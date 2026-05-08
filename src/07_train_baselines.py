@@ -4,32 +4,54 @@
 
 Baseline-модели для оконного EEG PM/POW датасета.
 
-Вход:
+Поддерживаемые датасеты:
     data/processed/windowed_pm_dataset_w10.parquet
+    data/processed/windowed_eeg_pm_dataset_w10.parquet
 
 Задачи:
     1. Classification:
-        X = POW.*
         y = label_q5
 
     2. Regression:
-        X = POW.*
         y = target_main
+
+Признаки:
+    --feature-set pow
+        Использует только POW.* признаки.
+
+    --feature-set eeg
+        Использует только EEG.* признаки.
+
+    --feature-set pow_plus_eeg
+        Использует POW.* + EEG.* признаки.
 
 Важно:
     PM.* не используются как признаки, потому что target_main построен из PM.Focus.
-    target_* и label_* тоже не используются как признаки.
-    subject_id используется только как group для GroupKFold / subject-aware validation.
+    target_* и label_* не используются как признаки.
+    subject_id используется только для GroupKFold / subject-aware validation.
 
-Новые возможности:
-    --feature-mode raw_pow / log_pow / raw_plus_log_pow
-    --enable-cross-source-no-overlap
+Пример POW-only:
+    D:\\miniconda3\\envs\\eeg_nir\\python.exe src\\07_train_baselines.py ^
+      --dataset data\\processed\\windowed_pm_dataset_w10.parquet ^
+      --feature-set pow ^
+      --feature-mode log_pow ^
+      --enable-cross-source-no-overlap ^
+      --output-prefix baseline_pow_w10_log
 
-Запуск:
-    D:\\miniconda3\\envs\\eeg_nir\\python.exe src\\07_train_baselines.py --fast --feature-mode log_pow --output-prefix baseline_pow_w10_log_fast
+Пример EEG-only:
+    D:\\miniconda3\\envs\\eeg_nir\\python.exe src\\07_train_baselines.py ^
+      --dataset data\\processed\\windowed_eeg_pm_dataset_w10.parquet ^
+      --feature-set eeg ^
+      --enable-cross-source-no-overlap ^
+      --output-prefix baseline_eeg_w10
 
-Быстрый тест:
-    D:\\miniconda3\\envs\\eeg_nir\\python.exe src\\07_train_baselines.py --max-rows 10000 --fast --feature-mode log_pow --enable-cross-source-no-overlap --output-prefix baseline_pow_w10_log_test
+Пример POW+EEG:
+    D:\\miniconda3\\envs\\eeg_nir\\python.exe src\\07_train_baselines.py ^
+      --dataset data\\processed\\windowed_eeg_pm_dataset_w10.parquet ^
+      --feature-set pow_plus_eeg ^
+      --feature-mode log_pow ^
+      --enable-cross-source-no-overlap ^
+      --output-prefix baseline_pow_plus_eeg_w10_log
 """
 
 from __future__ import annotations
@@ -65,7 +87,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import GroupKFold, train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import FunctionTransformer, RobustScaler
+from sklearn.preprocessing import RobustScaler
 
 
 try:
@@ -123,20 +145,33 @@ def sanitize_filename(s: str) -> str:
 def infer_pow_feature_cols(df: pd.DataFrame) -> List[str]:
     cols = []
     for c in df.columns:
-        if not c.startswith("POW."):
-            continue
-        if pd.api.types.is_numeric_dtype(df[c]):
+        if c.startswith("POW.") and pd.api.types.is_numeric_dtype(df[c]):
             cols.append(c)
     return cols
 
 
-def transform_features(
+def infer_eeg_feature_cols(df: pd.DataFrame) -> List[str]:
+    """
+    Берем только построенные EEG-признаки вида:
+        EEG.AF3__mean
+        EEG.AF3__std
+        ...
+    Не берем возможные сырые EEG.AF3 без агрегата, если такие когда-то окажутся в таблице.
+    """
+    cols = []
+    for c in df.columns:
+        if c.startswith("EEG.") and "__" in c and pd.api.types.is_numeric_dtype(df[c]):
+            cols.append(c)
+    return cols
+
+
+def transform_pow_features(
     df: pd.DataFrame,
-    raw_feature_cols: List[str],
+    pow_cols: List[str],
     feature_mode: str,
 ) -> Tuple[pd.DataFrame, List[str]]:
     """
-    Создает матрицу признаков без утечки.
+    Преобразует только POW-признаки.
 
     feature_mode:
         raw_pow:
@@ -144,28 +179,76 @@ def transform_features(
 
         log_pow:
             log1p(max(x, 0)) для POW.*.
-            Это полезно из-за тяжелых хвостов и больших выбросов в POW.
 
         raw_plus_log_pow:
             исходные POW.* + log1p(max(x, 0)).
     """
-    X_raw = df[raw_feature_cols].copy()
+    if not pow_cols:
+        return pd.DataFrame(index=df.index), []
+
+    X_raw = df[pow_cols].copy()
 
     if feature_mode == "raw_pow":
-        return X_raw, raw_feature_cols
+        return X_raw, X_raw.columns.tolist()
 
     if feature_mode == "log_pow":
         X_log = np.log1p(X_raw.clip(lower=0))
-        X_log.columns = [f"log1p_{c}" for c in raw_feature_cols]
+        X_log.columns = [f"log1p_{c}" for c in pow_cols]
         return X_log, X_log.columns.tolist()
 
     if feature_mode == "raw_plus_log_pow":
         X_log = np.log1p(X_raw.clip(lower=0))
-        X_log.columns = [f"log1p_{c}" for c in raw_feature_cols]
+        X_log.columns = [f"log1p_{c}" for c in pow_cols]
         X = pd.concat([X_raw, X_log], axis=1)
         return X, X.columns.tolist()
 
     raise ValueError(f"Unknown feature_mode: {feature_mode}")
+
+
+def build_feature_matrix(
+    df: pd.DataFrame,
+    pow_cols: List[str],
+    eeg_cols: List[str],
+    feature_set: str,
+    feature_mode: str,
+) -> Tuple[pd.DataFrame, List[str]]:
+    """
+    Собирает итоговую матрицу признаков.
+
+    Важно:
+        - log-преобразование применяется только к POW.
+        - EEG-признаки используются как есть.
+        - PM/target/label/meta никогда сюда не попадают.
+    """
+    parts = []
+
+    if feature_set in {"pow", "pow_plus_eeg"}:
+        X_pow, _ = transform_pow_features(df, pow_cols, feature_mode)
+        if not X_pow.empty:
+            parts.append(X_pow)
+
+    if feature_set in {"eeg", "pow_plus_eeg"}:
+        if eeg_cols:
+            X_eeg = df[eeg_cols].copy()
+            parts.append(X_eeg)
+
+    if not parts:
+        raise RuntimeError(
+            f"No features selected. feature_set={feature_set}, "
+            f"n_pow={len(pow_cols)}, n_eeg={len(eeg_cols)}"
+        )
+
+    X = pd.concat(parts, axis=1)
+    feature_cols = X.columns.tolist()
+
+    leakage_cols = [
+        c for c in feature_cols
+        if c.startswith("PM.") or c.startswith("target_") or c.startswith("label_")
+    ]
+    if leakage_cols:
+        raise RuntimeError(f"Leakage columns in features: {leakage_cols[:20]}")
+
+    return X, feature_cols
 
 
 def make_classification_models(fast: bool = False) -> Dict[str, Any]:
@@ -360,11 +443,13 @@ def regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, floa
 
 def prepare_classification_data(
     df: pd.DataFrame,
-    raw_feature_cols: List[str],
+    pow_cols: List[str],
+    eeg_cols: List[str],
     target_col: str,
     min_windows_per_subject: int,
+    feature_set: str,
     feature_mode: str,
-) -> Tuple[pd.DataFrame, pd.DataFrame, np.ndarray]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, np.ndarray, List[str]]:
     data = df.copy()
     data = data[data[target_col].notna()].copy()
     data[target_col] = data[target_col].astype(int)
@@ -373,19 +458,27 @@ def prepare_classification_data(
     keep_subjects = counts[counts >= min_windows_per_subject].index
     data = data[data["subject_id"].isin(keep_subjects)].copy()
 
-    X, _ = transform_features(data, raw_feature_cols, feature_mode)
+    X, feature_cols = build_feature_matrix(
+        df=data,
+        pow_cols=pow_cols,
+        eeg_cols=eeg_cols,
+        feature_set=feature_set,
+        feature_mode=feature_mode,
+    )
     y = data[target_col].to_numpy()
 
-    return data, X, y
+    return data, X, y, feature_cols
 
 
 def prepare_regression_data(
     df: pd.DataFrame,
-    raw_feature_cols: List[str],
+    pow_cols: List[str],
+    eeg_cols: List[str],
     target_col: str,
     min_windows_per_subject: int,
+    feature_set: str,
     feature_mode: str,
-) -> Tuple[pd.DataFrame, pd.DataFrame, np.ndarray]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, np.ndarray, List[str]]:
     data = df.copy()
     data = data[data[target_col].notna()].copy()
     data[target_col] = pd.to_numeric(data[target_col], errors="coerce")
@@ -395,10 +488,16 @@ def prepare_regression_data(
     keep_subjects = counts[counts >= min_windows_per_subject].index
     data = data[data["subject_id"].isin(keep_subjects)].copy()
 
-    X, _ = transform_features(data, raw_feature_cols, feature_mode)
+    X, feature_cols = build_feature_matrix(
+        df=data,
+        pow_cols=pow_cols,
+        eeg_cols=eeg_cols,
+        feature_set=feature_set,
+        feature_mode=feature_mode,
+    )
     y = data[target_col].to_numpy(dtype=float)
 
-    return data, X, y
+    return data, X, y, feature_cols
 
 
 def get_base_prediction_columns(data: pd.DataFrame, target_col: str) -> List[str]:
@@ -922,8 +1021,10 @@ def plot_regression_scatter_for_best(
 def make_report(
     report_path: Path,
     dataset_path: Path,
+    feature_set: str,
     feature_mode: str,
-    raw_feature_cols: List[str],
+    pow_feature_count: int,
+    eeg_feature_count: int,
     final_feature_count: int,
     class_metrics: pd.DataFrame,
     class_agg: pd.DataFrame,
@@ -943,13 +1044,16 @@ def make_report(
 
     lines.append("## Feature policy")
     lines.append("")
-    lines.append("- Used as base features: `POW.*` aggregated columns only.")
     lines.append("- Excluded from features: `PM.*`, `target_*`, `label_*`, `source`, `subject_id`, `record_id`, time/meta columns.")
     lines.append("- Reason: `target_main` is derived from `PM.Focus.Scaled`; including PM columns would cause target leakage.")
     lines.append("")
-    lines.append(f"- Feature mode: **{feature_mode}**")
-    lines.append(f"- Raw POW feature columns: **{len(raw_feature_cols)}**")
-    lines.append(f"- Final feature columns after transform: **{final_feature_count}**")
+    lines.append(f"- Feature set: **{feature_set}**")
+    lines.append(f"- POW feature mode: **{feature_mode}**")
+    lines.append(f"- Raw POW feature columns available: **{pow_feature_count}**")
+    lines.append(f"- EEG feature columns available: **{eeg_feature_count}**")
+    lines.append(f"- Final feature columns used: **{final_feature_count}**")
+    lines.append("")
+    lines.append("POW log transformation is applied only to `POW.*`. EEG features are used in their original scale.")
     lines.append("")
 
     lines.append("## Classification data")
@@ -969,7 +1073,7 @@ def make_report(
 
     lines.append("## Classification fold metrics")
     lines.append("")
-    lines.append(df_to_markdown_safe(class_metrics.head(100), index=False) if not class_metrics.empty else "_No classification fold metrics._")
+    lines.append(df_to_markdown_safe(class_metrics.head(120), index=False) if not class_metrics.empty else "_No classification fold metrics._")
     lines.append("")
 
     lines.append("## Regression aggregated metrics")
@@ -979,7 +1083,7 @@ def make_report(
 
     lines.append("## Regression fold metrics")
     lines.append("")
-    lines.append(df_to_markdown_safe(reg_metrics.head(100), index=False) if not reg_metrics.empty else "_No regression fold metrics._")
+    lines.append(df_to_markdown_safe(reg_metrics.head(120), index=False) if not reg_metrics.empty else "_No regression fold metrics._")
     lines.append("")
 
     lines.append("## Figures")
@@ -998,8 +1102,7 @@ def make_report(
     lines.append("2. GroupKFold by `subject_id` is the main baseline validation scheme.")
     lines.append("3. Cross-source validation with subject overlap estimates source transfer but may be optimistic.")
     lines.append("4. Cross-source validation without subject overlap is stricter and should be used for transfer conclusions.")
-    lines.append("5. If GroupKFold metrics are much lower than random split metrics, the task has strong subject-specific effects.")
-    lines.append("6. If linear models fail on raw POW but improve on log POW, the issue is likely heavy-tailed spectral features.")
+    lines.append("5. Comparing `pow`, `eeg`, and `pow_plus_eeg` shows whether raw EEG time-domain features add useful signal beyond Emotiv bandpower features.")
 
     report_path.write_text("\n".join(lines), encoding="utf-8")
 
@@ -1021,7 +1124,7 @@ def main() -> None:
     parser.add_argument(
         "--output-prefix",
         type=str,
-        default="baseline_pow_w10",
+        default="baseline_w10",
     )
     parser.add_argument(
         "--class-target",
@@ -1034,10 +1137,18 @@ def main() -> None:
         default=DEFAULT_REG_TARGET,
     )
     parser.add_argument(
+        "--feature-set",
+        type=str,
+        choices=["pow", "eeg", "pow_plus_eeg"],
+        default="pow",
+        help="Какие признаки использовать.",
+    )
+    parser.add_argument(
         "--feature-mode",
         type=str,
         choices=["raw_pow", "log_pow", "raw_plus_log_pow"],
-        default="raw_pow",
+        default="log_pow",
+        help="Преобразование только для POW-признаков.",
     )
     parser.add_argument(
         "--n-splits",
@@ -1098,7 +1209,8 @@ def main() -> None:
     print(f"Root: {root}")
     print(f"Dataset: {dataset_path}")
     print(f"Output prefix: {args.output_prefix}")
-    print(f"Feature mode: {args.feature_mode}")
+    print(f"Feature set: {args.feature_set}")
+    print(f"POW feature mode: {args.feature_mode}")
 
     df = pd.read_parquet(dataset_path)
 
@@ -1111,37 +1223,46 @@ def main() -> None:
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
 
-    raw_feature_cols = infer_pow_feature_cols(df)
-    if not raw_feature_cols:
-        raise RuntimeError("No POW.* feature columns found.")
+    pow_cols = infer_pow_feature_cols(df)
+    eeg_cols = infer_eeg_feature_cols(df)
 
-    _, final_feature_cols = transform_features(df.head(5), raw_feature_cols, args.feature_mode)
+    if args.feature_set in {"pow", "pow_plus_eeg"} and not pow_cols:
+        raise RuntimeError("feature_set requires POW.*, but no POW feature columns were found.")
 
-    leakage_cols = [
-        c for c in raw_feature_cols
-        if c.startswith("PM.") or c.startswith("target_") or c.startswith("label_")
-    ]
-    if leakage_cols:
-        raise RuntimeError(f"Leakage columns in features: {leakage_cols[:20]}")
+    if args.feature_set in {"eeg", "pow_plus_eeg"} and not eeg_cols:
+        raise RuntimeError("feature_set requires EEG.*, but no EEG feature columns were found.")
 
-    print(f"Rows: {len(df)}")
-    print(f"Columns: {df.shape[1]}")
-    print(f"Raw POW feature columns: {len(raw_feature_cols)}")
-    print(f"Final feature columns: {len(final_feature_cols)}")
-
-    class_data, X_class, y_class = prepare_classification_data(
-        df=df,
-        raw_feature_cols=raw_feature_cols,
-        target_col=args.class_target,
-        min_windows_per_subject=args.min_windows_per_subject,
+    _, preview_feature_cols = build_feature_matrix(
+        df=df.head(10),
+        pow_cols=pow_cols,
+        eeg_cols=eeg_cols,
+        feature_set=args.feature_set,
         feature_mode=args.feature_mode,
     )
 
-    reg_data, X_reg, y_reg = prepare_regression_data(
+    print(f"Rows: {len(df)}")
+    print(f"Columns: {df.shape[1]}")
+    print(f"Available POW feature columns: {len(pow_cols)}")
+    print(f"Available EEG feature columns: {len(eeg_cols)}")
+    print(f"Final feature columns: {len(preview_feature_cols)}")
+
+    class_data, X_class, y_class, class_feature_cols = prepare_classification_data(
         df=df,
-        raw_feature_cols=raw_feature_cols,
+        pow_cols=pow_cols,
+        eeg_cols=eeg_cols,
+        target_col=args.class_target,
+        min_windows_per_subject=args.min_windows_per_subject,
+        feature_set=args.feature_set,
+        feature_mode=args.feature_mode,
+    )
+
+    reg_data, X_reg, y_reg, reg_feature_cols = prepare_regression_data(
+        df=df,
+        pow_cols=pow_cols,
+        eeg_cols=eeg_cols,
         target_col=args.reg_target,
         min_windows_per_subject=args.min_windows_per_subject,
+        feature_set=args.feature_set,
         feature_mode=args.feature_mode,
     )
 
@@ -1152,7 +1273,9 @@ def main() -> None:
         "sources": json.dumps(class_data["source"].value_counts().to_dict(), ensure_ascii=False),
         "class_distribution": json.dumps(class_data[args.class_target].value_counts().sort_index().to_dict(), ensure_ascii=False),
         "min_windows_per_subject": args.min_windows_per_subject,
+        "feature_set": args.feature_set,
         "feature_mode": args.feature_mode,
+        "n_features": len(class_feature_cols),
     }
 
     reg_data_info = {
@@ -1166,7 +1289,9 @@ def main() -> None:
         "target_median": float(reg_data[args.reg_target].median()),
         "target_max": float(reg_data[args.reg_target].max()),
         "min_windows_per_subject": args.min_windows_per_subject,
+        "feature_set": args.feature_set,
         "feature_mode": args.feature_mode,
+        "n_features": len(reg_feature_cols),
     }
 
     print("\nClassification data:")
@@ -1323,9 +1448,11 @@ def main() -> None:
     make_report(
         report_path=report_path,
         dataset_path=dataset_path,
+        feature_set=args.feature_set,
         feature_mode=args.feature_mode,
-        raw_feature_cols=raw_feature_cols,
-        final_feature_count=len(final_feature_cols),
+        pow_feature_count=len(pow_cols),
+        eeg_feature_count=len(eeg_cols),
+        final_feature_count=len(preview_feature_cols),
         class_metrics=class_metrics,
         class_agg=class_agg,
         reg_metrics=reg_metrics,
