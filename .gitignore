@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+*.env
+
+# IDE
+.idea/
+.vscode/
+
+# Data
+data/
+*.parquet
+*.csv
+*.bz2
+*.7z
+*.tar
+*.zip
+
+# Generated outputs
+reports/runs/
+reports/figures/
+outputs/
+logs/
+*.log
+
+# Models/checkpoints
+models/
+checkpoints/
+*.pt
+*.pth
+*.pkl
+*.joblib
+
+# OS
+.DS_Store
+Thumbs.db
