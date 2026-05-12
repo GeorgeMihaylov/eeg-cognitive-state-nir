@@ -1,16 +1,20 @@
 # EEG Cognitive State NIR
 
-Проект посвящен построению и сравнению моделей машинного обучения для предсказания когнитивных / аффективных состояний по EEG-сигналам. В качестве слабой разметки используются PM-метрики Emotiv, синхронизированные с оконными EEG/POW-признаками.
+Проект посвящен построению, сравнению и интерпретации моделей машинного обучения для предсказания когнитивных / аффективных состояний по EEG-сигналам. В качестве слабой разметки используются PM-метрики Emotiv, синхронизированные с оконными EEG/POW-признаками.
 
 Основная исследовательская гипотеза текущей ветки:
 
-> Локальный временной контекст соседних EEG-окон улучшает предсказание PM-метрик по сравнению с табличным baseline, использующим только одно окно.
+> PM-метрики имеют локальную временную инерцию, поэтому учет соседних EEG-окон должен улучшать качество предсказания по сравнению с однооконным tabular baseline.
+
+После серии экспериментов гипотеза уточнена:
+
+> Локальный временной контекст действительно улучшает качество, однако основной прирост дает не сам multi-head attention, а факт использования соседних окон. Простые context-tabular модели с `seq_len=5` часто превосходят или не уступают MHA-моделям.
 
 ---
 
-## 1. Статус ветки
+## 1. Текущий статус ветки
 
-В текущей ветке реализован полный экспериментальный pipeline:
+В текущей ветке реализован расширенный экспериментальный pipeline:
 
 1. Первичный осмотр исходных EEG/PM-данных.
 2. Построение каталога записей.
@@ -22,10 +26,14 @@
 8. Tabular baseline для разных feature sets: `pow`, `eeg`, `pow_plus_eeg`.
 9. Multi-PM baseline для всех PM-метрик.
 10. Multi-head attention baseline с локальным временным контекстом.
-11. Визуализация результатов MHA-прогона.
-12. Короткое сравнение attention-window `seq_len=3` и `seq_len=5`.
+11. Визуализация результатов MHA-прогонов.
+12. Context-tabular baseline с локальным контекстом `seq_len=3` и `seq_len=5`.
+13. Сравнение `tabular`, `context-tabular`, `MHA seq_len=3`, `MHA seq_len=5`.
+14. Подготовлен анализ литературы и roadmap дальнейших экспериментов.
 
-Основной финальный результат текущей ветки: **multi-head self-attention model с `seq_len=3` улучшает большинство PM-метрик относительно tabular baseline**.
+Основной финальный результат текущей ветки:
+
+> `context-tabular len=5 + LGBM/HGB` является наиболее сильным и устойчивым baseline для большинства PM-метрик. MHA дает небольшой выигрыш только для части targets (`attention`, частично `excitement`), но не является универсально лучшей моделью.
 
 ---
 
@@ -38,7 +46,7 @@ D:\PycharmProjects\eeg-cognitive-state-nir\data\raw\gpn_data
 D:\PycharmProjects\eeg-cognitive-state-nir\data\raw\Old_EEG
 ```
 
-После предобработки основной датасет:
+Основной датасет после предобработки:
 
 ```text
 data/processed/windowed_eeg_pm_dataset_w10.parquet
@@ -76,7 +84,7 @@ PM.Interest.Scaled__mean
 PM.Focus.Scaled__mean
 ```
 
-PM-метрики используются только как `target`, но не как входные признаки.
+PM-метрики используются как `target`, но не используются как входные признаки.
 
 ---
 
@@ -130,6 +138,17 @@ eeg-cognitive-state-nir/
 │   │           ├── global/
 │   │           └── per_target/
 │   │
+│   └── comparison/
+│       ├── final_pm_experiment_comparison/
+│       └── final_pm_experiment_comparison_context_len5/
+│           ├── normalized_all_experiments.csv
+│           ├── best_models_by_target.csv
+│           ├── final_experiment_comparison.csv
+│           ├── final_experiment_comparison.md
+│           ├── report.md
+│           ├── source_files.json
+│           └── figures/
+│
 ├── src/
 │   ├── 04_build_windowed_pm_dataset.py
 │   ├── 05_analyze_pm_sampling.py
@@ -139,7 +158,12 @@ eeg-cognitive-state-nir/
 │   ├── 09_train_multi_pm_baselines.py
 │   ├── 10_describe_multi_pm_baseline.py
 │   ├── 11_train_multihead_attention_short.py
-│   └── 12_visualize_mha_all_pm_run.py
+│   ├── 12_visualize_mha_all_pm_run.py
+│   ├── 13_train_context_tabular_baselines.py
+│   └── 14_compare_experiments.py
+│
+├── github_issues/
+│   └── *.md
 │
 └── README.md
 ```
@@ -168,7 +192,14 @@ D:\miniconda3\envs\eeg_nir\python.exe --version
 D:\miniconda3\envs\eeg_nir\python.exe -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"
 ```
 
-На текущей машине MHA-эксперименты запускались на CPU. Для ускорения можно использовать CUDA, если PyTorch установлен с поддержкой GPU.
+Для GPU-регима на локальной машине можно использовать конфигурацию PyTorch, аналогичную окружению `aiice_env`:
+
+```text
+torch = 2.5.1+cu124
+cuda available = True
+cuda = 12.4
+device = NVIDIA GeForce RTX 2070
+```
 
 ---
 
@@ -498,7 +529,7 @@ Head:
 ```text
 feature_set = pow_plus_eeg
 feature_mode = log_pow
-seq_len = 3
+seq_len = 3 or 5
 d_model = 64
 nhead = 4
 num_layers = 1
@@ -544,37 +575,9 @@ all_targets_aggregated_metrics.csv
 report.md
 ```
 
-По каждому target:
-
-```text
-targets/<target>/fold_metrics.csv
-targets/<target>/aggregated_metrics.csv
-targets/<target>/predictions.parquet
-targets/<target>/epoch_history.csv
-targets/<target>/report.md
-```
-
-### 6.3. Основные результаты MHA seq_len=3 full
-
-| Rank | Target | R2 mean | Spearman mean | RMSE mean |
-|---:|---|---:|---:|---:|
-| 1 | excitement | 0.555 | 0.698 | 0.154 |
-| 2 | relaxation | 0.365 | 0.628 | 0.132 |
-| 3 | stress | 0.274 | 0.469 | 0.116 |
-| 4 | engagement | 0.216 | 0.476 | 0.115 |
-| 5 | interest | 0.213 | 0.431 | 0.086 |
-| 6 | focus | 0.198 | 0.470 | 0.111 |
-| 7 | attention | 0.008 | 0.374 | 0.125 |
-
-Главный вывод:
-
-```text
-MHA с локальным контекстом из трех окон улучшает качество большинства PM-таргетов относительно tabular baseline.
-```
-
 ---
 
-### 6.4. Короткое сравнение seq_len=3 и seq_len=5
+### 6.3. Короткое сравнение MHA seq_len=3 и seq_len=5
 
 Проверялась гипотеза, что более широкий контекст из пяти окон может улучшить качество:
 
@@ -601,45 +604,7 @@ seq_len=5:
 --num-layers 1
 ```
 
-Короткий прогон `seq_len=5`:
-
-```powershell
-D:\miniconda3\envs\eeg_nir\python.exe src\11_train_multihead_attention_short.py `
-  --dataset data\processed\windowed_eeg_pm_dataset_w10.parquet `
-  --pm-target all `
-  --feature-set pow_plus_eeg `
-  --feature-mode log_pow `
-  --seq-len 5 `
-  --max-samples 10000 `
-  --fold-limit 2 `
-  --epochs 12 `
-  --batch-size 128 `
-  --d-model 64 `
-  --nhead 4 `
-  --num-layers 1 `
-  --run-name mha_all_pm_short_len5
-```
-
-Контрольный короткий прогон `seq_len=3`:
-
-```powershell
-D:\miniconda3\envs\eeg_nir\python.exe src\11_train_multihead_attention_short.py `
-  --dataset data\processed\windowed_eeg_pm_dataset_w10.parquet `
-  --pm-target all `
-  --feature-set pow_plus_eeg `
-  --feature-mode log_pow `
-  --seq-len 3 `
-  --max-samples 10000 `
-  --fold-limit 2 `
-  --epochs 12 `
-  --batch-size 128 `
-  --d-model 64 `
-  --nhead 4 `
-  --num-layers 1 `
-  --run-name mha_all_pm_short_len3_control
-```
-
-Сравнение коротких прогонов:
+Сравнение коротких MHA-прогонов:
 
 | Target | R2 len3 | R2 len5 | ΔR2 | Spearman len3 | Spearman len5 | ΔSpearman |
 |---|---:|---:|---:|---:|---:|---:|
@@ -654,13 +619,257 @@ D:\miniconda3\envs\eeg_nir\python.exe src\11_train_multihead_attention_short.py 
 Вывод:
 
 ```text
-seq_len=3 остается основной универсальной MHA-конфигурацией.
+seq_len=3 остается более универсальной MHA-конфигурацией.
 seq_len=5 улучшает Focus и Stress, но ухудшает Excitement и Relaxation.
 ```
 
 ---
 
-## 7. Визуализация MHA-прогона
+## 7. Context-tabular baseline
+
+### 7.1. Скрипт
+
+```text
+src/13_train_context_tabular_baselines.py
+```
+
+Назначение:
+
+- строит локальный контекст соседних окон внутри одного `record_id`;
+- формирует плоское табличное представление через конкатенацию окон;
+- обучает классические регрессионные модели;
+- поддерживает один PM-target или все PM-targets;
+- сохраняет отдельные fold metrics и общий summary.
+
+Форматы признаков:
+
+```text
+seq_len=3:
+  concat(X_{t-1}, X_t, X_{t+1})
+  448 × 3 = 1344 features
+
+seq_len=5:
+  concat(X_{t-2}, X_{t-1}, X_t, X_{t+1}, X_{t+2})
+  448 × 5 = 2240 features
+```
+
+### 7.2. Context-tabular seq_len=3
+
+Запуск:
+
+```powershell
+D:\miniconda3\envs\eeg_nir\python.exe src\13_train_context_tabular_baselines.py `
+  --dataset data\processed\windowed_eeg_pm_dataset_w10.parquet `
+  --pm-target all `
+  --feature-set pow_plus_eeg `
+  --feature-mode log_pow `
+  --seq-len 3 `
+  --fold-limit 0 `
+  --fast `
+  --models lgbm_reg,hgb_reg `
+  --save-predictions false `
+  --no-plots `
+  --run-name context_tabular_len3_fast
+```
+
+Run directory:
+
+```text
+reports/runs/20260512_144503_context_tabular_len3_fast_all_pow_plus_eeg_len3
+```
+
+Результаты:
+
+| Target | Best R2 | Best Spearman |
+|---|---:|---:|
+| attention | 0.181 | 0.462 |
+| engagement | 0.322 | 0.525 |
+| excitement | 0.570 | 0.717 |
+| stress | 0.354 | 0.530 |
+| relaxation | 0.425 | 0.640 |
+| interest | 0.226 | 0.452 |
+| focus | 0.261 | 0.489 |
+
+### 7.3. Context-tabular seq_len=5
+
+Запуск:
+
+```powershell
+D:\miniconda3\envs\eeg_nir\python.exe src\13_train_context_tabular_baselines.py `
+  --dataset data\processed\windowed_eeg_pm_dataset_w10.parquet `
+  --pm-target all `
+  --feature-set pow_plus_eeg `
+  --feature-mode log_pow `
+  --seq-len 5 `
+  --fold-limit 0 `
+  --fast `
+  --models lgbm_reg,hgb_reg `
+  --save-predictions false `
+  --no-plots `
+  --run-name context_tabular_len5_fast
+```
+
+Run directory:
+
+```text
+reports/runs/20260512_152527_context_tabular_len5_fast_all_pow_plus_eeg_len5
+```
+
+Результаты:
+
+| Target | Best model | Best R2 | Best Spearman | RMSE | MAE |
+|---|---|---:|---:|---:|---:|
+| attention | hgb/lgbm close | 0.203 | 0.467 | 0.113 | 0.089 |
+| engagement | hgb_reg | 0.306 | 0.513 | 0.108 | 0.086 |
+| excitement | lgbm_reg | 0.579 | 0.718 | 0.151 | 0.112 |
+| stress | hgb_reg | 0.347 | 0.502 | 0.110 | 0.080 |
+| relaxation | hgb_reg | 0.426 | 0.642 | 0.125 | 0.098 |
+| interest | hgb_reg | 0.274 | 0.465 | 0.082 | 0.060 |
+| focus | lgbm_reg | 0.345 | 0.568 | 0.100 | 0.077 |
+
+### 7.4. Context-tabular len=3 vs len=5
+
+| Target | Context len=3 R2 | Context len=5 R2 | ΔR2 |
+|---|---:|---:|---:|
+| attention | 0.181 | 0.203 | +0.022 |
+| engagement | 0.322 | 0.306 | -0.016 |
+| excitement | 0.570 | 0.579 | +0.009 |
+| stress | 0.354 | 0.347 | -0.007 |
+| relaxation | 0.425 | 0.426 | +0.001 |
+| interest | 0.226 | 0.274 | +0.048 |
+| focus | 0.261 | 0.345 | +0.084 |
+
+Вывод:
+
+```text
+Оптимальная длина локального контекста зависит от target.
+Focus, Interest и Attention заметно выигрывают от seq_len=5.
+Engagement и Stress немного лучше при seq_len=3.
+Relaxation и Excitement устойчиво хорошо предсказываются при обоих вариантах.
+```
+
+---
+
+## 8. Сравнение экспериментов
+
+### 8.1. Скрипт
+
+```text
+src/14_compare_experiments.py
+```
+
+Назначение:
+
+- собирает summary-файлы из разных run directories;
+- нормализует форматы результатов;
+- выбирает лучшую модель по каждому target;
+- строит итоговую таблицу сравнения;
+- считает deltas между подходами;
+- строит графики.
+
+Поддерживаемые входы:
+
+```text
+--tabular
+--context
+--mha-len3
+--mha-len5
+```
+
+### 8.2. Сравнение с context len=3
+
+Запуск:
+
+```powershell
+D:\miniconda3\envs\eeg_nir\python.exe src\14_compare_experiments.py `
+  --tabular data\processed\baseline_pow_plus_eeg_w10_log_regression_metrics_agg.csv `
+  --context reports\runs\20260512_144503_context_tabular_len3_fast_all_pow_plus_eeg_len3 `
+  --mha-len3 reports\runs\20260508_172632_mha_all_pm_short_len3_control_all_pow_plus_eeg_len3 `
+  --mha-len5 reports\runs\20260508_171708_mha_all_pm_short_len5_all_pow_plus_eeg_len5 `
+  --output-dir reports\comparison\final_pm_experiment_comparison
+```
+
+Результат:
+
+```text
+reports/comparison/final_pm_experiment_comparison/
+```
+
+### 8.3. Сравнение с context len=5
+
+Запуск:
+
+```powershell
+D:\miniconda3\envs\eeg_nir\python.exe src\14_compare_experiments.py `
+  --tabular data\processed\baseline_pow_plus_eeg_w10_log_regression_metrics_agg.csv `
+  --context reports\runs\20260512_152527_context_tabular_len5_fast_all_pow_plus_eeg_len5 `
+  --mha-len3 reports\runs\20260508_172632_mha_all_pm_short_len3_control_all_pow_plus_eeg_len3 `
+  --mha-len5 reports\runs\20260508_171708_mha_all_pm_short_len5_all_pow_plus_eeg_len5 `
+  --output-dir reports\comparison\final_pm_experiment_comparison_context_len5
+```
+
+Результат:
+
+```text
+reports/comparison/final_pm_experiment_comparison_context_len5/
+```
+
+Главные файлы:
+
+```text
+normalized_all_experiments.csv
+best_models_by_target.csv
+final_experiment_comparison.csv
+final_experiment_comparison.md
+report.md
+source_files.json
+figures/
+```
+
+### 8.4. Итоговое сравнение с context len=5
+
+| Target | Tabular R2 | Context len=5 R2 | MHA len=3 R2 | MHA len=5 R2 | Best approach |
+|---|---:|---:|---:|---:|---|
+| attention | NaN | 0.203 | 0.209 | 0.193 | MHA len=3, small margin |
+| engagement | NaN | 0.306 | 0.274 | 0.256 | context len=5 |
+| excitement | NaN | 0.579 | 0.581 | 0.427 | MHA len=3 / context close |
+| stress | NaN | 0.347 | 0.179 | 0.245 | context len=5 |
+| relaxation | NaN | 0.426 | 0.381 | 0.249 | context len=5 |
+| interest | NaN | 0.274 | 0.128 | 0.123 | context len=5 |
+| focus | 0.145 | 0.345 | 0.169 | 0.307 | context len=5 |
+
+Главные deltas:
+
+```text
+Focus:
+  tabular X_t R2     = 0.145
+  context len=5 R2   = 0.345
+  MHA len=5 R2       = 0.307
+
+Excitement:
+  context len=5 R2   = 0.579
+  MHA len=3 R2       = 0.581
+
+Attention:
+  context len=5 R2   = 0.203
+  MHA len=3 R2       = 0.209
+
+Interest:
+  context len=5 R2   = 0.274
+  MHA len=3 R2       = 0.128
+  MHA len=5 R2       = 0.123
+```
+
+Главный вывод:
+
+```text
+На текущих агрегированных признаках POW+EEG MHA не дает устойчивого преимущества над простой context-tabular моделью.
+Основной источник прироста — локальный временной контекст, а не сам механизм attention.
+```
+
+---
+
+## 9. Визуализация MHA-прогона
 
 Скрипт:
 
@@ -718,59 +927,43 @@ reports/runs/<run_id>/visualizations/
         └── <target>_loss_*.png
 ```
 
-Графики, которые рекомендуется включить в отчет:
+---
+
+## 10. Анализ литературы и исследовательский roadmap
+
+Подготовлен общий обзор статей по EEG foundation models, temporal context, event detection, graph/connectivity representations, multi-task EEG и benchmark methodology.
+
+Общий вывод по литературе:
 
 ```text
-global/dashboard_main_metrics.png
-global/target_metric_heatmap.png
-global/r2_bar.png
-global/spearman_bar.png
-global/fold_heatmap_r2.png
-global/fold_heatmap_spearman.png
-per_target/excitement/excitement_scatter_y_true_y_pred.png
-per_target/relaxation/relaxation_scatter_y_true_y_pred.png
-per_target/focus/focus_scatter_y_true_y_pred.png
-per_target/excitement/excitement_residual_hist.png
-per_target/relaxation/relaxation_calibration_binned.png
+Современная литература поддерживает стратегию:
+1. сначала строить сильные baseline и строгий benchmark;
+2. затем проводить frequency/channel/context/session ablation;
+3. только после этого усложнять нейросетевую архитектуру.
+```
+
+Ключевые идеи из литературы:
+
+| Направление | Практическая идея для проекта |
+|---|---|
+| NeuralBench | единый benchmark registry и стандартизированные метрики |
+| MPNet | multi-rhythm features, covariance/connectivity, compact pooling |
+| CLEF | session-level context и spectral representation |
+| DANCE | PM-state event detection и transition prediction |
+| CORTEG | subject calibration и parameter-efficient adaptation |
+| SIMON | saliency / feature / channel importance |
+| CFSPMNet | Fourier context, prototype consistency, cross-subject adaptation |
+| MTEEG | multi-task PM model с target-specific heads/adapters |
+
+Файл с обзором:
+
+```text
+eeg_pm_articles_summary_and_project_recommendations.md
 ```
 
 ---
 
-## 8. Таблицы сравнения
-
-### 8.1. Tabular baseline vs MHA seq_len=3
-
-Ключевой результат:
-
-| Target | Tabular R2 | MHA R2 | ΔR2 | Tabular Spearman | MHA Spearman | ΔSpearman |
-|---|---:|---:|---:|---:|---:|---:|
-| excitement | ~0.336 | 0.555 | +0.219 | ~0.518 | 0.698 | +0.180 |
-| relaxation | ~0.203 | 0.365 | +0.162 | ~0.471 | 0.628 | +0.157 |
-| engagement | ~0.229 | 0.216 | -0.013 | ~0.427 | 0.476 | +0.049 |
-| stress | ~0.157 | 0.274 | +0.117 | ~0.345 | 0.469 | +0.124 |
-| interest | ~0.149 | 0.213 | +0.064 | ~0.358 | 0.431 | +0.073 |
-| focus | ~0.110 | 0.198 | +0.088 | ~0.342 | 0.470 | +0.128 |
-| attention | ~0.104 | 0.008 | -0.096 | ~0.393 | 0.374 | -0.019 |
-
-Вывод:
-
-```text
-MHA seq_len=3 улучшает большинство PM-метрик, особенно Excitement, Relaxation, Stress и Focus.
-```
-
-### 8.2. MHA seq_len=3 vs seq_len=5 short
-
-См. раздел 6.4.
-
-Вывод:
-
-```text
-seq_len=5 не является универсально лучшим. Он улучшает Focus и Stress, но ухудшает наиболее сильные таргеты Excitement и Relaxation.
-```
-
----
-
-## 9. Методологические ограничения
+## 11. Методологические ограничения
 
 1. PM-метрики Emotiv являются слабой разметкой, а не экспертным ground truth.
 2. Модель предсказывает значения PM-метрик, а не когнитивное состояние напрямую.
@@ -778,54 +971,103 @@ seq_len=5 не является универсально лучшим. Он ул
 4. `Random split` может завышать качество из-за leakage между окнами одного субъекта.
 5. Источники `gpn_data` и `Old_EEG` имеют доменный сдвиг.
 6. Не все PM-метрики одинаково предсказуемы.
-7. `Attention` оказался наиболее проблемным PM-таргетом.
-8. `seq_len=5` не дает универсального улучшения и требует отдельной настройки под target.
+7. `Attention` и `Interest` сложнее, чем `Excitement` и `Relaxation`.
+8. `seq_len=5` не дает универсального улучшения для всех моделей и targets.
+9. MHA-подход требует честного сравнения с сильным context-tabular baseline.
+10. Текущие признаки агрегированы по окнам; raw temporal dynamics пока используются ограниченно.
 
 ---
 
-## 10. Основные выводы текущей ветки
+## 12. Основные выводы текущей ветки
 
 1. Окно 10 секунд обосновано частотой обновления PM-метрик.
 2. POW+EEG признаки лучше, чем использование только POW или только EEG.
 3. `Focus` не является самым сильным PM-таргетом.
-4. Наиболее предсказуемые PM-метрики: `Excitement`, `Relaxation`.
-5. Multi-head self-attention с локальным контекстом `seq_len=3` улучшает большинство PM-метрик.
-6. Улучшение наблюдается на subject-aware `GroupKFold`, то есть при переносе на новых субъектов.
-7. `seq_len=3` выбран как основная универсальная MHA-конфигурация.
-8. `seq_len=5` полезен для `Focus` и `Stress`, но ухудшает сильные таргеты `Excitement` и `Relaxation`.
+4. Наиболее предсказуемые PM-метрики: `Excitement`, `Relaxation`, далее `Stress` и `Focus`.
+5. Локальный временной контекст соседних EEG-окон заметно улучшает предсказание PM-метрик.
+6. `context-tabular len=5` является наиболее сильным текущим baseline для большинства targets.
+7. MHA полезен только для части PM-метрик и не превосходит context-tabular устойчиво.
+8. Оптимальная длина контекста зависит от target.
+9. Следующий научно обоснованный шаг — frequency-band ablation.
+10. Следующий инфраструктурный шаг — master benchmark registry.
 
 ---
 
-## 11. Рекомендуемый следующий план
+## 13. Рекомендуемый следующий план
 
-1. Зафиксировать финальные таблицы сравнения:
-   - tabular baseline vs MHA seq_len=3;
-   - MHA seq_len=3 vs MHA seq_len=5 short.
-2. Включить в отчет ключевые visualizations:
-   - dashboard;
-   - heatmap метрик;
-   - fold heatmaps;
-   - scatter plots для `excitement`, `relaxation`, `focus`;
-   - residual plots.
-3. Подготовить итоговый технический отчет:
-   - данные;
-   - признаки;
-   - pipeline;
-   - baseline;
-   - MHA;
-   - сравнение;
-   - ограничения;
-   - дальнейшие работы.
-4. В дальнейшем рассмотреть:
-   - target-specific `seq_len`;
-   - multi-task MHA для всех PM одновременно;
-   - domain adaptation между `gpn_data` и `Old_EEG`;
-   - синхронизацию annotation-based behavioral targets из `Old_EEG`;
-   - анализ артефактов и качества контакта электродов.
+### 13.1. Инфраструктурный шаг
+
+Создать единый benchmark registry:
+
+```text
+src/20_build_pm_benchmark_registry.py
+```
+
+Цель:
+
+```text
+собрать все completed runs в один master table:
+target, experiment, model, feature_set, seq_len, validation, folds,
+r2, spearman, rmse, mae, n_samples, n_subjects, run_dir
+```
+
+Выход:
+
+```text
+reports/comparison/master_pm_benchmark/master_pm_benchmark.csv
+reports/comparison/master_pm_benchmark/report.md
+reports/comparison/master_pm_benchmark/figures/
+```
+
+### 13.2. Главный следующий ML-эксперимент
+
+Frequency-band ablation:
+
+```text
+src/15_train_band_ablation_baselines.py
+```
+
+Feature groups:
+
+```text
+theta
+alpha
+beta
+gamma/high
+low = theta + alpha
+high = beta + gamma
+low_high_concat
+all_pow
+eeg_only
+pow_plus_eeg
+```
+
+Setup:
+
+```text
+seq_len = 5
+validation = GroupKFold by subject_id
+models = lgbm_reg,hgb_reg
+targets = all PM metrics
+```
+
+### 13.3. Дальнейшие эксперименты
+
+```text
+src/16_train_context_pooling_baselines.py
+src/16_train_session_context_baselines.py
+src/17_build_connectivity_features.py
+src/18_train_connectivity_augmented_baselines.py
+src/17_build_pm_state_events.py
+src/18_train_pm_event_baselines.py
+src/17_subject_calibration_experiment.py
+src/21_analyze_pm_target_relationships.py
+src/21_train_multitask_pm_model.py
+```
 
 ---
 
-## 12. Минимальная последовательность воспроизведения
+## 14. Минимальная последовательность воспроизведения
 
 ```powershell
 cd D:\PycharmProjects\eeg-cognitive-state-nir
@@ -857,7 +1099,24 @@ D:\miniconda3\envs\eeg_nir\python.exe src\09_train_multi_pm_baselines.py `
   --run-name multi_pm_full_pow_plus_eeg
 ```
 
-Запустить MHA all-PM full baseline:
+Запустить context-tabular baseline `seq_len=5`:
+
+```powershell
+D:\miniconda3\envs\eeg_nir\python.exe src\13_train_context_tabular_baselines.py `
+  --dataset data\processed\windowed_eeg_pm_dataset_w10.parquet `
+  --pm-target all `
+  --feature-set pow_plus_eeg `
+  --feature-mode log_pow `
+  --seq-len 5 `
+  --fold-limit 0 `
+  --fast `
+  --models lgbm_reg,hgb_reg `
+  --save-predictions false `
+  --no-plots `
+  --run-name context_tabular_len5_fast
+```
+
+Запустить MHA all-PM baseline:
 
 ```powershell
 D:\miniconda3\envs\eeg_nir\python.exe src\11_train_multihead_attention_short.py `
@@ -875,7 +1134,18 @@ D:\miniconda3\envs\eeg_nir\python.exe src\11_train_multihead_attention_short.py 
   --run-name mha_all_pm_full
 ```
 
-Построить визуализации:
+Построить сравнение экспериментов:
+
+```powershell
+D:\miniconda3\envs\eeg_nir\python.exe src\14_compare_experiments.py `
+  --tabular data\processed\baseline_pow_plus_eeg_w10_log_regression_metrics_agg.csv `
+  --context reports\runs\20260512_152527_context_tabular_len5_fast_all_pow_plus_eeg_len5 `
+  --mha-len3 reports\runs\20260508_172632_mha_all_pm_short_len3_control_all_pow_plus_eeg_len3 `
+  --mha-len5 reports\runs\20260508_171708_mha_all_pm_short_len5_all_pow_plus_eeg_len5 `
+  --output-dir reports\comparison\final_pm_experiment_comparison_context_len5
+```
+
+Построить визуализации MHA-прогона:
 
 ```powershell
 D:\miniconda3\envs\eeg_nir\python.exe src\12_visualize_mha_all_pm_run.py `
@@ -884,8 +1154,8 @@ D:\miniconda3\envs\eeg_nir\python.exe src\12_visualize_mha_all_pm_run.py `
 
 ---
 
-## 13. Ключевой результат для отчета
+## 15. Ключевой результат для отчета
 
 ```text
-В рамках текущей ветки реализован pipeline предсказания PM-метрик Emotiv по EEG/POW-признакам. После построения 10-секундного оконного датасета были обучены tabular baselines и temporal multi-head self-attention baseline. Наиболее сильный результат показала MHA-модель с локальным контекстом из трех окон. Для PM.Excitement.Scaled достигнуто R2≈0.555 и Spearman≈0.698, для PM.Relaxation.Scaled — R2≈0.365 и Spearman≈0.628, для PM.Focus.Scaled — R2≈0.198 и Spearman≈0.470. Это подтверждает гипотезу о полезности локального временного контекста соседних EEG-окон для предсказания PM-состояний.
+В рамках текущей ветки реализован pipeline предсказания PM-метрик Emotiv по EEG/POW-признакам. После построения 10-секундного оконного датасета были обучены однооконные tabular baselines, temporal multi-head self-attention models и context-tabular baselines. Эксперименты показали, что локальный временной контекст соседних EEG-окон существенно улучшает качество предсказания PM-метрик. Однако механизм multi-head attention не дал устойчивого преимущества над простым context-tabular baseline. Наиболее сильный текущий подход — context-tabular len=5 + LGBM/HGB. Для Focus достигнуто R2≈0.345 и Spearman≈0.568, для Excitement — R2≈0.579 и Spearman≈0.718, для Relaxation — R2≈0.426 и Spearman≈0.642. Это подтверждает полезность временного контекста, но указывает, что дальнейшее развитие должно быть направлено на frequency-band ablation, compact context pooling, session-level context и channel/connectivity features, а не на слепое усложнение attention-модели.
 ```
