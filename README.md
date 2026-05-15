@@ -1,6 +1,8 @@
 # EEG Cognitive State NIR
 
-Проект посвящен построению, сравнению и интерпретации моделей машинного обучения для предсказания когнитивных / аффективных состояний по EEG-сигналам. В качестве слабой разметки используются PM-метрики Emotiv, синхронизированные с оконными EEG/POW-признаками.
+Актуализировано: 2026-05-15.
+
+Проект посвящен построению, сравнению и интерпретации моделей машинного обучения для предсказания когнитивных / аффективных состояний по EEG-сигналам. В качестве слабой разметки используются PM-метрики Emotiv, синхронизированные с оконными EEG/POW-признаками. Дополнительно в текущей ветке начата внешняя линия проверки wearable-подхода: на датасете WESAD исследуется, могут ли физиологические сигналы носимых устройств выступать proxy-источником для stress/arousal-related состояний.
 
 Основная исследовательская гипотеза текущей ветки:
 
@@ -9,6 +11,10 @@
 После серии экспериментов гипотеза уточнена:
 
 > Локальный временной контекст действительно улучшает качество, однако основной прирост дает не сам multi-head attention, а факт использования соседних окон. Простые context-tabular модели с `seq_len=5` часто превосходят или не уступают MHA-моделям.
+
+Дополнительная рабочая гипотеза wearable-ветки:
+
+> Для `PM.Stress` и близких arousal-состояний полезны не только EEG/POW-признаки, но и физиологические сигналы носимых устройств: BVP/PPG, EDA, TEMP и ACC. При этом ACC должен рассматриваться как контроль движения и протокольных артефактов, а не как чистый физиологический маркер.
 
 ---
 
@@ -30,10 +36,21 @@
 12. Context-tabular baseline с локальным контекстом `seq_len=3` и `seq_len=5`.
 13. Сравнение `tabular`, `context-tabular`, `MHA seq_len=3`, `MHA seq_len=5`.
 14. Подготовлен анализ литературы и roadmap дальнейших экспериментов.
+15. Подключен внешний wearable benchmark WESAD.
+16. Построен WESAD windowed stress dataset с окнами 60 секунд и шагом 10 секунд.
+17. Обучены WESAD stress baselines и проведен threshold analysis.
+18. Проведен feature-group ablation для `EDA`, `BVP`, `TEMP`, `ACC` и их комбинаций.
+19. Проведен protocol-control experiment: `all`, `no_acc`, `acc_only`, `bvp_only`, `bvp_temp`, `eda_bvp_temp`.
+20. Сформирован итоговый WESAD summary report.
+21. COLET временно отложен: данные доступны, но формат MATLAB v7.3 с object references требует отдельной MATLAB-конвертации.
 
-Основной финальный результат текущей ветки:
+Основной финальный результат текущей EEG/PM-линии:
 
 > `context-tabular len=5 + LGBM/HGB` является наиболее сильным и устойчивым baseline для большинства PM-метрик. MHA дает небольшой выигрыш только для части targets (`attention`, частично `excitement`), но не является универсально лучшей моделью.
+
+Основной финальный результат wearable-линии:
+
+> На WESAD стресс-состояние предсказывается по wrist physiology при subject-aware validation. Лучший компактный физиологический вариант — `BVP + TEMP + logistic_robust`, balanced accuracy ≈ 0.843. Однако `ACC-only` также дает высокий результат, поэтому в дальнейшем ACC нужно использовать как контроль движения/protocol confounding, а основной wearable proxy для `PM.Stress` строить на BVP/PPG, EDA и TEMP.
 
 ---
 
@@ -85,6 +102,31 @@ PM.Focus.Scaled__mean
 ```
 
 PM-метрики используются как `target`, но не используются как входные признаки.
+
+Дополнительно подключены внешние датасеты для анализа связи PM-метрик с wearable / eye-tracking источниками:
+
+```text
+data/external/WESAD/
+data/external/COLET/
+```
+
+Текущий статус внешних источников:
+
+```text
+WESAD: обработан, построен windowed stress dataset, обучены baseline-модели, проведены ablation и protocol-control эксперименты.
+COLET: скачан и проинспектирован на уровне HDF5-структуры, но временно отложен из-за MATLAB v7.3 object references; требуется MATLAB-конвертация .mat -> CSV/Parquet.
+```
+
+Ключевой WESAD dataset:
+
+```text
+data/processed/wesad_windowed_stress_dataset.parquet
+Rows: 4 214
+Columns: 138
+Subjects: 15
+Feature columns: 116
+Target: stress_binary
+```
 
 ---
 
@@ -138,15 +180,26 @@ eeg-cognitive-state-nir/
 │   │           ├── global/
 │   │           └── per_target/
 │   │
-│   └── comparison/
-│       ├── final_pm_experiment_comparison/
-│       └── final_pm_experiment_comparison_context_len5/
-│           ├── normalized_all_experiments.csv
-│           ├── best_models_by_target.csv
-│           ├── final_experiment_comparison.csv
-│           ├── final_experiment_comparison.md
-│           ├── report.md
-│           ├── source_files.json
+│   ├── comparison/
+│   │   ├── final_pm_experiment_comparison/
+│   │   └── final_pm_experiment_comparison_context_len5/
+│   │       ├── normalized_all_experiments.csv
+│   │       ├── best_models_by_target.csv
+│   │       ├── final_experiment_comparison.csv
+│   │       ├── final_experiment_comparison.md
+│   │       ├── report.md
+│   │       ├── source_files.json
+│   │       └── figures/
+│   │
+│   └── wearable_pm_alignment/
+│       ├── wesad_inventory.csv
+│       ├── wesad_windowed_stress_dataset_report.md
+│       ├── runs/
+│       │   └── <wesad_run_id>/
+│       └── wesad_final_summary/
+│           ├── wesad_final_summary.md
+│           ├── wesad_key_metrics.csv
+│           ├── wesad_protocol_conclusions.csv
 │           └── figures/
 │
 ├── src/
@@ -160,7 +213,22 @@ eeg-cognitive-state-nir/
 │   ├── 11_train_multihead_attention_short.py
 │   ├── 12_visualize_mha_all_pm_run.py
 │   ├── 13_train_context_tabular_baselines.py
-│   └── 14_compare_experiments.py
+│   ├── 14_compare_experiments.py
+│   ├── 16_inspect_wesad_dataset.py
+│   ├── 17_prepare_wesad_windowed_dataset.py
+│   ├── 18_train_wesad_stress_baseline.py
+│   ├── 19_analyze_wesad_stress_results.py
+│   ├── 20_train_wesad_feature_group_ablation.py
+│   ├── 21_train_wesad_protocol_control.py
+│   ├── 22_inspect_colet_dataset.py
+│   ├── 22_inspect_colet_dataset_light.py
+│   ├── 23_probe_colet_minimal.py
+│   ├── 24_probe_colet_task_leafs.py
+│   ├── 25_check_colet_matlab_outputs.py
+│   └── 26_build_wesad_summary_report.py
+│
+├── tools/
+│   └── 25_convert_colet_mat_to_tables.m
 │
 ├── github_issues/
 │   └── *.md
@@ -182,7 +250,7 @@ conda activate eeg_nir
 Минимальный набор пакетов:
 
 ```powershell
-pip install numpy pandas scipy scikit-learn matplotlib pyarrow fastparquet torch lightgbm tabulate
+pip install numpy pandas scipy scikit-learn matplotlib pyarrow fastparquet torch lightgbm tabulate h5py
 ```
 
 Проверка окружения:
@@ -199,6 +267,14 @@ torch = 2.5.1+cu124
 cuda available = True
 cuda = 12.4
 device = NVIDIA GeForce RTX 2070
+```
+
+Для COLET требуется отдельная MATLAB-конвертация, если планируется продолжать работу с этим датасетом:
+
+```text
+COLET .mat files are MATLAB v7.3 / HDF5 files with object references.
+Python/h5py opens the files, but dereferencing MATLAB object references is too slow for practical extraction.
+Recommended path: MATLAB -> intermediate CSV/Parquet -> Python feature engineering.
 ```
 
 ---
@@ -929,7 +1005,207 @@ reports/runs/<run_id>/visualizations/
 
 ---
 
-## 10. Анализ литературы и исследовательский roadmap
+
+## 10. Wearable benchmark: WESAD
+
+### 10.1. Мотивация
+
+После созвона была выделена отдельная исследовательская линия: проверить, можно ли соотносить PM-метрики Emotiv, прежде всего `PM.Stress`, с сигналами носимых устройств. Для первичной проверки выбран WESAD, так как он содержит wrist-physiology сигналы и разметку stress / non-stress.
+
+WESAD используется как внешний benchmark. Он не является прямым датасетом для предсказания Emotiv PM-метрик, но проверяет более общую гипотезу:
+
+```text
+wearable physiology can provide useful proxy signals for stress/arousal-related cognitive-state estimation
+```
+
+### 10.2. Использованные данные WESAD
+
+Сырые данные:
+
+```text
+data/external/WESAD/WESAD/
+```
+
+Подготовленный датасет:
+
+```text
+data/processed/wesad_windowed_stress_dataset.parquet
+```
+
+Параметры подготовки:
+
+```text
+window_size_sec = 60
+step_size_sec   = 10
+validation      = GroupKFold by subject_id
+```
+
+Итоговая сводка:
+
+| Показатель | Значение |
+|---|---:|
+| Rows | 4 214 |
+| Columns | 138 |
+| Subjects | 15 |
+| Feature columns | 116 |
+| non-stress windows | 3 275 |
+| stress windows | 939 |
+
+### 10.3. Реализованные WESAD-скрипты
+
+| Скрипт | Назначение |
+|---|---|
+| `src/16_inspect_wesad_dataset.py` | Инвентаризация WESAD-файлов и структуры `.pkl` / E4 data. |
+| `src/17_prepare_wesad_windowed_dataset.py` | Формирование 60-секундного оконного stress dataset. |
+| `src/18_train_wesad_stress_baseline.py` | Обучение baseline-классификаторов stress / non-stress. |
+| `src/19_analyze_wesad_stress_results.py` | Threshold analysis, per-subject metrics, errors, feature importance. |
+| `src/20_train_wesad_feature_group_ablation.py` | Ablation по группам признаков: EDA, BVP, TEMP, ACC. |
+| `src/21_train_wesad_protocol_control.py` | Проверка protocol/movement confounding: `all`, `no_acc`, `acc_only`, `bvp_only`, `bvp_temp`. |
+| `src/26_build_wesad_summary_report.py` | Сборка итогового WESAD summary report. |
+
+### 10.4. Baseline stress classification
+
+Лучший default-threshold baseline:
+
+| Model | Balanced Accuracy | Macro-F1 | ROC-AUC | Average Precision | F1 stress |
+|---|---:|---:|---:|---:|---:|
+| `logistic_robust` | 0.803 | 0.793 | 0.878 | 0.804 | 0.694 |
+
+Threshold tuning показал, что `rf_clf` можно улучшить подбором порога:
+
+| Model | Best threshold | Best balanced accuracy |
+|---|---:|---:|
+| `rf_clf` | 0.25 | 0.809 |
+| `logistic_robust` | 0.45 | 0.804 |
+| `lgbm_clf` | 0.05 | 0.798 |
+
+### 10.5. Feature-group ablation
+
+Главный результат ablation:
+
+| Feature group | Model | Features | Balanced Accuracy | ROC-AUC | F1 stress |
+|---|---|---:|---:|---:|---:|
+| `bvp_only` | `logistic_robust` | 18 | 0.835 | 0.900 | 0.699 |
+| `acc_only` | `logistic_robust` | 64 | 0.830 | 0.915 | 0.709 |
+| `eda_bvp_temp` | `logistic_robust` | 52 | 0.813 | 0.883 | 0.682 |
+| `all` | `logistic_robust` | 116 | 0.803 | 0.878 | 0.694 |
+| `eda_only` | `logistic_robust` | 18 | 0.758 | 0.831 | 0.611 |
+
+Вывод:
+
+```text
+BVP/PPG оказался самым сильным компактным физиологическим proxy.
+EDA полезна, но с текущими простыми статистическими признаками слабее BVP.
+ACC-only слишком силен, поэтому его нельзя трактовать как чистую физиологию.
+```
+
+### 10.6. Protocol-control experiment
+
+Protocol-control был нужен, чтобы проверить, не объясняется ли качество только движением или структурой протокола.
+
+Лучшие default-threshold результаты:
+
+| Feature group | Model | Balanced Accuracy | ROC-AUC | F1 stress |
+|---|---|---:|---:|---:|
+| `bvp_temp` | `logistic_robust` | 0.843 | 0.909 | 0.703 |
+| `bvp_only` | `logistic_robust` | 0.835 | 0.900 | 0.699 |
+| `acc_only` | `logistic_robust` | 0.830 | 0.915 | 0.709 |
+| `no_acc` | `logistic_robust` | 0.813 | 0.883 | 0.682 |
+| `no_acc` | `lgbm_clf` | 0.807 | 0.920 | 0.714 |
+
+Threshold-optimized результаты:
+
+| Feature group | Model | Best threshold | Best balanced accuracy |
+|---|---|---:|---:|
+| `acc_only` | `logistic_robust` | 0.65 | 0.845 |
+| `no_acc` | `lgbm_clf` | 0.07 | 0.845 |
+| `bvp_temp` | `logistic_robust` | 0.48 | 0.844 |
+| `bvp_only` | `logistic_robust` | 0.49 | 0.836 |
+
+Итоговая интерпретация:
+
+```text
+WESAD подтверждает перспективность wearable stress detection, но высокий результат ACC-only указывает на movement/protocol confounding. Для PM.Stress alignment ACC следует использовать как контрольный канал, а основной физиологический wearable proxy строить на BVP/PPG, EDA и TEMP.
+```
+
+### 10.7. Итоговые файлы WESAD
+
+```text
+reports/wearable_pm_alignment/wesad_final_summary/
+  wesad_final_summary.md
+  wesad_key_metrics.csv
+  wesad_baseline_summary.csv
+  wesad_threshold_summary.csv
+  wesad_feature_group_summary.csv
+  wesad_protocol_control_summary.csv
+  wesad_protocol_conclusions.csv
+  source_files.json
+  figures/
+```
+
+---
+
+## 11. COLET: статус и причина остановки
+
+COLET был выбран как потенциальный eye-tracking benchmark для cognitive workload / attention / focus линии. Данные скачаны в:
+
+```text
+data/external/COLET/
+```
+
+Обнаруженная структура:
+
+```text
+COLET_v0: images + readme only
+COLET_v1: data.mat
+COLET_v2: data.mat
+COLET_v3: data_v3.mat
+```
+
+Инспекция показала, что `data.mat` / `data_v3.mat` — это MATLAB v7.3 / HDF5 файлы со структурой:
+
+```text
+/Data/subject_info  shape=(47, 1), dtype=object
+/Data/task          shape=(47, 1), dtype=object
+```
+
+Для первого task-объекта найдены поля:
+
+```text
+annotation
+blinks
+gaze
+pupil
+```
+
+Проблема:
+
+```text
+Python/h5py открывает файл быстро, но разыменование MATLAB object references работает слишком медленно.
+Даже минимальное обращение к Data.task[1] заняло около 175 секунд.
+```
+
+Решение:
+
+```text
+COLET временно отложен.
+Для продолжения нужна MATLAB-конвертация .mat -> CSV/Parquet.
+После конвертации Python будет использовать только промежуточные таблицы.
+```
+
+Подготовленные вспомогательные файлы:
+
+| Файл | Статус |
+|---|---|
+| `src/22_inspect_colet_dataset.py` | Полный инспектор, оказался слишком тяжелым для v7.3 references. |
+| `src/22_inspect_colet_dataset_light.py` | Легкая HDF5-инспекция верхнего уровня. |
+| `src/23_probe_colet_minimal.py` | Минимальный probe object references. |
+| `src/24_probe_colet_task_leafs.py` | Probe task leaf references, также слишком медленный для практического чтения. |
+| `tools/25_convert_colet_mat_to_tables.m` | MATLAB-конвертер для будущего этапа. |
+
+---
+
+## 12. Анализ литературы и исследовательский roadmap
 
 Подготовлен общий обзор статей по EEG foundation models, temporal context, event detection, graph/connectivity representations, multi-task EEG и benchmark methodology.
 
@@ -963,7 +1239,7 @@ eeg_pm_articles_summary_and_project_recommendations.md
 
 ---
 
-## 11. Методологические ограничения
+## 13. Методологические ограничения
 
 1. PM-метрики Emotiv являются слабой разметкой, а не экспертным ground truth.
 2. Модель предсказывает значения PM-метрик, а не когнитивное состояние напрямую.
@@ -975,10 +1251,13 @@ eeg_pm_articles_summary_and_project_recommendations.md
 8. `seq_len=5` не дает универсального улучшения для всех моделей и targets.
 9. MHA-подход требует честного сравнения с сильным context-tabular baseline.
 10. Текущие признаки агрегированы по окнам; raw temporal dynamics пока используются ограниченно.
+11. WESAD является внешним wearable benchmark, а не прямым датасетом для Emotiv PM prediction.
+12. Высокий результат `ACC-only` на WESAD указывает на protocol/movement confounding.
+13. COLET пока не используется в моделировании: требуется MATLAB-конвертация из MATLAB v7.3 object references.
 
 ---
 
-## 12. Основные выводы текущей ветки
+## 14. Основные выводы текущей ветки
 
 1. Окно 10 секунд обосновано частотой обновления PM-метрик.
 2. POW+EEG признаки лучше, чем использование только POW или только EEG.
@@ -988,19 +1267,61 @@ eeg_pm_articles_summary_and_project_recommendations.md
 6. `context-tabular len=5` является наиболее сильным текущим baseline для большинства targets.
 7. MHA полезен только для части PM-метрик и не превосходит context-tabular устойчиво.
 8. Оптимальная длина контекста зависит от target.
-9. Следующий научно обоснованный шаг — frequency-band ablation.
-10. Следующий инфраструктурный шаг — master benchmark registry.
+9. WESAD подтвердил, что wearable physiology может быть полезным внешним proxy для stress/arousal-related состояний.
+10. BVP/PPG и BVP+TEMP являются наиболее сильными компактными физиологическими группами WESAD.
+11. ACC-only на WESAD слишком силен, поэтому ACC следует использовать как контроль movement/protocol confounding.
+12. COLET отложен до MATLAB-конвертации.
+13. Следующий основной ML-шаг — subject calibration для Emotiv PM targets.
+14. Следующий инфраструктурный шаг — master benchmark registry.
 
 ---
 
-## 13. Рекомендуемый следующий план
+## 15. Рекомендуемый следующий план
 
-### 13.1. Инфраструктурный шаг
+### 15.1. Главный следующий ML-эксперимент
+
+Subject calibration для Emotiv PM targets:
+
+```text
+src/27_train_pm_subject_calibration.py
+```
+
+Мотивация:
+
+```text
+1. В EEG/PM экспериментах есть межсубъектная нестабильность.
+2. WESAD подтвердил, что физиологические сигналы также сильно зависят от субъекта.
+3. Усложнение модели само по себе не гарантирует прироста.
+4. Калибровка пользователя ближе к реальному сценарию: короткий индивидуальный warm-up -> персонализированное предсказание состояния.
+```
+
+Варианты постановки:
+
+```text
+zero-calibration: train on other subjects -> test on new subject
+few-window calibration: добавить первые N окон субъекта в calibration set
+linear residual calibration: global model + subject-specific correction
+personal normalization: z-score / robust scaling within subject/session
+adapter calibration: small calibration head on top of frozen/global features
+```
+
+Ожидаемые выходы:
+
+```text
+reports/calibration/pm_subject_calibration/
+  calibration_summary.csv
+  calibration_by_target.csv
+  calibration_by_subject.csv
+  report.md
+  figures/
+```
+
+### 15.2. Инфраструктурный шаг
 
 Создать единый benchmark registry:
 
 ```text
-src/20_build_pm_benchmark_registry.py
+src/28_build_pm_benchmark_registry.py
 ```
 
 Цель:
@@ -1019,55 +1340,43 @@ reports/comparison/master_pm_benchmark/report.md
 reports/comparison/master_pm_benchmark/figures/
 ```
 
-### 13.2. Главный следующий ML-эксперимент
-
-Frequency-band ablation:
+### 15.3. Следующие EEG/PM эксперименты
 
 ```text
-src/15_train_band_ablation_baselines.py
+src/29_train_band_ablation_baselines.py
+src/30_train_context_pooling_baselines.py
+src/31_train_session_context_baselines.py
+src/32_build_connectivity_features.py
+src/33_train_connectivity_augmented_baselines.py
+src/34_build_pm_state_events.py
+src/35_train_pm_event_baselines.py
+src/36_analyze_pm_target_relationships.py
+src/37_train_multitask_pm_model.py
 ```
 
-Feature groups:
+Рекомендуемый порядок:
 
 ```text
-theta
-alpha
-beta
-gamma/high
-low = theta + alpha
-high = beta + gamma
-low_high_concat
-all_pow
-eeg_only
-pow_plus_eeg
+1. subject calibration
+2. master benchmark registry
+3. frequency-band ablation
+4. compact context pooling
+5. session-level context
+6. connectivity/channel features
+7. PM event detection
+8. multi-task PM model
 ```
 
-Setup:
+### 15.4. Wearable / external datasets
 
 ```text
-seq_len = 5
-validation = GroupKFold by subject_id
-models = lgbm_reg,hgb_reg
-targets = all PM metrics
-```
-
-### 13.3. Дальнейшие эксперименты
-
-```text
-src/16_train_context_pooling_baselines.py
-src/16_train_session_context_baselines.py
-src/17_build_connectivity_features.py
-src/18_train_connectivity_augmented_baselines.py
-src/17_build_pm_state_events.py
-src/18_train_pm_event_baselines.py
-src/17_subject_calibration_experiment.py
-src/21_analyze_pm_target_relationships.py
-src/21_train_multitask_pm_model.py
+WESAD: считать текущий этап завершенным и использовать как внешний аргумент для wearable stress proxy.
+COLET: держать в backlog до появления MATLAB или готовой MATLAB-конвертации.
 ```
 
 ---
 
-## 14. Минимальная последовательность воспроизведения
+## 16. Минимальная последовательность воспроизведения
 
 ```powershell
 cd D:\PycharmProjects\eeg-cognitive-state-nir
@@ -1152,10 +1461,44 @@ D:\miniconda3\envs\eeg_nir\python.exe src\12_visualize_mha_all_pm_run.py `
   --run-dir reports\runs\<mha_all_pm_full_run_id>
 ```
 
+Воспроизвести WESAD wearable benchmark:
+
+```powershell
+D:\miniconda3\envs\eeg_nir\python.exe src\16_inspect_wesad_dataset.py
+
+D:\miniconda3\envs\eeg_nir\python.exe src\17_prepare_wesad_windowed_dataset.py `
+  --output-name wesad_windowed_stress_dataset
+
+D:\miniconda3\envs\eeg_nir\python.exe src\18_train_wesad_stress_baseline.py `
+  --dataset data\processed\wesad_windowed_stress_dataset.parquet `
+  --fast `
+  --run-name wesad_stress_full
+
+D:\miniconda3\envs\eeg_nir\python.exe src\19_analyze_wesad_stress_results.py `
+  --run-dir reports\wearable_pm_alignment\runs\<wesad_stress_full_run_id>
+
+D:\miniconda3\envs\eeg_nir\python.exe src\20_train_wesad_feature_group_ablation.py `
+  --dataset data\processed\wesad_windowed_stress_dataset.parquet `
+  --fast `
+  --run-name wesad_feature_group_ablation
+
+D:\miniconda3\envs\eeg_nir\python.exe src\21_train_wesad_protocol_control.py `
+  --dataset data\processed\wesad_windowed_stress_dataset.parquet `
+  --fast `
+  --models logistic_robust,lgbm_clf `
+  --run-name wesad_protocol_control
+
+D:\miniconda3\envs\eeg_nir\python.exe src\26_build_wesad_summary_report.py
+```
+
 ---
 
-## 15. Ключевой результат для отчета
+## 17. Ключевой результат для отчета
 
 ```text
-В рамках текущей ветки реализован pipeline предсказания PM-метрик Emotiv по EEG/POW-признакам. После построения 10-секундного оконного датасета были обучены однооконные tabular baselines, temporal multi-head self-attention models и context-tabular baselines. Эксперименты показали, что локальный временной контекст соседних EEG-окон существенно улучшает качество предсказания PM-метрик. Однако механизм multi-head attention не дал устойчивого преимущества над простым context-tabular baseline. Наиболее сильный текущий подход — context-tabular len=5 + LGBM/HGB. Для Focus достигнуто R2≈0.345 и Spearman≈0.568, для Excitement — R2≈0.579 и Spearman≈0.718, для Relaxation — R2≈0.426 и Spearman≈0.642. Это подтверждает полезность временного контекста, но указывает, что дальнейшее развитие должно быть направлено на frequency-band ablation, compact context pooling, session-level context и channel/connectivity features, а не на слепое усложнение attention-модели.
+В рамках текущей ветки реализован pipeline предсказания PM-метрик Emotiv по EEG/POW-признакам. После построения 10-секундного оконного датасета были обучены однооконные tabular baselines, temporal multi-head self-attention models и context-tabular baselines. Эксперименты показали, что локальный временной контекст соседних EEG-окон существенно улучшает качество предсказания PM-метрик. Однако механизм multi-head attention не дал устойчивого преимущества над простым context-tabular baseline. Наиболее сильный текущий подход — context-tabular len=5 + LGBM/HGB. Для Focus достигнуто R2≈0.345 и Spearman≈0.568, для Excitement — R2≈0.579 и Spearman≈0.718, для Relaxation — R2≈0.426 и Spearman≈0.642.
+
+Дополнительно завершена внешняя wearable-линия на WESAD. Был построен 60-секундный оконный stress dataset, обучены stress baselines, проведены threshold analysis, feature-group ablation и protocol-control experiment. Лучший компактный default-вариант — BVP+TEMP + logistic regression, balanced accuracy≈0.843. BVP-only также силен: balanced accuracy≈0.835. При этом ACC-only дает сопоставимое качество, что указывает на movement/protocol confounding. Поэтому для будущего PM.Stress alignment ACC следует использовать как контрольный канал, а основной физиологический wearable proxy строить на BVP/PPG, EDA и TEMP.
+
+COLET скачан и проинспектирован, но временно отложен: MATLAB v7.3 object references слишком медленно читаются через Python/h5py. Для продолжения нужна MATLAB-конвертация .mat -> CSV/Parquet. Следующий основной шаг проекта — subject calibration для Emotiv PM targets, потому что и EEG/PM, и wearable-эксперименты показывают значимую межсубъектную вариативность.
 ```
