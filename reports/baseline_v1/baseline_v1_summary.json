@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-17T14:13:27",
+  "generated_at": "2026-06-17T14:29:55",
   "baseline_name": "baseline_v1_personal_calibrated_latent_proxy_trajectory",
   "baseline_title": "Baseline v1: personal calibration of latent EEG proxy-state trajectories",
   "configuration": {
@@ -116,7 +116,7 @@
       "subject_mean_spearman_positive_rate_min": 0.625,
       "subject_mean_spearman_positive_rate_max": 1.0
     },
-    "naive_baselines_available": false
+    "naive_baselines_available": true
   },
   "hypothesis_status": [
     {
@@ -146,8 +146,8 @@
     },
     {
       "hypothesis_id": "H6",
-      "status": "optional / missing",
-      "main_metric": ""
+      "status": "available",
+      "main_metric": "best naive R2=0.9381"
     }
   ],
   "artifacts": [
@@ -184,7 +184,7 @@
     {
       "name": "naive_dir",
       "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\reports\\naive_hypothesis_baselines\\pow_plus_eeg_seq8_pca123",
-      "status": "missing"
+      "status": "dir_exists"
     },
     {
       "name": "script_44",
@@ -214,7 +214,7 @@
     {
       "name": "script_51_optional",
       "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\src\\51_run_naive_hypothesis_baselines.py",
-      "status": "missing"
+      "status": "file_exists"
     }
   ],
   "commands": []
