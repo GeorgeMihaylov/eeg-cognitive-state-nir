@@ -1,0 +1,221 @@
+{
+  "generated_at": "2026-06-17T14:29:55",
+  "baseline_name": "baseline_v1_personal_calibrated_latent_proxy_trajectory",
+  "baseline_title": "Baseline v1: personal calibration of latent EEG proxy-state trajectories",
+  "configuration": {
+    "feature_set": "pow_plus_eeg",
+    "seq_len": 8,
+    "targets": [
+      "slow_pca_1",
+      "slow_pca_2",
+      "slow_pca_3"
+    ],
+    "calibration_lr": 0.0001,
+    "calibration_frac": 0.2,
+    "split_level": "subject",
+    "seeds": [
+      42,
+      123,
+      2024,
+      3407,
+      777
+    ]
+  },
+  "main_results": {
+    "feature_ablation": {
+      "feature_set": "pow_plus_eeg",
+      "selected_seq_len": 8.0,
+      "selected_lr": 0.0001,
+      "selected_frac": 0.2,
+      "val_selected_mean_r2": 0.0924009159207344,
+      "val_selected_spearman": 0.5206710987061406,
+      "test_at_selected_mean_r2": 0.2398300816615422,
+      "test_at_selected_spearman": 0.5803796273383859,
+      "test_best_lr": 0.001,
+      "test_best_frac": 0.2,
+      "test_best_mean_r2": 0.2409866526722908,
+      "test_best_spearman": 0.5796639509624171
+    },
+    "main_calibration_test": {
+      "eval_split": "test",
+      "n_subjects": 8.0,
+      "n_target_subject_pairs": 24.0,
+      "mean_r2_zero": -0.0529585431019465,
+      "mean_r2_calibrated": 0.2398300816615422,
+      "mean_r2_gain": 0.2927886247634887,
+      "median_r2_gain": 0.0775156319141388,
+      "target_subject_r2_positive_rate": 0.8333333333333334,
+      "subject_mean_r2_positive_rate": 1.0,
+      "mean_spearman_zero": 0.5477561166811201,
+      "mean_spearman_calibrated": 0.5803796273383859,
+      "mean_spearman_gain": 0.0326235106572657,
+      "target_subject_spearman_positive_rate": 0.9166666666666666,
+      "subject_mean_spearman_positive_rate": 0.875,
+      "mean_mae_reduction": 0.1064054332673549,
+      "mean_rmse_reduction": 0.1190415386706247
+    },
+    "best_temporal_zero_full_test": {
+      "rank_by_test_r2": 1,
+      "model": "transformer",
+      "eval_split": "test",
+      "phase": "zero_full",
+      "mean_r2": 0.2613984942436218,
+      "mean_spearman": 0.6094191834559999,
+      "mean_mae": 0.9294950564702352,
+      "mean_rmse": 1.159332224051817
+    },
+    "split_seed_test": {
+      "eval_split": "test",
+      "n_seeds": 5,
+      "mean_r2_zero_mean": -0.0298503582676251,
+      "mean_r2_zero_std": 0.0935053085393951,
+      "mean_r2_zero_min": -0.0996984839439392,
+      "mean_r2_zero_max": 0.1328398585319519,
+      "mean_r2_calibrated_mean": 0.2085279315710067,
+      "mean_r2_calibrated_std": 0.1026634206267043,
+      "mean_r2_calibrated_min": 0.0637542456388473,
+      "mean_r2_calibrated_max": 0.3242249513665835,
+      "mean_r2_gain_mean": 0.2383782898386319,
+      "mean_r2_gain_std": 0.1113512153899898,
+      "mean_r2_gain_min": 0.1340557659665743,
+      "mean_r2_gain_max": 0.4071178858478864,
+      "mean_spearman_zero_mean": 0.5388305700701247,
+      "mean_spearman_zero_std": 0.0061358371968593,
+      "mean_spearman_zero_min": 0.5325554002039684,
+      "mean_spearman_zero_max": 0.5477561166811201,
+      "mean_spearman_calibrated_mean": 0.5804022036676323,
+      "mean_spearman_calibrated_std": 0.0149752110226389,
+      "mean_spearman_calibrated_min": 0.5549746714952299,
+      "mean_spearman_calibrated_max": 0.5937254441120784,
+      "mean_spearman_gain_mean": 0.0415716335975075,
+      "mean_spearman_gain_std": 0.0144025512974804,
+      "mean_spearman_gain_min": 0.0224192712912615,
+      "mean_spearman_gain_max": 0.0601861427568672,
+      "mean_mae_reduction_mean": 0.1018833855787912,
+      "mean_mae_reduction_std": 0.0527408874386857,
+      "mean_mae_reduction_min": 0.0328309051692485,
+      "mean_mae_reduction_max": 0.1795094770689804,
+      "mean_rmse_reduction_mean": 0.1011992968509587,
+      "mean_rmse_reduction_std": 0.0549069117968415,
+      "mean_rmse_reduction_min": 0.0211403306772517,
+      "mean_rmse_reduction_max": 0.1720184305632149,
+      "target_subject_r2_positive_rate_mean": 0.7333333333333334,
+      "target_subject_r2_positive_rate_std": 0.0959238702768445,
+      "target_subject_r2_positive_rate_min": 0.625,
+      "target_subject_r2_positive_rate_max": 0.8333333333333334,
+      "subject_mean_r2_positive_rate_mean": 0.85,
+      "subject_mean_r2_positive_rate_std": 0.1629800601300662,
+      "subject_mean_r2_positive_rate_min": 0.625,
+      "subject_mean_r2_positive_rate_max": 1.0,
+      "target_subject_spearman_positive_rate_mean": 0.7166666666666667,
+      "target_subject_spearman_positive_rate_std": 0.1228990100312718,
+      "target_subject_spearman_positive_rate_min": 0.5833333333333334,
+      "target_subject_spearman_positive_rate_max": 0.9166666666666666,
+      "subject_mean_spearman_positive_rate_mean": 0.775,
+      "subject_mean_spearman_positive_rate_std": 0.1629800601300662,
+      "subject_mean_spearman_positive_rate_min": 0.625,
+      "subject_mean_spearman_positive_rate_max": 1.0
+    },
+    "naive_baselines_available": true
+  },
+  "hypothesis_status": [
+    {
+      "hypothesis_id": "H1",
+      "status": "supported within PM proxy labels",
+      "main_metric": ""
+    },
+    {
+      "hypothesis_id": "H2",
+      "status": "supported",
+      "main_metric": "R2=0.2614; Spearman=0.6094"
+    },
+    {
+      "hypothesis_id": "H3",
+      "status": "supported",
+      "main_metric": "R2=0.2398; Spearman=0.5804"
+    },
+    {
+      "hypothesis_id": "H4",
+      "status": "supported",
+      "main_metric": "R2 gain=0.2928"
+    },
+    {
+      "hypothesis_id": "H5",
+      "status": "supported",
+      "main_metric": "mean R2 gain=0.2384"
+    },
+    {
+      "hypothesis_id": "H6",
+      "status": "available",
+      "main_metric": "best naive R2=0.9381"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "dataset",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\reports\\slow_latent_states\\pm_w10\\slow_pm_latent_states_w10.parquet",
+      "status": "file_exists"
+    },
+    {
+      "name": "feature_ablation_dir",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\reports\\feature_ablation_v2",
+      "status": "dir_exists"
+    },
+    {
+      "name": "subject_diagnostics_dir",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\reports\\feature_ablation_v2\\subject_diagnostics_pow_plus_eeg",
+      "status": "dir_exists"
+    },
+    {
+      "name": "temporal_baselines_dir",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\reports\\temporal_baselines\\pow_plus_eeg_seq8_pca123",
+      "status": "dir_exists"
+    },
+    {
+      "name": "final_summary_dir",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\reports\\final_experiment_summary",
+      "status": "dir_exists"
+    },
+    {
+      "name": "split_seed_dir",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\reports\\split_seed_robustness\\pow_plus_eeg_seq8_pca123",
+      "status": "dir_exists"
+    },
+    {
+      "name": "naive_dir",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\reports\\naive_hypothesis_baselines\\pow_plus_eeg_seq8_pca123",
+      "status": "dir_exists"
+    },
+    {
+      "name": "script_44",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\src\\44_run_seq_len_sensitivity.py",
+      "status": "file_exists"
+    },
+    {
+      "name": "script_46",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\src\\46_run_reliable_axes_calibration_val_test.py",
+      "status": "file_exists"
+    },
+    {
+      "name": "script_48",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\src\\48_train_temporal_baselines.py",
+      "status": "file_exists"
+    },
+    {
+      "name": "script_49",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\src\\49_summarize_final_experiments.py",
+      "status": "file_exists"
+    },
+    {
+      "name": "script_50",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\src\\50_run_split_seed_robustness.py",
+      "status": "file_exists"
+    },
+    {
+      "name": "script_51_optional",
+      "path": "D:\\PycharmProjects\\eeg-cognitive-state-nir\\src\\51_run_naive_hypothesis_baselines.py",
+      "status": "file_exists"
+    }
+  ],
+  "commands": []
+}
