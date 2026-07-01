@@ -31,7 +31,6 @@ logs/
 *.log
 
 # Models/checkpoints
-models/
 checkpoints/
 *.pt
 *.pth
