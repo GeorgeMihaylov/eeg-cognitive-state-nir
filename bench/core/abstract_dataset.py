@@ -1,0 +1,54 @@
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import List, Optional, Dict, Any, Tuple
+import numpy as np
+
+
+@dataclass
+class EEGData:
+    data: np.ndarray
+    labels: np.ndarray
+    subject_ids: np.ndarray
+    feature_names: Optional[List[str]] = None
+    sampling_rate: float = 128.0
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        if self.feature_names is None:
+            self.feature_names = [f"feature_{i}" for i in range(self.data.shape[1])]
+
+    @property
+    def n_samples(self) -> int:
+        return len(self.data)
+
+    @property
+    def n_features(self) -> int:
+        return self.data.shape[1] if len(self.data.shape) == 2 else self.data.shape[2]
+
+    @property
+    def n_subjects(self) -> int:
+        return len(np.unique(self.subject_ids))
+
+    @property
+    def n_classes(self) -> int:
+        return len(np.unique(self.labels))
+
+
+class BaseDataset(ABC):
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        self._data: Optional[EEGData] = None
+
+    @abstractmethod
+    def load(self) -> EEGData:
+        pass
+
+    @abstractmethod
+    def get_description(self) -> Dict[str, Any]:
+        pass
+
+    @property
+    def data(self) -> EEGData:
+        if self._data is None:
+            self._data = self.load()
+        return self._data

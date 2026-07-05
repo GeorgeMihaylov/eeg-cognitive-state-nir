@@ -1,0 +1,21 @@
+output_dir: "./benchmark_results"
+
+datasets:
+  emotiv_cognitive:
+    data_path:
+    feature_set: "pow_plus_eeg"
+    n_classes: 3
+    discretize: true
+    max_features: 500
+
+tasks:
+  - cognitive_load_3class
+
+models:
+
+model_config:
+
+task_config:
+  test_size: 0.15
+  random_state: 42
+  n_splits: 5
