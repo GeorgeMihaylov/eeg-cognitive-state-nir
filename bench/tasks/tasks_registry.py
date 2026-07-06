@@ -1,8 +1,7 @@
 from typing import Dict, Type, Any
-from .base import BaseEEGTask
 from .cognitive_load import CognitiveLoadTask
-from ..core.task import BaseTask
-from ..core.dataset import EEGData
+from ..core.abstract_task import BaseTask
+from ..core.abstract_dataset import EEGData
 
 TASK_REGISTRY: Dict[str, Type[BaseTask]] = {
     'cognitive_load_3class': CognitiveLoadTask,

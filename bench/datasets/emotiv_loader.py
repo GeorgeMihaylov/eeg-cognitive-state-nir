@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, List
-from .base import BaseEEGDataset
-from ..core.dataset import EEGData
+from .base_eeg_data_loader import BaseEEGDataset
+from ..core.abstract_dataset import EEGData
 
 
 class EmotivDataset(BaseEEGDataset):

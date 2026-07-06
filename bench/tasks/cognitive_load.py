@@ -1,13 +1,17 @@
+# cognitive_load.py
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from typing import Dict, Any, Optional
-from .base import BaseEEGTask
-from ..core.task import TaskSplit
+from ..core.abstract_task import BaseTask, TaskSplit
+from ..core.abstract_dataset import EEGData
 
 
-class CognitiveLoadTask(BaseEEGTask):
+class CognitiveLoadTask(BaseTask):
     def __init__(self, data: EEGData, config: Dict[str, Any]):
         super().__init__(data, config)
+        self.test_size = config.get('test_size', 0.15)
+        self.random_state = config.get('random_state', 42)
+        self.n_splits = config.get('n_splits', 5)
         self._validate_classes()
 
     def _validate_classes(self):
@@ -32,19 +36,41 @@ class CognitiveLoadTask(BaseEEGTask):
         else:
             return self._loso_split(X, y, subjects, subject_id)
 
+    def get_all_splits(self) -> Dict[str, TaskSplit]:
+        """
+        Получить все LOSO разбиения для всех субъектов
+        """
+        subjects = np.unique(self.data.subject_ids)
+        splits = {}
+
+        for subject_id in subjects:
+            try:
+                splits[str(subject_id)] = self.get_split(subject_id)
+            except ValueError as e:
+                print(f"Warning: Could not create split for subject {subject_id}: {e}")
+
+        return splits
+
     def _within_subject_split(self, X: np.ndarray, y: np.ndarray) -> TaskSplit:
-        skf = StratifiedKFold(n_splits=min(5, np.min(np.bincount(y))), shuffle=True, random_state=self.random_state)
+        # Проверяем, что у нас достаточно данных для стратифицированного разбиения
+        unique, counts = np.unique(y, return_counts=True)
+        min_count = np.min(counts)
 
-        for train_idx, test_idx in skf.split(X, y):
-            return TaskSplit(
-                X_train=X[train_idx],
-                y_train=y[train_idx],
-                X_test=X[test_idx],
-                y_test=y[test_idx],
-                feature_names=self.data.feature_names,
-                metadata={'split_type': 'within_subject_stratified'}
-            )
+        if min_count >= 2:
+            n_splits = min(self.n_splits, min_count)
+            skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=self.random_state)
 
+            for train_idx, test_idx in skf.split(X, y):
+                return TaskSplit(
+                    X_train=X[train_idx],
+                    y_train=y[train_idx],
+                    X_test=X[test_idx],
+                    y_test=y[test_idx],
+                    feature_names=self.data.feature_names,
+                    metadata={'split_type': 'within_subject_stratified'}
+                )
+
+        # Fallback: обычное случайное разбиение
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=self.test_size, random_state=self.random_state, stratify=y
         )

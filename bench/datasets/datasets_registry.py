@@ -1,5 +1,5 @@
 from typing import Dict, Type, Any
-from ..core.dataset import BaseDataset
+from ..core.abstract_dataset import BaseDataset
 
 # Используем этот файл для централизованной регистрации датасетов
 

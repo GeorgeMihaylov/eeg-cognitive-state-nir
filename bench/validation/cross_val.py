@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Dict, List, Tuple, Any
-from ..core.task import BaseTask, TaskSplit
+from ..core.abstract_task import BaseTask, TaskSplit
 from .metrics import MetricsCalculator
 
 

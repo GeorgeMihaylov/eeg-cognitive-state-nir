@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Dict, Any
 import numpy as np
+
+from .abstract_dataset import EEGData
 
 
 @dataclass
