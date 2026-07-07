@@ -5,27 +5,45 @@ from ..core.abstract_task import BaseTask, TaskSplit
 from ..core.abstract_dataset import EEGData
 
 
-class CognitiveLoadTask(BaseTask):
+class WESADTask(BaseTask):
+    """
+
+    4 класса:
+    - 0: baseline
+    - 1: stress
+    - 2: amusement
+    - 3: meditation
+
+    """
+
     def __init__(self, data: EEGData, config: Dict[str, Any]):
         super().__init__(data, config)
         self.test_size = config.get('test_size', 0.15)
         self.random_state = config.get('random_state', 42)
         self.n_splits = config.get('n_splits', 5)
         self._validate_classes()
+        self._remap_labels_if_needed()
 
     def _validate_classes(self):
         unique = np.unique(self.data.labels)
-        if len(unique) != 3:
-            print(f"Warning: Expected 3 classes, got {len(unique)}. Proceeding anyway.")
+        if len(unique) != 4:
+            print(f"Warning: Expected 4 classes, got {len(unique)}. Proceeding anyway.")
+
+    def _remap_labels_if_needed(self):
+        unique = np.unique(self.data.labels)
+
+        if np.min(unique) >= 1 and len(unique) == 4:
+            label_map = {1: 0, 2: 1, 3: 2, 4: 3}
+            self.data.labels = np.array([label_map.get(l, l) for l in self.data.labels])
+            print("Remapped WESAD labels: 1->0, 2->1, 3->2, 4->3")
+
+        elif len(unique) == 4:
+            sorted_unique = np.sort(unique)
+            label_map = {val: idx for idx, val in enumerate(sorted_unique)}
+            self.data.labels = np.array([label_map.get(l, l) for l in self.data.labels])
+            print(f"Remapped WESAD labels: {sorted_unique} -> 0,1,2,3")
 
     def get_split(self, subject_id: Optional[str] = None) -> TaskSplit:
-        """
-        Получить разбиение
-
-        Args:
-            subject_id: Если None → Within-Subject (StratifiedKFold)
-                       Если указан → LOSO
-        """
         X = self.data.data
         y = self.data.labels
         subjects = self.data.subject_ids
@@ -36,9 +54,6 @@ class CognitiveLoadTask(BaseTask):
             return self._loso_split(X, y, subjects, subject_id)
 
     def get_all_splits(self) -> Dict[str, TaskSplit]:
-        """
-        Получить все LOSO разбиения для всех субъектов
-        """
         subjects = np.unique(self.data.subject_ids)
         splits = {}
 
@@ -104,4 +119,4 @@ class CognitiveLoadTask(BaseTask):
 
     @property
     def name(self) -> str:
-        return 'cognitive_load_3class'
+        return 'wesad_4class'
