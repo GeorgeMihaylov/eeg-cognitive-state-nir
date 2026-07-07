@@ -3,7 +3,9 @@ from ..core.abstract_dataset import BaseDataset
 
 # Используем этот файл для централизованной регистрации датасетов
 
-DATASET_REGISTRY: Dict[str, Type[BaseDataset]] = {}
+DATASET_REGISTRY: Dict[str, Type[BaseDataset]] = {
+    'wesad': WESADDataset,
+}
 
 
 def get_dataset(name: str, config: Dict[str, Any]) -> BaseDataset:
