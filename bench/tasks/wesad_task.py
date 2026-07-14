@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import train_test_split
 from typing import Dict, Any, Optional
 from ..core.abstract_task import BaseTask, TaskSplit
 from ..core.abstract_dataset import EEGData
@@ -66,31 +66,59 @@ class WESADTask(BaseTask):
         return splits
 
     def _within_subject_split(self, X: np.ndarray, y: np.ndarray) -> TaskSplit:
-        unique, counts = np.unique(y, return_counts=True)
-        min_count = np.min(counts)
+        subjects = self.data.subject_ids
+        unique_subjects = np.unique(subjects)
+        X_train_list, X_test_list, y_train_list, y_test_list = [], [], [], []
 
-        if min_count >= 2:
-            n_splits = min(self.n_splits, min_count)
-            skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=self.random_state)
+        for subj in unique_subjects:
+            mask = (subjects == subj)
+            X_subj = X[mask]
+            y_subj = y[mask]
 
-            for train_idx, test_idx in skf.split(X, y):
-                return TaskSplit(
-                    X_train=X[train_idx],
-                    y_train=y[train_idx],
-                    X_test=X[test_idx],
-                    y_test=y[test_idx],
-                    feature_names=self.data.feature_names,
-                    metadata={'split_type': 'within_subject_stratified'}
+            if len(y_subj) < 2:
+                continue
+
+            if self.test_size < 1.0:
+                test_size = self.test_size
+            else:
+                test_size = min(self.test_size, len(y_subj) - 1) / len(y_subj)
+
+            if self.task_type == 'classification':
+                try:
+                    X_tr, X_te, y_tr, y_te = train_test_split(
+                        X_subj, y_subj, test_size=test_size,
+                        random_state=self.random_state, stratify=y_subj
+                    )
+                except ValueError:
+                    X_tr, X_te, y_tr, y_te = train_test_split(
+                        X_subj, y_subj, test_size=test_size, random_state=self.random_state
+                    )
+            else:
+                X_tr, X_te, y_tr, y_te = train_test_split(
+                    X_subj, y_subj, test_size=test_size, random_state=self.random_state
                 )
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=self.test_size, random_state=self.random_state, stratify=y
-        )
+            X_train_list.append(X_tr)
+            X_test_list.append(X_te)
+            y_train_list.append(y_tr)
+            y_test_list.append(y_te)
+
+        if not X_train_list:
+            raise ValueError("No subjects with enough data for within-subject split")
+
+        X_train = np.vstack(X_train_list)
+        X_test = np.vstack(X_test_list)
+        y_train = np.concatenate(y_train_list)
+        y_test = np.concatenate(y_test_list)
+
         return TaskSplit(
-            X_train=X_train, y_train=y_train,
-            X_test=X_test, y_test=y_test,
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
             feature_names=self.data.feature_names,
-            metadata={'split_type': 'within_subject_random'}
+            task_type=self.task_type,
+            metadata={'split_type': 'within_subject'}
         )
 
     def _loso_split(self, X: np.ndarray, y: np.ndarray,

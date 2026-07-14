@@ -15,6 +15,7 @@ class TaskSplit:
     subject_train: Optional[np.ndarray] = None
     subject_test: Optional[np.ndarray] = None
     feature_names: Optional[List[str]] = None
+    task_type: str = 'classification'
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -22,6 +23,7 @@ class BaseTask(ABC):
     def __init__(self, data: EEGData, config: Dict[str, Any]):
         self.data = data
         self.config = config
+        self.task_type = config.get('task_type', 'classification')
         self._validate()
 
     def _validate(self):
@@ -29,9 +31,12 @@ class BaseTask(ABC):
             raise ValueError("Labels are required for task")
         if len(self.data.data) != len(self.data.labels):
             raise ValueError("Data and labels must have same length")
+        if self.task_type == 'classification':
+            if not np.issubdtype(self.data.labels.dtype, np.integer):
+                raise ValueError("Classification requires integer labels")
 
     @abstractmethod
-    def get_split(self, subject_id: Optional[str] = None) -> TaskSplit:
+    def get_split(self, subject_id: Optional[str] = None, split_strategy: str = 'random') -> TaskSplit:
         """
         Получить разбиение для задачи.
 
@@ -43,7 +48,7 @@ class BaseTask(ABC):
         pass
 
     @abstractmethod
-    def get_all_splits(self) -> Dict[str, TaskSplit]:
+    def get_all_splits(self, split_strategy: str = 'loso') -> Dict[str, TaskSplit]:
         pass
 
     @property
