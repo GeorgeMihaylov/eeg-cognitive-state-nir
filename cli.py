@@ -2,6 +2,7 @@ import argparse
 import sys
 import yaml
 import logging
+import pandas as pd
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, Optional
@@ -199,8 +200,7 @@ Examples:
     parser.add_argument(
         '--task',
         type=str,
-        default='cognitive_load_3class',
-        help='Task name (default: cognitive_load_3class)'
+        help='Task name (default: all tasks from config)'
     )
     
     parser.add_argument(
@@ -239,7 +239,9 @@ Examples:
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
-    
+
+    if args.test:
+        config = create_default_config()
     elif args.config:
         config = load_config(args.config)
     

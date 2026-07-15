@@ -1,0 +1,51 @@
+output_dir: "./benchmark_results/groupkfold_torch_bilstm_label_q5"
+
+datasets:
+  emotiv_cognitive:
+    data_path: "./data/processed/windowed_eeg_pm_dataset_w10.parquet"
+    feature_set: "pow_plus_eeg"
+    target_col: "label_q5"
+    subject_col: "subject_id"
+    n_classes: 5
+    discretize: false
+    max_features: 448
+
+tasks:
+  - cognitive_load_5class
+
+sequence:
+  length: 10
+  stride: 1
+  target_position: "last"
+
+models:
+  torch_bilstm:
+    type: "torch_bilstm"
+    task_type: "classification"
+    params:
+      hidden_size: 128
+      num_layers: 1
+      bidirectional: true
+      dropout: 0.2
+      classifier_hidden: 64
+      batch_size: 256
+      max_epochs: 15
+      learning_rate: 0.001
+      weight_decay: 0.0001
+      validation_size: 0.15
+      early_stopping_patience: 4
+      device: "auto"
+      random_state: 42
+      standardize: true
+
+evaluation:
+  protocol: "group_kfold_subject"
+  n_splits: 5
+  group_column: "subject_id"
+  random_state: 42
+
+task_config:
+  random_state: 42
+
+run_within_subject: false
+run_loso: false

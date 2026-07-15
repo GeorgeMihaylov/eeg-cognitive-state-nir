@@ -6,6 +6,8 @@ from ..core.abstract_dataset import EEGData
 
 
 class CognitiveLoadTask(BaseTask):
+    expected_n_classes = 3
+
     def __init__(self, data: EEGData, config: Dict[str, Any]):
         super().__init__(data, config)
         self.test_size = config.get('test_size', 0.15)
@@ -15,8 +17,11 @@ class CognitiveLoadTask(BaseTask):
 
     def _validate_classes(self):
         unique = np.unique(self.data.labels)
-        if len(unique) != 3:
-            print(f"Warning: Expected 3 classes, got {len(unique)}. Proceeding anyway.")
+        if len(unique) != self.expected_n_classes:
+            raise ValueError(
+                f"Expected {self.expected_n_classes} classes, got {len(unique)}: "
+                f"{unique.tolist()}"
+            )
 
     def get_split(self, subject_id: Optional[str] = None) -> TaskSplit:
         """
@@ -59,23 +64,31 @@ class CognitiveLoadTask(BaseTask):
             skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=self.random_state)
 
             for train_idx, test_idx in skf.split(X, y):
-                return TaskSplit(
-                    X_train=X[train_idx],
-                    y_train=y[train_idx],
-                    X_test=X[test_idx],
-                    y_test=y[test_idx],
-                    feature_names=self.data.feature_names,
-                    metadata={'split_type': 'within_subject_stratified'}
+                return self._build_indexed_split(
+                    train_idx,
+                    test_idx,
+                    metadata={
+                        'split_type': 'random_window_stratified_kfold_first_fold',
+                        'n_splits': n_splits,
+                        'random_state': self.random_state,
+                    }
                 )
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=self.test_size, random_state=self.random_state, stratify=y
+        indices = np.arange(len(X))
+        train_idx, test_idx = train_test_split(
+            indices,
+            test_size=self.test_size,
+            random_state=self.random_state,
+            stratify=y,
         )
-        return TaskSplit(
-            X_train=X_train, y_train=y_train,
-            X_test=X_test, y_test=y_test,
-            feature_names=self.data.feature_names,
-            metadata={'split_type': 'within_subject_random'}
+        return self._build_indexed_split(
+            train_idx,
+            test_idx,
+            metadata={
+                'split_type': 'random_window_train_test',
+                'test_size': self.test_size,
+                'random_state': self.random_state,
+            }
         )
 
     def _loso_split(self, X: np.ndarray, y: np.ndarray,
@@ -86,14 +99,11 @@ class CognitiveLoadTask(BaseTask):
         if np.sum(test_mask) == 0:
             raise ValueError(f"No data found for subject {subject_id}")
 
-        return TaskSplit(
-            X_train=X[train_mask],
-            y_train=y[train_mask],
-            X_test=X[test_mask],
-            y_test=y[test_mask],
-            subject_train=subjects[train_mask],
-            subject_test=subjects[test_mask],
-            feature_names=self.data.feature_names,
+        train_idx = np.flatnonzero(train_mask)
+        test_idx = np.flatnonzero(test_mask)
+        return self._build_indexed_split(
+            train_idx,
+            test_idx,
             metadata={
                 'split_type': 'loso',
                 'test_subject': subject_id,
@@ -102,6 +112,43 @@ class CognitiveLoadTask(BaseTask):
             }
         )
 
+    def _build_indexed_split(
+            self,
+            train_idx: np.ndarray,
+            test_idx: np.ndarray,
+            metadata: Dict[str, Any]
+    ) -> TaskSplit:
+        return TaskSplit(
+            X_train=self.data.data[train_idx],
+            y_train=self.data.labels[train_idx],
+            X_test=self.data.data[test_idx],
+            y_test=self.data.labels[test_idx],
+            subject_train=self.data.subject_ids[train_idx],
+            subject_test=self.data.subject_ids[test_idx],
+            feature_names=self.data.feature_names,
+            metadata=metadata,
+            sample_id_train=self.data.sample_ids[train_idx],
+            sample_id_test=self.data.sample_ids[test_idx],
+            record_id_train=self.data.record_ids[train_idx],
+            record_id_test=self.data.record_ids[test_idx],
+            row_metadata_train={
+                key: np.asarray(values)[train_idx]
+                for key, values in self.data.row_metadata.items()
+            },
+            row_metadata_test={
+                key: np.asarray(values)[test_idx]
+                for key, values in self.data.row_metadata.items()
+            },
+        )
+
     @property
     def name(self) -> str:
         return 'cognitive_load_3class'
+
+
+class CognitiveLoad5ClassTask(CognitiveLoadTask):
+    expected_n_classes = 5
+
+    @property
+    def name(self) -> str:
+        return 'cognitive_load_5class'

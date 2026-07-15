@@ -404,7 +404,7 @@ def integration_config(temp_dir, integration_test_data):
     return {
         'output_dir': temp_dir,
         'datasets': {
-            'test_dataset': {
+            'emotiv_cognitive': {
                 'data_path': str(integration_test_data),
                 'feature_set': 'all',
                 'n_classes': 3,
@@ -451,7 +451,7 @@ def test_end_to_end_integration(integration_config, temp_dir):
     if json_files:
         with open(json_files[0], 'r') as f:
             data = json.load(f)
-            assert 'test_dataset' in data
+            assert 'emotiv_cognitive' in data
 
 
 @pytest.mark.integration
@@ -562,3 +562,62 @@ def test_run_with_error_in_model(mock_get_dataset, mock_get_task, test_config, t
 
     summary = runner.run()
     assert isinstance(summary, pd.DataFrame)
+
+
+@patch('bench.bench_runner.get_dataset')
+def test_runner_torch_mlp_smoke(mock_get_dataset, temp_dir):
+    n_samples = 90
+    n_features = 10
+    labels = np.tile(np.arange(3), n_samples // 3)
+    features = np.random.randn(n_samples, n_features).astype(np.float32)
+    features[:, 0] += labels
+    data = EEGData(
+        data=features,
+        labels=labels,
+        subject_ids=np.repeat(['S1', 'S2', 'S3'], n_samples // 3),
+    )
+    mock_dataset = Mock()
+    mock_dataset.load.return_value = data
+    mock_get_dataset.return_value = mock_dataset
+    config = {
+        'output_dir': temp_dir,
+        'datasets': {
+            'synthetic': {
+                'data_path': 'unused.parquet',
+            }
+        },
+        'tasks': ['cognitive_load_3class'],
+        'models': {
+            'torch_mlp': {
+                'type': 'torch_mlp',
+                'task_type': 'classification',
+                'params': {
+                    'hidden_dims': [16],
+                    'dropout': 0.1,
+                    'batch_size': 16,
+                    'max_epochs': 2,
+                    'learning_rate': 0.002,
+                    'validation_size': 0.2,
+                    'early_stopping_patience': 2,
+                    'device': 'cpu',
+                    'random_state': 42,
+                }
+            }
+        },
+        'task_config': {
+            'random_state': 42,
+            'n_splits': 3,
+        },
+        'run_within_subject': True,
+        'run_loso': False,
+    }
+    runner = BenchmarkRunner(config)
+
+    summary = runner.run()
+
+    assert len(summary) == 1
+    assert runner.models['torch_mlp']['model'].input_shape == (n_features,)
+    assert runner.models['torch_mlp']['model'].num_classes == 3
+    assert len(list(Path(temp_dir).rglob('model.pt'))) == 1
+    assert len(list(Path(temp_dir).rglob('training_log.csv'))) == 1
+    assert len(list(Path(temp_dir).rglob('predictions.parquet'))) == 1

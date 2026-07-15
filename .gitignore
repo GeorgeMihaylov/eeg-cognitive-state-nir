@@ -24,6 +24,7 @@ data/
 *.zip
 
 # Generated outputs
+benchmark_results/
 reports/runs/
 reports/figures/
 outputs/
@@ -46,3 +47,5 @@ data/external/
 *.zip
 *.7z
 *.rar
+
+.pytest_cache/

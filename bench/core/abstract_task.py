@@ -16,6 +16,12 @@ class TaskSplit:
     subject_test: Optional[np.ndarray] = None
     feature_names: Optional[List[str]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    sample_id_train: Optional[np.ndarray] = None
+    sample_id_test: Optional[np.ndarray] = None
+    record_id_train: Optional[np.ndarray] = None
+    record_id_test: Optional[np.ndarray] = None
+    row_metadata_train: Dict[str, np.ndarray] = field(default_factory=dict)
+    row_metadata_test: Dict[str, np.ndarray] = field(default_factory=dict)
 
 
 class BaseTask(ABC):

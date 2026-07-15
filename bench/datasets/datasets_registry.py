@@ -1,9 +1,14 @@
 from typing import Dict, Type, Any
 from ..core.abstract_dataset import BaseDataset
+from .emotiv_loader import EmotivDataset
+from .raw_eeg_window_dataset import RawEEGWindowDataset
+from .wesad_loader import WESADDataset
 
 # Используем этот файл для централизованной регистрации датасетов
 
 DATASET_REGISTRY: Dict[str, Type[BaseDataset]] = {
+    'emotiv_cognitive': EmotivDataset,
+    'emotiv_raw_eeg': RawEEGWindowDataset,
     'wesad': WESADDataset,
 }
 

@@ -13,6 +13,25 @@ class EmotivDataset(BaseEEGDataset):
 
     def load(self) -> EEGData:
         df = self._load_dataframe()
+        sample_ids = (
+            df['sample_id'].values
+            if 'sample_id' in df.columns
+            else np.arange(len(df), dtype=np.int64)
+        )
+        record_ids = (
+            df['record_id'].astype(str).values
+            if 'record_id' in df.columns
+            else np.full(len(df), 'unknown', dtype=object)
+        )
+        row_metadata_columns = [
+            column
+            for column in ('source', 't_start', 't_center', 'window_id')
+            if column in df.columns
+        ]
+        row_metadata = {
+            column: df[column].values
+            for column in row_metadata_columns
+        }
         feature_cols = self._select_features(df)
         if self.target_col not in df.columns:
             target_candidates = ['target_main', 'label_q5'] + [c for c in df.columns if c.startswith('target_')]
@@ -33,6 +52,12 @@ class EmotivDataset(BaseEEGDataset):
         X = X[valid_mask]
         y = y[valid_mask]
         subject_ids = subject_ids[valid_mask]
+        sample_ids = sample_ids[valid_mask]
+        record_ids = record_ids[valid_mask]
+        row_metadata = {
+            column: values[valid_mask]
+            for column, values in row_metadata.items()
+        }
         unique_classes = np.unique(y)
 
         return EEGData(
@@ -40,10 +65,14 @@ class EmotivDataset(BaseEEGDataset):
             labels=y,
             subject_ids=subject_ids,
             feature_names=feature_cols,
+            sample_ids=sample_ids,
+            record_ids=record_ids,
+            row_metadata=row_metadata,
             metadata={
                 'n_samples': len(X),
                 'n_features': len(feature_cols),
                 'n_subjects': len(np.unique(subject_ids)),
+                'n_records': len(np.unique(record_ids)),
                 'n_classes': len(unique_classes),
                 'classes': unique_classes.tolist(),
                 'source': 'Emotiv EPOC X',

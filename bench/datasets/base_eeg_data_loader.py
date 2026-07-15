@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-from ..core.dataset import BaseDataset, EEGData
+from ..core.abstract_dataset import BaseDataset
 
 
 class BaseEEGDataset(BaseDataset):
