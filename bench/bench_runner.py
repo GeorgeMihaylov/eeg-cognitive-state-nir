@@ -1,9 +1,11 @@
 import json
+import hashlib
 import logging
 import time
 from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, Iterable, List, Mapping, Optional, Tuple
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -27,6 +29,8 @@ from model_zoo.DL.sequence_utils import build_sequences
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+RUN_MANIFEST_SCHEMA_VERSION = "benchmark-run-v1"
+
 
 def _json_default(value: Any) -> Any:
     if isinstance(value, np.ndarray):
@@ -40,6 +44,76 @@ def _json_default(value: Any) -> Any:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
+def _serializable_config_value(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {
+            str(key): _serializable_config_value(item)
+            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+        }
+    if isinstance(value, (list, tuple)):
+        return [_serializable_config_value(item) for item in value]
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, (pd.Timestamp, datetime)):
+        return value.isoformat()
+    return value
+
+
+def canonical_benchmark_config(config: Mapping[str, Any]) -> Dict[str, Any]:
+    """Return the deterministic scientific config used for run identity.
+
+    ``output_dir`` is execution placement rather than an experimental
+    parameter. Excluding it also permits content-addressed output directories.
+    """
+    scientific = {
+        key: value for key, value in config.items() if key != 'output_dir'
+    }
+    return _serializable_config_value(scientific)
+
+
+def benchmark_config_hash(config: Mapping[str, Any]) -> str:
+    """Return a stable SHA-256 hash for a benchmark configuration."""
+    payload = json.dumps(
+        canonical_benchmark_config(config),
+        sort_keys=True,
+        separators=(',', ':'),
+        ensure_ascii=True,
+        allow_nan=False,
+    )
+    return hashlib.sha256(payload.encode('utf-8')).hexdigest()
+
+
+@dataclass(frozen=True)
+class CompletedBenchmarkRun:
+    """Validated pointer to one authoritative standard benchmark run."""
+
+    config_hash: str
+    run_directory: Path
+    result_file: Path
+    summary_file: Path | None
+    manifest_file: Path | None
+    legacy: bool = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'config_hash': self.config_hash,
+            'benchmark_run_directory': str(self.run_directory),
+            'benchmark_result_file': str(self.result_file),
+            'benchmark_summary_file': (
+                None if self.summary_file is None else str(self.summary_file)
+            ),
+            'benchmark_manifest_file': (
+                None if self.manifest_file is None else str(self.manifest_file)
+            ),
+            'legacy': bool(self.legacy),
+            'status': 'completed',
+        }
+
+
 class BenchmarkRunner:
 
     def __init__(self, config: Dict[str, Any]):
@@ -48,10 +122,197 @@ class BenchmarkRunner:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.run_dir = self.output_dir / self.timestamp
+        self.result_file = (
+            self.output_dir / f"benchmark_results_{self.timestamp}.json"
+        )
+        self.summary_file = self.output_dir / f"summary_{self.timestamp}.csv"
+        self.config_hash = benchmark_config_hash(config)
         self.results = {}
         self.models = {}
 
         self._setup_models()
+
+    @staticmethod
+    def config_hash_for(config: Mapping[str, Any]) -> str:
+        """Public config identity shared by CLI, experiments and AutoML."""
+        return benchmark_config_hash(config)
+
+    @classmethod
+    def _validate_result_artifacts(cls, results: Mapping[str, Any]) -> None:
+        group_results = 0
+        for dataset_result in results.values():
+            if not isinstance(dataset_result, Mapping):
+                continue
+            for task_result in dataset_result.get('models', {}).values():
+                for model_result in task_result.values():
+                    group = model_result.get('group_kfold_subject')
+                    if not isinstance(group, Mapping):
+                        continue
+                    group_results += 1
+                    folds = group.get('folds', {})
+                    if not folds or len(folds) != int(group.get('n_folds', -1)):
+                        raise ValueError(
+                            "Standard benchmark result has incomplete GroupKFold folds"
+                        )
+                    expected_predictions = 0
+                    for fold_name, fold_result in folds.items():
+                        expected_predictions += int(fold_result.get('n_test', 0))
+                        artifacts = fold_result.get('artifacts', {})
+                        if not artifacts:
+                            raise ValueError(
+                                f"Standard benchmark fold {fold_name} has no artifacts"
+                            )
+                        missing = [
+                            key for key, path in artifacts.items()
+                            if not Path(path).exists()
+                        ]
+                        if missing:
+                            raise ValueError(
+                                f"Standard benchmark fold {fold_name} is missing "
+                                f"artifacts: {missing}"
+                            )
+                    predictions_path = Path(
+                        group.get('artifacts', {}).get('predictions', '')
+                    )
+                    if not predictions_path.is_file():
+                        raise ValueError(
+                            "Standard benchmark unified predictions are missing"
+                        )
+                    predictions = pd.read_parquet(predictions_path)
+                    identity = (
+                        'sequence_id'
+                        if 'sequence_id' in predictions.columns
+                        else 'sample_id'
+                    )
+                    if identity not in predictions.columns:
+                        raise ValueError(
+                            "Standard benchmark predictions have no observation ID"
+                        )
+                    if predictions[identity].duplicated().any():
+                        raise ValueError(
+                            "Standard benchmark predictions contain duplicate IDs"
+                        )
+                    if len(predictions) != expected_predictions:
+                        raise ValueError(
+                            "Standard benchmark predictions are incomplete: "
+                            f"rows={len(predictions)}, expected={expected_predictions}"
+                        )
+        if group_results == 0:
+            raise ValueError("Standard benchmark result has no GroupKFold result")
+
+    @classmethod
+    def validate_completed_run(
+            cls,
+            run_directory: str | Path,
+            *,
+            expected_config_hash: str,
+            result_file: str | Path | None = None,
+            manifest_file: str | Path | None = None,
+            legacy: bool = False,
+    ) -> CompletedBenchmarkRun:
+        """Validate config identity and required standard benchmark artifacts."""
+        run_dir = Path(run_directory)
+        config_path = run_dir / 'config.yaml'
+        metrics_path = run_dir / 'metrics.json'
+        if not config_path.is_file() or not metrics_path.is_file():
+            raise ValueError(f"Incomplete standard benchmark run: {run_dir}")
+        with open(config_path, encoding='utf-8') as input_file:
+            saved_config = yaml.safe_load(input_file) or {}
+        actual_hash = benchmark_config_hash(saved_config)
+        if actual_hash != expected_config_hash:
+            raise ValueError(
+                "Benchmark config hash mismatch: "
+                f"expected={expected_config_hash}, actual={actual_hash}"
+            )
+        with open(metrics_path, encoding='utf-8') as input_file:
+            results = json.load(input_file)
+        cls._validate_result_artifacts(results)
+
+        resolved_result = (
+            Path(result_file)
+            if result_file is not None
+            else run_dir.parent / f"benchmark_results_{run_dir.name}.json"
+        )
+        if not resolved_result.is_file():
+            raise ValueError(
+                f"Standard benchmark result JSON is missing: {resolved_result}"
+            )
+        summary = run_dir.parent / f"summary_{run_dir.name}.csv"
+        return CompletedBenchmarkRun(
+            config_hash=actual_hash,
+            run_directory=run_dir,
+            result_file=resolved_result,
+            summary_file=summary if summary.is_file() else None,
+            manifest_file=(
+                None if manifest_file is None else Path(manifest_file)
+            ),
+            legacy=legacy,
+        )
+
+    @classmethod
+    def find_completed_run(
+            cls,
+            config: Mapping[str, Any],
+            *,
+            search_directories: Iterable[str | Path] | None = None,
+    ) -> CompletedBenchmarkRun | None:
+        """Find a valid standard run by config hash, including legacy runs."""
+        expected_hash = benchmark_config_hash(config)
+        roots = list(search_directories or [config.get('output_dir', '.')])
+        candidates: list[tuple[Path, Path | None, Path | None, bool]] = []
+        for root_value in roots:
+            root = Path(root_value)
+            if not root.exists():
+                continue
+            for manifest_path in root.glob('*/run_manifest.json'):
+                try:
+                    manifest = json.loads(
+                        manifest_path.read_text(encoding='utf-8')
+                    )
+                except (OSError, json.JSONDecodeError):
+                    continue
+                if (
+                    manifest.get('status') != 'completed'
+                    or manifest.get('config_hash') != expected_hash
+                ):
+                    continue
+                candidates.append((
+                    manifest_path.parent,
+                    Path(manifest.get('benchmark_result_file', '')),
+                    manifest_path,
+                    False,
+                ))
+            for config_path in root.glob('*/config.yaml'):
+                if (config_path.parent / 'run_manifest.json').exists():
+                    continue
+                candidates.append((config_path.parent, None, None, True))
+
+        candidates.sort(
+            key=lambda item: item[0].stat().st_mtime,
+            reverse=True,
+        )
+        for run_dir, result_file, manifest_file, legacy in candidates:
+            try:
+                return cls.validate_completed_run(
+                    run_dir,
+                    expected_config_hash=expected_hash,
+                    result_file=result_file,
+                    manifest_file=manifest_file,
+                    legacy=legacy,
+                )
+            except (OSError, ValueError, json.JSONDecodeError, yaml.YAMLError):
+                continue
+        return None
+
+    def completed_run(self) -> CompletedBenchmarkRun:
+        """Return the validated standard reference after ``run()``."""
+        return self.validate_completed_run(
+            self.run_dir,
+            expected_config_hash=self.config_hash,
+            result_file=self.result_file,
+            manifest_file=self.run_dir / 'run_manifest.json',
+        )
 
     def _setup_models(self):
         model_configs = self.config.get('models', {})
@@ -1009,7 +1270,7 @@ class BenchmarkRunner:
         return self.get_summary()
 
     def _save_results(self):
-        output_file = self.output_dir / f"benchmark_results_{self.timestamp}.json"
+        output_file = self.result_file
 
         def convert_to_serializable(obj):
             if isinstance(obj, np.ndarray):
@@ -1025,7 +1286,7 @@ class BenchmarkRunner:
         with open(output_file, 'w') as f:
             json.dump(self.results, f, default=convert_to_serializable, indent=2)
 
-        run_dir = self.output_dir / self.timestamp
+        run_dir = self.run_dir
         run_dir.mkdir(parents=True, exist_ok=True)
         serializable_config = json.loads(json.dumps(
             self.config, default=convert_to_serializable
@@ -1044,10 +1305,23 @@ class BenchmarkRunner:
 
         logger.info(f"Results saved to {output_file}")
         self._save_csv_summary()
+        manifest = {
+            'schema_version': RUN_MANIFEST_SCHEMA_VERSION,
+            'status': 'completed',
+            'config_hash': self.config_hash,
+            'benchmark_run_directory': str(run_dir),
+            'benchmark_result_file': str(self.result_file),
+            'benchmark_summary_file': str(self.summary_file),
+            'config_file': str(config_path),
+            'metrics_file': str(metrics_path),
+            'timestamp': self.timestamp,
+        }
+        with open(run_dir / 'run_manifest.json', 'w', encoding='utf-8') as output:
+            json.dump(manifest, output, indent=2)
 
     def _save_csv_summary(self):
         summary = self.get_summary()
-        csv_file = self.output_dir / f"summary_{self.timestamp}.csv"
+        csv_file = self.summary_file
         summary.to_csv(csv_file, index=False)
         logger.info(f"Summary saved to {csv_file}")
 

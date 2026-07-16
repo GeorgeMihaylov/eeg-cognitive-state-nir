@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 import yaml
 import logging
@@ -150,7 +151,13 @@ def override_config_with_args(config: Dict[str, Any], args: argparse.Namespace) 
     return config
 
 
-def main():
+def _parse_trial_ids(value: str | None) -> list[str] | None:
+    if value is None:
+        return None
+    return [item.strip().upper() for item in value.split(',') if item.strip()]
+
+
+def main(argv: Optional[list[str]] = None):
     parser = argparse.ArgumentParser(
         description="Run EEG benchmark",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -233,12 +240,62 @@ Examples:
         action='store_true',
         help='Enable verbose logging (DEBUG level)'
     )
+
+    parser.add_argument(
+        '--experiment-matrix',
+        type=str,
+        help='Resolve and run a preprocessing experiment matrix'
+    )
+    parser.add_argument('--trial-ids', help='Comma-separated matrix trial labels')
+    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--build-missing-caches', action='store_true')
+    parser.add_argument('--cache-only', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--plan-only', action='store_true')
+    parser.add_argument('--fold-limit', type=int)
+    parser.add_argument('--max-windows', type=int)
+    parser.add_argument('--max-epochs', type=int)
     
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.experiment_matrix:
+        if args.config or args.test:
+            parser.error(
+                '--experiment-matrix cannot be combined with --config or --test'
+            )
+        from bench.experiments.preprocessing_ablation import (
+            PreprocessingAblation,
+            render_plan_csv,
+            render_plan_markdown,
+        )
+
+        experiment = PreprocessingAblation(args.experiment_matrix)
+        plans = experiment.plan(
+            trial_ids=_parse_trial_ids(args.trial_ids),
+            seed=args.seed,
+            fold_limit=args.fold_limit,
+            max_windows=args.max_windows,
+            max_epochs=args.max_epochs,
+        )
+        if args.plan_only:
+            print(render_plan_markdown(plans))
+            print("\n--- CSV ---\n")
+            print(render_plan_csv(plans), end='')
+            return
+        if args.cache_only and not args.build_missing_caches:
+            parser.error('--cache-only requires --build-missing-caches')
+        results = experiment.execute(
+            plans,
+            build_missing_caches=args.build_missing_caches,
+            run=not args.cache_only,
+            resume=args.resume,
+        )
+        print(json.dumps(results, indent=2, default=str))
+        return
 
     if args.test:
         config = create_default_config()
