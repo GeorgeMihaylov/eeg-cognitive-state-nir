@@ -140,28 +140,50 @@ class BenchmarkRunner:
 
     @classmethod
     def _validate_result_artifacts(cls, results: Mapping[str, Any]) -> None:
-        group_results = 0
+        supported_results = 0
         for dataset_result in results.values():
             if not isinstance(dataset_result, Mapping):
                 continue
             for task_result in dataset_result.get('models', {}).values():
                 for model_result in task_result.values():
                     group = model_result.get('group_kfold_subject')
-                    if not isinstance(group, Mapping):
-                        continue
-                    group_results += 1
-                    folds = group.get('folds', {})
-                    if not folds or len(folds) != int(group.get('n_folds', -1)):
-                        raise ValueError(
-                            "Standard benchmark result has incomplete GroupKFold folds"
+                    cross_source = model_result.get('cross_source_holdout')
+                    if isinstance(group, Mapping):
+                        protocol_result = group
+                        partitions = group.get('folds', {})
+                        expected_partitions = int(group.get('n_folds', -1))
+                        incomplete_message = (
+                            "Standard benchmark result has incomplete "
+                            "GroupKFold folds"
                         )
+                    elif isinstance(cross_source, Mapping):
+                        protocol_result = cross_source
+                        partitions = cross_source.get('splits', {})
+                        expected_partitions = int(
+                            cross_source.get('n_splits', -1)
+                        )
+                        incomplete_message = (
+                            "Standard benchmark result has incomplete "
+                            "cross-source splits"
+                        )
+                    else:
+                        continue
+                    supported_results += 1
+                    if (
+                        not partitions
+                        or len(partitions) != expected_partitions
+                    ):
+                        raise ValueError(incomplete_message)
                     expected_predictions = 0
-                    for fold_name, fold_result in folds.items():
-                        expected_predictions += int(fold_result.get('n_test', 0))
-                        artifacts = fold_result.get('artifacts', {})
+                    for partition_name, partition_result in partitions.items():
+                        expected_predictions += int(
+                            partition_result.get('n_test', 0)
+                        )
+                        artifacts = partition_result.get('artifacts', {})
                         if not artifacts:
                             raise ValueError(
-                                f"Standard benchmark fold {fold_name} has no artifacts"
+                                "Standard benchmark partition "
+                                f"{partition_name} has no artifacts"
                             )
                         missing = [
                             key for key, path in artifacts.items()
@@ -169,11 +191,14 @@ class BenchmarkRunner:
                         ]
                         if missing:
                             raise ValueError(
-                                f"Standard benchmark fold {fold_name} is missing "
+                                "Standard benchmark partition "
+                                f"{partition_name} is missing "
                                 f"artifacts: {missing}"
                             )
                     predictions_path = Path(
-                        group.get('artifacts', {}).get('predictions', '')
+                        protocol_result.get('artifacts', {}).get(
+                            'predictions', ''
+                        )
                     )
                     if not predictions_path.is_file():
                         raise ValueError(
@@ -198,8 +223,10 @@ class BenchmarkRunner:
                             "Standard benchmark predictions are incomplete: "
                             f"rows={len(predictions)}, expected={expected_predictions}"
                         )
-        if group_results == 0:
-            raise ValueError("Standard benchmark result has no GroupKFold result")
+        if supported_results == 0:
+            raise ValueError(
+                "Standard benchmark result has no supported evaluation result"
+            )
 
     @classmethod
     def validate_completed_run(
@@ -322,10 +349,10 @@ class BenchmarkRunner:
                 model_type = model_config.get('type')
                 if not model_type:
                     raise ValueError("Model config must define a non-empty 'type'")
-                group_protocol = self.config.get('evaluation', {}).get(
+                lazy_protocol = self.config.get('evaluation', {}).get(
                     'protocol'
-                ) == 'group_kfold_subject'
-                if model_requires_data_shape(model_type) or group_protocol:
+                ) in {'group_kfold_subject', 'cross_source_holdout'}
+                if model_requires_data_shape(model_type) or lazy_protocol:
                     model = None
                     logger.info(
                         f"Model '{model_name}' will be initialized after data loading"
@@ -431,10 +458,73 @@ class BenchmarkRunner:
             evaluation_config = self.config.get('evaluation')
             if evaluation_config:
                 protocol = evaluation_config.get('protocol')
+                if protocol == 'cross_source_holdout':
+                    thresholds = evaluation_config.get('thresholds', {})
+                    cross_source_split = cv.run_cross_source_holdout(
+                        train_source=evaluation_config.get('train_source', ''),
+                        test_source=evaluation_config.get('test_source', ''),
+                        subject_mode=evaluation_config.get(
+                            'subject_mode', 'source_exclusive'
+                        ),
+                        remove_logical_duplicates=bool(
+                            evaluation_config.get(
+                                'remove_logical_duplicates', True
+                            )
+                        ),
+                        minimum_train_subjects=int(
+                            thresholds.get('minimum_train_subjects', 5)
+                        ),
+                        minimum_test_subjects=int(
+                            thresholds.get('minimum_test_subjects', 3)
+                        ),
+                        minimum_train_classes=int(
+                            thresholds.get('minimum_train_classes', 5)
+                        ),
+                        minimum_test_classes=int(
+                            thresholds.get('minimum_test_classes', 2)
+                        ),
+                        minimum_predictions_per_test_subject=int(
+                            thresholds.get(
+                                'minimum_predictions_per_test_subject', 20
+                            )
+                        ),
+                        max_train_windows=evaluation_config.get(
+                            'max_train_windows'
+                        ),
+                        max_test_windows=evaluation_config.get(
+                            'max_test_windows'
+                        ),
+                        random_state=int(
+                            evaluation_config.get('random_state', 42)
+                        ),
+                    )
+                    if cross_source_split.metadata['status'] != 'valid':
+                        raise ValueError(
+                            "Cross-source split is invalid: "
+                            + '; '.join(
+                                cross_source_split.metadata['invalid_reasons']
+                            )
+                        )
+                    for model_name, model_info in self.models.items():
+                        cross_source_result = self._evaluate_cross_source(
+                            outer_split=cross_source_split,
+                            model_name=model_name,
+                            model_config=model_info['config'],
+                            num_outputs=task.n_classes,
+                            dataset_name=dataset_name,
+                            task_name=task_name,
+                        )
+                        results['models'].setdefault(task_name, {})
+                        results['models'][task_name].setdefault(model_name, {})
+                        results['models'][task_name][model_name][
+                            protocol
+                        ] = cross_source_result
+                    continue
                 if protocol != 'group_kfold_subject':
                     raise ValueError(
                         f"Unknown evaluation protocol {protocol!r}. "
-                        "Available: ['group_kfold_subject']"
+                        "Available: ['group_kfold_subject', "
+                        "'cross_source_holdout']"
                     )
                 group_column = evaluation_config.get('group_column')
                 if not group_column:
@@ -803,6 +893,63 @@ class BenchmarkRunner:
                 rejected.to_parquet(rejected_path, index=False)
                 artifacts['rejected_windows'] = str(rejected_path)
 
+        if protocol == 'cross_source_holdout':
+            split_payload = {
+                key: value
+                for key, value in split.metadata.items()
+                if key != 'dataset_metadata'
+            }
+            cross_source_split_path = artifact_dir / 'cross_source_split.json'
+            with open(
+                cross_source_split_path, 'w', encoding='utf-8'
+            ) as output:
+                json.dump(
+                    split_payload, output, indent=2, default=_json_default
+                )
+            artifacts['cross_source_split'] = str(cross_source_split_path)
+
+            excluded_subjects_path = artifact_dir / 'excluded_subjects.json'
+            with open(
+                excluded_subjects_path, 'w', encoding='utf-8'
+            ) as output:
+                json.dump(
+                    split.metadata.get('excluded_subjects', {}),
+                    output,
+                    indent=2,
+                    default=_json_default,
+                )
+            artifacts['excluded_subjects'] = str(excluded_subjects_path)
+
+            excluded_logical_path = (
+                artifact_dir / 'excluded_logical_recordings.json'
+            )
+            with open(
+                excluded_logical_path, 'w', encoding='utf-8'
+            ) as output:
+                json.dump(
+                    split.metadata.get('excluded_logical_record_ids', []),
+                    output,
+                    indent=2,
+                    default=_json_default,
+                )
+            artifacts['excluded_logical_recordings'] = str(
+                excluded_logical_path
+            )
+
+            source_distribution_path = (
+                artifact_dir / 'source_distribution.json'
+            )
+            with open(
+                source_distribution_path, 'w', encoding='utf-8'
+            ) as output:
+                json.dump(
+                    split.metadata.get('source_distribution', {}),
+                    output,
+                    indent=2,
+                    default=_json_default,
+                )
+            artifacts['source_distribution'] = str(source_distribution_path)
+
         validation_split = getattr(model, 'validation_split_', None)
         if validation_split is not None:
             validation_split_path = artifact_dir / 'validation_split.json'
@@ -819,17 +966,18 @@ class BenchmarkRunner:
             pd.DataFrame(model.training_log_).to_csv(training_log_path, index=False)
             artifacts['model'] = str(model_path)
             artifacts['training_log'] = str(training_log_path)
-            if (
-                split.metadata.get('observation_unit') == 'raw_eeg_window'
-                and getattr(model, 'feature_mean_', None) is not None
-            ):
+            if getattr(model, 'feature_mean_', None) is not None:
                 normalization_path = artifact_dir / 'normalization_stats.json'
                 normalization = {
                     'scope': 'inner_train_only',
-                    'channel_names': list(split.feature_names or []),
+                    'feature_names': list(split.feature_names or []),
                     'mean': np.asarray(model.feature_mean_).tolist(),
                     'scale': np.asarray(model.feature_scale_).tolist(),
                 }
+                if split.metadata.get('observation_unit') == 'raw_eeg_window':
+                    normalization['channel_names'] = list(
+                        split.feature_names or []
+                    )
                 with open(normalization_path, 'w', encoding='utf-8') as output:
                     json.dump(normalization, output, indent=2)
                 artifacts['normalization_stats'] = str(normalization_path)
@@ -890,6 +1038,9 @@ class BenchmarkRunner:
         if group_column == 'record_id':
             train_groups = np.asarray(split.record_id_train).astype(str)
             test_groups = np.asarray(split.record_id_test).astype(str)
+        elif group_column == 'subject_id':
+            train_groups = np.asarray(split.subject_train).astype(str)
+            test_groups = np.asarray(split.subject_test).astype(str)
         elif (
             group_column in split.row_metadata_train
             and group_column in split.row_metadata_test
@@ -913,19 +1064,19 @@ class BenchmarkRunner:
                 "PyTorch model does not support group-aware validation metadata"
             )
         train_subjects = np.asarray(split.subject_train).astype(str)
-        outer_record_overlap = np.intersect1d(
+        outer_group_overlap = np.intersect1d(
             np.unique(train_groups), np.unique(test_groups)
         )
-        if len(outer_record_overlap):
+        if len(outer_group_overlap):
             raise RuntimeError(
-                "Outer train/test records overlap before inner validation: "
-                f"{outer_record_overlap.astype(str).tolist()}"
+                "Outer train/test validation groups overlap before inner "
+                f"validation: {outer_group_overlap.astype(str).tolist()}"
             )
         model.set_validation_groups(
             train_groups,
             subject_ids=train_subjects,
-            record_ids=train_groups,
-            outer_test_record_ids=test_groups,
+            record_ids=np.asarray(split.record_id_train).astype(str),
+            outer_test_record_ids=np.asarray(split.record_id_test).astype(str),
             strategy=strategy,
             group_column=group_column,
             validation_size=float(
@@ -1007,7 +1158,10 @@ class BenchmarkRunner:
             train_result.metadata['subject_id'].unique(),
             test_result.metadata['subject_id'].unique(),
         )
-        if len(sequence_subject_overlap):
+        if (
+            len(sequence_subject_overlap)
+            and not split.metadata.get('allow_subject_overlap', False)
+        ):
             raise RuntimeError(
                 "Subject leakage detected after sequence construction: "
                 f"{sequence_subject_overlap.astype(str).tolist()}"
@@ -1023,6 +1177,7 @@ class BenchmarkRunner:
             'sequence_max_gap_seconds': max_gap_seconds,
             'n_train_sequences': len(train_result.X),
             'n_test_sequences': len(test_result.X),
+            'subject_overlap': sequence_subject_overlap.astype(str).tolist(),
             'sequence_stats': {
                 'train': train_result.stats,
                 'test': test_result.stats,
@@ -1052,6 +1207,88 @@ class BenchmarkRunner:
             row_metadata_train=train_metadata,
             row_metadata_test=test_metadata,
         )
+
+    def _evaluate_cross_source(
+            self,
+            outer_split: TaskSplit,
+            model_name: str,
+            model_config: Dict[str, Any],
+            num_outputs: int,
+            dataset_name: str,
+            task_name: str,
+    ) -> Dict[str, Any]:
+        """Evaluate one directional transfer through the standard split path."""
+        sequence_model = model_requires_sequences(model_config.get('type', ''))
+        split = (
+            self._build_sequence_split(outer_split)
+            if sequence_model
+            else outer_split
+        )
+        logical_overlap = split.metadata.get('logical_record_overlap', [])
+        record_overlap = split.metadata.get('record_overlap', [])
+        sample_overlap = split.metadata.get('sample_overlap', [])
+        subject_overlap = split.metadata.get('subject_overlap', [])
+        if logical_overlap or record_overlap or sample_overlap:
+            raise RuntimeError(
+                "Cross-source leakage detected before training: "
+                f"logical={logical_overlap}, records={record_overlap}, "
+                f"samples={sample_overlap}"
+            )
+        if subject_overlap and not split.metadata.get(
+            'allow_subject_overlap', False
+        ):
+            raise RuntimeError(
+                "Unexpected subject overlap before cross-source training: "
+                f"{subject_overlap}"
+            )
+        split_model_config = deepcopy(model_config)
+        model = self._create_model(
+            split_model_config,
+            input_shape=tuple(split.X_train.shape[1:]),
+            num_outputs=num_outputs,
+        )
+        split_name = str(split.metadata['fold_name'])
+        logger.info(
+            f"      {model_name} {split_name}: "
+            f"train={len(split.y_train)}, test={len(split.y_test)}, "
+            f"train_subjects={split.metadata['n_train_subjects']}, "
+            f"test_subjects={split.metadata['n_test_subjects']}"
+        )
+        result = self._evaluate_split(
+            model=model,
+            split=split,
+            model_name=model_name,
+            dataset_name=dataset_name,
+            task_name=task_name,
+            artifact_split_name=split_name,
+        )
+        protocol_dir = (
+            self._model_artifact_dir(dataset_name, task_name, model_name)
+            / 'cross_source_holdout'
+        )
+        protocol_dir.mkdir(parents=True, exist_ok=True)
+        unified_predictions = protocol_dir / 'predictions.parquet'
+        predictions = pd.read_parquet(result['artifacts']['predictions'])
+        identity_column = (
+            'sequence_id' if 'sequence_id' in predictions.columns else 'sample_id'
+        )
+        if predictions[identity_column].duplicated().any():
+            raise RuntimeError(
+                "Cross-source predictions contain duplicate observation IDs"
+            )
+        predictions.sort_values(identity_column).to_parquet(
+            unified_predictions, index=False
+        )
+        return {
+            'protocol': 'cross_source_holdout',
+            'status': 'completed',
+            'n_splits': 1,
+            'splits': {split_name: result},
+            'metrics': result['metrics'],
+            'training_time_total': result['training_time'],
+            'split_metadata': split.metadata,
+            'artifacts': {'predictions': str(unified_predictions)},
+        }
 
     def _evaluate_group_kfold(
             self,
@@ -1393,6 +1630,42 @@ class BenchmarkRunner:
                             'training_time': aggregated.get(
                                 'training_time_total', np.nan
                             ),
+                        })
+                    if 'cross_source_holdout' in model_results:
+                        cross_result = model_results['cross_source_holdout']
+                        metrics = cross_result.get('metrics', {})
+                        split_metadata = cross_result.get(
+                            'split_metadata', {}
+                        )
+                        rows.append({
+                            'dataset': dataset_name,
+                            'task': task_name,
+                            'model': model_name,
+                            'evaluation': 'cross_source_holdout',
+                            'train_source': split_metadata.get('train_source'),
+                            'test_source': split_metadata.get('test_source'),
+                            'subject_mode': split_metadata.get('subject_mode'),
+                            'accuracy': metrics.get('accuracy', np.nan),
+                            'balanced_accuracy': metrics.get(
+                                'balanced_accuracy', np.nan
+                            ),
+                            'macro_f1': metrics.get('macro_f1', np.nan),
+                            'weighted_f1': metrics.get(
+                                'weighted_f1', np.nan
+                            ),
+                            'kappa': metrics.get('kappa', np.nan),
+                            'auc': metrics.get('auc', np.nan),
+                            'ordinal_mae': metrics.get(
+                                'ordinal_mae', np.nan
+                            ),
+                            'severe_error_rate': metrics.get(
+                                'severe_error_rate', np.nan
+                            ),
+                            'training_time': cross_result.get(
+                                'training_time_total', np.nan
+                            ),
+                            'n_train': split_metadata.get('n_train_rows'),
+                            'n_test': split_metadata.get('n_test_rows'),
                         })
                     if 'loso' in model_results:
                         aggregated = model_results['loso'].get('aggregated', {})

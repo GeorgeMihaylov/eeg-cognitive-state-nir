@@ -347,12 +347,105 @@ Examples:
         help='Comma-separated statistical analysis tracks',
     )
     parser.add_argument('--bootstrap-samples', type=int)
+    parser.add_argument(
+        '--cross-source-experiment',
+        type=str,
+        help='Plan or run strict directional cross-source transfer',
+    )
+    parser.add_argument(
+        '--directions',
+        help='Comma-separated train->test source directions',
+    )
+    parser.add_argument(
+        '--subject-modes',
+        help='Comma-separated cross-source subject modes',
+    )
+    parser.add_argument(
+        '--run',
+        action='store_true',
+        help='Execute valid cross-source trials after planning',
+    )
+    parser.add_argument('--max-train-windows', type=int)
+    parser.add_argument('--max-test-windows', type=int)
     
     args = parser.parse_args(argv)
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.cross_source_experiment:
+        conflicts = {
+            '--config': args.config,
+            '--test': args.test,
+            '--experiment-matrix': args.experiment_matrix,
+            '--calibration-experiment': args.calibration_experiment,
+            '--automl-study': args.automl_study,
+            '--statistical-analysis': args.statistical_analysis,
+        }
+        active_conflicts = [
+            name for name, value in conflicts.items() if value
+        ]
+        if active_conflicts:
+            parser.error(
+                '--cross-source-experiment cannot be combined with '
+                + ', '.join(active_conflicts)
+            )
+        if args.plan_only and args.run:
+            parser.error('--plan-only and --run are mutually exclusive')
+        if not args.plan_only and not args.run:
+            parser.error(
+                '--cross-source-experiment requires --plan-only or --run'
+            )
+        from bench.experiments.cross_source_generalization import (
+            CrossSourceExperiment,
+        )
+
+        directions = (
+            None
+            if args.directions is None
+            else [
+                value.strip()
+                for value in args.directions.split(',')
+                if value.strip()
+            ]
+        )
+        subject_modes = (
+            None
+            if args.subject_modes is None
+            else [
+                value.strip()
+                for value in args.subject_modes.split(',')
+                if value.strip()
+            ]
+        )
+        models = (
+            None
+            if args.models is None
+            else [
+                value.strip()
+                for value in args.models.split(',')
+                if value.strip()
+            ]
+        )
+        experiment = CrossSourceExperiment(args.cross_source_experiment)
+        plans = experiment.plan(
+            directions=directions,
+            subject_modes=subject_modes,
+            models=models,
+            seed=42 if args.seed is None else args.seed,
+            max_train_windows=args.max_train_windows,
+            max_test_windows=args.max_test_windows,
+            max_epochs=args.max_epochs,
+        )
+        if args.plan_only:
+            plan_reports = experiment.write_plan_reports(plans)
+            print(experiment.render_plan(plans))
+            print(json.dumps(plan_reports, indent=2))
+            return
+        result = experiment.execute(plans, resume=args.resume)
+        print(json.dumps(result, indent=2, default=str))
+        return
 
     if args.statistical_analysis:
         if (

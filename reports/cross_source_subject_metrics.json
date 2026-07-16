@@ -1,0 +1,2719 @@
+{
+  "schema_version": "cross-source-results-v1",
+  "subjects": [
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "0001508a",
+      "n_predictions": 305,
+      "metrics": {
+        "accuracy": 0.2786885245901639,
+        "balanced_accuracy": 0.24531266917505867,
+        "precision": 0.2636411604978424,
+        "recall": 0.2786885245901639,
+        "macro_f1": 0.22827679036972354,
+        "weighted_f1": 0.24963912047361606,
+        "f1_macro": 0.22827679036972354,
+        "f1_weighted": 0.24963912047361606,
+        "kappa": 0.059473248952244706,
+        "ordinal_mae": 1.3737704918032787,
+        "adjacent_accuracy": 0.5967213114754099,
+        "severe_error_rate": 0.40327868852459015,
+        "confusion_matrix": [
+          [
+            46,
+            18,
+            6,
+            5,
+            5
+          ],
+          [
+            36,
+            22,
+            8,
+            3,
+            8
+          ],
+          [
+            29,
+            17,
+            4,
+            4,
+            4
+          ],
+          [
+            24,
+            17,
+            3,
+            8,
+            7
+          ],
+          [
+            11,
+            7,
+            4,
+            4,
+            5
+          ]
+        ],
+        "auc": 0.5297591586860171,
+        "n_samples": 305,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "21a031f6",
+      "n_predictions": 716,
+      "metrics": {
+        "accuracy": 0.2541899441340782,
+        "balanced_accuracy": 0.2723535584883856,
+        "precision": 0.22995254095558618,
+        "recall": 0.2541899441340782,
+        "macro_f1": 0.22231793361984464,
+        "weighted_f1": 0.22009538797122086,
+        "f1_macro": 0.22231793361984464,
+        "f1_weighted": 0.22009538797122086,
+        "kappa": 0.07376111940153873,
+        "ordinal_mae": 1.303072625698324,
+        "adjacent_accuracy": 0.6298882681564246,
+        "severe_error_rate": 0.37011173184357543,
+        "confusion_matrix": [
+          [
+            18,
+            38,
+            12,
+            2,
+            23
+          ],
+          [
+            27,
+            80,
+            21,
+            3,
+            36
+          ],
+          [
+            30,
+            69,
+            40,
+            12,
+            49
+          ],
+          [
+            17,
+            50,
+            38,
+            2,
+            61
+          ],
+          [
+            6,
+            21,
+            16,
+            3,
+            42
+          ]
+        ],
+        "auc": 0.5701962975886776,
+        "n_samples": 716,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "30c140ca",
+      "n_predictions": 378,
+      "metrics": {
+        "accuracy": 0.3412698412698413,
+        "balanced_accuracy": 0.3201201802213521,
+        "precision": 0.372783995185003,
+        "recall": 0.3412698412698413,
+        "macro_f1": 0.30002519193979366,
+        "weighted_f1": 0.3361187649812147,
+        "f1_macro": 0.30002519193979366,
+        "f1_weighted": 0.3361187649812147,
+        "kappa": 0.15821199871212388,
+        "ordinal_mae": 1.2645502645502646,
+        "adjacent_accuracy": 0.656084656084656,
+        "severe_error_rate": 0.3439153439153439,
+        "confusion_matrix": [
+          [
+            37,
+            52,
+            18,
+            9,
+            23
+          ],
+          [
+            16,
+            41,
+            10,
+            5,
+            7
+          ],
+          [
+            7,
+            11,
+            6,
+            1,
+            6
+          ],
+          [
+            7,
+            21,
+            8,
+            6,
+            10
+          ],
+          [
+            8,
+            14,
+            5,
+            11,
+            39
+          ]
+        ],
+        "auc": 0.6319694583348666,
+        "n_samples": 378,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "7092f07b",
+      "n_predictions": 471,
+      "metrics": {
+        "accuracy": 0.28662420382165604,
+        "balanced_accuracy": 0.22059813824519706,
+        "precision": 0.260705108355599,
+        "recall": 0.28662420382165604,
+        "macro_f1": 0.20154715236005502,
+        "weighted_f1": 0.24732542310494002,
+        "f1_macro": 0.20154715236005502,
+        "f1_weighted": 0.24732542310494002,
+        "kappa": 0.02742167430769804,
+        "ordinal_mae": 1.1634819532908705,
+        "adjacent_accuracy": 0.7070063694267515,
+        "severe_error_rate": 0.2929936305732484,
+        "confusion_matrix": [
+          [
+            53,
+            68,
+            12,
+            3,
+            0
+          ],
+          [
+            52,
+            68,
+            9,
+            1,
+            2
+          ],
+          [
+            29,
+            46,
+            9,
+            3,
+            1
+          ],
+          [
+            33,
+            28,
+            11,
+            3,
+            6
+          ],
+          [
+            12,
+            12,
+            5,
+            3,
+            2
+          ]
+        ],
+        "auc": 0.564149279881927,
+        "n_samples": 471,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "71f0603f",
+      "n_predictions": 1025,
+      "metrics": {
+        "accuracy": 0.29853658536585365,
+        "balanced_accuracy": 0.2639681218664468,
+        "precision": 0.2838953893627201,
+        "recall": 0.29853658536585365,
+        "macro_f1": 0.25433412628411345,
+        "weighted_f1": 0.2834037883583607,
+        "f1_macro": 0.25433412628411345,
+        "f1_weighted": 0.2834037883583607,
+        "kappa": 0.1002064589542262,
+        "ordinal_mae": 1.4195121951219511,
+        "adjacent_accuracy": 0.5921951219512195,
+        "severe_error_rate": 0.40780487804878046,
+        "confusion_matrix": [
+          [
+            89,
+            46,
+            12,
+            29,
+            62
+          ],
+          [
+            40,
+            21,
+            12,
+            26,
+            52
+          ],
+          [
+            28,
+            30,
+            11,
+            34,
+            73
+          ],
+          [
+            35,
+            29,
+            11,
+            43,
+            58
+          ],
+          [
+            23,
+            32,
+            17,
+            70,
+            142
+          ]
+        ],
+        "auc": 0.6015092351628729,
+        "n_samples": 1025,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "8191f1d9",
+      "n_predictions": 742,
+      "metrics": {
+        "accuracy": 0.20754716981132076,
+        "balanced_accuracy": 0.24235535785994503,
+        "precision": 0.30048352799181216,
+        "recall": 0.20754716981132076,
+        "macro_f1": 0.19491237755120833,
+        "weighted_f1": 0.19412066708703726,
+        "f1_macro": 0.19491237755120833,
+        "f1_weighted": 0.19412066708703726,
+        "kappa": 0.04212661696129827,
+        "ordinal_mae": 1.84366576819407,
+        "adjacent_accuracy": 0.49595687331536387,
+        "severe_error_rate": 0.5040431266846361,
+        "confusion_matrix": [
+          [
+            37,
+            59,
+            15,
+            55,
+            131
+          ],
+          [
+            10,
+            30,
+            5,
+            11,
+            43
+          ],
+          [
+            11,
+            40,
+            10,
+            8,
+            40
+          ],
+          [
+            14,
+            22,
+            13,
+            21,
+            62
+          ],
+          [
+            6,
+            20,
+            6,
+            17,
+            56
+          ]
+        ],
+        "auc": 0.5567580684371066,
+        "n_samples": 742,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "b1c2f044",
+      "n_predictions": 551,
+      "metrics": {
+        "accuracy": 0.38656987295825773,
+        "balanced_accuracy": 0.29388871187047083,
+        "precision": 0.3924455190989885,
+        "recall": 0.38656987295825773,
+        "macro_f1": 0.291034018960311,
+        "weighted_f1": 0.3859907870667856,
+        "f1_macro": 0.291034018960311,
+        "f1_weighted": 0.3859907870667856,
+        "kappa": 0.15101315159665396,
+        "ordinal_mae": 1.1288566243194191,
+        "adjacent_accuracy": 0.7005444646098004,
+        "severe_error_rate": 0.29945553539019965,
+        "confusion_matrix": [
+          [
+            130,
+            62,
+            20,
+            18,
+            12
+          ],
+          [
+            37,
+            49,
+            17,
+            6,
+            13
+          ],
+          [
+            18,
+            31,
+            7,
+            5,
+            7
+          ],
+          [
+            19,
+            18,
+            1,
+            5,
+            10
+          ],
+          [
+            15,
+            15,
+            4,
+            10,
+            22
+          ]
+        ],
+        "auc": 0.6422084861100957,
+        "n_samples": 551,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "d18000a3",
+      "n_predictions": 680,
+      "metrics": {
+        "accuracy": 0.25588235294117645,
+        "balanced_accuracy": 0.2698155279415596,
+        "precision": 0.24294579526796492,
+        "recall": 0.25588235294117645,
+        "macro_f1": 0.23791520140147457,
+        "weighted_f1": 0.22730331716146696,
+        "f1_macro": 0.23791520140147457,
+        "f1_weighted": 0.22730331716146696,
+        "kappa": 0.07882020020293379,
+        "ordinal_mae": 1.2544117647058823,
+        "adjacent_accuracy": 0.6426470588235295,
+        "severe_error_rate": 0.3573529411764706,
+        "confusion_matrix": [
+          [
+            14,
+            38,
+            24,
+            3,
+            4
+          ],
+          [
+            22,
+            53,
+            40,
+            5,
+            14
+          ],
+          [
+            16,
+            27,
+            57,
+            11,
+            20
+          ],
+          [
+            24,
+            52,
+            75,
+            7,
+            37
+          ],
+          [
+            8,
+            39,
+            34,
+            13,
+            43
+          ]
+        ],
+        "auc": 0.5845870584338259,
+        "n_samples": 680,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "e0c0408a",
+      "n_predictions": 182,
+      "metrics": {
+        "accuracy": 0.15384615384615385,
+        "balanced_accuracy": 0.17432295023272468,
+        "precision": 0.16948587668190646,
+        "recall": 0.15384615384615385,
+        "macro_f1": 0.14509419250811945,
+        "weighted_f1": 0.1387907887364959,
+        "f1_macro": 0.14509419250811945,
+        "f1_weighted": 0.1387907887364959,
+        "kappa": -0.044340114762650096,
+        "ordinal_mae": 1.434065934065934,
+        "adjacent_accuracy": 0.5879120879120879,
+        "severe_error_rate": 0.41208791208791207,
+        "confusion_matrix": [
+          [
+            2,
+            15,
+            4,
+            3,
+            4
+          ],
+          [
+            3,
+            2,
+            11,
+            7,
+            19
+          ],
+          [
+            1,
+            8,
+            5,
+            11,
+            24
+          ],
+          [
+            1,
+            5,
+            4,
+            8,
+            20
+          ],
+          [
+            0,
+            1,
+            6,
+            7,
+            11
+          ]
+        ],
+        "auc": 0.5696089273815436,
+        "n_samples": 182,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "f0f2a1e1",
+      "n_predictions": 507,
+      "metrics": {
+        "accuracy": 0.4240631163708087,
+        "balanced_accuracy": 0.2633602104809535,
+        "precision": 0.3997571333832718,
+        "recall": 0.4240631163708087,
+        "macro_f1": 0.24945568190114198,
+        "weighted_f1": 0.40492030566532705,
+        "f1_macro": 0.24945568190114198,
+        "f1_weighted": 0.40492030566532705,
+        "kappa": 0.09520724596936836,
+        "ordinal_mae": 0.9428007889546351,
+        "adjacent_accuracy": 0.7534516765285996,
+        "severe_error_rate": 0.2465483234714004,
+        "confusion_matrix": [
+          [
+            3,
+            4,
+            3,
+            1,
+            4
+          ],
+          [
+            2,
+            6,
+            9,
+            5,
+            17
+          ],
+          [
+            6,
+            12,
+            6,
+            10,
+            31
+          ],
+          [
+            5,
+            13,
+            16,
+            24,
+            75
+          ],
+          [
+            10,
+            10,
+            20,
+            39,
+            176
+          ]
+        ],
+        "auc": 0.6071358876555281,
+        "n_samples": 507,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "f1a0c120",
+      "n_predictions": 603,
+      "metrics": {
+        "accuracy": 0.2570480928689884,
+        "balanced_accuracy": 0.24428166950210364,
+        "precision": 0.2754013535075525,
+        "recall": 0.2570480928689884,
+        "macro_f1": 0.24535627520380957,
+        "weighted_f1": 0.25228505465911477,
+        "f1_macro": 0.24535627520380957,
+        "f1_weighted": 0.25228505465911477,
+        "kappa": 0.03226915802143626,
+        "ordinal_mae": 1.1525704809286899,
+        "adjacent_accuracy": 0.6898839137645107,
+        "severe_error_rate": 0.3101160862354892,
+        "confusion_matrix": [
+          [
+            45,
+            64,
+            50,
+            4,
+            3
+          ],
+          [
+            56,
+            58,
+            37,
+            8,
+            11
+          ],
+          [
+            29,
+            44,
+            28,
+            3,
+            5
+          ],
+          [
+            11,
+            29,
+            42,
+            9,
+            10
+          ],
+          [
+            6,
+            16,
+            15,
+            5,
+            15
+          ]
+        ],
+        "auc": 0.5495443395886402,
+        "n_samples": 603,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__random_forest",
+      "subject_id": "f1d06060",
+      "n_predictions": 557,
+      "metrics": {
+        "accuracy": 0.3752244165170557,
+        "balanced_accuracy": 0.32430093463760545,
+        "precision": 0.3956236194277118,
+        "recall": 0.3752244165170557,
+        "macro_f1": 0.3079743313683321,
+        "weighted_f1": 0.3774296707067796,
+        "f1_macro": 0.3079743313683321,
+        "f1_weighted": 0.3774296707067796,
+        "kappa": 0.18388965610158636,
+        "ordinal_mae": 1.1310592459605027,
+        "adjacent_accuracy": 0.6929982046678635,
+        "severe_error_rate": 0.30700179533213645,
+        "confusion_matrix": [
+          [
+            38,
+            33,
+            7,
+            1,
+            6
+          ],
+          [
+            18,
+            22,
+            7,
+            6,
+            12
+          ],
+          [
+            19,
+            25,
+            9,
+            14,
+            21
+          ],
+          [
+            18,
+            18,
+            8,
+            18,
+            32
+          ],
+          [
+            21,
+            26,
+            16,
+            40,
+            122
+          ]
+        ],
+        "auc": 0.6774611727988278,
+        "n_samples": 557,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "0001508a",
+      "n_predictions": 298,
+      "metrics": {
+        "accuracy": 0.3691275167785235,
+        "balanced_accuracy": 0.3693893273077688,
+        "precision": 0.358295708919364,
+        "recall": 0.3691275167785235,
+        "macro_f1": 0.3615820378957844,
+        "weighted_f1": 0.3595591486528151,
+        "f1_macro": 0.3615820378957844,
+        "f1_weighted": 0.3595591486528151,
+        "kappa": 0.19306331739355886,
+        "ordinal_mae": 0.9328859060402684,
+        "adjacent_accuracy": 0.761744966442953,
+        "severe_error_rate": 0.23825503355704697,
+        "confusion_matrix": [
+          [
+            38,
+            22,
+            10,
+            3,
+            0
+          ],
+          [
+            27,
+            32,
+            9,
+            6,
+            3
+          ],
+          [
+            16,
+            18,
+            11,
+            8,
+            5
+          ],
+          [
+            13,
+            10,
+            11,
+            14,
+            11
+          ],
+          [
+            0,
+            0,
+            5,
+            11,
+            15
+          ]
+        ],
+        "auc": 0.6565216440874503,
+        "n_samples": 298,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "21a031f6",
+      "n_predictions": 709,
+      "metrics": {
+        "accuracy": 0.3131170662905501,
+        "balanced_accuracy": 0.33012197678864347,
+        "precision": 0.3104474883886742,
+        "recall": 0.3131170662905501,
+        "macro_f1": 0.3164576683655044,
+        "weighted_f1": 0.30704976488840285,
+        "f1_macro": 0.3164576683655044,
+        "f1_weighted": 0.30704976488840285,
+        "kappa": 0.12885857951291402,
+        "ordinal_mae": 0.9732016925246827,
+        "adjacent_accuracy": 0.770098730606488,
+        "severe_error_rate": 0.229901269393512,
+        "confusion_matrix": [
+          [
+            43,
+            27,
+            12,
+            6,
+            3
+          ],
+          [
+            49,
+            67,
+            25,
+            15,
+            6
+          ],
+          [
+            27,
+            74,
+            45,
+            30,
+            24
+          ],
+          [
+            17,
+            26,
+            63,
+            41,
+            21
+          ],
+          [
+            2,
+            1,
+            24,
+            35,
+            26
+          ]
+        ],
+        "auc": 0.6445458130434661,
+        "n_samples": 709,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "30c140ca",
+      "n_predictions": 371,
+      "metrics": {
+        "accuracy": 0.431266846361186,
+        "balanced_accuracy": 0.2848881792869799,
+        "precision": 0.4390793829721337,
+        "recall": 0.431266846361186,
+        "macro_f1": 0.2462570792929752,
+        "weighted_f1": 0.3359620215451694,
+        "f1_macro": 0.2462570792929752,
+        "f1_weighted": 0.3359620215451694,
+        "kappa": 0.16462842019891577,
+        "ordinal_mae": 1.2183288409703503,
+        "adjacent_accuracy": 0.6711590296495957,
+        "severe_error_rate": 0.3288409703504043,
+        "confusion_matrix": [
+          [
+            135,
+            0,
+            3,
+            0,
+            0
+          ],
+          [
+            60,
+            9,
+            8,
+            0,
+            0
+          ],
+          [
+            19,
+            4,
+            5,
+            1,
+            0
+          ],
+          [
+            30,
+            8,
+            7,
+            2,
+            3
+          ],
+          [
+            41,
+            7,
+            14,
+            6,
+            9
+          ]
+        ],
+        "auc": 0.611954505620741,
+        "n_samples": 371,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "7092f07b",
+      "n_predictions": 464,
+      "metrics": {
+        "accuracy": 0.3103448275862069,
+        "balanced_accuracy": 0.25505906174786624,
+        "precision": 0.3394615000643413,
+        "recall": 0.3103448275862069,
+        "macro_f1": 0.23712003895380418,
+        "weighted_f1": 0.2675998953049224,
+        "f1_macro": 0.23712003895380418,
+        "f1_weighted": 0.2675998953049224,
+        "kappa": 0.06829063207896435,
+        "ordinal_mae": 0.9676724137931034,
+        "adjacent_accuracy": 0.771551724137931,
+        "severe_error_rate": 0.22844827586206898,
+        "confusion_matrix": [
+          [
+            26,
+            94,
+            16,
+            0,
+            0
+          ],
+          [
+            20,
+            92,
+            16,
+            1,
+            3
+          ],
+          [
+            17,
+            52,
+            17,
+            1,
+            1
+          ],
+          [
+            8,
+            36,
+            23,
+            5,
+            5
+          ],
+          [
+            1,
+            10,
+            13,
+            3,
+            4
+          ]
+        ],
+        "auc": 0.6159370115885162,
+        "n_samples": 464,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "71f0603f",
+      "n_predictions": 983,
+      "metrics": {
+        "accuracy": 0.3652085452695829,
+        "balanced_accuracy": 0.33762892178308485,
+        "precision": 0.3929419296103045,
+        "recall": 0.3652085452695829,
+        "macro_f1": 0.3143418271697036,
+        "weighted_f1": 0.34044490137069783,
+        "f1_macro": 0.3143418271697036,
+        "f1_weighted": 0.34044490137069783,
+        "kappa": 0.1983386285844232,
+        "ordinal_mae": 1.1241098677517802,
+        "adjacent_accuracy": 0.6978636826042727,
+        "severe_error_rate": 0.3021363173957274,
+        "confusion_matrix": [
+          [
+            45,
+            65,
+            24,
+            58,
+            39
+          ],
+          [
+            9,
+            30,
+            31,
+            49,
+            30
+          ],
+          [
+            10,
+            34,
+            19,
+            59,
+            51
+          ],
+          [
+            6,
+            15,
+            13,
+            80,
+            58
+          ],
+          [
+            2,
+            8,
+            5,
+            58,
+            185
+          ]
+        ],
+        "auc": 0.6834788548828853,
+        "n_samples": 983,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "8191f1d9",
+      "n_predictions": 685,
+      "metrics": {
+        "accuracy": 0.3182481751824818,
+        "balanced_accuracy": 0.3035574042538996,
+        "precision": 0.37291166644699214,
+        "recall": 0.3182481751824818,
+        "macro_f1": 0.22702838430257294,
+        "weighted_f1": 0.29016478042781296,
+        "f1_macro": 0.22702838430257294,
+        "f1_weighted": 0.29016478042781296,
+        "kappa": 0.15121098268963395,
+        "ordinal_mae": 1.3956204379562043,
+        "adjacent_accuracy": 0.5970802919708029,
+        "severe_error_rate": 0.4029197080291971,
+        "confusion_matrix": [
+          [
+            99,
+            41,
+            13,
+            48,
+            55
+          ],
+          [
+            17,
+            2,
+            10,
+            17,
+            47
+          ],
+          [
+            7,
+            3,
+            2,
+            19,
+            74
+          ],
+          [
+            7,
+            7,
+            0,
+            18,
+            97
+          ],
+          [
+            0,
+            1,
+            0,
+            4,
+            97
+          ]
+        ],
+        "auc": 0.66202136672059,
+        "n_samples": 685,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "b1c2f044",
+      "n_predictions": 544,
+      "metrics": {
+        "accuracy": 0.45036764705882354,
+        "balanced_accuracy": 0.47285844011704176,
+        "precision": 0.5563913971740735,
+        "recall": 0.45036764705882354,
+        "macro_f1": 0.4326416091910669,
+        "weighted_f1": 0.46708946542375723,
+        "f1_macro": 0.4326416091910669,
+        "f1_weighted": 0.46708946542375723,
+        "kappa": 0.2996150500779373,
+        "ordinal_mae": 0.8235294117647058,
+        "adjacent_accuracy": 0.7996323529411765,
+        "severe_error_rate": 0.20036764705882354,
+        "confusion_matrix": [
+          [
+            100,
+            86,
+            29,
+            17,
+            6
+          ],
+          [
+            16,
+            48,
+            23,
+            22,
+            10
+          ],
+          [
+            4,
+            13,
+            24,
+            15,
+            12
+          ],
+          [
+            0,
+            5,
+            9,
+            22,
+            17
+          ],
+          [
+            0,
+            1,
+            3,
+            11,
+            51
+          ]
+        ],
+        "auc": 0.8001570878478422,
+        "n_samples": 544,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "d18000a3",
+      "n_predictions": 673,
+      "metrics": {
+        "accuracy": 0.35809806835066865,
+        "balanced_accuracy": 0.3874242704368836,
+        "precision": 0.3413705029687267,
+        "recall": 0.35809806835066865,
+        "macro_f1": 0.35239166092970875,
+        "weighted_f1": 0.33317421698186755,
+        "f1_macro": 0.35239166092970875,
+        "f1_weighted": 0.33317421698186755,
+        "kappa": 0.19474864977149975,
+        "ordinal_mae": 0.9227340267459139,
+        "adjacent_accuracy": 0.7771173848439822,
+        "severe_error_rate": 0.22288261515601784,
+        "confusion_matrix": [
+          [
+            44,
+            6,
+            19,
+            6,
+            2
+          ],
+          [
+            37,
+            23,
+            42,
+            14,
+            17
+          ],
+          [
+            8,
+            24,
+            35,
+            29,
+            35
+          ],
+          [
+            10,
+            27,
+            34,
+            41,
+            83
+          ],
+          [
+            0,
+            2,
+            10,
+            27,
+            98
+          ]
+        ],
+        "auc": 0.6986758484135324,
+        "n_samples": 673,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "e0c0408a",
+      "n_predictions": 162,
+      "metrics": {
+        "accuracy": 0.2037037037037037,
+        "balanced_accuracy": 0.2867647058823529,
+        "precision": 0.06917321361765806,
+        "recall": 0.2037037037037037,
+        "macro_f1": 0.14932950191570882,
+        "weighted_f1": 0.103063951563313,
+        "f1_macro": 0.14932950191570882,
+        "f1_weighted": 0.103063951563313,
+        "kappa": 0.022178551375631628,
+        "ordinal_mae": 1.3888888888888888,
+        "adjacent_accuracy": 0.5370370370370371,
+        "severe_error_rate": 0.46296296296296297,
+        "confusion_matrix": [
+          [
+            0,
+            0,
+            8,
+            19,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            35,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            35,
+            11
+          ],
+          [
+            0,
+            0,
+            0,
+            19,
+            15
+          ],
+          [
+            0,
+            0,
+            0,
+            2,
+            14
+          ]
+        ],
+        "auc": 0.5991048197051865,
+        "n_samples": 162,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "f0f2a1e1",
+      "n_predictions": 493,
+      "metrics": {
+        "accuracy": 0.6125760649087221,
+        "balanced_accuracy": 0.35794879309229116,
+        "precision": 0.5660988021028589,
+        "recall": 0.6125760649087221,
+        "macro_f1": 0.3621479457975124,
+        "weighted_f1": 0.5825019968296574,
+        "f1_macro": 0.3621479457975124,
+        "f1_weighted": 0.5825019968296574,
+        "kappa": 0.36531591647456885,
+        "ordinal_mae": 0.4847870182555781,
+        "adjacent_accuracy": 0.9168356997971603,
+        "severe_error_rate": 0.08316430020283976,
+        "confusion_matrix": [
+          [
+            0,
+            8,
+            5,
+            1,
+            1
+          ],
+          [
+            0,
+            7,
+            15,
+            13,
+            4
+          ],
+          [
+            0,
+            3,
+            15,
+            27,
+            14
+          ],
+          [
+            0,
+            0,
+            6,
+            64,
+            61
+          ],
+          [
+            0,
+            0,
+            3,
+            30,
+            216
+          ]
+        ],
+        "auc": 0.7897091674550815,
+        "n_samples": 493,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "f1a0c120",
+      "n_predictions": 569,
+      "metrics": {
+        "accuracy": 0.3233743409490334,
+        "balanced_accuracy": 0.30192045488979546,
+        "precision": 0.4121007195655512,
+        "recall": 0.3233743409490334,
+        "macro_f1": 0.31005494214799584,
+        "weighted_f1": 0.31896328306828636,
+        "f1_macro": 0.31005494214799584,
+        "f1_weighted": 0.31896328306828636,
+        "kappa": 0.11776906100488105,
+        "ordinal_mae": 0.8787346221441125,
+        "adjacent_accuracy": 0.8031634446397188,
+        "severe_error_rate": 0.1968365553602812,
+        "confusion_matrix": [
+          [
+            41,
+            77,
+            43,
+            0,
+            0
+          ],
+          [
+            19,
+            70,
+            62,
+            8,
+            0
+          ],
+          [
+            6,
+            46,
+            50,
+            5,
+            0
+          ],
+          [
+            3,
+            37,
+            42,
+            14,
+            2
+          ],
+          [
+            0,
+            0,
+            15,
+            20,
+            9
+          ]
+        ],
+        "auc": 0.6346588949983241,
+        "n_samples": 569,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "gpn_data_to_old_eeg__source_exclusive__torch_transformer",
+      "subject_id": "f1d06060",
+      "n_predictions": 545,
+      "metrics": {
+        "accuracy": 0.48256880733944957,
+        "balanced_accuracy": 0.30766265149566857,
+        "precision": 0.45927554043564817,
+        "recall": 0.48256880733944957,
+        "macro_f1": 0.29109767529794733,
+        "weighted_f1": 0.40977824517999417,
+        "f1_macro": 0.29109767529794733,
+        "f1_weighted": 0.40977824517999417,
+        "kappa": 0.24035053900561998,
+        "ordinal_mae": 0.7963302752293578,
+        "adjacent_accuracy": 0.7724770642201835,
+        "severe_error_rate": 0.22752293577981653,
+        "confusion_matrix": [
+          [
+            9,
+            35,
+            30,
+            5,
+            5
+          ],
+          [
+            3,
+            10,
+            25,
+            12,
+            13
+          ],
+          [
+            0,
+            4,
+            11,
+            12,
+            57
+          ],
+          [
+            0,
+            2,
+            9,
+            14,
+            68
+          ],
+          [
+            0,
+            0,
+            0,
+            2,
+            219
+          ]
+        ],
+        "auc": 0.8024496954449055,
+        "n_samples": 545,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "0110f12e",
+      "n_predictions": 678,
+      "metrics": {
+        "accuracy": 0.26253687315634217,
+        "balanced_accuracy": 0.28452748147663404,
+        "precision": 0.26356032479201535,
+        "recall": 0.26253687315634217,
+        "macro_f1": 0.24355843531878674,
+        "weighted_f1": 0.23612297288822567,
+        "f1_macro": 0.24355843531878674,
+        "f1_weighted": 0.23612297288822567,
+        "kappa": 0.07744056431246182,
+        "ordinal_mae": 1.2905604719764012,
+        "adjacent_accuracy": 0.6371681415929203,
+        "severe_error_rate": 0.36283185840707965,
+        "confusion_matrix": [
+          [
+            64,
+            26,
+            6,
+            7,
+            9
+          ],
+          [
+            69,
+            56,
+            17,
+            15,
+            23
+          ],
+          [
+            51,
+            74,
+            24,
+            8,
+            20
+          ],
+          [
+            37,
+            38,
+            18,
+            9,
+            33
+          ],
+          [
+            11,
+            22,
+            7,
+            9,
+            25
+          ]
+        ],
+        "auc": 0.5714062948005373,
+        "n_samples": 678,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "0182e16c",
+      "n_predictions": 511,
+      "metrics": {
+        "accuracy": 0.25048923679060664,
+        "balanced_accuracy": 0.265025641025641,
+        "precision": 0.36529535179039196,
+        "recall": 0.25048923679060664,
+        "macro_f1": 0.22515464899873647,
+        "weighted_f1": 0.26313957806104193,
+        "f1_macro": 0.22515464899873647,
+        "f1_weighted": 0.26313957806104193,
+        "kappa": 0.07750428929655528,
+        "ordinal_mae": 1.5048923679060666,
+        "adjacent_accuracy": 0.538160469667319,
+        "severe_error_rate": 0.461839530332681,
+        "confusion_matrix": [
+          [
+            14,
+            29,
+            32,
+            45,
+            30
+          ],
+          [
+            10,
+            66,
+            43,
+            46,
+            30
+          ],
+          [
+            5,
+            18,
+            17,
+            18,
+            17
+          ],
+          [
+            4,
+            5,
+            11,
+            10,
+            12
+          ],
+          [
+            2,
+            7,
+            13,
+            6,
+            21
+          ]
+        ],
+        "auc": 0.5551195937700331,
+        "n_samples": 511,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "30908049",
+      "n_predictions": 709,
+      "metrics": {
+        "accuracy": 0.4132581100141044,
+        "balanced_accuracy": 0.2166243691336102,
+        "precision": 0.34408252966643754,
+        "recall": 0.4132581100141044,
+        "macro_f1": 0.19974773749038824,
+        "weighted_f1": 0.360722372469481,
+        "f1_macro": 0.19974773749038824,
+        "f1_weighted": 0.360722372469481,
+        "kappa": 0.07159809877553569,
+        "ordinal_mae": 0.9562764456981664,
+        "adjacent_accuracy": 0.7489421720733427,
+        "severe_error_rate": 0.25105782792665726,
+        "confusion_matrix": [
+          [
+            0,
+            2,
+            6,
+            2,
+            14
+          ],
+          [
+            3,
+            1,
+            13,
+            20,
+            31
+          ],
+          [
+            4,
+            3,
+            11,
+            27,
+            48
+          ],
+          [
+            4,
+            8,
+            15,
+            38,
+            142
+          ],
+          [
+            6,
+            7,
+            28,
+            33,
+            243
+          ]
+        ],
+        "auc": 0.564170741087556,
+        "n_samples": 709,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "40f0714a",
+      "n_predictions": 155,
+      "metrics": {
+        "accuracy": 0.1032258064516129,
+        "balanced_accuracy": 0.16129804849201657,
+        "precision": 0.5430529075690367,
+        "recall": 0.1032258064516129,
+        "macro_f1": 0.08232067394512738,
+        "weighted_f1": 0.14434564970478383,
+        "f1_macro": 0.08232067394512738,
+        "f1_weighted": 0.14434564970478383,
+        "kappa": -0.025464064731080427,
+        "ordinal_mae": 1.8193548387096774,
+        "adjacent_accuracy": 0.34838709677419355,
+        "severe_error_rate": 0.6516129032258065,
+        "confusion_matrix": [
+          [
+            11,
+            3,
+            46,
+            23,
+            6
+          ],
+          [
+            1,
+            1,
+            21,
+            12,
+            5
+          ],
+          [
+            0,
+            1,
+            3,
+            7,
+            8
+          ],
+          [
+            0,
+            0,
+            4,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            1
+          ]
+        ],
+        "auc": 0.5394626105956853,
+        "n_samples": 155,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "5001d09a",
+      "n_predictions": 326,
+      "metrics": {
+        "accuracy": 0.2883435582822086,
+        "balanced_accuracy": 0.2266796767458235,
+        "precision": 0.3374570729303921,
+        "recall": 0.2883435582822086,
+        "macro_f1": 0.22542668559717605,
+        "weighted_f1": 0.2981541706490759,
+        "f1_macro": 0.22542668559717605,
+        "f1_weighted": 0.2981541706490759,
+        "kappa": 0.07184056156885854,
+        "ordinal_mae": 1.2423312883435582,
+        "adjacent_accuracy": 0.6226993865030674,
+        "severe_error_rate": 0.3773006134969325,
+        "confusion_matrix": [
+          [
+            0,
+            2,
+            5,
+            1,
+            1
+          ],
+          [
+            1,
+            8,
+            19,
+            11,
+            8
+          ],
+          [
+            4,
+            13,
+            30,
+            11,
+            13
+          ],
+          [
+            7,
+            11,
+            32,
+            17,
+            15
+          ],
+          [
+            10,
+            12,
+            40,
+            16,
+            39
+          ]
+        ],
+        "auc": 0.5521776980238601,
+        "n_samples": 326,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "71a251fa",
+      "n_predictions": 369,
+      "metrics": {
+        "accuracy": 0.3116531165311653,
+        "balanced_accuracy": 0.19158092478297956,
+        "precision": 0.33787382738632105,
+        "recall": 0.3116531165311653,
+        "macro_f1": 0.19284154463549194,
+        "weighted_f1": 0.3017165518378437,
+        "f1_macro": 0.19284154463549194,
+        "f1_weighted": 0.3017165518378437,
+        "kappa": 0.024632387374730835,
+        "ordinal_mae": 1.070460704607046,
+        "adjacent_accuracy": 0.7506775067750677,
+        "severe_error_rate": 0.24932249322493225,
+        "confusion_matrix": [
+          [
+            24,
+            69,
+            5,
+            6,
+            13
+          ],
+          [
+            18,
+            78,
+            16,
+            19,
+            9
+          ],
+          [
+            11,
+            40,
+            12,
+            6,
+            4
+          ],
+          [
+            1,
+            17,
+            9,
+            1,
+            4
+          ],
+          [
+            1,
+            5,
+            1,
+            0,
+            0
+          ]
+        ],
+        "auc": 0.5781986756316126,
+        "n_samples": 369,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "b0700166",
+      "n_predictions": 760,
+      "metrics": {
+        "accuracy": 0.2565789473684211,
+        "balanced_accuracy": 0.24529068687139577,
+        "precision": 0.27506889047496247,
+        "recall": 0.2565789473684211,
+        "macro_f1": 0.24825312463376772,
+        "weighted_f1": 0.25668119796259026,
+        "f1_macro": 0.24825312463376772,
+        "f1_weighted": 0.25668119796259026,
+        "kappa": 0.05440579952698266,
+        "ordinal_mae": 1.1328947368421052,
+        "adjacent_accuracy": 0.7078947368421052,
+        "severe_error_rate": 0.29210526315789476,
+        "confusion_matrix": [
+          [
+            34,
+            71,
+            37,
+            16,
+            4
+          ],
+          [
+            30,
+            61,
+            69,
+            33,
+            12
+          ],
+          [
+            22,
+            39,
+            58,
+            38,
+            10
+          ],
+          [
+            9,
+            27,
+            44,
+            21,
+            13
+          ],
+          [
+            6,
+            17,
+            29,
+            39,
+            21
+          ]
+        ],
+        "auc": 0.5885773946488944,
+        "n_samples": 760,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "c112918e",
+      "n_predictions": 844,
+      "metrics": {
+        "accuracy": 0.3471563981042654,
+        "balanced_accuracy": 0.3006839817618637,
+        "precision": 0.36033376200197254,
+        "recall": 0.3471563981042654,
+        "macro_f1": 0.23934312025438614,
+        "weighted_f1": 0.2830030208104488,
+        "f1_macro": 0.23934312025438614,
+        "f1_weighted": 0.2830030208104488,
+        "kappa": 0.11629586275567994,
+        "ordinal_mae": 1.2819905213270142,
+        "adjacent_accuracy": 0.6161137440758294,
+        "severe_error_rate": 0.38388625592417064,
+        "confusion_matrix": [
+          [
+            205,
+            43,
+            2,
+            8,
+            25
+          ],
+          [
+            108,
+            48,
+            2,
+            11,
+            30
+          ],
+          [
+            96,
+            31,
+            4,
+            4,
+            34
+          ],
+          [
+            61,
+            25,
+            0,
+            7,
+            37
+          ],
+          [
+            26,
+            6,
+            0,
+            2,
+            29
+          ]
+        ],
+        "auc": 0.5878581329385677,
+        "n_samples": 844,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "d0724095",
+      "n_predictions": 507,
+      "metrics": {
+        "accuracy": 0.31952662721893493,
+        "balanced_accuracy": 0.2511439123125502,
+        "precision": 0.3046472461354645,
+        "recall": 0.31952662721893493,
+        "macro_f1": 0.23429879620169897,
+        "weighted_f1": 0.30895028184861306,
+        "f1_macro": 0.23429879620169897,
+        "f1_weighted": 0.30895028184861306,
+        "kappa": 0.06428540859777876,
+        "ordinal_mae": 1.280078895463511,
+        "adjacent_accuracy": 0.6607495069033531,
+        "severe_error_rate": 0.33925049309664695,
+        "confusion_matrix": [
+          [
+            109,
+            53,
+            13,
+            22,
+            17
+          ],
+          [
+            55,
+            22,
+            6,
+            11,
+            19
+          ],
+          [
+            20,
+            23,
+            3,
+            4,
+            10
+          ],
+          [
+            21,
+            13,
+            9,
+            5,
+            18
+          ],
+          [
+            12,
+            12,
+            2,
+            5,
+            23
+          ]
+        ],
+        "auc": 0.5768848226885323,
+        "n_samples": 507,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "d111e017",
+      "n_predictions": 1326,
+      "metrics": {
+        "accuracy": 0.2684766214177979,
+        "balanced_accuracy": 0.2655590161681377,
+        "precision": 0.27305829164786455,
+        "recall": 0.2684766214177979,
+        "macro_f1": 0.2667056323281223,
+        "weighted_f1": 0.26885661053342336,
+        "f1_macro": 0.2667056323281223,
+        "f1_weighted": 0.26885661053342336,
+        "kappa": 0.08209361043750818,
+        "ordinal_mae": 1.299396681749623,
+        "adjacent_accuracy": 0.6365007541478129,
+        "severe_error_rate": 0.363499245852187,
+        "confusion_matrix": [
+          [
+            64,
+            54,
+            69,
+            52,
+            35
+          ],
+          [
+            39,
+            44,
+            72,
+            45,
+            29
+          ],
+          [
+            39,
+            50,
+            97,
+            86,
+            35
+          ],
+          [
+            37,
+            36,
+            71,
+            62,
+            54
+          ],
+          [
+            28,
+            27,
+            50,
+            62,
+            89
+          ]
+        ],
+        "auc": 0.5890951724702826,
+        "n_samples": 1326,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__random_forest",
+      "subject_id": "d142d110",
+      "n_predictions": 163,
+      "metrics": {
+        "accuracy": 0.22699386503067484,
+        "balanced_accuracy": 0.23678551910259227,
+        "precision": 0.24033223410312207,
+        "recall": 0.22699386503067484,
+        "macro_f1": 0.20936233877410348,
+        "weighted_f1": 0.2172868340316915,
+        "f1_macro": 0.20936233877410348,
+        "f1_weighted": 0.2172868340316915,
+        "kappa": 0.030036837631057023,
+        "ordinal_mae": 1.4723926380368098,
+        "adjacent_accuracy": 0.5705521472392638,
+        "severe_error_rate": 0.4294478527607362,
+        "confusion_matrix": [
+          [
+            7,
+            6,
+            9,
+            17,
+            2
+          ],
+          [
+            8,
+            5,
+            17,
+            13,
+            9
+          ],
+          [
+            3,
+            5,
+            18,
+            9,
+            2
+          ],
+          [
+            5,
+            5,
+            7,
+            5,
+            2
+          ],
+          [
+            4,
+            1,
+            0,
+            2,
+            2
+          ]
+        ],
+        "auc": 0.5620706565813097,
+        "n_samples": 163,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "0110f12e",
+      "n_predictions": 664,
+      "metrics": {
+        "accuracy": 0.32981927710843373,
+        "balanced_accuracy": 0.36599765798313016,
+        "precision": 0.33825714296993253,
+        "recall": 0.32981927710843373,
+        "macro_f1": 0.34987161929913174,
+        "weighted_f1": 0.32659139074369353,
+        "f1_macro": 0.34987161929913174,
+        "f1_weighted": 0.32659139074369353,
+        "kappa": 0.15344703600457255,
+        "ordinal_mae": 0.9789156626506024,
+        "adjacent_accuracy": 0.7424698795180723,
+        "severe_error_rate": 0.2575301204819277,
+        "confusion_matrix": [
+          [
+            41,
+            13,
+            27,
+            16,
+            1
+          ],
+          [
+            35,
+            45,
+            50,
+            42,
+            8
+          ],
+          [
+            28,
+            36,
+            49,
+            49,
+            15
+          ],
+          [
+            8,
+            15,
+            40,
+            41,
+            31
+          ],
+          [
+            0,
+            0,
+            11,
+            20,
+            43
+          ]
+        ],
+        "auc": 0.6523002923227912,
+        "n_samples": 664,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "0182e16c",
+      "n_predictions": 490,
+      "metrics": {
+        "accuracy": 0.34285714285714286,
+        "balanced_accuracy": 0.26949190078144747,
+        "precision": 0.3998015707740823,
+        "recall": 0.34285714285714286,
+        "macro_f1": 0.22709349134938797,
+        "weighted_f1": 0.2845708463838124,
+        "f1_macro": 0.22709349134938797,
+        "f1_weighted": 0.2845708463838124,
+        "kappa": 0.0999634919910557,
+        "ordinal_mae": 1.0877551020408163,
+        "adjacent_accuracy": 0.7346938775510204,
+        "severe_error_rate": 0.2653061224489796,
+        "confusion_matrix": [
+          [
+            122,
+            8,
+            12,
+            4,
+            4
+          ],
+          [
+            131,
+            29,
+            9,
+            8,
+            7
+          ],
+          [
+            48,
+            7,
+            5,
+            9,
+            3
+          ],
+          [
+            24,
+            0,
+            1,
+            9,
+            3
+          ],
+          [
+            18,
+            2,
+            0,
+            24,
+            3
+          ]
+        ],
+        "auc": 0.6363061369430155,
+        "n_samples": 490,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "30908049",
+      "n_predictions": 695,
+      "metrics": {
+        "accuracy": 0.4633093525179856,
+        "balanced_accuracy": 0.2419131881396747,
+        "precision": 0.3261814896522373,
+        "recall": 0.4633093525179856,
+        "macro_f1": 0.20815766818349526,
+        "weighted_f1": 0.37267495657882743,
+        "f1_macro": 0.20815766818349526,
+        "f1_weighted": 0.37267495657882743,
+        "kappa": 0.09205374092001195,
+        "ordinal_mae": 0.818705035971223,
+        "adjacent_accuracy": 0.7956834532374101,
+        "severe_error_rate": 0.20431654676258992,
+        "confusion_matrix": [
+          [
+            3,
+            0,
+            1,
+            12,
+            7
+          ],
+          [
+            6,
+            0,
+            0,
+            29,
+            27
+          ],
+          [
+            7,
+            2,
+            0,
+            26,
+            57
+          ],
+          [
+            1,
+            1,
+            0,
+            40,
+            159
+          ],
+          [
+            0,
+            0,
+            0,
+            38,
+            279
+          ]
+        ],
+        "auc": 0.6569211756817801,
+        "n_samples": 695,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "40f0714a",
+      "n_predictions": 148,
+      "metrics": {
+        "accuracy": 0.4797297297297297,
+        "balanced_accuracy": 0.2540436456996149,
+        "precision": 0.4002794600620687,
+        "recall": 0.4797297297297297,
+        "macro_f1": 0.20919540229885056,
+        "weighted_f1": 0.43274308791550176,
+        "f1_macro": 0.20919540229885056,
+        "f1_weighted": 0.43274308791550176,
+        "kappa": 0.15012305168170637,
+        "ordinal_mae": 0.8175675675675675,
+        "adjacent_accuracy": 0.7837837837837838,
+        "severe_error_rate": 0.21621621621621623,
+        "confusion_matrix": [
+          [
+            61,
+            1,
+            14,
+            4,
+            2
+          ],
+          [
+            25,
+            0,
+            11,
+            2,
+            2
+          ],
+          [
+            4,
+            3,
+            10,
+            1,
+            1
+          ],
+          [
+            2,
+            0,
+            3,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            1,
+            0
+          ]
+        ],
+        "auc": 0.6413756613063716,
+        "n_samples": 148,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "5001d09a",
+      "n_predictions": 312,
+      "metrics": {
+        "accuracy": 0.1282051282051282,
+        "balanced_accuracy": 0.18418136240184474,
+        "precision": 0.3809598006730134,
+        "recall": 0.1282051282051282,
+        "macro_f1": 0.1250690869383729,
+        "weighted_f1": 0.14827944541411966,
+        "f1_macro": 0.1250690869383729,
+        "f1_weighted": 0.14827944541411966,
+        "kappa": -0.021374927787406017,
+        "ordinal_mae": 1.5961538461538463,
+        "adjacent_accuracy": 0.5064102564102564,
+        "severe_error_rate": 0.4935897435897436,
+        "confusion_matrix": [
+          [
+            4,
+            2,
+            2,
+            0,
+            1
+          ],
+          [
+            33,
+            5,
+            4,
+            1,
+            1
+          ],
+          [
+            37,
+            12,
+            5,
+            10,
+            0
+          ],
+          [
+            33,
+            14,
+            16,
+            15,
+            1
+          ],
+          [
+            11,
+            14,
+            40,
+            40,
+            11
+          ]
+        ],
+        "auc": 0.6076915430077616,
+        "n_samples": 312,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "71a251fa",
+      "n_predictions": 355,
+      "metrics": {
+        "accuracy": 0.36056338028169016,
+        "balanced_accuracy": 0.2913025335815933,
+        "precision": 0.3622624287466173,
+        "recall": 0.36056338028169016,
+        "macro_f1": 0.27653816538438136,
+        "weighted_f1": 0.33591671389102634,
+        "f1_macro": 0.27653816538438136,
+        "f1_weighted": 0.33591671389102634,
+        "kappa": 0.11123733056875973,
+        "ordinal_mae": 0.8760563380281691,
+        "adjacent_accuracy": 0.8028169014084507,
+        "severe_error_rate": 0.19718309859154928,
+        "confusion_matrix": [
+          [
+            68,
+            25,
+            7,
+            2,
+            1
+          ],
+          [
+            84,
+            28,
+            20,
+            7,
+            1
+          ],
+          [
+            30,
+            14,
+            23,
+            5,
+            1
+          ],
+          [
+            9,
+            6,
+            8,
+            9,
+            0
+          ],
+          [
+            0,
+            0,
+            6,
+            1,
+            0
+          ]
+        ],
+        "auc": 0.5489022012900402,
+        "n_samples": 355,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "b0700166",
+      "n_predictions": 746,
+      "metrics": {
+        "accuracy": 0.27882037533512066,
+        "balanced_accuracy": 0.2736365767376578,
+        "precision": 0.3350449258961782,
+        "recall": 0.27882037533512066,
+        "macro_f1": 0.252394064728931,
+        "weighted_f1": 0.249408457405486,
+        "f1_macro": 0.252394064728931,
+        "f1_weighted": 0.249408457405486,
+        "kappa": 0.080457768664154,
+        "ordinal_mae": 1.2332439678284182,
+        "adjacent_accuracy": 0.6474530831099196,
+        "severe_error_rate": 0.35254691689008044,
+        "confusion_matrix": [
+          [
+            111,
+            35,
+            6,
+            3,
+            1
+          ],
+          [
+            141,
+            40,
+            18,
+            3,
+            1
+          ],
+          [
+            114,
+            21,
+            17,
+            9,
+            0
+          ],
+          [
+            49,
+            23,
+            17,
+            20,
+            5
+          ],
+          [
+            15,
+            34,
+            14,
+            29,
+            20
+          ]
+        ],
+        "auc": 0.5981264490888224,
+        "n_samples": 746,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "c112918e",
+      "n_predictions": 823,
+      "metrics": {
+        "accuracy": 0.38153098420413123,
+        "balanced_accuracy": 0.30067780504475217,
+        "precision": 0.3232584306512097,
+        "recall": 0.38153098420413123,
+        "macro_f1": 0.235153064932227,
+        "weighted_f1": 0.2616306053966961,
+        "f1_macro": 0.235153064932227,
+        "f1_weighted": 0.2616306053966961,
+        "kappa": 0.11244380034662638,
+        "ordinal_mae": 1.1385176184690158,
+        "adjacent_accuracy": 0.6561360874848117,
+        "severe_error_rate": 0.34386391251518833,
+        "confusion_matrix": [
+          [
+            269,
+            2,
+            3,
+            1,
+            3
+          ],
+          [
+            168,
+            6,
+            5,
+            2,
+            9
+          ],
+          [
+            138,
+            8,
+            7,
+            6,
+            7
+          ],
+          [
+            83,
+            11,
+            4,
+            8,
+            23
+          ],
+          [
+            20,
+            6,
+            0,
+            10,
+            24
+          ]
+        ],
+        "auc": 0.6929148382213616,
+        "n_samples": 823,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "d0724095",
+      "n_predictions": 500,
+      "metrics": {
+        "accuracy": 0.454,
+        "balanced_accuracy": 0.27613819352949787,
+        "precision": 0.2818827586206897,
+        "recall": 0.454,
+        "macro_f1": 0.225479328608788,
+        "weighted_f1": 0.3114389973687855,
+        "f1_macro": 0.225479328608788,
+        "f1_weighted": 0.3114389973687855,
+        "kappa": 0.10377792076477621,
+        "ordinal_mae": 1.074,
+        "adjacent_accuracy": 0.702,
+        "severe_error_rate": 0.298,
+        "confusion_matrix": [
+          [
+            206,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            112,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            57,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            57,
+            1,
+            0,
+            1,
+            7
+          ],
+          [
+            28,
+            2,
+            1,
+            3,
+            20
+          ]
+        ],
+        "auc": 0.6794031743090461,
+        "n_samples": 500,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "d111e017",
+      "n_predictions": 1276,
+      "metrics": {
+        "accuracy": 0.2711598746081505,
+        "balanced_accuracy": 0.2688545056955453,
+        "precision": 0.2692589035765239,
+        "recall": 0.2711598746081505,
+        "macro_f1": 0.2644651322823852,
+        "weighted_f1": 0.26638541624609735,
+        "f1_macro": 0.2644651322823852,
+        "f1_weighted": 0.26638541624609735,
+        "kappa": 0.08557461357613627,
+        "ordinal_mae": 1.1739811912225706,
+        "adjacent_accuracy": 0.6747648902821317,
+        "severe_error_rate": 0.32523510971786834,
+        "confusion_matrix": [
+          [
+            43,
+            81,
+            76,
+            48,
+            14
+          ],
+          [
+            34,
+            35,
+            64,
+            68,
+            18
+          ],
+          [
+            43,
+            58,
+            86,
+            66,
+            47
+          ],
+          [
+            25,
+            14,
+            75,
+            56,
+            76
+          ],
+          [
+            13,
+            8,
+            41,
+            61,
+            126
+          ]
+        ],
+        "auc": 0.6096462946133583,
+        "n_samples": 1276,
+        "n_classes": 5
+      }
+    },
+    {
+      "trial_id": "old_eeg_to_gpn_data__source_exclusive__torch_transformer",
+      "subject_id": "d142d110",
+      "n_predictions": 156,
+      "metrics": {
+        "accuracy": 0.3076923076923077,
+        "balanced_accuracy": 0.2962972781901732,
+        "precision": 0.3599651317674573,
+        "recall": 0.3076923076923077,
+        "macro_f1": 0.3099666444211153,
+        "weighted_f1": 0.2922163149177726,
+        "f1_macro": 0.3099666444211153,
+        "f1_weighted": 0.2922163149177726,
+        "kappa": 0.07224669603524225,
+        "ordinal_mae": 0.9935897435897436,
+        "adjacent_accuracy": 0.7564102564102564,
+        "severe_error_rate": 0.24358974358974358,
+        "confusion_matrix": [
+          [
+            6,
+            25,
+            9,
+            1,
+            0
+          ],
+          [
+            1,
+            25,
+            14,
+            6,
+            0
+          ],
+          [
+            1,
+            19,
+            9,
+            7,
+            0
+          ],
+          [
+            2,
+            15,
+            1,
+            5,
+            1
+          ],
+          [
+            2,
+            2,
+            0,
+            2,
+            3
+          ]
+        ],
+        "auc": 0.5677220769223875,
+        "n_samples": 156,
+        "n_classes": 5
+      }
+    }
+  ]
+}
