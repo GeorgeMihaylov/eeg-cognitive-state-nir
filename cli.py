@@ -337,12 +337,55 @@ Examples:
     parser.add_argument('--timeout', type=float)
     parser.add_argument('--inner-splits', type=int)
     parser.add_argument('--no-evaluate-best', action='store_true')
+    parser.add_argument(
+        '--statistical-analysis',
+        type=str,
+        help='Analyze canonical completed runs without training models',
+    )
+    parser.add_argument(
+        '--tracks',
+        help='Comma-separated statistical analysis tracks',
+    )
+    parser.add_argument('--bootstrap-samples', type=int)
     
     args = parser.parse_args(argv)
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.statistical_analysis:
+        if (
+            args.config
+            or args.test
+            or args.experiment_matrix
+            or args.calibration_experiment
+            or args.automl_study
+        ):
+            parser.error(
+                '--statistical-analysis cannot be combined with --config, --test, '
+                '--experiment-matrix, --calibration-experiment, or --automl-study'
+            )
+        from bench.analysis.report_builder import StatisticalAnalysis
+
+        tracks = (
+            None
+            if args.tracks is None
+            else [value.strip() for value in args.tracks.split(',') if value.strip()]
+        )
+        analysis = StatisticalAnalysis(
+            args.statistical_analysis,
+            tracks=tracks,
+            bootstrap_samples=args.bootstrap_samples,
+            random_state=args.seed,
+            output_dir=args.output_dir,
+        )
+        if args.plan_only:
+            print(analysis.render_plan(analysis.plan()))
+            return
+        result = analysis.execute()
+        print(json.dumps(result, indent=2, default=str))
+        return
 
     if args.automl_study:
         if args.config or args.test or args.experiment_matrix or args.calibration_experiment:

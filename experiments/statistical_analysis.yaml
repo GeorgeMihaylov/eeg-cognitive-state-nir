@@ -1,0 +1,319 @@
+analysis:
+  name: completed_benchmark_statistical_analysis
+  output_dir: benchmark_results/analysis
+  reports_dir: reports
+  figures_dir: reports/figures
+  bootstrap_samples: 10000
+  confidence_level: 0.95
+  random_state: 42
+
+# These are discovery and semantic-validation rules, not copies of benchmark
+# configurations. Resolved run configs and manifests remain authoritative.
+run_rules:
+  - analysis_track: feature_window
+    model: random_forest
+    search_root: benchmark_results/groupkfold_rf_label_q5
+    config: configs/groupkfold_rf_label_q5.yaml
+    expected_model_type: random_forest
+    expected_prediction_model: random_forest
+    dataset: emotiv_cognitive
+    representation: eeg_pow_feature_window_w10
+    preprocessing: feature_pipeline
+    prediction_unit: window
+    expected_predictions: 45384
+    expected_folds: 5
+
+  - analysis_track: feature_window
+    model: torch_mlp
+    search_root: benchmark_results/groupkfold_torch_mlp_label_q5
+    config: configs/groupkfold_torch_mlp_label_q5.yaml
+    expected_model_type: torch_mlp
+    expected_prediction_model: torch_mlp
+    dataset: emotiv_cognitive
+    representation: eeg_pow_feature_window_w10
+    preprocessing: feature_pipeline
+    prediction_unit: window
+    expected_predictions: 45384
+    expected_folds: 5
+
+  # The completed recurrent runs predate the length-8 sequence baseline. They
+  # are retained as an exact length-10 LSTM/BiLSTM pair; alignment must block
+  # either one from a paired Transformer test.
+  - analysis_track: feature_sequence
+    model: lstm
+    search_root: benchmark_results/groupkfold_torch_lstm_gapaware_label_q5
+    config: configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+    expected_model_type: torch_lstm
+    expected_prediction_model: torch_lstm_gapaware
+    dataset: emotiv_cognitive
+    representation: gap_aware_sequence_len10_legacy
+    preprocessing: feature_pipeline
+    prediction_unit: sequence
+    sequence_length: 10
+    expected_predictions: 43828
+    expected_folds: 5
+
+  - analysis_track: feature_sequence
+    model: bilstm
+    search_root: benchmark_results/groupkfold_torch_bilstm_gapaware_label_q5
+    config: configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+    expected_model_type: torch_bilstm
+    expected_prediction_model: torch_bilstm_gapaware
+    dataset: emotiv_cognitive
+    representation: gap_aware_sequence_len10_legacy
+    preprocessing: feature_pipeline
+    prediction_unit: sequence
+    sequence_length: 10
+    expected_predictions: 43828
+    expected_folds: 5
+
+  - analysis_track: feature_sequence
+    model: transformer
+    search_root: benchmark_results/groupkfold_torch_transformer_label_q5
+    config: configs/groupkfold_torch_transformer_label_q5.yaml
+    expected_model_type: torch_transformer
+    expected_prediction_model: torch_transformer
+    dataset: emotiv_cognitive
+    representation: gap_aware_sequence_len8
+    preprocessing: feature_pipeline
+    prediction_unit: sequence
+    sequence_length: 8
+    expected_predictions: 44142
+    expected_folds: 5
+
+  - analysis_track: feature_sequence
+    model: transformer
+    search_root: benchmark_results/groupkfold_torch_transformer_label_q5_seed7
+    expected_model_type: torch_transformer
+    expected_prediction_model: torch_transformer
+    dataset: emotiv_cognitive
+    representation: gap_aware_sequence_len8
+    preprocessing: feature_pipeline
+    prediction_unit: sequence
+    sequence_length: 8
+    expected_predictions: 44142
+    expected_folds: 5
+    seed: 7
+
+  - analysis_track: feature_sequence
+    model: transformer
+    search_root: benchmark_results/groupkfold_torch_transformer_label_q5_seed123
+    expected_model_type: torch_transformer
+    expected_prediction_model: torch_transformer
+    dataset: emotiv_cognitive
+    representation: gap_aware_sequence_len8
+    preprocessing: feature_pipeline
+    prediction_unit: sequence
+    sequence_length: 8
+    expected_predictions: 44142
+    expected_folds: 5
+    seed: 123
+
+  - analysis_track: raw_eeg
+    model: eegnet
+    search_root: benchmark_results/groupkfold_torch_eegnet_raw_dedup_label_q5
+    config: configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+    expected_model_type: torch_eegnet
+    expected_prediction_model: torch_eegnet
+    dataset: emotiv_raw_eeg
+    representation: raw_eeg_1x14x2560_deduplicated
+    preprocessing: raw
+    prediction_unit: raw_window
+    expected_predictions: 30958
+    expected_folds: 5
+
+  - analysis_track: raw_eeg
+    model: eegnet
+    search_root: benchmark_results/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7
+    config: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml
+    expected_model_type: torch_eegnet
+    expected_prediction_model: torch_eegnet
+    dataset: emotiv_raw_eeg
+    representation: raw_eeg_1x14x2560_deduplicated
+    preprocessing: raw
+    prediction_unit: raw_window
+    expected_predictions: 30958
+    expected_folds: 5
+    seed: 7
+
+  - analysis_track: raw_eeg
+    model: eegnet
+    search_root: benchmark_results/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123
+    config: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml
+    expected_model_type: torch_eegnet
+    expected_prediction_model: torch_eegnet
+    dataset: emotiv_raw_eeg
+    representation: raw_eeg_1x14x2560_deduplicated
+    preprocessing: raw
+    prediction_unit: raw_window
+    expected_predictions: 30958
+    expected_folds: 5
+    seed: 123
+
+  - analysis_track: raw_eeg
+    model: shallowconvnet
+    search_root: benchmark_results/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed42
+    config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+    expected_model_type: torch_shallow_convnet
+    expected_prediction_model: torch_shallow_convnet
+    dataset: emotiv_raw_eeg
+    representation: raw_eeg_1x14x2560_deduplicated
+    preprocessing: raw
+    prediction_unit: raw_window
+    expected_predictions: 30958
+    expected_folds: 5
+
+  - analysis_track: raw_eeg
+    model: shallowconvnet
+    search_root: benchmark_results/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7
+    config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+    expected_model_type: torch_shallow_convnet
+    expected_prediction_model: torch_shallow_convnet
+    dataset: emotiv_raw_eeg
+    representation: raw_eeg_1x14x2560_deduplicated
+    preprocessing: raw
+    prediction_unit: raw_window
+    expected_predictions: 30958
+    expected_folds: 5
+    seed: 7
+
+  - analysis_track: raw_eeg
+    model: shallowconvnet
+    search_root: benchmark_results/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123
+    config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
+    expected_model_type: torch_shallow_convnet
+    expected_prediction_model: torch_shallow_convnet
+    dataset: emotiv_raw_eeg
+    representation: raw_eeg_1x14x2560_deduplicated
+    preprocessing: raw
+    prediction_unit: raw_window
+    expected_predictions: 30958
+    expected_folds: 5
+    seed: 123
+
+  - analysis_track: preprocessing
+    model: shallowconvnet
+    search_root: benchmark_results/preprocessing_ablation_shallowconvnet
+    expected_model_type: torch_shallow_convnet
+    expected_prediction_model: torch_shallow_convnet
+    dynamic_preprocessing: true
+    dataset: emotiv_raw_eeg
+    representation: raw_eeg_1x14x2560_deduplicated
+    prediction_unit: raw_window
+    expected_predictions: 30958
+    expected_folds: 5
+
+  - analysis_track: calibration
+    model: transformer_calibration
+    kind: calibration
+    search_root: benchmark_results/user_calibration_transformer_label_q5
+    methods: [zero_shot, head_only, subject_normalization]
+    dataset: emotiv_cognitive
+    representation: gap_aware_sequence_len8_matched_tail
+    preprocessing: feature_pipeline
+    prediction_unit: sequence
+
+  - analysis_track: calibration
+    model: transformer_full_model_calibration
+    kind: calibration
+    search_root: benchmark_results/user_calibration_transformer_full_model_label_q5
+    methods: [full_model]
+    dataset: emotiv_cognitive
+    representation: gap_aware_sequence_len8_matched_tail
+    preprocessing: feature_pipeline
+    prediction_unit: sequence
+
+  - analysis_track: automl_pilot
+    model: baseline_transformer
+    search_root: benchmark_results/groupkfold_torch_transformer_label_q5
+    config: configs/groupkfold_torch_transformer_label_q5.yaml
+    expected_model_type: torch_transformer
+    expected_prediction_model: torch_transformer
+    dataset: emotiv_cognitive
+    representation: gap_aware_sequence_len8_outer_fold1
+    preprocessing: feature_pipeline
+    prediction_unit: sequence
+    sequence_length: 8
+    fold_filter: [1]
+    expected_predictions: 8800
+    expected_folds: 1
+
+  - analysis_track: automl_pilot
+    model: tuned_transformer
+    search_root: benchmark_results/automl/transformer_label_q5/transformer_label_q5_pilot/outer_evaluation
+    expected_model_type: torch_transformer
+    expected_prediction_model: torch_transformer
+    dataset: emotiv_cognitive
+    representation: gap_aware_sequence_len8_outer_fold1
+    preprocessing: feature_pipeline
+    prediction_unit: sequence
+    sequence_length: 8
+    fold_filter: [1]
+    allow_fold_subset: true
+    expected_predictions: 8800
+    expected_folds: 1
+
+comparisons:
+  - name: random_forest_minus_torch_mlp
+    family: feature_window
+    track: feature_window
+    left_model: random_forest
+    right_model: torch_mlp
+    seed: 42
+    inferential: true
+
+  - name: lstm_minus_bilstm_len10
+    family: sequence
+    track: feature_sequence
+    left_model: lstm
+    right_model: bilstm
+    seed: 42
+    inferential: true
+
+  - name: transformer_len8_minus_lstm_len10
+    family: sequence
+    track: feature_sequence
+    left_model: transformer
+    right_model: lstm
+    seed: 42
+    inferential: true
+
+  - name: transformer_len8_minus_bilstm_len10
+    family: sequence
+    track: feature_sequence
+    left_model: transformer
+    right_model: bilstm
+    seed: 42
+    inferential: true
+
+  - name: shallowconvnet_minus_eegnet_seed42
+    family: raw
+    track: raw_eeg
+    left_model: shallowconvnet
+    right_model: eegnet
+    seed: 42
+    inferential: true
+
+  - name: shallowconvnet_minus_eegnet_seed7
+    family: raw
+    track: raw_eeg
+    left_model: shallowconvnet
+    right_model: eegnet
+    seed: 7
+    inferential: true
+
+  - name: shallowconvnet_minus_eegnet_seed123
+    family: raw
+    track: raw_eeg
+    left_model: shallowconvnet
+    right_model: eegnet
+    seed: 123
+    inferential: true
+
+  - name: tuned_minus_baseline_transformer_outer_fold1
+    family: automl_pilot
+    track: automl_pilot
+    left_model: tuned_transformer
+    right_model: baseline_transformer
+    seed: 42
+    inferential: false
