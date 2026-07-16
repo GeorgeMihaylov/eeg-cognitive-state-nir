@@ -25,6 +25,12 @@ class MetricsCalculator:
         metrics['f1_macro'] = metrics['macro_f1']
         metrics['f1_weighted'] = metrics['weighted_f1']
         metrics['kappa'] = cohen_kappa_score(y_true, y_pred)
+        ordinal_distance = np.abs(
+            np.asarray(y_pred, dtype=np.float64)
+            - np.asarray(y_true, dtype=np.float64)
+        )
+        metrics['ordinal_mae'] = float(np.mean(ordinal_distance))
+        metrics['adjacent_accuracy'] = float(np.mean(ordinal_distance <= 1.0))
         metrics['confusion_matrix'] = confusion_matrix(y_true, y_pred).tolist()
         if y_proba is not None:
             try:

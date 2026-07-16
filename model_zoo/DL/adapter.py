@@ -1,5 +1,7 @@
 import random
+import time
 import warnings
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
@@ -92,6 +94,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.best_epoch_: Optional[int] = None
         self.best_validation_loss_: Optional[float] = None
         self.n_epochs_trained_: int = 0
+        self.peak_gpu_memory_bytes_: int = 0
         self.is_fitted_: bool = False
         self.validation_strategy_ = "stratified_random"
         self.validation_group_column_: Optional[str] = None
@@ -210,6 +213,35 @@ class TorchClassificationAdapter(BaseModelAdapter):
             )
         if counts.min() < 2:
             raise ValueError("Each class needs at least two samples for validation splitting")
+        return labels
+
+    def _validate_calibration_labels(
+        self,
+        y: Any,
+        n_samples: int,
+    ) -> np.ndarray:
+        """Validate calibration labels without requiring class coverage."""
+        array = np.asarray(y)
+        if array.ndim != 1:
+            raise ValueError(f"Expected one-dimensional y, got shape {array.shape}")
+        if len(array) != n_samples:
+            raise ValueError(
+                f"X and y have different lengths: {n_samples} and {len(array)}"
+            )
+        if len(array) == 0:
+            raise ValueError("Calibration labels cannot be empty")
+        if not np.issubdtype(array.dtype, np.number):
+            raise ValueError("y must contain numeric class labels")
+        numeric = array.astype(np.float64, copy=False)
+        if not np.isfinite(numeric).all():
+            raise ValueError("y contains NaN or infinite values")
+        if not np.equal(numeric, np.floor(numeric)).all():
+            raise ValueError("y must contain integer class labels")
+        labels = numeric.astype(np.int64)
+        if labels.min() < 0 or labels.max() >= self.num_classes:
+            raise ValueError(
+                f"Class labels must be in [0, {self.num_classes - 1}]"
+            )
         return labels
 
     def _fit_standardizer(self, X_train: Any) -> None:
@@ -512,6 +544,33 @@ class TorchClassificationAdapter(BaseModelAdapter):
             raise ValueError("Feature standardization produced NaN or infinite values")
         return np.ascontiguousarray(transformed, dtype=np.float32)
 
+    def set_feature_normalization(
+        self,
+        mean: Any,
+        scale: Any,
+    ) -> "TorchClassificationAdapter":
+        """Replace transform statistics on an independent fitted adapter."""
+        mean_array = np.asarray(mean, dtype=np.float32)
+        scale_array = np.asarray(scale, dtype=np.float32)
+        expected_shape = (
+            (self.input_shape[1],)
+            if len(self.input_shape) == 3
+            else (self.input_shape[-1],)
+        )
+        if mean_array.shape != expected_shape or scale_array.shape != expected_shape:
+            raise ValueError(
+                "Normalization statistics must have shape "
+                f"{expected_shape}, got mean={mean_array.shape}, "
+                f"scale={scale_array.shape}"
+            )
+        if not np.isfinite(mean_array).all() or not np.isfinite(scale_array).all():
+            raise ValueError("Normalization statistics must be finite")
+        if np.any(scale_array <= 0):
+            raise ValueError("Normalization scale must be positive")
+        self.feature_mean_ = mean_array.copy()
+        self.feature_scale_ = scale_array.copy()
+        return self
+
     def _make_loader(
         self,
         X: Any,
@@ -545,6 +604,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         seed_torch(self.random_state)
         self.model.load_state_dict(self._initial_state)
         self.model.to(self.device_)
+        if self.device_.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(self.device_)
 
         train_idx, validation_idx = self._validation_indices(labels)
         self.inner_train_indices_ = np.asarray(train_idx, dtype=np.int64)
@@ -579,6 +640,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.best_validation_loss_ = None
 
         for epoch in range(1, self.max_epochs + 1):
+            epoch_started = time.perf_counter()
             self.model.train()
             train_loss_sum = 0.0
             train_count = 0
@@ -630,6 +692,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
                     "validation_loss": validation_loss,
                     "validation_accuracy": validation_correct / validation_count,
                     "is_best": improved,
+                    "epoch_time_seconds": time.perf_counter() - epoch_started,
                 }
             )
             if epochs_without_improvement >= self.early_stopping_patience:
@@ -642,7 +705,185 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.model.eval()
         self.best_validation_loss_ = best_loss
         self.n_epochs_trained_ = len(self.training_log_)
+        if self.device_.type == "cuda":
+            self.peak_gpu_memory_bytes_ = int(
+                torch.cuda.max_memory_allocated(self.device_)
+            )
         self.is_fitted_ = True
+        return self
+
+    def fine_tune(
+        self,
+        X_train: Any,
+        y_train: Any,
+        *,
+        X_validation: Optional[Any] = None,
+        y_validation: Optional[Any] = None,
+        trainable_parameter_prefixes: Optional[Sequence[str]] = None,
+        max_epochs: Optional[int] = None,
+        learning_rate: Optional[float] = None,
+        weight_decay: Optional[float] = None,
+        early_stopping_patience: Optional[int] = None,
+    ) -> "TorchClassificationAdapter":
+        """Fine-tune loaded weights on explicit calibration-only partitions."""
+        if not self.is_fitted_:
+            raise RuntimeError("A fitted or loaded base model is required")
+        features = self._validate_features(X_train)
+        labels = self._validate_calibration_labels(y_train, len(features))
+        has_validation = X_validation is not None or y_validation is not None
+        if (X_validation is None) != (y_validation is None):
+            raise ValueError(
+                "X_validation and y_validation must be provided together"
+            )
+        validation_features: Optional[Any] = None
+        validation_labels: Optional[np.ndarray] = None
+        if has_validation:
+            validation_features = self._validate_features(X_validation)
+            validation_labels = self._validate_calibration_labels(
+                y_validation, len(validation_features)
+            )
+
+        epochs = self.max_epochs if max_epochs is None else int(max_epochs)
+        lr = self.learning_rate if learning_rate is None else float(learning_rate)
+        decay = self.weight_decay if weight_decay is None else float(weight_decay)
+        patience = (
+            self.early_stopping_patience
+            if early_stopping_patience is None
+            else int(early_stopping_patience)
+        )
+        if epochs <= 0 or lr <= 0 or decay < 0 or patience <= 0:
+            raise ValueError(
+                "Fine-tuning epochs, learning rate, patience must be positive "
+                "and weight decay non-negative"
+            )
+
+        prefixes = (
+            None
+            if trainable_parameter_prefixes is None
+            else tuple(str(value) for value in trainable_parameter_prefixes)
+        )
+        trainable_names: list[str] = []
+        for name, parameter in self.model.named_parameters():
+            parameter.requires_grad = (
+                prefixes is None or any(name.startswith(prefix) for prefix in prefixes)
+            )
+            if parameter.requires_grad:
+                trainable_names.append(name)
+        if not trainable_names:
+            raise ValueError("No model parameters were selected for fine-tuning")
+
+        seed_torch(self.random_state)
+        self.model.to(self.device_)
+        if self.device_.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(self.device_)
+        transformed_train = self._transform_features(features)
+        train_loader = self._make_loader(
+            transformed_train, labels, shuffle=True
+        )
+        validation_loader: Optional[DataLoader] = None
+        if validation_features is not None and validation_labels is not None:
+            validation_loader = self._make_loader(
+                self._transform_features(validation_features), validation_labels
+            )
+
+        optimizer = torch.optim.AdamW(
+            [parameter for parameter in self.model.parameters() if parameter.requires_grad],
+            lr=lr,
+            weight_decay=decay,
+        )
+        criterion = nn.CrossEntropyLoss()
+        best_state: Optional[Dict[str, torch.Tensor]] = None
+        best_loss = float("inf")
+        epochs_without_improvement = 0
+        self.training_log_ = []
+        self.best_epoch_ = None
+        self.best_validation_loss_ = None
+
+        for epoch in range(1, epochs + 1):
+            epoch_started = time.perf_counter()
+            self.model.train()
+            train_loss_sum = 0.0
+            train_count = 0
+            for batch_features, batch_labels in train_loader:
+                batch_features = batch_features.to(self.device_, non_blocking=True)
+                batch_labels = batch_labels.to(self.device_, non_blocking=True)
+                optimizer.zero_grad(set_to_none=True)
+                logits = self.model(batch_features)
+                loss = criterion(logits, batch_labels)
+                if not torch.isfinite(loss):
+                    raise ValueError("Fine-tuning loss became NaN or infinite")
+                loss.backward()
+                optimizer.step()
+                train_loss_sum += float(loss.item()) * len(batch_labels)
+                train_count += len(batch_labels)
+
+            validation_loss: Optional[float] = None
+            validation_accuracy: Optional[float] = None
+            improved = False
+            if validation_loader is not None:
+                self.model.eval()
+                validation_loss_sum = 0.0
+                validation_correct = 0
+                validation_count = 0
+                with torch.no_grad():
+                    for batch_features, batch_labels in validation_loader:
+                        batch_features = batch_features.to(
+                            self.device_, non_blocking=True
+                        )
+                        batch_labels = batch_labels.to(
+                            self.device_, non_blocking=True
+                        )
+                        logits = self.model(batch_features)
+                        loss = criterion(logits, batch_labels)
+                        validation_loss_sum += float(loss.item()) * len(batch_labels)
+                        validation_correct += int(
+                            (logits.argmax(dim=1) == batch_labels).sum().item()
+                        )
+                        validation_count += len(batch_labels)
+                validation_loss = validation_loss_sum / validation_count
+                validation_accuracy = validation_correct / validation_count
+                improved = validation_loss < best_loss
+                if improved:
+                    best_loss = validation_loss
+                    best_state = {
+                        key: value.detach().cpu().clone()
+                        for key, value in self.model.state_dict().items()
+                    }
+                    self.best_epoch_ = epoch
+                    epochs_without_improvement = 0
+                else:
+                    epochs_without_improvement += 1
+
+            self.training_log_.append({
+                "epoch": epoch,
+                "train_loss": train_loss_sum / train_count,
+                "validation_loss": validation_loss,
+                "validation_accuracy": validation_accuracy,
+                "is_best": improved,
+                "epoch_time_seconds": time.perf_counter() - epoch_started,
+            })
+            if validation_loader is not None and (
+                epochs_without_improvement >= patience
+            ):
+                break
+
+        if validation_loader is not None:
+            if best_state is None or self.best_epoch_ is None:
+                raise RuntimeError("Fine-tuning finished without a valid state")
+            self.model.load_state_dict(best_state)
+            self.best_validation_loss_ = best_loss
+        else:
+            self.best_epoch_ = len(self.training_log_)
+            self.best_validation_loss_ = None
+        self.n_epochs_trained_ = len(self.training_log_)
+        self.model.to(self.device_)
+        self.model.eval()
+        if self.device_.type == "cuda":
+            self.peak_gpu_memory_bytes_ = int(
+                torch.cuda.max_memory_allocated(self.device_)
+            )
+        self.is_fitted_ = True
+        self.model_metadata["fine_tune_trainable_parameters"] = trainable_names
         return self
 
     def predict_proba(self, X: Any) -> np.ndarray:
@@ -677,6 +918,12 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "epochs_trained": self.n_epochs_trained_,
             "best_epoch": self.best_epoch_,
             "best_validation_loss": self.best_validation_loss_,
+            "trainable_parameter_count": sum(
+                parameter.numel()
+                for parameter in self.model.parameters()
+                if parameter.requires_grad
+            ),
+            "peak_gpu_memory_bytes": self.peak_gpu_memory_bytes_,
             "validation_size": self.validation_size,
             "standardize": self.standardize,
             "validation_strategy": self.validation_strategy_,
@@ -721,3 +968,62 @@ class TorchClassificationAdapter(BaseModelAdapter):
             ),
         }
         torch.save(payload, output_path)
+
+    def load(self, path: PathLike) -> "TorchClassificationAdapter":
+        """Load a canonical adapter checkpoint into a factory-built instance."""
+        checkpoint_path = Path(path)
+        if not checkpoint_path.exists():
+            raise FileNotFoundError(f"Model checkpoint not found: {checkpoint_path}")
+        try:
+            payload = torch.load(
+                checkpoint_path, map_location=self.device_, weights_only=False
+            )
+        except TypeError:
+            payload = torch.load(checkpoint_path, map_location=self.device_)
+        stored_shape = tuple(int(value) for value in payload.get("input_shape", ()))
+        stored_classes = int(payload.get("num_classes", -1))
+        if stored_shape != self.input_shape:
+            raise ValueError(
+                f"Checkpoint input_shape {stored_shape} does not match "
+                f"adapter {self.input_shape}"
+            )
+        if stored_classes != self.num_classes:
+            raise ValueError(
+                f"Checkpoint num_classes {stored_classes} does not match "
+                f"adapter {self.num_classes}"
+            )
+        self.model.load_state_dict(payload["model_state_dict"], strict=True)
+        self.model.to(self.device_)
+        self.model.eval()
+        self._initial_state = {
+            key: value.detach().cpu().clone()
+            for key, value in self.model.state_dict().items()
+        }
+        mean = payload.get("feature_mean")
+        scale = payload.get("feature_scale")
+        self.feature_mean_ = (
+            None if mean is None else np.asarray(mean.cpu(), dtype=np.float32)
+        )
+        self.feature_scale_ = (
+            None if scale is None else np.asarray(scale.cpu(), dtype=np.float32)
+        )
+        self.model_metadata = dict(payload.get("model_metadata", self.model_metadata))
+        self.training_log_ = list(payload.get("training_log", []))
+        self.validation_split_ = payload.get("validation_split")
+        summary = payload.get("training_summary", {})
+        self.best_epoch_ = summary.get("best_epoch")
+        self.best_validation_loss_ = summary.get("best_validation_loss")
+        self.n_epochs_trained_ = int(summary.get("epochs_trained", 0))
+        self.peak_gpu_memory_bytes_ = int(
+            summary.get("peak_gpu_memory_bytes", 0)
+        )
+        self.is_fitted_ = True
+        return self
+
+    def clone(self) -> "TorchClassificationAdapter":
+        """Create an independent fitted adapter for one calibration subject."""
+        if not self.is_fitted_:
+            raise RuntimeError("The model must be fitted or loaded before cloning")
+        cloned = deepcopy(self)
+        cloned.model.to(cloned.device_)
+        return cloned

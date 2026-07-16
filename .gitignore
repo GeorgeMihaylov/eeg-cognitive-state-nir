@@ -49,3 +49,7 @@ data/external/
 *.rar
 
 .pytest_cache/
+
+AGENTS.md
+PROJECT_CONTEXT.md
+TODO.md

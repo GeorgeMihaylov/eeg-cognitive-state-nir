@@ -310,12 +310,67 @@ Examples:
     parser.add_argument('--fold-limit', type=int)
     parser.add_argument('--max-windows', type=int)
     parser.add_argument('--max-epochs', type=int)
+    parser.add_argument(
+        '--calibration-experiment',
+        type=str,
+        help='Run subject calibration from an existing benchmark run',
+    )
+    parser.add_argument('--subject-limit', type=int)
+    parser.add_argument(
+        '--calibration-budgets',
+        help='Comma-separated calibration budgets in seconds',
+    )
+    parser.add_argument(
+        '--calibration-methods',
+        help='Comma-separated calibration methods',
+    )
+    parser.add_argument('--max-calibration-epochs', type=int)
     
     args = parser.parse_args(argv)
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.calibration_experiment:
+        if args.config or args.test or args.experiment_matrix:
+            parser.error(
+                '--calibration-experiment cannot be combined with '
+                '--config, --test, or --experiment-matrix'
+            )
+        from bench.experiments.user_calibration import UserCalibrationExperiment
+
+        budgets = (
+            None
+            if args.calibration_budgets is None
+            else [
+                float(value.strip())
+                for value in args.calibration_budgets.split(',')
+                if value.strip()
+            ]
+        )
+        methods = (
+            None
+            if args.calibration_methods is None
+            else [
+                value.strip()
+                for value in args.calibration_methods.split(',')
+                if value.strip()
+            ]
+        )
+        experiment = UserCalibrationExperiment(args.calibration_experiment)
+        result = experiment.execute(
+            fold_limit=args.fold_limit,
+            subject_limit=args.subject_limit,
+            budgets_seconds=budgets,
+            methods=methods,
+            max_epochs=args.max_calibration_epochs,
+            random_state=args.seed,
+            output_dir=args.output_dir,
+            write_reports=True,
+        )
+        print(json.dumps(result, indent=2, default=str))
+        return
 
     if args.experiment_matrix:
         if args.config or args.test:
