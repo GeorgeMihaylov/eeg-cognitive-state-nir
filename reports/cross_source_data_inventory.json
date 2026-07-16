@@ -1,0 +1,122 @@
+{
+  "schema_version": "cross-source-data-audit-v1",
+  "canonical_inputs": {
+    "feature_dataset": "data/processed/windowed_eeg_pm_dataset_w10.parquet",
+    "logical_recording_manifest": "data/interim/logical_recording_map.parquet",
+    "raw_record_catalog": "data/interim/emotiv_record_catalog.parquet",
+    "target": "label_q5",
+    "feature_set": "pow_plus_eeg",
+    "feature_count": 448
+  },
+  "dataset": {
+    "rows": 51308,
+    "supervised_rows": 45384,
+    "unlabeled_rows": 5924,
+    "source_records": 120,
+    "supervised_source_records": 119,
+    "logical_recordings": 86,
+    "cross_source_duplicate_logical_recordings": 33,
+    "unmapped_supervised_rows": 0
+  },
+  "sources": {
+    "gpn_data": {
+      "rows": 27021,
+      "supervised_rows": 23826,
+      "unlabeled_rows": 3195,
+      "subjects": 42,
+      "source_records": 71,
+      "logical_recordings": 71,
+      "class_distribution": {"0": 4813, "1": 4920, "2": 4876, "3": 4684, "4": 4533},
+      "raw_catalog_records": 71,
+      "raw_files_present": 71,
+      "sampling_rates_hz": [256.0],
+      "channel_order": ["AF3", "F7", "F3", "FC5", "T7", "P7", "O1", "O2", "P8", "T8", "FC6", "F4", "F8", "AF4"],
+      "duration_seconds": {"min": 35.0, "median": 2945.0, "max": 7365.0, "sum": 241995.0}
+    },
+    "Old_EEG": {
+      "rows": 24287,
+      "supervised_rows": 21558,
+      "unlabeled_rows": 2729,
+      "subjects": 43,
+      "source_records": 48,
+      "logical_recordings": 48,
+      "class_distribution": {"0": 4267, "1": 4155, "2": 4199, "3": 4394, "4": 4543},
+      "raw_catalog_records": 49,
+      "raw_files_present": 49,
+      "sampling_rates_hz": [256.0],
+      "channel_order": ["AF3", "F7", "F3", "FC5", "T7", "P7", "O1", "O2", "P8", "T8", "FC6", "F4", "F8", "AF4"],
+      "duration_seconds": {"min": 35.0, "median": 4745.0, "max": 7685.0, "sum": 219550.0}
+    }
+  },
+  "overlap": {
+    "shared_subjects": ["0012905a", "01c2a0d8", "1081b177", "20201194", "2162c09e", "2182c1cd", "219060fa", "3110e0c7", "40009139", "41e2010c", "50c02189", "517001af", "6030f0fd", "7072a0e0", "7150e10a", "71c09041", "71e10186", "71f21142", "8030618f", "81e150c1", "81f1f0fe", "9192c107", "a02151ac", "a1721173", "a1b210fc", "b112005d", "c060c06a", "c1a150b1", "d0e2d025", "d151b0c4", "f121f1e0"],
+    "eligible_shared_subjects_after_duplicate_removal": ["a02151ac"],
+    "gpn_data_exclusive_subjects": ["0110f12e", "0182e16c", "30908049", "40f0714a", "5001d09a", "71a251fa", "b0700166", "c112918e", "d0724095", "d111e017", "d142d110"],
+    "Old_EEG_exclusive_subjects": ["0001508a", "21a031f6", "30c140ca", "7092f07b", "71f0603f", "8191f1d9", "b1c2f044", "d18000a3", "e0c0408a", "f0f2a1e1", "f1a0c120", "f1d06060"],
+    "duplicate_validation": {
+      "logical_recordings": 33,
+      "subjects": 30,
+      "time_ranges_match": 33,
+      "exact_signal_duplicates": 33,
+      "supervised_rows_per_source": 14385,
+      "canonical_intersection_filter": "present_in_both_sources == true"
+    },
+    "duplicate_intersection_table": {
+      "path": "data/interim/logical_recording_map.parquet",
+      "filter": "present_in_both_sources == true",
+      "rows": 33,
+      "columns": [
+        "subject_id",
+        "sources",
+        "source_record_ids",
+        "record_group_id",
+        "supervised_windows_by_record",
+        "label_distribution",
+        "signal_relationship"
+      ]
+    }
+  },
+  "thresholds": {
+    "minimum_train_subjects": 5,
+    "minimum_test_subjects": 3,
+    "minimum_train_classes": 5,
+    "minimum_test_classes": 2,
+    "minimum_predictions_per_test_subject": 20
+  },
+  "protocols": [
+    {
+      "train_source": "gpn_data", "test_source": "Old_EEG", "subject_mode": "source_exclusive", "valid": true,
+      "train_windows": 6348, "test_windows": 6717, "train_subjects": 11, "test_subjects": 12,
+      "train_records": 21, "test_records": 14, "train_sequences": 6165, "test_sequences": 6496,
+      "train_class_distribution": {"0": 1475, "1": 1468, "2": 1248, "3": 1097, "4": 1060},
+      "test_class_distribution": {"0": 1602, "1": 1277, "2": 1172, "3": 1282, "4": 1384},
+      "subject_overlap": [], "logical_record_overlap": [], "source_record_overlap": [], "sample_overlap": []
+    },
+    {
+      "train_source": "Old_EEG", "test_source": "gpn_data", "subject_mode": "source_exclusive", "valid": true,
+      "train_windows": 6717, "test_windows": 6348, "train_subjects": 12, "test_subjects": 11,
+      "train_records": 14, "test_records": 21, "train_sequences": 6496, "test_sequences": 6165,
+      "train_class_distribution": {"0": 1602, "1": 1277, "2": 1172, "3": 1282, "4": 1384},
+      "test_class_distribution": {"0": 1475, "1": 1468, "2": 1248, "3": 1097, "4": 1060},
+      "subject_overlap": [], "logical_record_overlap": [], "source_record_overlap": [], "sample_overlap": []
+    },
+    {
+      "train_source": "gpn_data", "test_source": "Old_EEG", "subject_mode": "shared_subject", "valid": false,
+      "invalid_reasons": ["train_subjects=1 is below minimum 5", "test_subjects=1 is below minimum 3"],
+      "train_windows": 263, "test_windows": 456, "train_subjects": 1, "test_subjects": 1,
+      "train_records": 1, "test_records": 1, "train_sequences": 256, "test_sequences": 449,
+      "train_class_distribution": {"0": 130, "1": 64, "2": 43, "3": 24, "4": 2},
+      "test_class_distribution": {"0": 139, "1": 93, "2": 99, "3": 77, "4": 48},
+      "subject_overlap": ["a02151ac"], "logical_record_overlap": [], "source_record_overlap": [], "sample_overlap": []
+    },
+    {
+      "train_source": "Old_EEG", "test_source": "gpn_data", "subject_mode": "shared_subject", "valid": false,
+      "invalid_reasons": ["train_subjects=1 is below minimum 5", "test_subjects=1 is below minimum 3"],
+      "train_windows": 456, "test_windows": 263, "train_subjects": 1, "test_subjects": 1,
+      "train_records": 1, "test_records": 1, "train_sequences": 449, "test_sequences": 256,
+      "train_class_distribution": {"0": 139, "1": 93, "2": 99, "3": 77, "4": 48},
+      "test_class_distribution": {"0": 130, "1": 64, "2": 43, "3": 24, "4": 2},
+      "subject_overlap": ["a02151ac"], "logical_record_overlap": [], "source_record_overlap": [], "sample_overlap": []
+    }
+  ]
+}

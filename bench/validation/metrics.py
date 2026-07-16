@@ -31,6 +31,7 @@ class MetricsCalculator:
         )
         metrics['ordinal_mae'] = float(np.mean(ordinal_distance))
         metrics['adjacent_accuracy'] = float(np.mean(ordinal_distance <= 1.0))
+        metrics['severe_error_rate'] = float(np.mean(ordinal_distance >= 2.0))
         metrics['confusion_matrix'] = confusion_matrix(y_true, y_pred).tolist()
         if y_proba is not None:
             try:

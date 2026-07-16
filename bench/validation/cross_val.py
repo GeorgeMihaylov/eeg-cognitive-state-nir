@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import GroupKFold
 from typing import Dict, List, Tuple, Any, Optional
 from ..core.abstract_task import BaseTask, TaskSplit
@@ -157,6 +158,313 @@ class CrossValidator:
                 f"violations: {invalid_samples[:20].tolist()}"
             )
         return splits
+
+    @staticmethod
+    def _limited_indices(
+            data,
+            indices: np.ndarray,
+            limit: Optional[int],
+    ) -> np.ndarray:
+        """Select a deterministic subject-balanced prefix for technical runs."""
+        indices = np.asarray(indices, dtype=np.int64)
+        if limit is None or len(indices) <= int(limit):
+            return indices
+        limit = int(limit)
+        if limit <= 0:
+            raise ValueError("Cross-source window limits must be positive")
+        source = data.get_row_values('source').astype(str)
+        time_values = None
+        for column in ('t_start', 't_center'):
+            try:
+                time_values = data.get_row_values(column).astype(float)
+                break
+            except ValueError:
+                continue
+        if time_values is None:
+            time_values = np.arange(data.n_samples, dtype=float)
+        frame = pd.DataFrame({
+            'index': indices,
+            'subject_id': data.subject_ids[indices].astype(str),
+            'source': source[indices],
+            'record_id': data.record_ids[indices].astype(str),
+            'time': time_values[indices],
+            'sample_id': data.sample_ids[indices],
+        }).sort_values(
+            ['subject_id', 'source', 'record_id', 'time', 'sample_id'],
+            kind='mergesort',
+        )
+        frame['subject_rank'] = frame.groupby(
+            'subject_id', sort=True
+        ).cumcount()
+        selected = frame.sort_values(
+            ['subject_rank', 'subject_id', 'source', 'record_id', 'time'],
+            kind='mergesort',
+        ).head(limit)['index'].to_numpy(dtype=np.int64, copy=True)
+        selected.sort()
+        return selected
+
+    def run_cross_source_holdout(
+            self,
+            *,
+            train_source: str,
+            test_source: str,
+            subject_mode: str = 'source_exclusive',
+            remove_logical_duplicates: bool = True,
+            minimum_train_subjects: int = 5,
+            minimum_test_subjects: int = 3,
+            minimum_train_classes: int = 5,
+            minimum_test_classes: int = 2,
+            minimum_predictions_per_test_subject: int = 20,
+            max_train_windows: Optional[int] = None,
+            max_test_windows: Optional[int] = None,
+            random_state: int = 42,
+    ) -> TaskSplit:
+        """Build one directional source holdout without fitting any model."""
+        data = self.task.data
+        train_source = str(train_source)
+        test_source = str(test_source)
+        if not train_source or not test_source or train_source == test_source:
+            raise ValueError("train_source and test_source must be distinct")
+        normalized_mode = str(subject_mode).strip().lower().replace('-', '_')
+        aliases = {
+            'source_exclusive': 'source_exclusive',
+            'exclusive': 'source_exclusive',
+            'shared_subject': 'shared_subject',
+            'shared_subjects': 'shared_subject',
+            'shared': 'shared_subject',
+        }
+        if normalized_mode not in aliases:
+            raise ValueError(
+                "subject_mode must be 'source_exclusive' or 'shared_subject'"
+            )
+        normalized_mode = aliases[normalized_mode]
+
+        sources = data.get_row_values('source').astype(str)
+        available_sources = set(np.unique(sources).tolist())
+        missing_sources = sorted(
+            {train_source, test_source} - available_sources
+        )
+        if missing_sources:
+            raise ValueError(
+                f"Cross-source split sources are unavailable: {missing_sources}"
+            )
+        logical_ids = data.get_row_values('record_group_id').astype(str)
+        source_subjects = {
+            source: set(data.subject_ids[sources == source].astype(str))
+            for source in (train_source, test_source)
+        }
+        shared_subjects = source_subjects[train_source] & source_subjects[test_source]
+        exclusive_subjects = {
+            source: source_subjects[source] - shared_subjects
+            for source in (train_source, test_source)
+        }
+        logical_sources: Dict[str, set[str]] = {}
+        for logical_id, source in zip(logical_ids, sources):
+            logical_sources.setdefault(str(logical_id), set()).add(str(source))
+        duplicated_logical_ids = {
+            logical_id
+            for logical_id, group_sources in logical_sources.items()
+            if train_source in group_sources and test_source in group_sources
+        }
+
+        if normalized_mode == 'source_exclusive':
+            train_subjects = exclusive_subjects[train_source]
+            test_subjects = exclusive_subjects[test_source]
+        else:
+            train_subjects = shared_subjects
+            test_subjects = shared_subjects
+        train_mask = (
+            (sources == train_source)
+            & np.isin(data.subject_ids.astype(str), sorted(train_subjects))
+        )
+        test_mask = (
+            (sources == test_source)
+            & np.isin(data.subject_ids.astype(str), sorted(test_subjects))
+        )
+        excluded_logical_ids: list[str] = []
+        duplicate_mask = np.zeros(len(logical_ids), dtype=bool)
+        if remove_logical_duplicates:
+            excluded_logical_ids = sorted(duplicated_logical_ids)
+            duplicate_mask = np.isin(logical_ids, excluded_logical_ids)
+            train_mask &= ~duplicate_mask
+            test_mask &= ~duplicate_mask
+        residual_source_subjects = {
+            source: set(
+                data.subject_ids[
+                    (sources == source) & ~duplicate_mask
+                ].astype(str)
+            )
+            for source in (train_source, test_source)
+        }
+        eligible_shared_subjects = (
+            shared_subjects
+            & residual_source_subjects[train_source]
+            & residual_source_subjects[test_source]
+        )
+        if normalized_mode == 'shared_subject':
+            eligible_mask = np.isin(
+                data.subject_ids.astype(str), sorted(eligible_shared_subjects)
+            )
+            train_mask &= eligible_mask
+            test_mask &= eligible_mask
+
+        train_idx = self._limited_indices(
+            data, np.flatnonzero(train_mask), max_train_windows
+        )
+        test_idx = self._limited_indices(
+            data, np.flatnonzero(test_mask), max_test_windows
+        )
+        train_subject_values = np.unique(data.subject_ids[train_idx]).astype(str)
+        test_subject_values = np.unique(data.subject_ids[test_idx]).astype(str)
+        train_logical = np.unique(logical_ids[train_idx]).astype(str)
+        test_logical = np.unique(logical_ids[test_idx]).astype(str)
+        train_records = np.unique(data.record_ids[train_idx]).astype(str)
+        test_records = np.unique(data.record_ids[test_idx]).astype(str)
+        train_samples = np.unique(data.sample_ids[train_idx])
+        test_samples = np.unique(data.sample_ids[test_idx])
+        subject_overlap = np.intersect1d(
+            train_subject_values, test_subject_values
+        ).astype(str).tolist()
+        logical_overlap = np.intersect1d(
+            train_logical, test_logical
+        ).astype(str).tolist()
+        record_overlap = np.intersect1d(
+            train_records, test_records
+        ).astype(str).tolist()
+        sample_overlap = np.intersect1d(
+            train_samples, test_samples
+        ).tolist()
+
+        invalid_reasons: list[str] = []
+        checks = (
+            ('train subjects', len(train_subject_values), int(minimum_train_subjects)),
+            ('test subjects', len(test_subject_values), int(minimum_test_subjects)),
+            ('train classes', len(np.unique(data.labels[train_idx])), int(minimum_train_classes)),
+            ('test classes', len(np.unique(data.labels[test_idx])), int(minimum_test_classes)),
+        )
+        for label, actual, minimum in checks:
+            if actual < minimum:
+                invalid_reasons.append(
+                    f"{label}={actual} is below configured minimum {minimum}"
+                )
+        if len(test_idx):
+            _, per_subject_counts = np.unique(
+                data.subject_ids[test_idx].astype(str), return_counts=True
+            )
+            minimum_test_predictions = int(per_subject_counts.min())
+        else:
+            minimum_test_predictions = 0
+        if minimum_test_predictions < int(minimum_predictions_per_test_subject):
+            invalid_reasons.append(
+                "minimum test predictions per subject="
+                f"{minimum_test_predictions} is below configured minimum "
+                f"{int(minimum_predictions_per_test_subject)}"
+            )
+        if normalized_mode == 'source_exclusive' and subject_overlap:
+            invalid_reasons.append(
+                f"source-exclusive subject overlap detected: {subject_overlap}"
+            )
+        if logical_overlap:
+            invalid_reasons.append(
+                f"logical recording overlap detected: {logical_overlap[:20]}"
+            )
+        if record_overlap:
+            invalid_reasons.append(
+                f"source record overlap detected: {record_overlap[:20]}"
+            )
+        if sample_overlap:
+            invalid_reasons.append(
+                f"sample overlap detected: {sample_overlap[:20]}"
+            )
+
+        split_name = (
+            f"{train_source}_to_{test_source}_{normalized_mode}"
+        )
+        metadata = {
+            'split_type': 'cross_source_holdout',
+            'protocol': 'cross_source_holdout',
+            'fold': split_name,
+            'fold_name': split_name,
+            'status': 'valid' if not invalid_reasons else 'invalid',
+            'invalid_reasons': invalid_reasons,
+            'train_source': train_source,
+            'test_source': test_source,
+            'subject_mode': normalized_mode,
+            'remove_logical_duplicates': bool(remove_logical_duplicates),
+            'random_state': int(random_state),
+            'max_train_windows': max_train_windows,
+            'max_test_windows': max_test_windows,
+            'observation_unit': data.metadata.get('observation_unit', 'window'),
+            'dataset_metadata': data.metadata,
+            'n_train_rows': int(len(train_idx)),
+            'n_test_rows': int(len(test_idx)),
+            'n_train_subjects': int(len(train_subject_values)),
+            'n_test_subjects': int(len(test_subject_values)),
+            'n_train_records': int(len(train_records)),
+            'n_test_records': int(len(test_records)),
+            'n_train_logical_recordings': int(len(train_logical)),
+            'n_test_logical_recordings': int(len(test_logical)),
+            'train_subject_ids': train_subject_values.tolist(),
+            'test_subject_ids': test_subject_values.tolist(),
+            'train_record_ids': train_records.tolist(),
+            'test_record_ids': test_records.tolist(),
+            'train_logical_record_ids': train_logical.tolist(),
+            'test_logical_record_ids': test_logical.tolist(),
+            'shared_subject_ids': sorted(shared_subjects),
+            'eligible_shared_subject_ids': sorted(eligible_shared_subjects),
+            'excluded_subjects': {
+                'shared': sorted(shared_subjects) if normalized_mode == 'source_exclusive' else [],
+                'train_source_exclusive': sorted(exclusive_subjects[train_source]),
+                'test_source_exclusive': sorted(exclusive_subjects[test_source]),
+                'shared_without_residual_data_in_both_sources': sorted(
+                    shared_subjects - eligible_shared_subjects
+                ) if normalized_mode == 'shared_subject' else [],
+            },
+            'excluded_logical_record_ids': excluded_logical_ids,
+            'group_overlap': logical_overlap,
+            'logical_record_overlap': logical_overlap,
+            'raw_interval_overlap': logical_overlap,
+            'record_overlap': record_overlap,
+            'subject_overlap': subject_overlap,
+            'sample_overlap': sample_overlap,
+            'allow_subject_overlap': normalized_mode == 'shared_subject',
+            'minimum_test_predictions_per_subject_actual': minimum_test_predictions,
+            'thresholds': {
+                'minimum_train_subjects': int(minimum_train_subjects),
+                'minimum_test_subjects': int(minimum_test_subjects),
+                'minimum_train_classes': int(minimum_train_classes),
+                'minimum_test_classes': int(minimum_test_classes),
+                'minimum_predictions_per_test_subject': int(
+                    minimum_predictions_per_test_subject
+                ),
+            },
+            'source_distribution': {
+                'train': {train_source: int(len(train_idx))},
+                'test': {test_source: int(len(test_idx))},
+            },
+        }
+        return TaskSplit(
+            X_train=data.data[train_idx],
+            y_train=data.labels[train_idx],
+            X_test=data.data[test_idx],
+            y_test=data.labels[test_idx],
+            subject_train=data.subject_ids[train_idx],
+            subject_test=data.subject_ids[test_idx],
+            feature_names=data.feature_names,
+            sample_id_train=data.sample_ids[train_idx],
+            sample_id_test=data.sample_ids[test_idx],
+            record_id_train=data.record_ids[train_idx],
+            record_id_test=data.record_ids[test_idx],
+            row_metadata_train={
+                key: np.asarray(values)[train_idx]
+                for key, values in data.row_metadata.items()
+            },
+            row_metadata_test={
+                key: np.asarray(values)[test_idx]
+                for key, values in data.row_metadata.items()
+            },
+            metadata=metadata,
+        )
 
     def evaluate_model(self, model, split: TaskSplit) -> Dict[str, Any]:
         model.fit(split.X_train, split.y_train)
