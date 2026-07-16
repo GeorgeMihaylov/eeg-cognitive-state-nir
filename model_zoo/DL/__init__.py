@@ -8,6 +8,11 @@ from .shallow_convnet import (
     TorchShallowConvNetClassifier,
     build_torch_shallow_convnet,
 )
+from .transformer import (
+    TorchFeatureTransformerClassifier,
+    TransformerPositionalEncoding,
+    build_torch_transformer,
+)
 
 __all__ = [
     "TorchClassificationAdapter",
@@ -15,10 +20,13 @@ __all__ = [
     "TorchLSTMClassifier",
     "TorchMLP",
     "TorchShallowConvNetClassifier",
+    "TorchFeatureTransformerClassifier",
+    "TransformerPositionalEncoding",
     "SquareActivation",
     "SafeLog",
     "build_torch_lstm",
     "build_torch_eegnet",
     "build_torch_mlp",
     "build_torch_shallow_convnet",
+    "build_torch_transformer",
 ]

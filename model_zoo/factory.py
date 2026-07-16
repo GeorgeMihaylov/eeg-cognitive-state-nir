@@ -11,9 +11,12 @@ TORCH_MODEL_NAMES = frozenset(
         "torch_bilstm",
         "torch_eegnet",
         "torch_shallow_convnet",
+        "torch_transformer",
     }
 )
-SEQUENCE_MODEL_NAMES = frozenset({"torch_lstm", "torch_bilstm"})
+SEQUENCE_MODEL_NAMES = frozenset(
+    {"torch_lstm", "torch_bilstm", "torch_transformer"}
+)
 
 
 def model_requires_data_shape(model_name: str) -> bool:
@@ -83,6 +86,18 @@ def build_model(
             return cast(
                 ModelLike,
                 build_torch_shallow_convnet(
+                    input_shape=input_shape,
+                    num_outputs=int(num_outputs),
+                    params=params,
+                ),
+            )
+
+        if normalized_name == "torch_transformer":
+            from .DL.transformer import build_torch_transformer
+
+            return cast(
+                ModelLike,
+                build_torch_transformer(
                     input_shape=input_shape,
                     num_outputs=int(num_outputs),
                     params=params,

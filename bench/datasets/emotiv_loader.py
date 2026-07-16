@@ -25,13 +25,17 @@ class EmotivDataset(BaseEEGDataset):
         )
         row_metadata_columns = [
             column
-            for column in ('source', 't_start', 't_center', 'window_id')
+            for column in (
+                'source', 't_start', 't_center', 'window_id',
+                'record_group_id',
+            )
             if column in df.columns
         ]
         row_metadata = {
             column: df[column].values
             for column in row_metadata_columns
         }
+        row_metadata.setdefault('record_group_id', record_ids.copy())
         feature_cols = self._select_features(df)
         if self.target_col not in df.columns:
             target_candidates = ['target_main', 'label_q5'] + [c for c in df.columns if c.startswith('target_')]
@@ -58,6 +62,53 @@ class EmotivDataset(BaseEEGDataset):
             column: values[valid_mask]
             for column, values in row_metadata.items()
         }
+        max_windows = self.config.get('max_windows')
+        if max_windows is not None:
+            max_windows = int(max_windows)
+            if max_windows <= 0:
+                raise ValueError('max_windows must be positive')
+            if len(X) > max_windows:
+                selection = pd.DataFrame({
+                    'position': np.arange(len(X), dtype=np.int64),
+                    'subject_id': subject_ids.astype(str),
+                    'record_id': record_ids.astype(str),
+                    'source': np.asarray(
+                        row_metadata.get(
+                            'source', np.full(len(X), 'unknown', dtype=object)
+                        )
+                    ).astype(str),
+                    'time': np.asarray(
+                        row_metadata.get(
+                            't_start', row_metadata.get(
+                                't_center', np.arange(len(X), dtype=float)
+                            )
+                        )
+                    ).astype(float),
+                    'sample_id': sample_ids,
+                })
+                selection = selection.sort_values(
+                    ['subject_id', 'source', 'record_id', 'time', 'sample_id'],
+                    kind='mergesort',
+                )
+                selection['subject_rank'] = selection.groupby(
+                    'subject_id', sort=True
+                ).cumcount()
+                selected = selection.sort_values(
+                    ['subject_rank', 'subject_id', 'source', 'record_id', 'time'],
+                    kind='mergesort',
+                ).head(max_windows)['position'].to_numpy(
+                    dtype=np.int64, copy=True
+                )
+                selected.sort()
+                X = X[selected]
+                y = y[selected]
+                subject_ids = subject_ids[selected]
+                sample_ids = sample_ids[selected]
+                record_ids = record_ids[selected]
+                row_metadata = {
+                    column: values[selected]
+                    for column, values in row_metadata.items()
+                }
         unique_classes = np.unique(y)
 
         return EEGData(
@@ -73,6 +124,7 @@ class EmotivDataset(BaseEEGDataset):
                 'n_features': len(feature_cols),
                 'n_subjects': len(np.unique(subject_ids)),
                 'n_records': len(np.unique(record_ids)),
+                'max_windows': max_windows,
                 'n_classes': len(unique_classes),
                 'classes': unique_classes.tolist(),
                 'source': 'Emotiv EPOC X',

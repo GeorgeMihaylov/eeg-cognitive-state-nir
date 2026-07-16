@@ -1,0 +1,28 @@
+Baseline test suite before preprocessing-ablation code changes
+Date: 2026-07-16 (Europe/Moscow)
+Branch: feature/preprocessing-ablation
+
+Command:
+New-Item -ItemType Directory -Force F:\pytest_tmp | Out-Null
+$env:TEMP = "F:\pytest_tmp"
+$env:TMP = "F:\pytest_tmp"
+$pytestBase = "F:\pytest_tmp\baseline-$PID"
+& 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' -m pytest -q --basetemp $pytestBase -p no:cacheprovider
+
+Result:
+........................................................................ [ 90%]
+........                                                                 [100%]
+============================== warnings summary ===============================
+tests/test_torch_eegnet.py::test_runner_executes_small_lazy_raw_eeg_smoke
+  C:\Users\George\miniconda3\envs\eeg_benchmark\Lib\site-packages\sklearn\metrics\_classification.py:2939: UserWarning: y_pred contains classes not in y_true
+    warnings.warn("y_pred contains classes not in y_true")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+80 passed, 1 warning in 5.97s
+
+Infrastructure note:
+The first sandboxed attempt could not create F:\pytest_tmp\baseline-* and ended
+with 69 passed and 11 setup PermissionError errors. Re-running the identical
+command with permission to write to the requested temporary directory produced
+the successful baseline result above. No code was changed to address those
+environment-only errors.

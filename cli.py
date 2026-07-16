@@ -148,6 +148,61 @@ def override_config_with_args(config: Dict[str, Any], args: argparse.Namespace) 
             dataset['feature_set'] = args.feature_set
         logger.info(f"Feature set overridden: {args.feature_set}")
 
+    seed = getattr(args, 'seed', None)
+    if seed is not None:
+        seed = int(seed)
+        for model in config['models'].values():
+            params = model.setdefault('params', {})
+            if (
+                str(model.get('type', '')).startswith('torch_')
+                or 'random_state' in params
+            ):
+                params['random_state'] = seed
+        config.setdefault('evaluation', {})['random_state'] = seed
+        config.setdefault('task_config', {})['random_state'] = seed
+        if 'validation' in config:
+            config['validation']['random_state'] = seed
+        logger.info(f"Random seed overridden: {seed}")
+
+    fold_limit = getattr(args, 'fold_limit', None)
+    if fold_limit is not None:
+        fold_limit = int(fold_limit)
+        if fold_limit <= 0:
+            raise ValueError('--fold-limit must be positive')
+        evaluation = config.get('evaluation')
+        if not evaluation:
+            raise ValueError('--fold-limit requires an evaluation section')
+        n_splits = int(evaluation.get('n_splits', 5))
+        if fold_limit > n_splits:
+            raise ValueError(
+                f'--fold-limit={fold_limit} exceeds n_splits={n_splits}'
+            )
+        evaluation['folds'] = list(range(1, fold_limit + 1))
+        logger.info(f"Evaluation limited to {fold_limit} fold(s)")
+
+    max_windows = getattr(args, 'max_windows', None)
+    if max_windows is not None:
+        max_windows = int(max_windows)
+        if max_windows <= 0:
+            raise ValueError('--max-windows must be positive')
+        for dataset in config['datasets'].values():
+            dataset['max_windows'] = max_windows
+        logger.info(f"Datasets limited to {max_windows} windows")
+
+    max_epochs = getattr(args, 'max_epochs', None)
+    if max_epochs is not None:
+        max_epochs = int(max_epochs)
+        if max_epochs <= 0:
+            raise ValueError('--max-epochs must be positive')
+        updated = 0
+        for model in config['models'].values():
+            if str(model.get('type', '')).startswith('torch_'):
+                model.setdefault('params', {})['max_epochs'] = max_epochs
+                updated += 1
+        if not updated:
+            raise ValueError('--max-epochs requires at least one torch model')
+        logger.info(f"PyTorch models limited to {max_epochs} epochs")
+
     return config
 
 
@@ -247,7 +302,7 @@ Examples:
         help='Resolve and run a preprocessing experiment matrix'
     )
     parser.add_argument('--trial-ids', help='Comma-separated matrix trial labels')
-    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--seed', type=int)
     parser.add_argument('--resume', action='store_true')
     parser.add_argument('--build-missing-caches', action='store_true')
     parser.add_argument('--cache-only', action='store_true', help=argparse.SUPPRESS)
@@ -276,7 +331,7 @@ Examples:
         experiment = PreprocessingAblation(args.experiment_matrix)
         plans = experiment.plan(
             trial_ids=_parse_trial_ids(args.trial_ids),
-            seed=args.seed,
+            seed=42 if args.seed is None else args.seed,
             fold_limit=args.fold_limit,
             max_windows=args.max_windows,
             max_epochs=args.max_epochs,

@@ -225,6 +225,11 @@ def build_sequences(
                     "source": source,
                     "subject_id": subject_id,
                     "record_id": record_id,
+                    "record_group_id": (
+                        metadata.at[target_index, "record_group_id"]
+                        if "record_group_id" in metadata.columns
+                        else record_id
+                    ),
                     "segment_id": segment_id,
                     "sequence_length": sequence_length,
                     "sequence_start_sample_id": metadata.at[
@@ -256,6 +261,7 @@ def build_sequences(
         "source",
         "subject_id",
         "record_id",
+        "record_group_id",
         "segment_id",
         "sequence_length",
         "sequence_start_sample_id",
