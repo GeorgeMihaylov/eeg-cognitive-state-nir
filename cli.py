@@ -325,12 +325,52 @@ Examples:
         help='Comma-separated calibration methods',
     )
     parser.add_argument('--max-calibration-epochs', type=int)
+    parser.add_argument(
+        '--automl-study',
+        type=str,
+        help='Run a nested AutoML study through the canonical benchmark',
+    )
+    parser.add_argument('--study-name', type=str)
+    parser.add_argument('--storage', type=str)
+    parser.add_argument('--outer-fold', type=int, default=1)
+    parser.add_argument('--n-trials', type=int)
+    parser.add_argument('--timeout', type=float)
+    parser.add_argument('--inner-splits', type=int)
+    parser.add_argument('--no-evaluate-best', action='store_true')
     
     args = parser.parse_args(argv)
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.automl_study:
+        if args.config or args.test or args.experiment_matrix or args.calibration_experiment:
+            parser.error(
+                '--automl-study cannot be combined with --config, --test, '
+                '--experiment-matrix, or --calibration-experiment'
+            )
+        from bench.automl.study_runner import AutoMLStudyRunner
+
+        study = AutoMLStudyRunner(
+            args.automl_study,
+            outer_fold=args.outer_fold,
+            study_name=args.study_name,
+            storage=args.storage,
+            n_trials=args.n_trials,
+            timeout_seconds=args.timeout,
+            seed=args.seed,
+            inner_splits=args.inner_splits,
+            max_epochs=args.max_epochs,
+            max_windows=args.max_windows,
+            evaluate_best=False if args.no_evaluate_best else None,
+        )
+        if args.plan_only:
+            print(study.render_plan(study.plan()))
+            return
+        result = study.execute(resume=args.resume)
+        print(json.dumps(result, indent=2, default=str))
+        return
 
     if args.calibration_experiment:
         if args.config or args.test or args.experiment_matrix:

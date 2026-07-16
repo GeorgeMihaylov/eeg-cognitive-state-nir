@@ -122,11 +122,35 @@ def _set_nested(document: dict[str, Any], dotted_path: str, value: Any) -> None:
 
 SUPPORTED_TRIAL_PARAMETERS = frozenset({
     *FACTOR_PATHS,
+    "model.name",
+    "model.params.d_model",
+    "model.params.nhead",
+    "model.params.num_layers",
+    "model.params.dim_feedforward",
+    "model.params.dropout",
+    "training.learning_rate",
+    "training.weight_decay",
+    "training.batch_size",
     "training.random_state",
     "training.max_epochs",
     "dataset.max_windows",
     "evaluation.folds",
 })
+
+
+def _single_model_config(
+    resolved: dict[str, Any],
+) -> tuple[str, dict[str, Any]]:
+    models = resolved.get("models")
+    if not isinstance(models, dict) or len(models) != 1:
+        raise ValueError(
+            "Neutral model/training trial parameters require exactly one model"
+        )
+    model_key = next(iter(models))
+    model_config = models[model_key]
+    if not isinstance(model_config, dict):
+        raise ValueError(f"models.{model_key} must be a mapping")
+    return str(model_key), model_config
 
 
 def resolve_trial_config(
@@ -145,9 +169,40 @@ def resolve_trial_config(
             f"{sorted(SUPPORTED_TRIAL_PARAMETERS)}"
         )
     resolved = deepcopy(dict(base_config))
+    preprocessing_paths = set(trial_parameters).intersection(FACTOR_PATHS)
     preprocessing = resolved.get("raw_preprocessing")
-    if not isinstance(preprocessing, dict):
+    if preprocessing_paths and not isinstance(preprocessing, dict):
         raise ValueError("base_config.raw_preprocessing must be a mapping")
+
+    if "model.name" in trial_parameters:
+        model_name = str(trial_parameters["model.name"]).strip()
+        if not model_name:
+            raise ValueError("model.name must be non-empty")
+        previous_name, model_config = _single_model_config(resolved)
+        model_config["type"] = model_name
+        if previous_name != model_name:
+            resolved["models"] = {model_name: model_config}
+
+    model_parameter_paths = {
+        "model.params.d_model": "d_model",
+        "model.params.nhead": "nhead",
+        "model.params.num_layers": "num_layers",
+        "model.params.dim_feedforward": "dim_feedforward",
+        "model.params.dropout": "dropout",
+        "training.learning_rate": "learning_rate",
+        "training.weight_decay": "weight_decay",
+        "training.batch_size": "batch_size",
+    }
+    selected_model_paths = set(trial_parameters).intersection(
+        model_parameter_paths
+    )
+    if selected_model_paths:
+        _, model_config = _single_model_config(resolved)
+        params = model_config.setdefault("params", {})
+        if not isinstance(params, dict):
+            raise ValueError("The configured model params must be a mapping")
+        for path in selected_model_paths:
+            params[model_parameter_paths[path]] = trial_parameters[path]
 
     for path in FACTOR_PATHS[:2]:
         if path not in trial_parameters:
@@ -156,6 +211,7 @@ def resolve_trial_config(
         if not isinstance(value, bool):
             raise ValueError(f"{path} must be boolean")
         component = path.split(".")[1]
+        assert isinstance(preprocessing, dict)
         preprocessing.setdefault(component, {})["enabled"] = value
 
     car_path = FACTOR_PATHS[2]
@@ -163,6 +219,7 @@ def resolve_trial_config(
         value = trial_parameters[car_path]
         if not isinstance(value, bool):
             raise ValueError(f"{car_path} must be boolean")
+        assert isinstance(preprocessing, dict)
         preprocessing.setdefault("rereference", {})["mode"] = (
             "common_average" if value else "none"
         )

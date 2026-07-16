@@ -13,6 +13,35 @@ class EmotivDataset(BaseEEGDataset):
 
     def load(self) -> EEGData:
         df = self._load_dataframe()
+        include_subject_ids = self.config.get('include_subject_ids')
+        normalized_subject_ids = None
+        if include_subject_ids is not None:
+            if isinstance(include_subject_ids, (str, bytes)):
+                raise ValueError('include_subject_ids must be a sequence of IDs')
+            normalized_subject_ids = sorted({
+                str(value) for value in include_subject_ids
+            })
+            if not normalized_subject_ids:
+                raise ValueError('include_subject_ids must not be empty')
+            if self.subject_col not in df.columns:
+                raise ValueError(
+                    f"Subject column {self.subject_col!r} is required for "
+                    'include_subject_ids'
+                )
+            available_subjects = set(df[self.subject_col].astype(str))
+            missing_subjects = sorted(
+                set(normalized_subject_ids) - available_subjects
+            )
+            if missing_subjects:
+                raise ValueError(
+                    'include_subject_ids contains IDs absent from the dataset: '
+                    f'{missing_subjects[:20]}'
+                )
+            df = df.loc[
+                df[self.subject_col].astype(str).isin(normalized_subject_ids)
+            ].copy()
+            if df.empty:
+                raise ValueError('include_subject_ids selected no dataset rows')
         sample_ids = (
             df['sample_id'].values
             if 'sample_id' in df.columns
@@ -125,6 +154,7 @@ class EmotivDataset(BaseEEGDataset):
                 'n_subjects': len(np.unique(subject_ids)),
                 'n_records': len(np.unique(record_ids)),
                 'max_windows': max_windows,
+                'include_subject_ids': normalized_subject_ids,
                 'n_classes': len(unique_classes),
                 'classes': unique_classes.tolist(),
                 'source': 'Emotiv EPOC X',
