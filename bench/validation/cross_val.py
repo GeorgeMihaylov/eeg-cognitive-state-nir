@@ -121,6 +121,9 @@ class CrossValidator:
                 metadata={
                     'split_type': 'group_kfold_subject',
                     'protocol': 'group_kfold_subject',
+                    'task_type': getattr(
+                        self.task, 'task_type', 'classification'
+                    ),
                     'fold': fold_index,
                     'fold_name': fold_name,
                     'n_splits': n_splits,

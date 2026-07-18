@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, List
 from .base_eeg_data_loader import BaseEEGDataset
+from .base_eeg_data_loader import feature_list_sha256
 from ..core.abstract_dataset import EEGData
 
 
@@ -231,6 +232,8 @@ class EmotivDataset(BaseEEGDataset):
             metadata={
                 'n_samples': len(X),
                 'n_features': len(feature_cols),
+                'feature_set': self.feature_set,
+                'feature_list_sha256': feature_list_sha256(feature_cols),
                 'n_subjects': len(np.unique(subject_ids)),
                 'n_records': len(np.unique(record_ids)),
                 'max_windows': max_windows,

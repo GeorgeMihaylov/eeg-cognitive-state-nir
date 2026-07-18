@@ -7,6 +7,7 @@ from ..core.abstract_dataset import EEGData
 
 class CognitiveLoadTask(BaseTask):
     expected_n_classes = 3
+    task_type = 'classification'
 
     def __init__(self, data: EEGData, config: Dict[str, Any]):
         super().__init__(data, config)
@@ -152,3 +153,38 @@ class CognitiveLoad5ClassTask(CognitiveLoadTask):
     @property
     def name(self) -> str:
         return 'cognitive_load_5class'
+
+
+class FocusRegressionTask(CognitiveLoadTask):
+    """Continuous ``target_focus`` task using the shared split machinery."""
+
+    task_type = 'regression'
+
+    def _validate_classes(self):
+        labels = np.asarray(self.data.labels, dtype=float)
+        if not np.isfinite(labels).all():
+            raise ValueError('Regression labels must be finite')
+        if len(np.unique(labels)) < 2:
+            raise ValueError('Regression labels must contain variation')
+
+    def _within_subject_split(self, X: np.ndarray, y: np.ndarray) -> TaskSplit:
+        indices = np.arange(len(X))
+        train_idx, test_idx = train_test_split(
+            indices,
+            test_size=self.test_size,
+            random_state=self.random_state,
+        )
+        return self._build_indexed_split(
+            train_idx,
+            test_idx,
+            metadata={
+                'split_type': 'random_window_train_test',
+                'test_size': self.test_size,
+                'random_state': self.random_state,
+                'task_type': self.task_type,
+            },
+        )
+
+    @property
+    def name(self) -> str:
+        return 'focus_regression'

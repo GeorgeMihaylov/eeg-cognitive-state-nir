@@ -358,6 +358,19 @@ Examples:
         help='Compare global and outer-train-fitted label thresholds',
     )
     parser.add_argument(
+        '--feature-group-experiment',
+        type=str,
+        help='Plan or run RF EEG/POW feature-group classification and regression',
+    )
+    parser.add_argument(
+        '--feature-groups',
+        help='Comma-separated feature groups for the RF experiment',
+    )
+    parser.add_argument(
+        '--tasks',
+        help='Comma-separated task families for the RF experiment',
+    )
+    parser.add_argument(
         '--tracks',
         help='Comma-separated statistical analysis tracks',
     )
@@ -388,6 +401,57 @@ Examples:
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.feature_group_experiment:
+        conflicts = {
+            '--config': args.config,
+            '--test': args.test,
+            '--experiment-matrix': args.experiment_matrix,
+            '--calibration-experiment': args.calibration_experiment,
+            '--automl-study': args.automl_study,
+            '--statistical-analysis': args.statistical_analysis,
+            '--cross-source-experiment': args.cross_source_experiment,
+            '--label-target-audit': args.label_target_audit,
+            '--temporal-target-audit': args.temporal_target_audit,
+            '--label-definition-sensitivity': args.label_definition_sensitivity,
+        }
+        active_conflicts = [name for name, value in conflicts.items() if value]
+        if active_conflicts:
+            parser.error(
+                '--feature-group-experiment cannot be combined with '
+                + ', '.join(active_conflicts)
+            )
+        if args.plan_only and args.run:
+            parser.error('--plan-only and --run are mutually exclusive')
+        if not args.plan_only and not args.run:
+            parser.error(
+                '--feature-group-experiment requires --plan-only or --run'
+            )
+        from bench.experiments.feature_group_ablation import (
+            FeatureGroupRFExperiment,
+        )
+
+        parse_values = lambda value: (
+            None
+            if value is None
+            else [item.strip() for item in value.split(',') if item.strip()]
+        )
+        experiment = FeatureGroupRFExperiment(
+            args.feature_group_experiment,
+            output_dir=args.output_dir,
+        )
+        plans = experiment.plan(
+            feature_groups=parse_values(args.feature_groups),
+            tasks=parse_values(args.tasks),
+            models=parse_values(args.models),
+            seed=42 if args.seed is None else args.seed,
+        )
+        if args.plan_only:
+            print(experiment.render_plan(plans))
+            return
+        result = experiment.execute(plans, resume=args.resume)
+        print(json.dumps(result, indent=2, default=str))
+        return
 
     if args.label_definition_sensitivity:
         conflicts = {

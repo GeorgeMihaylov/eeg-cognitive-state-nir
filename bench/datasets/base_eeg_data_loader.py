@@ -1,8 +1,60 @@
+import hashlib
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from ..core.abstract_dataset import BaseDataset
+
+
+FEATURE_SET_ALIASES = {
+    'eeg': 'eeg_only',
+    'eeg_only': 'eeg_only',
+    'pow': 'pow_only',
+    'pow_only': 'pow_only',
+    'pow_plus_eeg': 'eeg_pow',
+    'eeg_pow': 'eeg_pow',
+    'all': 'all',
+}
+
+
+def feature_list_sha256(feature_names: List[str]) -> str:
+    """Hash an ordered feature list using a documented line serialization."""
+
+    payload = ''.join(f'{name}\n' for name in feature_names).encode('utf-8')
+    return hashlib.sha256(payload).hexdigest()
+
+
+def resolve_feature_columns(
+        columns: List[str],
+        feature_set: str,
+) -> List[str]:
+    """Resolve deterministic EEG/POW groups while preserving dataset order."""
+
+    try:
+        normalized = FEATURE_SET_ALIASES[str(feature_set).strip().lower()]
+    except KeyError as exc:
+        raise ValueError(
+            f'Unknown feature_set {feature_set!r}. '
+            f'Available: {sorted(FEATURE_SET_ALIASES)}'
+        ) from exc
+
+    eeg_columns = {column for column in columns if column.startswith('EEG.')}
+    pow_columns = {column for column in columns if column.startswith('POW.')}
+    if normalized == 'eeg_only':
+        return [column for column in columns if column in eeg_columns]
+    if normalized == 'pow_only':
+        return [column for column in columns if column in pow_columns]
+    if normalized == 'eeg_pow':
+        selected = eeg_columns | pow_columns
+        return [column for column in columns if column in selected]
+
+    exclude = {
+        'record_id', 'source', 'subject_id', 'sample_id', 'window_id',
+        'day', 'part', 'datetime_from_name', 't_center', 't_start', 't_end',
+        'target_main', 'label_q5',
+    }
+    exclude.update(column for column in columns if column.startswith('target_'))
+    return [column for column in columns if column not in exclude]
 
 
 class BaseEEGDataset(BaseDataset):
@@ -27,27 +79,25 @@ class BaseEEGDataset(BaseDataset):
 
     def _select_features(self, df: pd.DataFrame) -> List[str]:
         all_cols = df.columns.tolist()
-
-        exclude = ['record_id', 'source', 'subject_id', 'day', 'part',
-                   'datetime_from_name', 't_center', 't_start', 't_end',
-                   'target_main', 'label_q5']
-
-        exclude.extend([c for c in all_cols if c.startswith('target_')])
-
-        if self.feature_set == 'pow_plus_eeg':
-            include = [c for c in all_cols if c not in exclude and
-                       ('POW.' in c or 'EEG.' in c or 'eeg' in c.lower())]
-        elif self.feature_set == 'pow':
-            include = [c for c in all_cols if 'POW.' in c]
-        elif self.feature_set == 'eeg':
-            include = [c for c in all_cols if 'EEG.' in c]
-        elif self.feature_set == 'all':
-            include = [c for c in all_cols if c not in exclude]
-        else:
-            include = [c for c in all_cols if c not in exclude]
-
+        include = resolve_feature_columns(all_cols, self.feature_set)
         max_features = self.config.get('max_features', 500)
-        return include[:max_features]
+        if max_features is not None:
+            include = include[:int(max_features)]
+
+        expected_count = self.config.get('expected_feature_count')
+        if expected_count is not None and len(include) != int(expected_count):
+            raise ValueError(
+                f'Feature set {self.feature_set!r} resolved to {len(include)} '
+                f'columns, expected {int(expected_count)}'
+            )
+        expected_hash = self.config.get('feature_list_sha256')
+        actual_hash = feature_list_sha256(include)
+        if expected_hash is not None and actual_hash != str(expected_hash):
+            raise ValueError(
+                f'Feature list hash mismatch for {self.feature_set!r}: '
+                f'{actual_hash} != {expected_hash}'
+            )
+        return include
 
     def _discretize_target(self, y: np.ndarray) -> np.ndarray:
         if not self.config.get('discretize', True):

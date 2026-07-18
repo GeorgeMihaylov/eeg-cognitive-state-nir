@@ -1,7 +1,9 @@
 import numpy as np
+from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import (
     accuracy_score, balanced_accuracy_score, precision_score, recall_score, f1_score,
-    confusion_matrix, cohen_kappa_score, roc_auc_score
+    confusion_matrix, cohen_kappa_score, mean_absolute_error,
+    mean_squared_error, r2_score, roc_auc_score,
 )
 from typing import Dict, Any, List, Optional
 
@@ -12,8 +14,14 @@ class MetricsCalculator:
             y_true: np.ndarray,
             y_pred: np.ndarray,
             y_proba: Optional[np.ndarray] = None,
-            average: str = 'weighted'
+            average: str = 'weighted',
+            task_type: str = 'classification',
     ) -> Dict[str, Any]:
+        normalized_task = str(task_type).strip().lower()
+        if normalized_task in {'regression', 'regressor'}:
+            return MetricsCalculator.calculate_regression_metrics(y_true, y_pred)
+        if normalized_task not in {'classification', 'classifier'}:
+            raise ValueError(f'Unknown task_type {task_type!r}')
         metrics = {}
         metrics['accuracy'] = accuracy_score(y_true, y_pred)
         metrics['balanced_accuracy'] = balanced_accuracy_score(y_true, y_pred)
@@ -46,6 +54,48 @@ class MetricsCalculator:
         metrics['n_classes'] = len(np.unique(y_true))
 
         return metrics
+
+    @staticmethod
+    def calculate_regression_metrics(
+            y_true: np.ndarray,
+            y_pred: np.ndarray,
+    ) -> Dict[str, Any]:
+        truth = np.asarray(y_true, dtype=float).reshape(-1)
+        prediction = np.asarray(y_pred, dtype=float).reshape(-1)
+        if truth.shape != prediction.shape:
+            raise ValueError(
+                f'Regression arrays must have equal shape: '
+                f'{truth.shape} != {prediction.shape}'
+            )
+        if not np.isfinite(truth).all() or not np.isfinite(prediction).all():
+            raise ValueError('Regression metrics require finite values')
+
+        has_truth_variation = len(truth) >= 2 and np.ptp(truth) > 0
+        has_prediction_variation = len(prediction) >= 2 and np.ptp(prediction) > 0
+        r2 = (
+            float(r2_score(truth, prediction))
+            if has_truth_variation
+            else np.nan
+        )
+        pearson = (
+            float(pearsonr(truth, prediction).statistic)
+            if has_truth_variation and has_prediction_variation
+            else np.nan
+        )
+        spearman = (
+            float(spearmanr(truth, prediction).statistic)
+            if has_truth_variation and has_prediction_variation
+            else np.nan
+        )
+        return {
+            'mae': float(mean_absolute_error(truth, prediction)),
+            'rmse': float(np.sqrt(mean_squared_error(truth, prediction))),
+            'r2': r2,
+            'pearson': pearson,
+            'spearman': spearman,
+            'n_samples': int(len(truth)),
+            'task_type': 'regression',
+        }
 
     @staticmethod
     def get_baseline_accuracy(n_classes: int) -> float:

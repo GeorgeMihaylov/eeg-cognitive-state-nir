@@ -116,6 +116,7 @@ def _subject_row(
         "auc": auc,
         "ordinal_mae": float(metrics["ordinal_mae"]),
         "adjacent_accuracy": float(metrics["adjacent_accuracy"]),
+        "severe_error_rate": float(metrics["severe_error_rate"]),
     }
     if budget_seconds is not None:
         row["budget_seconds"] = float(budget_seconds)
@@ -157,4 +158,45 @@ def calculate_subject_metrics(
         )
         for subject_id, group in frame.groupby("subject_id", sort=True)
     ]
+    return pd.DataFrame(rows)
+
+
+def calculate_regression_subject_metrics(
+    predictions: pd.DataFrame,
+    *,
+    track: str,
+    model: str,
+    seed: int,
+) -> pd.DataFrame:
+    """Calculate continuous-target metrics without filling undefined values."""
+
+    required = {"subject_id", "y_true", "y_pred"}
+    missing = sorted(required - set(predictions.columns))
+    if missing:
+        raise ValueError(f"Prediction artifact is missing columns: {missing}")
+    rows: list[dict[str, Any]] = []
+    for subject_id, group in evaluation_predictions(predictions).groupby(
+        "subject_id", sort=True
+    ):
+        metrics = MetricsCalculator.calculate_regression_metrics(
+            group["y_true"].to_numpy(dtype=float),
+            group["y_pred"].to_numpy(dtype=float),
+        )
+        rows.append({
+            "track": track,
+            "model": model,
+            "seed": int(seed),
+            "subject_id": str(subject_id),
+            "outer_fold": _fold_value(group),
+            "source": _source_value(group),
+            "records": int(group["record_id"].nunique())
+            if "record_id" in group
+            else 0,
+            "n_samples": int(metrics["n_samples"]),
+            "mae": float(metrics["mae"]),
+            "rmse": float(metrics["rmse"]),
+            "r2": float(metrics["r2"]),
+            "pearson": float(metrics["pearson"]),
+            "spearman": float(metrics["spearman"]),
+        })
     return pd.DataFrame(rows)

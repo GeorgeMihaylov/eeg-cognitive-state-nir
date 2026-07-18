@@ -14,6 +14,7 @@ import yaml
 from .core.abstract_dataset import BaseDataset, EEGData
 from .core.abstract_task import BaseTask, TaskSplit
 from .datasets.datasets_registry import get_dataset
+from .datasets.base_eeg_data_loader import feature_list_sha256
 from .tasks.tasks_registry import get_task
 from .validation.cross_val import CrossValidator
 from .validation.metrics import MetricsCalculator
@@ -453,6 +454,13 @@ class BenchmarkRunner:
             logger.info(f"  Running task: {task_name}")
             task_config = self.config.get('task_config', {})
             task = get_task(task_name, data, task_config)
+            configured_task_type = getattr(task, 'task_type', 'classification')
+            task_type = (
+                configured_task_type.strip().lower()
+                if isinstance(configured_task_type, str)
+                else 'classification'
+            )
+            task_num_outputs = task.n_classes if task_type == 'classification' else 1
             cv = CrossValidator(task)
             subject_ids = np.unique(data.subject_ids)
             evaluation_config = self.config.get('evaluation')
@@ -510,7 +518,7 @@ class BenchmarkRunner:
                             outer_split=cross_source_split,
                             model_name=model_name,
                             model_config=model_info['config'],
-                            num_outputs=task.n_classes,
+                            num_outputs=task_num_outputs,
                             dataset_name=dataset_name,
                             task_name=task_name,
                         )
@@ -559,9 +567,10 @@ class BenchmarkRunner:
                         group_splits=group_splits,
                         model_name=model_name,
                         model_config=model_info['config'],
-                        num_outputs=task.n_classes,
+                        num_outputs=task_num_outputs,
                         dataset_name=dataset_name,
                         task_name=task_name,
+                        task_type=task_type,
                     )
                     results['models'].setdefault(task_name, {})
                     results['models'][task_name].setdefault(model_name, {})
@@ -575,7 +584,7 @@ class BenchmarkRunner:
                         model = self._get_model_for_split(
                             model_info,
                             split,
-                            num_outputs=task.n_classes,
+                            num_outputs=task_num_outputs,
                         )
                         split_name = split.metadata.get(
                             'split_type', 'within_subject'
@@ -587,6 +596,7 @@ class BenchmarkRunner:
                             dataset_name=dataset_name,
                             task_name=task_name,
                             artifact_split_name=split_name,
+                            task_type=task_type,
                         )
                         if task_name not in results['models']:
                             results['models'][task_name] = {}
@@ -606,9 +616,10 @@ class BenchmarkRunner:
                             loso_splits,
                             model_name,
                             model_config=model_info['config'],
-                            num_outputs=task.n_classes,
+                            num_outputs=task_num_outputs,
                             dataset_name=dataset_name,
                             task_name=task_name,
+                            task_type=task_type,
                         )
                         if task_name not in results['models']:
                             results['models'][task_name] = {}
@@ -627,7 +638,8 @@ class BenchmarkRunner:
             model_name: str,
             dataset_name: Optional[str] = None,
             task_name: Optional[str] = None,
-            artifact_split_name: Optional[str] = None
+            artifact_split_name: Optional[str] = None,
+            task_type: str = 'classification',
     ) -> Dict[str, Any]:
         start_time = time.time()
         self._configure_model_validation(model, split)
@@ -642,7 +654,7 @@ class BenchmarkRunner:
 
         training_time = time.time() - start_time
         metrics = MetricsCalculator.calculate_all_metrics(
-            split.y_test, y_pred, y_proba
+            split.y_test, y_pred, y_proba, task_type=task_type
         )
 
         result = {
@@ -802,6 +814,41 @@ class BenchmarkRunner:
                 ),
             )
         artifacts['metrics'] = str(metrics_path)
+
+        feature_names = list(split.feature_names or [])
+        feature_manifest = {
+            'feature_group': split.metadata.get('dataset_metadata', {}).get(
+                'feature_set'
+            ),
+            'feature_count': len(feature_names),
+            'ordered_feature_names': feature_names,
+            'feature_list_sha256': feature_list_sha256(feature_names),
+            'serialization': 'UTF-8 feature name plus newline, in model order',
+        }
+        feature_manifest_path = artifact_dir / 'feature_manifest.json'
+        with open(feature_manifest_path, 'w', encoding='utf-8') as output:
+            json.dump(feature_manifest, output, indent=2)
+        artifacts['feature_manifest'] = str(feature_manifest_path)
+
+        feature_importances = getattr(model, 'feature_importances_', None)
+        if feature_importances is not None:
+            importance = np.asarray(feature_importances, dtype=float).reshape(-1)
+            if len(importance) != len(feature_names):
+                raise ValueError(
+                    'Model feature importance length does not match feature names: '
+                    f'{len(importance)} != {len(feature_names)}'
+                )
+            order = np.argsort(-importance, kind='mergesort')
+            ranks = np.empty(len(order), dtype=np.int64)
+            ranks[order] = np.arange(1, len(order) + 1, dtype=np.int64)
+            importance_path = artifact_dir / 'feature_importance.parquet'
+            pd.DataFrame({
+                'feature_index': np.arange(len(feature_names), dtype=np.int64),
+                'feature_name': feature_names,
+                'importance': importance,
+                'rank': ranks,
+            }).to_parquet(importance_path, index=False)
+            artifacts['feature_importance'] = str(importance_path)
 
         sequence_stats = split.metadata.get('sequence_stats')
         if sequence_stats is not None:
@@ -1297,7 +1344,8 @@ class BenchmarkRunner:
             model_config: Dict[str, Any],
             num_outputs: int,
             dataset_name: str,
-            task_name: str
+            task_name: str,
+            task_type: str = 'classification',
     ) -> Dict[str, Any]:
         per_fold_results: Dict[str, Any] = {}
         prediction_frames = []
@@ -1346,6 +1394,7 @@ class BenchmarkRunner:
                 dataset_name=dataset_name,
                 task_name=task_name,
                 artifact_split_name=fold_name,
+                task_type=task_type,
             )
             per_fold_results[fold_name] = result
             expected_predictions += len(split.y_test)
@@ -1398,6 +1447,14 @@ class BenchmarkRunner:
             'weighted_f1',
             'kappa',
             'auc',
+            'ordinal_mae',
+            'adjacent_accuracy',
+            'severe_error_rate',
+            'mae',
+            'rmse',
+            'r2',
+            'pearson',
+            'spearman',
         ]
         aggregated: Dict[str, Any] = {
             'n_folds': len(per_fold_results),
@@ -1438,7 +1495,8 @@ class BenchmarkRunner:
             model_config: Optional[Dict[str, Any]] = None,
             num_outputs: Optional[int] = None,
             dataset_name: Optional[str] = None,
-            task_name: Optional[str] = None
+            task_name: Optional[str] = None,
+            task_type: str = 'classification',
     ) -> Dict[str, Any]:
         per_subject_results = {}
 
@@ -1459,6 +1517,7 @@ class BenchmarkRunner:
                 dataset_name=dataset_name,
                 task_name=task_name,
                 artifact_split_name=f"loso_{subject_id}",
+                task_type=task_type,
             )
             per_subject_results[str(subject_id)] = result
         aggregated = self._aggregate_loso_metrics(per_subject_results)
@@ -1627,6 +1686,47 @@ class BenchmarkRunner:
                             'kappa': aggregated.get('kappa_mean', np.nan),
                             'kappa_mean': aggregated.get('kappa_mean', np.nan),
                             'kappa_std': aggregated.get('kappa_std', np.nan),
+                            'auc': aggregated.get('auc_mean', np.nan),
+                            'auc_mean': aggregated.get('auc_mean', np.nan),
+                            'auc_std': aggregated.get('auc_std', np.nan),
+                            'ordinal_mae': aggregated.get(
+                                'ordinal_mae_mean', np.nan
+                            ),
+                            'ordinal_mae_mean': aggregated.get(
+                                'ordinal_mae_mean', np.nan
+                            ),
+                            'ordinal_mae_std': aggregated.get(
+                                'ordinal_mae_std', np.nan
+                            ),
+                            'adjacent_accuracy': aggregated.get(
+                                'adjacent_accuracy_mean', np.nan
+                            ),
+                            'severe_error_rate': aggregated.get(
+                                'severe_error_rate_mean', np.nan
+                            ),
+                            'mae': aggregated.get('mae_mean', np.nan),
+                            'mae_mean': aggregated.get('mae_mean', np.nan),
+                            'mae_std': aggregated.get('mae_std', np.nan),
+                            'rmse': aggregated.get('rmse_mean', np.nan),
+                            'rmse_mean': aggregated.get('rmse_mean', np.nan),
+                            'rmse_std': aggregated.get('rmse_std', np.nan),
+                            'r2': aggregated.get('r2_mean', np.nan),
+                            'r2_mean': aggregated.get('r2_mean', np.nan),
+                            'r2_std': aggregated.get('r2_std', np.nan),
+                            'pearson': aggregated.get('pearson_mean', np.nan),
+                            'pearson_mean': aggregated.get(
+                                'pearson_mean', np.nan
+                            ),
+                            'pearson_std': aggregated.get(
+                                'pearson_std', np.nan
+                            ),
+                            'spearman': aggregated.get('spearman_mean', np.nan),
+                            'spearman_mean': aggregated.get(
+                                'spearman_mean', np.nan
+                            ),
+                            'spearman_std': aggregated.get(
+                                'spearman_std', np.nan
+                            ),
                             'training_time': aggregated.get(
                                 'training_time_total', np.nan
                             ),
