@@ -743,6 +743,7 @@ class OrdinalTransformerFullExperiment:
         fold_name: str,
         fold: Mapping[str, Any],
         split: Any,
+        categorical_reference_run: Path | None = None,
     ) -> tuple[dict[str, Any], pd.DataFrame]:
         artifacts = {key: Path(value) for key, value in fold["artifacts"].items()}
         required_artifacts = {
@@ -891,10 +892,14 @@ class OrdinalTransformerFullExperiment:
             raise ValueError(f"Inner leakage detected in {fold_name}")
         if fold["split_metadata"].get("subject_overlap"):
             raise ValueError(f"Outer subject leakage detected in {fold_name}")
-        reference_run = _repo_path(
-            self.document["categorical_references"][plan.feature_group][
-                "run_directory"
-            ]
+        reference_run = (
+            categorical_reference_run
+            if categorical_reference_run is not None
+            else _repo_path(
+                self.document["categorical_references"][plan.feature_group][
+                    "run_directory"
+                ]
+            )
         )
         reference_fold = self._reference_fold_directory(reference_run, fold_name)
         reference_validation = json.loads(
@@ -1023,6 +1028,7 @@ class OrdinalTransformerFullExperiment:
         plan: OrdinalTransformerFullTrialPlan,
         completed: CompletedBenchmarkRun,
         splits: Mapping[str, Any],
+        categorical_reference_run: Path | None = None,
     ) -> dict[str, Any]:
         model_result = self._result_model(completed)
         expected_folds = [f"fold_{fold:02d}" for fold in FULL_FOLDS]
@@ -1032,7 +1038,11 @@ class OrdinalTransformerFullExperiment:
         prediction_frames: list[pd.DataFrame] = []
         for fold_name in expected_folds:
             audit, predictions = self._audit_fold(
-                plan, fold_name, model_result["folds"][fold_name], splits[fold_name]
+                plan,
+                fold_name,
+                model_result["folds"][fold_name],
+                splits[fold_name],
+                categorical_reference_run,
             )
             fold_audits.append(audit)
             prediction_frames.append(predictions)
@@ -1063,10 +1073,14 @@ class OrdinalTransformerFullExperiment:
         source_metrics = self._source_metrics(combined)
         class_metrics = self._class_metrics(combined)
 
-        reference_run = _repo_path(
-            self.document["categorical_references"][plan.feature_group][
-                "run_directory"
-            ]
+        reference_run = (
+            categorical_reference_run
+            if categorical_reference_run is not None
+            else _repo_path(
+                self.document["categorical_references"][plan.feature_group][
+                    "run_directory"
+                ]
+            )
         )
         reference_prediction_path = next(
             reference_run.glob("**/group_kfold_subject/predictions.parquet")

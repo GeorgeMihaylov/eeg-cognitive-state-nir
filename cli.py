@@ -439,14 +439,31 @@ Examples:
             parser.error(
                 '--ordinal-transformer-analysis requires --plan-only or --run'
             )
-        from bench.analysis.ordinal_transformer_statistics import (
-            OrdinalTransformerStatistics,
+        analysis_config_path = Path(args.ordinal_transformer_analysis)
+        analysis_document = (
+            yaml.safe_load(analysis_config_path.read_text(encoding='utf-8')) or {}
+            if analysis_config_path.is_file()
+            else {}
         )
+        analysis_type = str(analysis_document.get('analysis', {}).get('type', ''))
+        if analysis_type == 'ordinal_transformer_multiseed_statistics':
+            from bench.analysis.ordinal_transformer_multiseed_statistics import (
+                OrdinalTransformerMultiseedStatistics,
+            )
 
-        analysis = OrdinalTransformerStatistics(
-            args.ordinal_transformer_analysis,
-            output_dir=args.output_dir,
-        )
+            analysis = OrdinalTransformerMultiseedStatistics(
+                args.ordinal_transformer_analysis,
+                output_dir=args.output_dir,
+            )
+        else:
+            from bench.analysis.ordinal_transformer_statistics import (
+                OrdinalTransformerStatistics,
+            )
+
+            analysis = OrdinalTransformerStatistics(
+                args.ordinal_transformer_analysis,
+                output_dir=args.output_dir,
+            )
         if args.plan_only:
             print(analysis.render_plan(analysis.plan()))
             return

@@ -1220,6 +1220,14 @@ def build_ordinal_transformer_experiment(
         )
 
         return OrdinalTransformerFullExperiment(resolved, output_dir=output_dir)
+    if experiment_type == "ordinal_transformer_multiseed":
+        from bench.experiments.ordinal_transformer_multiseed import (
+            OrdinalTransformerMultiseedExperiment,
+        )
+
+        return OrdinalTransformerMultiseedExperiment(
+            resolved, output_dir=output_dir
+        )
     if experiment_type == "ordinal_transformer_smoke":
         return OrdinalTransformerSmokeExperiment(resolved, output_dir=output_dir)
     raise ValueError(
