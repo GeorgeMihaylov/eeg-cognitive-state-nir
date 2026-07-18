@@ -1,0 +1,508 @@
+{
+  "schema_version": 1,
+  "document_type": "auxiliary_corn_transformer_preregistered_design",
+  "status": "design_only",
+  "design_date": "2026-07-18",
+  "source_revision": "d8428d9dfadb17078fd523b03ebda3c1e805b996",
+  "side_effects": {
+    "model_code_changed": false,
+    "training_performed": false,
+    "lambda_search_performed": false,
+    "checkpoint_created": false,
+    "outer_test_evaluated": false
+  },
+  "motivation": {
+    "categorical_eeg_pow_three_seed_approximate_metrics": {
+      "balanced_accuracy": 0.367,
+      "macro_f1": 0.369,
+      "ordinal_mae": 0.985,
+      "severe_error_rate": 0.252
+    },
+    "pure_corn_eeg_pow_subject_level_improvements": {
+      "ordinal_mae": {
+        "mean": 0.03385,
+        "bootstrap_ci_95": [0.01237, 0.05698],
+        "holm_adjusted_p_value": 0.01196,
+        "positive_seeds": 2
+      },
+      "severe_error_rate": {
+        "mean": 0.01981,
+        "bootstrap_ci_95": [0.00995, 0.03044],
+        "holm_adjusted_p_value": 0.00302,
+        "positive_seeds": 3
+      },
+      "balanced_accuracy_change": -0.01114,
+      "macro_f1_change": -0.00168,
+      "worst_quartile_ordinal_mae_improvement": 0.07663,
+      "worst_quartile_severe_error_improvement": 0.03308
+    }
+  },
+  "research_hypothesis": "An auxiliary CORN objective can improve ordinal error characteristics of the primary categorical Transformer prediction while preserving more categorical discrimination than a pure CORN head.",
+  "architecture": {
+    "model_name": "torch_transformer",
+    "head_type": "categorical_corn",
+    "num_classes": 5,
+    "num_thresholds": 4,
+    "input_shapes": {
+      "eeg_only": [8, 168],
+      "eeg_pow": [8, 448]
+    },
+    "single_encoder_call": true,
+    "shared_representation": "TorchFeatureTransformerClassifier.encode output",
+    "categorical_head": {
+      "registered_name": "classifier",
+      "state_dict_prefixes": [
+        "classifier.0.",
+        "classifier.1.",
+        "classifier.4."
+      ],
+      "output_shape": ["batch", 5],
+      "unchanged_from_legacy": true
+    },
+    "auxiliary_head": {
+      "class": "CornOrdinalHead",
+      "registered_name": "auxiliary_ordinal_head",
+      "state_dict_prefix": "auxiliary_ordinal_head.",
+      "output_shape": ["batch", 4],
+      "duplicates_existing_corn": false
+    },
+    "projected_parameter_counts": {
+      "eeg_only": 322313,
+      "eeg_pow": 358153,
+      "hard_coded_in_model": false
+    }
+  },
+  "forward_output": {
+    "recommended_kind": "NamedTuple",
+    "type_name": "CategoricalCornOutput",
+    "fields": {
+      "categorical_logits": ["batch", 5],
+      "ordinal_logits": ["batch", 4]
+    },
+    "legacy_single_head_return_type": "torch.Tensor",
+    "shape_based_semantic_inference_allowed": false
+  },
+  "objective": {
+    "type": "categorical_plus_auxiliary_corn",
+    "formula": "cross_entropy(categorical_logits,y) + auxiliary_weight * corn_loss(ordinal_logits,y)",
+    "categorical_normalization": "sum cross entropy divided by sample count",
+    "corn_normalization": "sum(mask * BCEWithLogits) divided by sum(mask)",
+    "reuse_existing_corn_loss": true,
+    "allowed_auxiliary_weight": {
+      "type": "finite_float",
+      "minimum": 0.0
+    },
+    "excluded_terms": [
+      "probability_consistency",
+      "regression_loss",
+      "subject_weights",
+      "class_weights",
+      "changed_corn_risk_sets"
+    ],
+    "training_log_columns": [
+      "train_total_loss",
+      "train_categorical_loss",
+      "train_ordinal_loss",
+      "validation_total_loss",
+      "validation_categorical_loss",
+      "validation_ordinal_loss"
+    ],
+    "legacy_log_aliases": {
+      "train_loss": "train_total_loss",
+      "validation_loss": "validation_total_loss"
+    }
+  },
+  "prediction_semantics": {
+    "primary_head": "categorical",
+    "class_probabilities": "softmax(categorical_logits)",
+    "y_pred": "argmax(class_probabilities)",
+    "primary_metrics_probability_source": "categorical class probabilities only",
+    "auxiliary_head_role": "diagnostic_only",
+    "auxiliary_threshold_probability_semantics": "cumulative P(y > k)",
+    "auxiliary_prediction": "count(aux_threshold_probability >= 0.5)",
+    "head_ensembling_allowed": false,
+    "outer_test_head_selection_allowed": false
+  },
+  "checkpoint": {
+    "strict_load": true,
+    "required_identity_fields": [
+      "head_type",
+      "input_shape",
+      "num_classes",
+      "objective_schema_version",
+      "auxiliary_weight"
+    ],
+    "required_state_prefixes": [
+      "input_projection.",
+      "positional_encoding.",
+      "encoder.",
+      "classifier.",
+      "auxiliary_ordinal_head."
+    ],
+    "reject_incompatible_head_types": [
+      "categorical",
+      "coral",
+      "corn"
+    ],
+    "initialization_for_first_experiment": "from_scratch",
+    "implicit_partial_load_allowed": false,
+    "warm_start_in_scope": false
+  },
+  "calibration": {
+    "supported": false,
+    "required_error": "head_type categorical_corn: calibration not supported yet",
+    "automatic_categorical_head_only_fine_tuning": false
+  },
+  "canonical_data": {
+    "target": "label_q5",
+    "source_parquet_sha256": "26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8",
+    "supervised_windows": 45384,
+    "sequences": 44142,
+    "subjects": 53,
+    "sequence_length": 8,
+    "sequence_stride": 1,
+    "target_position": "last",
+    "sequence_index_sha256": "1d0a1fe8ab8aad1c6da8637cb882c4365c01acb80c0822e34ced21ef7ee36afa"
+  },
+  "feature_groups": [
+    {
+      "name": "eeg_pow",
+      "role": "primary",
+      "feature_count": 448,
+      "feature_list_sha256": "8cd5d70faa8ff30fb4290dd9d9a2dde0e81f50e7682d05668b5fb47df511fd51"
+    },
+    {
+      "name": "eeg_only",
+      "role": "control",
+      "feature_count": 168,
+      "feature_list_sha256": "6e822ee172422e7138945b47b2b27c947393b828b72d96b7a8e22850aded8aca"
+    }
+  ],
+  "seeds": {
+    "model_initialization": [7, 42, 123],
+    "outer_split": 42,
+    "inner_split": 42,
+    "treated_as_independent_in_inference": false
+  },
+  "splits": {
+    "outer": {
+      "protocol": "group_kfold_subject",
+      "group_column": "subject_id",
+      "folds": [1, 2, 3, 4, 5],
+      "train_test_subject_overlap_required": 0
+    },
+    "inner": {
+      "strategy": "group_record",
+      "group_column": "record_group_id",
+      "validation_size": 0.15,
+      "train_validation_group_overlap_required": 0
+    },
+    "same_inner_indices_for_all_weights": true,
+    "same_normalization_for_all_weights": true
+  },
+  "auxiliary_weight_strategies": [
+    {
+      "name": "fixed",
+      "selected": false,
+      "new_trial_configurations": 6,
+      "fold_trainings": 30,
+      "estimated_training_seconds": 1025,
+      "advantages": ["low cost", "simple interpretation"],
+      "disadvantages": ["sensitive to arbitrary loss scale"]
+    },
+    {
+      "name": "nested_grid",
+      "selected": true,
+      "new_trial_configurations": 18,
+      "fold_trainings": 90,
+      "estimated_training_seconds": 3074,
+      "advantages": ["outer-test-blind selection", "transparent declared grid"],
+      "disadvantages": ["threefold training cost", "requires candidate orchestration"]
+    },
+    {
+      "name": "learned_weight",
+      "selected": false,
+      "new_trial_configurations": 6,
+      "fold_trainings": 30,
+      "estimated_training_seconds_lower_bound": 1025,
+      "advantages": ["no manual grid"],
+      "disadvantages": ["new methodological component", "weaker attribution and interpretability"]
+    }
+  ],
+  "lambda_selection": {
+    "strategy": "nested_grid",
+    "candidate_grid": [0.25, 0.5, 1.0],
+    "selection_scope": "independent per feature_group, model_seed, outer_fold",
+    "selection_data": "inner_validation_only",
+    "categorical_reference": "paired checkpoint evaluated on identical inner-validation rows",
+    "balanced_accuracy_noninferiority_margin_absolute": 0.01,
+    "eligibility_rule": "candidate_balanced_accuracy >= categorical_reference_balanced_accuracy - 0.01",
+    "eligible_candidate_order": [
+      "minimum_severe_error_rate",
+      "minimum_ordinal_mae",
+      "maximum_balanced_accuracy",
+      "maximum_macro_f1",
+      "minimum_auxiliary_weight"
+    ],
+    "numeric_tie_rounding_decimals": 8,
+    "no_eligible_fallback_order": [
+      "maximum_balanced_accuracy",
+      "maximum_macro_f1",
+      "minimum_severe_error_rate",
+      "minimum_ordinal_mae",
+      "minimum_auxiliary_weight"
+    ],
+    "no_eligible_flag": "ba_guard_fallback",
+    "outer_test_input_allowed": false,
+    "post_selection_refit": false
+  },
+  "early_stopping": {
+    "monitor": "validation_categorical_loss",
+    "mode": "min",
+    "patience": 4,
+    "max_epochs": 15,
+    "outer_test_metrics_allowed": false,
+    "logged_nonmonitor_losses": [
+      "validation_total_loss",
+      "validation_ordinal_loss"
+    ]
+  },
+  "nested_protocol": [
+    "materialize canonical outer split",
+    "resolve one group-record inner split from outer-train",
+    "fit normalization on inner-train only",
+    "evaluate paired categorical reference on inner-validation",
+    "fit fresh candidates for weights 0.25, 0.5, 1.0 on identical inner split",
+    "finalize immutable selection manifest without outer-test access",
+    "evaluate only selected best checkpoint on outer-test once",
+    "audit alignment, overlap, probabilities, checkpoint, and selection provenance"
+  ],
+  "runner_constraint": {
+    "current_behavior": "BenchmarkRunner.run fits and immediately evaluates outer-test",
+    "unsafe_candidate_usage": "calling full run once per lambda",
+    "minimal_future_seam": "separate fit-one-split from predict-and-save-fitted-split while preserving existing evaluate API",
+    "new_training_loop_allowed": false
+  },
+  "metrics": {
+    "primary": [
+      "balanced_accuracy",
+      "macro_f1",
+      "ordinal_mae",
+      "severe_error_rate"
+    ],
+    "secondary_primary_head": [
+      "auc",
+      "cohen_kappa",
+      "quadratic_weighted_kappa",
+      "adjacent_accuracy",
+      "categorical_expected_rank_mae",
+      "categorical_expected_rank_spearman"
+    ],
+    "auxiliary_diagnostics": [
+      "auxiliary_ordinal_mae",
+      "auxiliary_severe_error_rate",
+      "auxiliary_expected_rank_mae",
+      "categorical_auxiliary_prediction_agreement"
+    ]
+  },
+  "statistical_analysis": {
+    "unit": "subject_id",
+    "subject_count": 53,
+    "seed_handling": "average three seeds within subject before inference",
+    "bootstrap": {
+      "type": "paired_subject",
+      "samples": 10000,
+      "confidence_level": 0.95
+    },
+    "tests": [
+      "two_sided_wilcoxon",
+      "holm_correction",
+      "sign_test",
+      "rank_biserial_correlation"
+    ],
+    "primary_families": [
+      {
+        "name": "eeg_pow_primary",
+        "comparison": "categorical_corn_vs_categorical",
+        "metrics": ["balanced_accuracy", "macro_f1", "ordinal_mae", "severe_error_rate"]
+      },
+      {
+        "name": "eeg_only_primary",
+        "comparison": "categorical_corn_vs_categorical",
+        "metrics": ["balanced_accuracy", "macro_f1", "ordinal_mae", "severe_error_rate"]
+      }
+    ],
+    "secondary_comparison": "categorical_corn_vs_pure_corn",
+    "hard_subject_definition": "lowest categorical-performance quartile within feature group"
+  },
+  "success_criteria": [
+    "ordinal_mae lower than categorical",
+    "severe_error_rate lower than categorical",
+    "no stable confirmed macro_f1 degradation",
+    "balanced_accuracy loss smaller than pure_corn",
+    "worst-quartile subject improvement retained",
+    "main effect direction positive in at least two of three seeds",
+    "effect direction consistent across eeg_pow and eeg_only or difference is interpretable"
+  ],
+  "strong_result": "ordinal errors improve, balanced accuracy and macro F1 are statistically non-worse than categorical, and balanced accuracy exceeds pure CORN",
+  "negative_result": "joint model repeats the pure-CORN tradeoff or has no stable ordinal improvement",
+  "computation": {
+    "empirical_reference": {
+      "fold_trainings": 60,
+      "aggregate_training_seconds": 2049.6,
+      "mean_seconds_per_fold": 34.16
+    },
+    "recommended_nested_grid": {
+      "candidate_fold_trainings": 90,
+      "selected_outer_fold_evaluations": 30,
+      "point_estimate_training_seconds": 3074,
+      "single_gpu_planning_envelope_hours": [1.0, 2.0],
+      "parallelizable_candidates": true,
+      "resume_by_config_hash": true
+    },
+    "storage": {
+      "observed_mean_checkpoint_bytes": 1320079,
+      "observed_mean_predictions_bytes_per_fold": 1745415,
+      "selected_checkpoint_count": 30,
+      "estimated_selected_checkpoint_megabytes": 42,
+      "estimated_selected_prediction_megabytes": 53,
+      "estimated_total_megabytes_range": [100, 160],
+      "retain_nonselected_checkpoints_after_atomic_selection": false,
+      "write_full_nonselected_predictions": false
+    }
+  },
+  "artifact_schema": {
+    "experiment_level": [
+      "resolved_config",
+      "canonical_sequence_index.parquet",
+      "candidate_plan.json",
+      "lambda_selection_summary.json",
+      "run_manifest.json",
+      "aligned_predictions.parquet",
+      "subject_metrics.parquet",
+      "source_metrics.json",
+      "class_metrics.json",
+      "statistical_summary.json",
+      "report.md"
+    ],
+    "selected_fold": [
+      "model.pt",
+      "metrics.json",
+      "training_log.csv",
+      "predictions.parquet",
+      "validation_split.json",
+      "normalization_stats.json",
+      "selection_manifest.json"
+    ],
+    "prediction_fields": [
+      "dataset",
+      "task",
+      "model",
+      "split",
+      "protocol",
+      "fold",
+      "sample_index",
+      "sample_id",
+      "sequence_id",
+      "subject_id",
+      "record_id",
+      "source",
+      "y_true",
+      "y_pred",
+      "head_type",
+      "proba_0",
+      "proba_1",
+      "proba_2",
+      "proba_3",
+      "proba_4",
+      "class_probability_0",
+      "class_probability_1",
+      "class_probability_2",
+      "class_probability_3",
+      "class_probability_4",
+      "categorical_expected_rank",
+      "aux_threshold_probability_0",
+      "aux_threshold_probability_1",
+      "aux_threshold_probability_2",
+      "aux_threshold_probability_3",
+      "aux_class_probability_0",
+      "aux_class_probability_1",
+      "aux_class_probability_2",
+      "aux_class_probability_3",
+      "aux_class_probability_4",
+      "aux_expected_rank",
+      "aux_ordinal_prediction",
+      "aux_ordinal_argmax",
+      "auxiliary_weight"
+    ],
+    "per_sample_loss_fields_required": false
+  },
+  "test_plan": [
+    "encode called once",
+    "categorical output shape batch by 5",
+    "auxiliary output shape batch by 4",
+    "joint forward has explicit declared type",
+    "categorical CE matches reference",
+    "CORN loss matches existing implementation",
+    "total loss equals CE plus weighted CORN",
+    "lambda zero yields absent or zero auxiliary gradient",
+    "positive lambda yields finite gradients in both heads",
+    "shared encoder receives finite contribution from both tasks",
+    "predict_proba returns categorical N by 5",
+    "AUC receives categorical probabilities only",
+    "auxiliary probabilities saved separately",
+    "primary y_pred is categorical argmax",
+    "auxiliary prediction uses CORN threshold rule",
+    "checkpoint contains both heads",
+    "strict joint checkpoint reload reproduces outputs",
+    "pure categorical checkpoint rejected for implicit joint load",
+    "pure CORN checkpoint rejected for joint load",
+    "head_type and auxiliary_weight affect config hash",
+    "missing or nonfinite auxiliary weight rejected",
+    "negative auxiliary weight rejected",
+    "outer-test absent from lambda selection",
+    "inner splits and normalization identical across lambdas",
+    "early stopping uses categorical validation loss",
+    "personal calibration fails explicitly",
+    "legacy categorical CORAL CORN tests pass",
+    "canonical sequence IDs and hashes unchanged",
+    "prediction writer saves finite normalized required fields",
+    ".gitignore and source parquet unchanged"
+  ],
+  "implementation_stages": [
+    {
+      "task": "7B",
+      "scope": "dual output, composite handler, logging, prediction, checkpoint, calibration guard, tests",
+      "full_training": false
+    },
+    {
+      "task": "7C",
+      "scope": "fold-1 EEG+POW seed-42 three-epoch technical smoke",
+      "scientific_result": false
+    },
+    {
+      "task": "7D",
+      "scope": "nested grid across two groups, three seeds, five folds",
+      "candidate_fold_trainings": 90
+    },
+    {
+      "task": "7E",
+      "scope": "paired subject-level multiseed analysis and decision"
+    }
+  ],
+  "frozen_decisions": {
+    "model_name": "torch_transformer",
+    "head_type": "categorical_corn",
+    "primary_head": "categorical",
+    "auxiliary_role": "training_and_diagnostics_only",
+    "lambda_grid": [0.25, 0.5, 1.0],
+    "ba_margin": 0.01,
+    "early_stopping_monitor": "validation_categorical_loss",
+    "warm_start": false,
+    "coral_included": false,
+    "calibration_included": false,
+    "regression_included": false,
+    "preprocessing_variants_included": false,
+    "head_ensemble_included": false
+  }
+}
