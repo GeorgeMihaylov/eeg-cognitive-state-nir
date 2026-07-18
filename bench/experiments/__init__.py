@@ -18,6 +18,13 @@ from .ordinal_transformer import (
     OrdinalTransformerSmokeExperiment,
     OrdinalTransformerTrialPlan,
     audit_prediction_probabilities,
+    build_ordinal_transformer_experiment,
+)
+from .ordinal_transformer_full import (
+    OrdinalTransformerFullExperiment,
+    OrdinalTransformerFullTrialPlan,
+    full_prediction_alignment,
+    load_ordinal_transformer_full_spec,
 )
 
 __all__ = [
@@ -33,5 +40,10 @@ __all__ = [
     "resolve_calibration_parameters",
     "OrdinalTransformerSmokeExperiment",
     "OrdinalTransformerTrialPlan",
+    "OrdinalTransformerFullExperiment",
+    "OrdinalTransformerFullTrialPlan",
     "audit_prediction_probabilities",
+    "build_ordinal_transformer_experiment",
+    "full_prediction_alignment",
+    "load_ordinal_transformer_full_spec",
 ]

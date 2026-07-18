@@ -110,6 +110,7 @@ def test_training_log_contains_head_specific_diagnostics(head_type: str) -> None
     adapter.fit(features, labels)
     row = adapter.training_log_[0]
     assert np.isfinite(row["learning_rate"])
+    assert adapter.get_training_summary()["stopping_reason"] == "max_epochs"
     if head_type == "coral":
         cutpoints = [row[f"cutpoint_{index}"] for index in range(4)]
         assert np.all(np.diff(cutpoints) > 0)

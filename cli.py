@@ -434,10 +434,10 @@ Examples:
                 '--ordinal-transformer-experiment requires --plan-only or --run'
             )
         from bench.experiments.ordinal_transformer import (
-            OrdinalTransformerSmokeExperiment,
+            build_ordinal_transformer_experiment,
         )
 
-        experiment = OrdinalTransformerSmokeExperiment(
+        experiment = build_ordinal_transformer_experiment(
             args.ordinal_transformer_experiment,
             output_dir=args.output_dir,
         )

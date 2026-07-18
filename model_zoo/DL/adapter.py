@@ -107,6 +107,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.best_epoch_: Optional[int] = None
         self.best_validation_loss_: Optional[float] = None
         self.n_epochs_trained_: int = 0
+        self.stopping_reason_: Optional[str] = None
         self.peak_gpu_memory_bytes_: int = 0
         self.is_fitted_: bool = False
         self.validation_strategy_ = "stratified_random"
@@ -656,6 +657,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.training_log_ = []
         self.best_epoch_ = None
         self.best_validation_loss_ = None
+        self.stopping_reason_ = None
 
         for epoch in range(1, self.max_epochs + 1):
             epoch_started = time.perf_counter()
@@ -744,6 +746,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 **epoch_diagnostics,
             })
             if epochs_without_improvement >= self.early_stopping_patience:
+                self.stopping_reason_ = "early_stopping_patience"
                 break
 
         if best_state is None or self.best_epoch_ is None:
@@ -753,6 +756,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.model.eval()
         self.best_validation_loss_ = best_loss
         self.n_epochs_trained_ = len(self.training_log_)
+        if self.stopping_reason_ is None:
+            self.stopping_reason_ = "max_epochs"
         if self.device_.type == "cuda":
             self.peak_gpu_memory_bytes_ = int(
                 torch.cuda.max_memory_allocated(self.device_)
@@ -1038,6 +1043,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "epochs_trained": self.n_epochs_trained_,
             "best_epoch": self.best_epoch_,
             "best_validation_loss": self.best_validation_loss_,
+            "stopping_reason": self.stopping_reason_,
             "trainable_parameter_count": sum(
                 parameter.numel()
                 for parameter in self.model.parameters()
@@ -1160,6 +1166,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.best_epoch_ = summary.get("best_epoch")
         self.best_validation_loss_ = summary.get("best_validation_loss")
         self.n_epochs_trained_ = int(summary.get("epochs_trained", 0))
+        self.stopping_reason_ = summary.get("stopping_reason")
         self.peak_gpu_memory_bytes_ = int(
             summary.get("peak_gpu_memory_bytes", 0)
         )

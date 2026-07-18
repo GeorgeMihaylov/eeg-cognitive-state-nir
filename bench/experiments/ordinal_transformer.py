@@ -1205,11 +1205,35 @@ class OrdinalTransformerSmokeExperiment:
         return manifest
 
 
+def build_ordinal_transformer_experiment(
+    spec_path: str | Path,
+    *,
+    output_dir: str | Path | None = None,
+) -> Any:
+    """Select the smoke or full ordinal experiment from ``experiment.type``."""
+    resolved = _repo_path(spec_path)
+    document = yaml.safe_load(resolved.read_text(encoding="utf-8")) or {}
+    experiment_type = str(document.get("experiment", {}).get("type", ""))
+    if experiment_type == "ordinal_transformer_full":
+        from bench.experiments.ordinal_transformer_full import (
+            OrdinalTransformerFullExperiment,
+        )
+
+        return OrdinalTransformerFullExperiment(resolved, output_dir=output_dir)
+    if experiment_type == "ordinal_transformer_smoke":
+        return OrdinalTransformerSmokeExperiment(resolved, output_dir=output_dir)
+    raise ValueError(
+        "Unknown ordinal Transformer experiment type: "
+        f"{experiment_type!r}"
+    )
+
+
 __all__ = [
     "OrdinalTransformerSmokeExperiment",
     "OrdinalTransformerTrialPlan",
     "SMOKE_ALIGNMENT_COLUMNS",
     "audit_prediction_probabilities",
+    "build_ordinal_transformer_experiment",
     "load_ordinal_transformer_spec",
     "prediction_alignment",
     "stable_frame_sha256",
