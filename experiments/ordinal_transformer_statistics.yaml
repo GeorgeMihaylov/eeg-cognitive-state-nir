@@ -1,0 +1,42 @@
+analysis:
+  name: ordinal_transformer_statistics
+  type: completed_run_subject_statistics
+  run_roots:
+    - benchmark_results/feature_group_transformer_ablation/runs
+    - benchmark_results/ordinal_transformer_full_seed42/runs
+  output_dir: benchmark_results/ordinal_transformer_statistics
+  report_path: reports/ordinal_transformer_statistical_analysis.md
+  summary_path: reports/ordinal_transformer_statistical_analysis_summary.json
+  decision_report_path: reports/ordinal_transformer_decision.md
+  bootstrap_samples: 10000
+  random_state: 42
+
+expected:
+  seed: 42
+  sequence_length: 8
+  sequences: 44142
+  subjects: 53
+  folds: 5
+  sequence_index_sha256: 1d0a1fe8ab8aad1c6da8637cb882c4365c01acb80c0822e34ced21ef7ee36afa
+  prediction_artifact_index_sha256: 13327b8d0bb2ddd1b3b0044d7b6d180e3f3e2a3f198dc45dd4603b176f500f1a
+  source_parquet: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  source_parquet_sha256: 26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8
+
+hypotheses:
+  primary_metrics:
+    - ordinal_mae
+    - severe_error_rate
+  secondary_metrics:
+    - balanced_accuracy
+    - macro_f1
+    - quadratic_weighted_kappa
+    - adjacent_accuracy
+    - expected_rank_mae
+    - expected_rank_spearman
+  primary_candidates:
+    - coral
+    - corn
+  primary_reference: categorical
+  feature_groups:
+    - eeg_only
+    - eeg_pow

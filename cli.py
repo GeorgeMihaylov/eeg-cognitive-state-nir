@@ -368,6 +368,11 @@ Examples:
         help='Plan or run the one-fold ordinal Transformer technical smoke',
     )
     parser.add_argument(
+        '--ordinal-transformer-analysis',
+        type=str,
+        help='Plan or run paired subject-level ordinal Transformer statistics',
+    )
+    parser.add_argument(
         '--feature-groups',
         help='Comma-separated feature groups for the RF experiment',
     )
@@ -406,6 +411,48 @@ Examples:
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.ordinal_transformer_analysis:
+        conflicts = {
+            '--config': args.config,
+            '--test': args.test,
+            '--experiment-matrix': args.experiment_matrix,
+            '--calibration-experiment': args.calibration_experiment,
+            '--automl-study': args.automl_study,
+            '--statistical-analysis': args.statistical_analysis,
+            '--cross-source-experiment': args.cross_source_experiment,
+            '--feature-group-experiment': args.feature_group_experiment,
+            '--ordinal-transformer-experiment': args.ordinal_transformer_experiment,
+            '--label-target-audit': args.label_target_audit,
+            '--temporal-target-audit': args.temporal_target_audit,
+            '--label-definition-sensitivity': args.label_definition_sensitivity,
+        }
+        active_conflicts = [name for name, value in conflicts.items() if value]
+        if active_conflicts:
+            parser.error(
+                '--ordinal-transformer-analysis cannot be combined with '
+                + ', '.join(active_conflicts)
+            )
+        if args.plan_only and args.run:
+            parser.error('--plan-only and --run are mutually exclusive')
+        if not args.plan_only and not args.run:
+            parser.error(
+                '--ordinal-transformer-analysis requires --plan-only or --run'
+            )
+        from bench.analysis.ordinal_transformer_statistics import (
+            OrdinalTransformerStatistics,
+        )
+
+        analysis = OrdinalTransformerStatistics(
+            args.ordinal_transformer_analysis,
+            output_dir=args.output_dir,
+        )
+        if args.plan_only:
+            print(analysis.render_plan(analysis.plan()))
+            return
+        result = analysis.execute()
+        print(json.dumps(result, indent=2, default=str))
+        return
 
     if args.ordinal_transformer_experiment:
         conflicts = {
