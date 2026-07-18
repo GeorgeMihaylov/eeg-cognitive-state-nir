@@ -1,3 +1,5 @@
+import hashlib
+import json
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -7,6 +9,16 @@ import pandas as pd
 
 GROUP_COLUMNS = ("source", "subject_id", "record_id")
 TIME_COLUMN_PRIORITY = ("t_start", "t_center", "window_id")
+SEQUENCE_INDEX_COLUMNS = (
+    "sequence_id",
+    "fold",
+    "source",
+    "subject_id",
+    "record_id",
+    "target_sample_id",
+    "target_time",
+    "y_true",
+)
 
 
 @dataclass(frozen=True)
@@ -17,6 +29,42 @@ class SequenceBuildResult:
     y: np.ndarray
     metadata: pd.DataFrame
     stats: Dict[str, Any]
+
+
+def sequence_index_sha256(
+    metadata: pd.DataFrame,
+    columns: tuple[str, ...] = SEQUENCE_INDEX_COLUMNS,
+) -> str:
+    """Hash a canonical, order-independent sequence index.
+
+    Rows are sorted by ``sequence_id`` and serialized as compact UTF-8 JSON
+    arrays with one trailing newline per row. This keeps the hash independent
+    of feature values and DataFrame row order while retaining fold and target
+    assignments in the semantic identity.
+    """
+
+    frame = pd.DataFrame(metadata).copy()
+    missing = sorted(set(columns) - set(frame.columns))
+    if missing:
+        raise ValueError(f"Sequence index is missing required columns: {missing}")
+    if frame["sequence_id"].isna().any() or frame["sequence_id"].duplicated().any():
+        raise ValueError("Sequence index requires unique, non-null sequence_id values")
+    frame = frame.loc[:, list(columns)].sort_values(
+        "sequence_id", kind="mergesort"
+    )
+    digest = hashlib.sha256()
+    for row in frame.itertuples(index=False, name=None):
+        values = [value.item() if isinstance(value, np.generic) else value for value in row]
+        digest.update(
+            json.dumps(
+                values,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        )
+        digest.update(b"\n")
+    return digest.hexdigest()
 
 
 def _select_time_column(metadata: pd.DataFrame) -> str:

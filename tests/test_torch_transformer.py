@@ -353,6 +353,9 @@ def test_runner_builds_fresh_transformer_per_fold_and_infers_shape(
     assert len(list(tmp_path.rglob("run_manifest.json"))) == 1
     assert len(list(tmp_path.rglob("model.pt"))) == 2
     assert len(list(tmp_path.rglob("training_log.csv"))) == 2
+    assert len(list(tmp_path.rglob("normalization_stats.json"))) == 2
+    assert len(list(tmp_path.rglob("class_metrics.json"))) == 2
+    assert len(list(tmp_path.rglob("sequence_index_manifest.json"))) == 2
 
 
 def test_main_cli_smoke_overrides_are_canonical() -> None:

@@ -25,7 +25,11 @@ from model_zoo import (
     model_requires_data_shape,
     model_requires_sequences,
 )
-from model_zoo.DL.sequence_utils import build_sequences
+from model_zoo.DL.sequence_utils import (
+    SEQUENCE_INDEX_COLUMNS,
+    build_sequences,
+    sequence_index_sha256,
+)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -679,6 +683,7 @@ class BenchmarkRunner:
                 model_name=model_name,
                 artifact_split_name=artifact_split_name,
                 metrics=metrics,
+                task_type=task_type,
             )
 
         return result
@@ -713,6 +718,7 @@ class BenchmarkRunner:
             model_name: str,
             artifact_split_name: str,
             metrics: Dict[str, Any],
+            task_type: str = 'classification',
     ) -> Dict[str, str]:
         artifact_dir = self._model_artifact_dir(
             dataset_name, task_name, model_name
@@ -815,6 +821,20 @@ class BenchmarkRunner:
             )
         artifacts['metrics'] = str(metrics_path)
 
+        if str(task_type).strip().lower() in {'classification', 'classifier'}:
+            labels = (
+                np.arange(np.asarray(y_proba).shape[1], dtype=np.int64)
+                if y_proba is not None
+                else None
+            )
+            class_metrics = MetricsCalculator.calculate_class_metrics(
+                split.y_test, y_pred, labels=labels
+            )
+            class_metrics_path = artifact_dir / 'class_metrics.json'
+            with open(class_metrics_path, 'w', encoding='utf-8') as output:
+                json.dump(class_metrics, output, indent=2)
+            artifacts['class_metrics'] = str(class_metrics_path)
+
         feature_names = list(split.feature_names or [])
         feature_manifest = {
             'feature_group': split.metadata.get('dataset_metadata', {}).get(
@@ -856,6 +876,20 @@ class BenchmarkRunner:
             with open(sequence_stats_path, 'w', encoding='utf-8') as output:
                 json.dump(sequence_stats, output, indent=2, default=_json_default)
             artifacts['sequence_stats'] = str(sequence_stats_path)
+            sequence_index = predictions.loc[:, list(SEQUENCE_INDEX_COLUMNS)]
+            sequence_index_manifest = {
+                'observation_unit': 'sequence',
+                'sequence_count': int(len(sequence_index)),
+                'sequence_index_sha256': sequence_index_sha256(sequence_index),
+                'columns': list(SEQUENCE_INDEX_COLUMNS),
+                'serialization': (
+                    'Rows sorted by sequence_id; compact UTF-8 JSON array plus newline'
+                ),
+            }
+            sequence_manifest_path = artifact_dir / 'sequence_index_manifest.json'
+            with open(sequence_manifest_path, 'w', encoding='utf-8') as output:
+                json.dump(sequence_index_manifest, output, indent=2)
+            artifacts['sequence_index_manifest'] = str(sequence_manifest_path)
 
         if split.metadata.get('observation_unit') == 'raw_eeg_window':
             dataset_metadata = split.metadata.get('dataset_metadata', {})

@@ -4,11 +4,50 @@ from sklearn.metrics import (
     accuracy_score, balanced_accuracy_score, precision_score, recall_score, f1_score,
     confusion_matrix, cohen_kappa_score, mean_absolute_error,
     mean_squared_error, r2_score, roc_auc_score,
+    precision_recall_fscore_support,
 )
 from typing import Dict, Any, List, Optional
 
 
 class MetricsCalculator:
+    @staticmethod
+    def calculate_class_metrics(
+            y_true: np.ndarray,
+            y_pred: np.ndarray,
+            labels: Optional[np.ndarray] = None,
+    ) -> List[Dict[str, Any]]:
+        """Return deterministic one-vs-rest precision/recall/F1 per class."""
+
+        truth = np.asarray(y_true).reshape(-1)
+        prediction = np.asarray(y_pred).reshape(-1)
+        if truth.shape != prediction.shape:
+            raise ValueError(
+                f'Classification arrays must have equal shape: '
+                f'{truth.shape} != {prediction.shape}'
+            )
+        resolved_labels = (
+            np.unique(np.concatenate([truth, prediction]))
+            if labels is None
+            else np.asarray(labels).reshape(-1)
+        )
+        precision, recall, f1, support = precision_recall_fscore_support(
+            truth,
+            prediction,
+            labels=resolved_labels,
+            zero_division=0,
+        )
+        return [
+            {
+                'class_id': int(class_id),
+                'precision': float(class_precision),
+                'recall': float(class_recall),
+                'f1': float(class_f1),
+                'support': int(class_support),
+            }
+            for class_id, class_precision, class_recall, class_f1, class_support
+            in zip(resolved_labels, precision, recall, f1, support)
+        ]
+
     @staticmethod
     def calculate_all_metrics(
             y_true: np.ndarray,

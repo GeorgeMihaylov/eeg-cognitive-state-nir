@@ -428,7 +428,7 @@ Examples:
                 '--feature-group-experiment requires --plan-only or --run'
             )
         from bench.experiments.feature_group_ablation import (
-            FeatureGroupRFExperiment,
+            build_feature_group_experiment,
         )
 
         parse_values = lambda value: (
@@ -436,7 +436,7 @@ Examples:
             if value is None
             else [item.strip() for item in value.split(',') if item.strip()]
         )
-        experiment = FeatureGroupRFExperiment(
+        experiment = build_feature_group_experiment(
             args.feature_group_experiment,
             output_dir=args.output_dir,
         )
