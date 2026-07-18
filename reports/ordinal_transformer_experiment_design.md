@@ -68,14 +68,16 @@ y=4 -> [1,1,1,1]
 `h_i`. CORAL head использует одну общую score-функцию и четыре упорядоченных cutpoints:
 
 ```text
-s_i = w^T h_i
+s_i = w^T h_i + b
 c_0 = a
 c_k = c_(k-1) + softplus(delta_k) + epsilon, k=1..3
 z[i,k] = s_i - c_k
 q[i,k] = sigmoid(z[i,k]) = P(y_i > k)
 ```
 
-`epsilon=1e-6`. Поскольку cutpoints строго возрастают, logits и probabilities
+`epsilon=1e-6`. Наличие bias в score-функции явно зафиксировано в реализации 6Б;
+оно соответствует требованию `s = w^T h + b`. Поскольку cutpoints строго
+возрастают, logits и probabilities
 не возрастают по `k`: `q_0 >= q_1 >= q_2 >= q_3`. Это структурная гарантия, а не
 post-hoc сортировка. Инициализация воспроизводима и не использует labels: cutpoints
 `[-1.5,-0.5,0.5,1.5]`, что задаётся через `a=-1.5` и inverse-softplus unit increments;
@@ -170,12 +172,14 @@ y_pred = sum_k 1[q_k >= 0.5]
 
 ```text
 expected_rank = sum_k q_k
-y_pred_argmax = argmax_j p_j
+ordinal_argmax = argmax_j p_j
 ```
 
 `expected_rank` лежит в `[0,4]` и используется только для continuous diagnostics.
-`y_pred_argmax` сохраняется как secondary diagnostic, но не заменяет primary `y_pred`
-после просмотра результатов.
+`ordinal_argmax` сохраняется как secondary diagnostic, но не заменяет primary
+`y_pred`. Имя `y_pred_argmax`, зафиксированное в первой версии проекта, может
+сохраняться только как compatibility alias; каноническое имя реализации —
+`ordinal_argmax`.
 
 ## Metrics
 
@@ -312,7 +316,8 @@ threshold_probability_0 ... threshold_probability_3   # cumulative q, не CORN 
 class_probability_0 ... class_probability_4
 proba_0 ... proba_4                                    # compatibility aliases
 expected_rank
-y_pred_argmax
+ordinal_argmax
+y_pred_argmax (compatibility alias)
 head_type
 ```
 

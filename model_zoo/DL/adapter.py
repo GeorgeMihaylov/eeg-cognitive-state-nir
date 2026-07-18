@@ -12,6 +12,7 @@ from torch import nn
 from torch.utils.data import DataLoader, Dataset, TensorDataset
 
 from ..base import BaseModelAdapter, PathLike
+from .ordinal import ClassificationObjectiveHandler
 
 
 def seed_torch(random_state: int) -> None:
@@ -65,6 +66,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         standardize: bool = True,
         num_workers: int = 0,
         model_metadata: Optional[Mapping[str, Any]] = None,
+        objective_handler: Optional[ClassificationObjectiveHandler] = None,
     ) -> None:
         self.input_shape = tuple(int(dim) for dim in input_shape)
         self.num_classes = int(num_classes)
@@ -79,6 +81,17 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.standardize = bool(standardize)
         self.num_workers = int(num_workers)
         self.model_metadata = dict(model_metadata or {})
+        self.objective_handler = (
+            ClassificationObjectiveHandler("categorical", self.num_classes)
+            if objective_handler is None
+            else objective_handler
+        )
+        if self.objective_handler.num_classes != self.num_classes:
+            raise ValueError(
+                "Objective handler num_classes does not match adapter: "
+                f"{self.objective_handler.num_classes} != {self.num_classes}"
+            )
+        self.head_type = self.objective_handler.head_type
 
         self._validate_config()
         self.device_ = self._resolve_device(self.requested_device)
@@ -631,7 +644,6 @@ class TorchClassificationAdapter(BaseModelAdapter):
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
         )
-        criterion = nn.CrossEntropyLoss()
         best_state: Optional[Dict[str, torch.Tensor]] = None
         best_loss = float("inf")
         epochs_without_improvement = 0
@@ -642,37 +654,61 @@ class TorchClassificationAdapter(BaseModelAdapter):
         for epoch in range(1, self.max_epochs + 1):
             epoch_started = time.perf_counter()
             self.model.train()
-            train_loss_sum = 0.0
-            train_count = 0
+            train_loss_numerator = 0.0
+            train_loss_denominator = 0.0
             for batch_features, batch_labels in train_loader:
                 batch_features = batch_features.to(self.device_, non_blocking=True)
                 batch_labels = batch_labels.to(self.device_, non_blocking=True)
                 optimizer.zero_grad(set_to_none=True)
-                logits = self.model(batch_features)
-                loss = criterion(logits, batch_labels)
+                raw_outputs = self.model(batch_features)
+                loss_parts = self.objective_handler.loss_parts(
+                    raw_outputs,
+                    batch_labels,
+                )
+                loss = loss_parts.mean
                 if not torch.isfinite(loss):
                     raise ValueError("Training loss became NaN or infinite")
                 loss.backward()
                 optimizer.step()
-                train_loss_sum += float(loss.item()) * len(batch_labels)
-                train_count += len(batch_labels)
+                train_loss_numerator += float(
+                    loss_parts.numerator.detach().item()
+                )
+                train_loss_denominator += float(
+                    loss_parts.denominator.detach().item()
+                )
 
             self.model.eval()
-            validation_loss_sum = 0.0
+            validation_loss_numerator = 0.0
+            validation_loss_denominator = 0.0
             validation_correct = 0
             validation_count = 0
             with torch.no_grad():
                 for batch_features, batch_labels in validation_loader:
                     batch_features = batch_features.to(self.device_, non_blocking=True)
                     batch_labels = batch_labels.to(self.device_, non_blocking=True)
-                    logits = self.model(batch_features)
-                    loss = criterion(logits, batch_labels)
-                    validation_loss_sum += float(loss.item()) * len(batch_labels)
-                    validation_correct += int((logits.argmax(dim=1) == batch_labels).sum().item())
+                    raw_outputs = self.model(batch_features)
+                    loss_parts = self.objective_handler.loss_parts(
+                        raw_outputs,
+                        batch_labels,
+                    )
+                    validation_loss_numerator += float(
+                        loss_parts.numerator.detach().item()
+                    )
+                    validation_loss_denominator += float(
+                        loss_parts.denominator.detach().item()
+                    )
+                    decoded = self.objective_handler.decode(raw_outputs)
+                    validation_correct += int(
+                        (decoded.y_pred == batch_labels).sum().item()
+                    )
                     validation_count += len(batch_labels)
 
-            train_loss = train_loss_sum / train_count
-            validation_loss = validation_loss_sum / validation_count
+            if train_loss_denominator <= 0 or validation_loss_denominator <= 0:
+                raise RuntimeError("Loss aggregation denominator must be positive")
+            train_loss = train_loss_numerator / train_loss_denominator
+            validation_loss = (
+                validation_loss_numerator / validation_loss_denominator
+            )
             improved = validation_loss < best_loss
             if improved:
                 best_loss = validation_loss
@@ -728,6 +764,11 @@ class TorchClassificationAdapter(BaseModelAdapter):
         """Fine-tune loaded weights on explicit calibration-only partitions."""
         if not self.is_fitted_:
             raise RuntimeError("A fitted or loaded base model is required")
+        if self.head_type != "categorical":
+            raise NotImplementedError(
+                "Ordinal calibration is not supported yet; "
+                f"received head_type={self.head_type!r}"
+            )
         features = self._validate_features(X_train)
         labels = self._validate_calibration_labels(y_train, len(features))
         has_validation = X_validation is not None or y_validation is not None
@@ -791,7 +832,6 @@ class TorchClassificationAdapter(BaseModelAdapter):
             lr=lr,
             weight_decay=decay,
         )
-        criterion = nn.CrossEntropyLoss()
         best_state: Optional[Dict[str, torch.Tensor]] = None
         best_loss = float("inf")
         epochs_without_improvement = 0
@@ -802,27 +842,36 @@ class TorchClassificationAdapter(BaseModelAdapter):
         for epoch in range(1, epochs + 1):
             epoch_started = time.perf_counter()
             self.model.train()
-            train_loss_sum = 0.0
-            train_count = 0
+            train_loss_numerator = 0.0
+            train_loss_denominator = 0.0
             for batch_features, batch_labels in train_loader:
                 batch_features = batch_features.to(self.device_, non_blocking=True)
                 batch_labels = batch_labels.to(self.device_, non_blocking=True)
                 optimizer.zero_grad(set_to_none=True)
-                logits = self.model(batch_features)
-                loss = criterion(logits, batch_labels)
+                raw_outputs = self.model(batch_features)
+                loss_parts = self.objective_handler.loss_parts(
+                    raw_outputs,
+                    batch_labels,
+                )
+                loss = loss_parts.mean
                 if not torch.isfinite(loss):
                     raise ValueError("Fine-tuning loss became NaN or infinite")
                 loss.backward()
                 optimizer.step()
-                train_loss_sum += float(loss.item()) * len(batch_labels)
-                train_count += len(batch_labels)
+                train_loss_numerator += float(
+                    loss_parts.numerator.detach().item()
+                )
+                train_loss_denominator += float(
+                    loss_parts.denominator.detach().item()
+                )
 
             validation_loss: Optional[float] = None
             validation_accuracy: Optional[float] = None
             improved = False
             if validation_loader is not None:
                 self.model.eval()
-                validation_loss_sum = 0.0
+                validation_loss_numerator = 0.0
+                validation_loss_denominator = 0.0
                 validation_correct = 0
                 validation_count = 0
                 with torch.no_grad():
@@ -833,14 +882,29 @@ class TorchClassificationAdapter(BaseModelAdapter):
                         batch_labels = batch_labels.to(
                             self.device_, non_blocking=True
                         )
-                        logits = self.model(batch_features)
-                        loss = criterion(logits, batch_labels)
-                        validation_loss_sum += float(loss.item()) * len(batch_labels)
+                        raw_outputs = self.model(batch_features)
+                        loss_parts = self.objective_handler.loss_parts(
+                            raw_outputs,
+                            batch_labels,
+                        )
+                        validation_loss_numerator += float(
+                            loss_parts.numerator.detach().item()
+                        )
+                        validation_loss_denominator += float(
+                            loss_parts.denominator.detach().item()
+                        )
+                        decoded = self.objective_handler.decode(raw_outputs)
                         validation_correct += int(
-                            (logits.argmax(dim=1) == batch_labels).sum().item()
+                            (decoded.y_pred == batch_labels).sum().item()
                         )
                         validation_count += len(batch_labels)
-                validation_loss = validation_loss_sum / validation_count
+                if validation_loss_denominator <= 0:
+                    raise RuntimeError(
+                        "Validation loss denominator must be positive"
+                    )
+                validation_loss = (
+                    validation_loss_numerator / validation_loss_denominator
+                )
                 validation_accuracy = validation_correct / validation_count
                 improved = validation_loss < best_loss
                 if improved:
@@ -856,7 +920,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
 
             self.training_log_.append({
                 "epoch": epoch,
-                "train_loss": train_loss_sum / train_count,
+                "train_loss": train_loss_numerator / train_loss_denominator,
                 "validation_loss": validation_loss,
                 "validation_accuracy": validation_accuracy,
                 "is_best": improved,
@@ -886,21 +950,63 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.model_metadata["fine_tune_trainable_parameters"] = trainable_names
         return self
 
-    def predict_proba(self, X: Any) -> np.ndarray:
+    def predict_detailed(self, X: Any) -> Dict[str, Any]:
+        """Return canonical predictions plus optional ordinal diagnostics."""
         if not self.is_fitted_:
             raise RuntimeError("The model must be fitted before prediction")
         features = self._transform_features(self._validate_features(X))
         loader = self._make_loader(features)
-        probabilities = []
+        values: Dict[str, list[np.ndarray]] = {
+            "class_probabilities": [],
+            "y_pred": [],
+            "raw_outputs": [],
+        }
+        optional_names = (
+            "threshold_probabilities",
+            "expected_rank",
+            "ordinal_argmax",
+            "conditional_probabilities",
+        )
+        optional_values: Dict[str, list[np.ndarray]] = {
+            name: [] for name in optional_names
+        }
         self.model.eval()
         with torch.no_grad():
             for (batch_features,) in loader:
-                logits = self.model(batch_features.to(self.device_, non_blocking=True))
-                probabilities.append(torch.softmax(logits, dim=1).cpu().numpy())
-        return np.concatenate(probabilities, axis=0)
+                raw_outputs = self.model(
+                    batch_features.to(self.device_, non_blocking=True)
+                )
+                decoded = self.objective_handler.decode(raw_outputs)
+                values["class_probabilities"].append(
+                    decoded.class_probabilities.cpu().numpy()
+                )
+                values["y_pred"].append(decoded.y_pred.cpu().numpy())
+                values["raw_outputs"].append(decoded.raw_outputs.cpu().numpy())
+                for name in optional_names:
+                    tensor = getattr(decoded, name)
+                    if tensor is not None:
+                        optional_values[name].append(tensor.cpu().numpy())
+
+        result: Dict[str, Any] = {
+            name: np.concatenate(parts, axis=0)
+            for name, parts in values.items()
+        }
+        result["head_type"] = self.head_type
+        for name, parts in optional_values.items():
+            if parts:
+                result[name] = np.concatenate(parts, axis=0)
+        if self.head_type != "categorical":
+            result["threshold_logits"] = result["raw_outputs"]
+            # The implementation task names this diagnostic ordinal_argmax;
+            # keep the design-stage name as a compatibility alias.
+            result["y_pred_argmax"] = result["ordinal_argmax"]
+        return result
+
+    def predict_proba(self, X: Any) -> np.ndarray:
+        return np.asarray(self.predict_detailed(X)["class_probabilities"])
 
     def predict(self, X: Any) -> np.ndarray:
-        return self.predict_proba(X).argmax(axis=1)
+        return np.asarray(self.predict_detailed(X)["y_pred"])
 
     def get_training_summary(self) -> Dict[str, Any]:
         if not self.is_fitted_:
@@ -913,6 +1019,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         return {
             "input_shape": list(self.input_shape),
             "num_outputs": self.num_classes,
+            "head_type": self.head_type,
             "device": str(self.device_),
             "device_name": device_name,
             "epochs_trained": self.n_epochs_trained_,
@@ -941,6 +1048,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 for key, value in self.model.state_dict().items()
             },
             "model_metadata": self.model_metadata,
+            "head_type": self.head_type,
+            "objective": self.objective_handler.to_metadata(),
             "input_shape": self.input_shape,
             "num_classes": self.num_classes,
             "training_config": {
@@ -952,6 +1061,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 "early_stopping_patience": self.early_stopping_patience,
                 "random_state": self.random_state,
                 "standardize": self.standardize,
+                "head_type": self.head_type,
             },
             "training_summary": self.get_training_summary(),
             "training_log": self.training_log_,
@@ -982,6 +1092,17 @@ class TorchClassificationAdapter(BaseModelAdapter):
             payload = torch.load(checkpoint_path, map_location=self.device_)
         stored_shape = tuple(int(value) for value in payload.get("input_shape", ()))
         stored_classes = int(payload.get("num_classes", -1))
+        stored_metadata = dict(payload.get("model_metadata", {}))
+        stored_objective = dict(payload.get("objective", {}))
+        stored_head_type = str(
+            payload.get(
+                "head_type",
+                stored_objective.get(
+                    "head_type",
+                    stored_metadata.get("head_type", "categorical"),
+                ),
+            )
+        ).strip().lower()
         if stored_shape != self.input_shape:
             raise ValueError(
                 f"Checkpoint input_shape {stored_shape} does not match "
@@ -991,6 +1112,12 @@ class TorchClassificationAdapter(BaseModelAdapter):
             raise ValueError(
                 f"Checkpoint num_classes {stored_classes} does not match "
                 f"adapter {self.num_classes}"
+            )
+        if stored_head_type != self.head_type:
+            raise ValueError(
+                "Checkpoint head_type does not match the factory-built model: "
+                f"{stored_head_type!r} != {self.head_type!r}. Automatic head "
+                "weight conversion is not supported."
             )
         self.model.load_state_dict(payload["model_state_dict"], strict=True)
         self.model.to(self.device_)

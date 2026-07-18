@@ -561,6 +561,21 @@ class UserCalibrationExperiment:
         self.base_config = yaml.safe_load(
             (self.base_run_dir / "config.yaml").read_text(encoding="utf-8")
         )
+        configured_model = str(
+            self.document["base_run"].get(
+                "model", next(iter(self.base_config["models"]))
+            )
+        )
+        head_type = str(
+            self.base_config["models"][configured_model]
+            .get("params", {})
+            .get("head_type", "categorical")
+        ).strip().lower()
+        if head_type != "categorical":
+            raise NotImplementedError(
+                "Ordinal calibration is not supported yet; "
+                f"received head_type={head_type!r}"
+            )
         self.base_manifest = json.loads(
             (self.base_run_dir / "run_manifest.json").read_text(encoding="utf-8")
         )

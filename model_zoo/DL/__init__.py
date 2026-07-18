@@ -2,6 +2,19 @@ from .adapter import TorchClassificationAdapter
 from .eegnet import TorchEEGNetClassifier, build_torch_eegnet
 from .lstm import TorchLSTMClassifier, build_torch_lstm
 from .mlp import TorchMLP, build_torch_mlp
+from .ordinal import (
+    ClassificationObjectiveHandler,
+    CoralOrdinalHead,
+    CornOrdinalHead,
+    build_corn_targets_and_masks,
+    build_cumulative_targets,
+    coral_loss,
+    corn_loss,
+    cumulative_to_class_probabilities,
+    decode_ordinal_prediction,
+    expected_rank,
+    threshold_logits_to_cumulative_probabilities,
+)
 from .shallow_convnet import (
     SafeLog,
     SquareActivation,
@@ -19,6 +32,9 @@ __all__ = [
     "TorchEEGNetClassifier",
     "TorchLSTMClassifier",
     "TorchMLP",
+    "ClassificationObjectiveHandler",
+    "CoralOrdinalHead",
+    "CornOrdinalHead",
     "TorchShallowConvNetClassifier",
     "TorchFeatureTransformerClassifier",
     "TransformerPositionalEncoding",
@@ -29,4 +45,12 @@ __all__ = [
     "build_torch_mlp",
     "build_torch_shallow_convnet",
     "build_torch_transformer",
+    "build_corn_targets_and_masks",
+    "build_cumulative_targets",
+    "coral_loss",
+    "corn_loss",
+    "cumulative_to_class_probabilities",
+    "decode_ordinal_prediction",
+    "expected_rank",
+    "threshold_logits_to_cumulative_probabilities",
 ]

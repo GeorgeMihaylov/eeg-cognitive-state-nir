@@ -9,6 +9,12 @@ import torch
 from torch import Tensor, nn
 
 from .adapter import TorchClassificationAdapter, seed_torch
+from .ordinal import (
+    ClassificationObjectiveHandler,
+    CoralOrdinalHead,
+    CornOrdinalHead,
+    normalize_head_type,
+)
 
 
 class TransformerPositionalEncoding(nn.Module):
@@ -87,6 +93,7 @@ class TorchFeatureTransformerClassifier(nn.Module):
         activation: str = "gelu",
         pooling: str = "last",
         positional_encoding: str = "learned",
+        head_type: str = "categorical",
     ) -> None:
         super().__init__()
         self.input_size = int(input_size)
@@ -100,6 +107,7 @@ class TorchFeatureTransformerClassifier(nn.Module):
         self.activation = str(activation).strip().lower()
         self.pooling = str(pooling).strip().lower()
         self.positional_encoding_kind = str(positional_encoding).strip().lower()
+        self.head_type = normalize_head_type(head_type)
         self._validate_config()
 
         self.input_projection = nn.Linear(self.input_size, self.d_model)
@@ -129,13 +137,27 @@ class TorchFeatureTransformerClassifier(nn.Module):
             num_layers=self.num_layers,
             enable_nested_tensor=False,
         )
-        self.classifier = nn.Sequential(
-            nn.LayerNorm(self.d_model),
-            nn.Linear(self.d_model, self.d_model),
-            nn.GELU(),
-            nn.Dropout(self.dropout),
-            nn.Linear(self.d_model, self.num_classes),
-        )
+        if self.head_type == "categorical":
+            # Keep this exact module layout and name for legacy strict checkpoints
+            # and categorical head-only calibration.
+            self.classifier = nn.Sequential(
+                nn.LayerNorm(self.d_model),
+                nn.Linear(self.d_model, self.d_model),
+                nn.GELU(),
+                nn.Dropout(self.dropout),
+                nn.Linear(self.d_model, self.num_classes),
+            )
+            self.ordinal_head = None
+        else:
+            self.classifier = None
+            ordinal_head_type = (
+                CoralOrdinalHead if self.head_type == "coral" else CornOrdinalHead
+            )
+            self.ordinal_head = ordinal_head_type(
+                input_dim=self.d_model,
+                num_classes=self.num_classes,
+                dropout=self.dropout,
+            )
 
     def _validate_config(self) -> None:
         if self.input_size <= 0:
@@ -198,11 +220,12 @@ class TorchFeatureTransformerClassifier(nn.Module):
         valid = (~padding_mask).unsqueeze(-1).to(dtype=encoded.dtype)
         return (encoded * valid).sum(dim=1) / valid.sum(dim=1).clamp_min(1.0)
 
-    def forward(
+    def encode(
         self,
         X: Tensor,
         padding_mask: Optional[Tensor] = None,
     ) -> Tensor:
+        """Encode and pool a feature sequence without applying an output head."""
         if X.ndim != 3:
             raise ValueError(
                 "TorchFeatureTransformerClassifier expects "
@@ -235,7 +258,21 @@ class TorchFeatureTransformerClassifier(nn.Module):
             pooled = self._masked_mean(encoded, mask)
         else:
             pooled = self._last_valid(encoded, mask)
-        return self.classifier(pooled)
+        return pooled
+
+    def forward(
+        self,
+        X: Tensor,
+        padding_mask: Optional[Tensor] = None,
+    ) -> Tensor:
+        pooled = self.encode(X, padding_mask=padding_mask)
+        if self.head_type == "categorical":
+            if self.classifier is None:
+                raise RuntimeError("Categorical classifier was not initialized")
+            return self.classifier(pooled)
+        if self.ordinal_head is None:
+            raise RuntimeError("Ordinal head was not initialized")
+        return self.ordinal_head(pooled)
 
 
 def build_torch_transformer(
@@ -267,6 +304,17 @@ def build_torch_transformer(
     positional_encoding = str(
         model_params.pop("positional_encoding", "learned")
     )
+    head_type = normalize_head_type(model_params.pop("head_type", "categorical"))
+    configured_num_classes = int(
+        model_params.pop("num_classes", int(num_outputs))
+    )
+    if configured_num_classes != int(num_outputs):
+        raise ValueError(
+            "model.params.num_classes must match num_outputs from the task: "
+            f"{configured_num_classes} != {int(num_outputs)}"
+        )
+    if int(num_outputs) < 2:
+        raise ValueError("torch_transformer requires at least two output classes")
     random_state = int(model_params.get("random_state", 42))
     seed_torch(random_state)
     model = TorchFeatureTransformerClassifier(
@@ -281,6 +329,11 @@ def build_torch_transformer(
         activation=activation,
         pooling=pooling,
         positional_encoding=positional_encoding,
+        head_type=head_type,
+    )
+    objective_handler = ClassificationObjectiveHandler(
+        head_type=head_type,
+        num_classes=int(num_outputs),
     )
     metadata = {
         "model_type": "torch_transformer",
@@ -294,6 +347,8 @@ def build_torch_transformer(
         "activation": activation,
         "pooling": pooling,
         "positional_encoding": positional_encoding,
+        **objective_handler.to_metadata(),
+        "probability_conversion_version": 1,
         "parameter_count": sum(
             parameter.numel() for parameter in model.parameters()
             if parameter.requires_grad
@@ -305,6 +360,7 @@ def build_torch_transformer(
             input_shape=shape,
             num_classes=int(num_outputs),
             model_metadata=metadata,
+            objective_handler=objective_handler,
             **model_params,
         )
     except TypeError as exc:

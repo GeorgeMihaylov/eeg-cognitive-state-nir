@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "status": "implemented_and_verified_without_real_eeg_training",
+  "date": "2026-07-18",
+  "branch": "feature/ordinal-transformer",
+  "base_commit": "0cd4570",
+  "model_name": "torch_transformer",
+  "head_types": [
+    "categorical",
+    "coral",
+    "corn"
+  ],
+  "default_head_type": "categorical",
+  "num_classes": 5,
+  "num_thresholds": 4,
+  "implementation": {
+    "ordinal_module": "model_zoo/DL/ordinal.py",
+    "objective_handler": "ClassificationObjectiveHandler",
+    "transformer_encode_method": true,
+    "categorical_classifier_keys_preserved": [
+      "classifier.0.*",
+      "classifier.1.*",
+      "classifier.4.*"
+    ],
+    "coral": {
+      "score": "s = w^T h + b",
+      "cutpoints": "c0 free; ck = c(k-1) + softplus(delta_k) + 1e-6",
+      "initial_cutpoints": [-1.5, -0.5, 0.5, 1.5],
+      "loss": "sum BCEWithLogits / (N * (K-1))"
+    },
+    "corn": {
+      "target": "1[y > k]",
+      "risk_mask": "1[y >= k]",
+      "loss": "sum(mask * BCEWithLogits) / sum(mask)"
+    },
+    "probability_tolerance": 1e-7,
+    "prediction_rule": "count(cumulative_probability >= 0.5)",
+    "expected_rank": "sum(cumulative_probability)",
+    "categorical_prediction_rule": "argmax(softmax(logits))"
+  },
+  "checkpoint_compatibility": {
+    "legacy_run": "benchmark_results/groupkfold_torch_transformer_label_q5/20260716_191246",
+    "fold_checked": "fold_01",
+    "strict_load": true,
+    "forward_exact_atol": 0.0,
+    "forward_exact_rtol": 0.0,
+    "missing_head_type_means": "categorical",
+    "cross_head_loading": "rejected_without_weight_conversion"
+  },
+  "calibration": {
+    "categorical": "unchanged",
+    "coral": "explicitly_not_supported_yet",
+    "corn": "explicitly_not_supported_yet"
+  },
+  "metrics": [
+    "accuracy",
+    "balanced_accuracy",
+    "macro_f1",
+    "weighted_f1",
+    "weighted_multiclass_ovr_auc",
+    "cohen_kappa",
+    "quadratic_weighted_kappa",
+    "ordinal_mae",
+    "adjacent_accuracy",
+    "severe_error_rate",
+    "expected_rank_mae",
+    "expected_rank_spearman"
+  ],
+  "prediction_artifacts": {
+    "source_of_truth": "predictions.parquet",
+    "ordinal_columns": [
+      "threshold_logit_0..3",
+      "threshold_probability_0..3",
+      "class_probability_0..4",
+      "expected_rank",
+      "ordinal_argmax",
+      "y_pred_argmax",
+      "head_type"
+    ],
+    "corn_columns": [
+      "conditional_probability_0..3"
+    ],
+    "categorical_empty_ordinal_columns": false
+  },
+  "synthetic_check": {
+    "real_eeg_used": false,
+    "input_shape": [50, 8, 6],
+    "prediction_rows": 8,
+    "seed": 42,
+    "device": "cpu",
+    "optimizer_steps_per_model": 1,
+    "results": [
+      {
+        "head_type": "categorical",
+        "raw_output_shape": [8, 5],
+        "class_probability_shape": [8, 5],
+        "parameter_count": 853,
+        "train_loss": 1.6690427780151367,
+        "validation_loss": 1.6682065963745116,
+        "maximum_probability_sum_error": 1.1920928955078125e-7,
+        "finite": true
+      },
+      {
+        "head_type": "coral",
+        "raw_output_shape": [8, 4],
+        "class_probability_shape": [8, 5],
+        "parameter_count": 821,
+        "train_loss": 0.5647347450256348,
+        "validation_loss": 0.5767518520355225,
+        "maximum_probability_sum_error": 1.1920928955078125e-7,
+        "finite": true
+      },
+      {
+        "head_type": "corn",
+        "raw_output_shape": [8, 4],
+        "class_probability_shape": [8, 5],
+        "parameter_count": 844,
+        "train_loss": 0.6465982028416225,
+        "validation_loss": 0.6600198064531598,
+        "maximum_probability_sum_error": 5.960464477539063e-8,
+        "finite": true
+      }
+    ]
+  },
+  "tests": {
+    "new_ordinal_and_compatibility": 55,
+    "selected_legacy_regressions": 68,
+    "targeted_combined": 123,
+    "full_suite_passed": 280,
+    "full_suite_warnings": 10
+  },
+  "not_run": [
+    "real EEG training",
+    "GroupKFold",
+    "additional seeds",
+    "user calibration",
+    "AutoML",
+    "task 6V"
+  ],
+  "planned_commit_message": "feat(models): add ordinal Transformer heads and objectives"
+}

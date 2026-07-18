@@ -55,6 +55,7 @@ class MetricsCalculator:
             y_proba: Optional[np.ndarray] = None,
             average: str = 'weighted',
             task_type: str = 'classification',
+            expected_rank: Optional[np.ndarray] = None,
     ) -> Dict[str, Any]:
         normalized_task = str(task_type).strip().lower()
         if normalized_task in {'regression', 'regressor'}:
@@ -72,6 +73,20 @@ class MetricsCalculator:
         metrics['f1_macro'] = metrics['macro_f1']
         metrics['f1_weighted'] = metrics['weighted_f1']
         metrics['kappa'] = cohen_kappa_score(y_true, y_pred)
+        probability_array = (
+            None if y_proba is None else np.asarray(y_proba)
+        )
+        qwk_labels = (
+            list(range(probability_array.shape[1]))
+            if probability_array is not None and probability_array.ndim == 2
+            else None
+        )
+        metrics['quadratic_weighted_kappa'] = cohen_kappa_score(
+            y_true,
+            y_pred,
+            labels=qwk_labels,
+            weights='quadratic',
+        )
         ordinal_distance = np.abs(
             np.asarray(y_pred, dtype=np.float64)
             - np.asarray(y_true, dtype=np.float64)
@@ -82,13 +97,40 @@ class MetricsCalculator:
         metrics['confusion_matrix'] = confusion_matrix(y_true, y_pred).tolist()
         if y_proba is not None:
             try:
-                n_classes = y_proba.shape[1]
+                n_classes = probability_array.shape[1]
                 if n_classes == 2:
-                    metrics['auc'] = roc_auc_score(y_true, y_proba[:, 1])
+                    metrics['auc'] = roc_auc_score(
+                        y_true, probability_array[:, 1]
+                    )
                 else:
-                    metrics['auc'] = roc_auc_score(y_true, y_proba, multi_class='ovr', average='weighted')
+                    metrics['auc'] = roc_auc_score(
+                        y_true,
+                        probability_array,
+                        multi_class='ovr',
+                        average='weighted',
+                    )
             except Exception:
                 metrics['auc'] = np.nan
+        if expected_rank is not None:
+            truth = np.asarray(y_true, dtype=np.float64).reshape(-1)
+            ranks = np.asarray(expected_rank, dtype=np.float64).reshape(-1)
+            if ranks.shape != truth.shape:
+                raise ValueError(
+                    'expected_rank must have the same shape as y_true: '
+                    f'{ranks.shape} != {truth.shape}'
+                )
+            if not np.isfinite(ranks).all():
+                raise ValueError('expected_rank must contain only finite values')
+            metrics['expected_rank_mae'] = float(
+                mean_absolute_error(truth, ranks)
+            )
+            metrics['expected_rank_spearman'] = (
+                float(spearmanr(truth, ranks).statistic)
+                if len(truth) >= 2
+                and np.ptp(truth) > 0
+                and np.ptp(ranks) > 0
+                else np.nan
+            )
         metrics['n_samples'] = len(y_true)
         metrics['n_classes'] = len(np.unique(y_true))
 

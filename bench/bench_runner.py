@@ -648,9 +648,18 @@ class BenchmarkRunner:
         start_time = time.time()
         self._configure_model_validation(model, split)
         model.fit(split.X_train, split.y_train)
-        y_pred = model.predict(split.X_test)
-        y_proba = None
-        if hasattr(model, 'predict_proba'):
+        detailed_predictions = None
+        detailed_predictor = getattr(model, 'predict_detailed', None)
+        if callable(detailed_predictor):
+            detailed_predictions = detailed_predictor(split.X_test)
+            y_pred = np.asarray(detailed_predictions['y_pred'])
+            y_proba = np.asarray(
+                detailed_predictions['class_probabilities']
+            )
+        else:
+            y_pred = model.predict(split.X_test)
+            y_proba = None
+        if detailed_predictions is None and hasattr(model, 'predict_proba'):
             try:
                 y_proba = model.predict_proba(split.X_test)
             except Exception:
@@ -658,7 +667,15 @@ class BenchmarkRunner:
 
         training_time = time.time() - start_time
         metrics = MetricsCalculator.calculate_all_metrics(
-            split.y_test, y_pred, y_proba, task_type=task_type
+            split.y_test,
+            y_pred,
+            y_proba,
+            task_type=task_type,
+            expected_rank=(
+                None
+                if detailed_predictions is None
+                else detailed_predictions.get('expected_rank')
+            ),
         )
 
         result = {
@@ -684,6 +701,7 @@ class BenchmarkRunner:
                 artifact_split_name=artifact_split_name,
                 metrics=metrics,
                 task_type=task_type,
+                detailed_predictions=detailed_predictions,
             )
 
         return result
@@ -719,6 +737,7 @@ class BenchmarkRunner:
             artifact_split_name: str,
             metrics: Dict[str, Any],
             task_type: str = 'classification',
+            detailed_predictions: Optional[Mapping[str, Any]] = None,
     ) -> Dict[str, str]:
         artifact_dir = self._model_artifact_dir(
             dataset_name, task_name, model_name
@@ -806,9 +825,129 @@ class BenchmarkRunner:
             for class_index in range(probabilities.shape[1]):
                 predictions[f'proba_{class_index}'] = probabilities[:, class_index]
 
+        head_type = 'categorical'
+        if detailed_predictions is not None:
+            head_type = str(
+                detailed_predictions.get('head_type', 'categorical')
+            ).strip().lower()
+        if head_type in {'coral', 'corn'}:
+            required = {
+                'threshold_logits': int(model.num_classes) - 1,
+                'threshold_probabilities': int(model.num_classes) - 1,
+                'class_probabilities': int(model.num_classes),
+            }
+            arrays: Dict[str, np.ndarray] = {}
+            for name, width in required.items():
+                values = np.asarray(detailed_predictions[name])
+                if values.shape != (n_test, width):
+                    raise ValueError(
+                        f"Ordinal detailed output {name!r} must have shape "
+                        f"{(n_test, width)}, got {values.shape}"
+                    )
+                if not np.isfinite(values).all():
+                    raise ValueError(
+                        f"Ordinal detailed output {name!r} is not finite"
+                    )
+                arrays[name] = values
+            for threshold_index in range(int(model.num_classes) - 1):
+                predictions[f'threshold_logit_{threshold_index}'] = (
+                    arrays['threshold_logits'][:, threshold_index]
+                )
+                predictions[f'threshold_probability_{threshold_index}'] = (
+                    arrays['threshold_probabilities'][:, threshold_index]
+                )
+            for class_index in range(int(model.num_classes)):
+                predictions[f'class_probability_{class_index}'] = (
+                    arrays['class_probabilities'][:, class_index]
+                )
+            expected = np.asarray(detailed_predictions['expected_rank'])
+            ordinal_argmax = np.asarray(
+                detailed_predictions['ordinal_argmax']
+            )
+            if expected.shape != (n_test,) or ordinal_argmax.shape != (n_test,):
+                raise ValueError(
+                    "Ordinal expected_rank and ordinal_argmax must be one-dimensional"
+                )
+            if not np.isfinite(expected).all():
+                raise ValueError("Ordinal expected_rank is not finite")
+            predictions['expected_rank'] = expected
+            predictions['ordinal_argmax'] = ordinal_argmax
+            predictions['y_pred_argmax'] = ordinal_argmax
+            predictions['head_type'] = head_type
+            conditional = detailed_predictions.get('conditional_probabilities')
+            if conditional is not None:
+                conditional_values = np.asarray(conditional)
+                if conditional_values.shape != (
+                    n_test,
+                    int(model.num_classes) - 1,
+                ):
+                    raise ValueError(
+                        "CORN conditional probabilities have an invalid shape"
+                    )
+                if not np.isfinite(conditional_values).all():
+                    raise ValueError(
+                        "CORN conditional probabilities are not finite"
+                    )
+                for threshold_index in range(int(model.num_classes) - 1):
+                    predictions[
+                        f'conditional_probability_{threshold_index}'
+                    ] = conditional_values[:, threshold_index]
+
         predictions_path = artifact_dir / 'predictions.parquet'
         predictions.to_parquet(predictions_path, index=False)
         artifacts = {'predictions': str(predictions_path)}
+        if head_type in {'coral', 'corn'}:
+            ordinal_metadata_path = artifact_dir / 'ordinal_metadata.json'
+            cumulative = arrays['threshold_probabilities']
+            class_probabilities = arrays['class_probabilities']
+            tolerance = float(model.objective_handler.tolerance)
+            raw_class_probabilities = np.concatenate(
+                [
+                    1.0 - cumulative[:, :1],
+                    cumulative[:, :-1] - cumulative[:, 1:],
+                    cumulative[:, -1:],
+                ],
+                axis=1,
+            )
+            monotonicity_violation = cumulative[:, 1:] - cumulative[:, :-1]
+            maximum_monotonicity_violation = float(
+                max(0.0, np.max(monotonicity_violation, initial=0.0))
+            )
+            row_sum_error = float(
+                np.max(
+                    np.abs(class_probabilities.sum(axis=1) - 1.0),
+                    initial=0.0,
+                )
+            )
+            ordinal_metadata = {
+                **dict(model.objective_handler.to_metadata()),
+                'probability_conversion_version': 1,
+                'primary_prediction_column': 'y_pred',
+                'diagnostic_argmax_column': 'ordinal_argmax',
+                'class_probability_columns': [
+                    f'class_probability_{index}'
+                    for index in range(int(model.num_classes))
+                ],
+                'threshold_probability_columns': [
+                    f'threshold_probability_{index}'
+                    for index in range(int(model.num_classes) - 1)
+                ],
+                'round_off_correction_count': int(
+                    np.count_nonzero(raw_class_probabilities < 0.0)
+                ),
+                'maximum_monotonicity_violation': (
+                    maximum_monotonicity_violation
+                ),
+                'monotonicity_within_tolerance': bool(
+                    maximum_monotonicity_violation <= tolerance
+                ),
+                'maximum_class_probability_row_sum_error': row_sum_error,
+            }
+            with open(
+                ordinal_metadata_path, 'w', encoding='utf-8'
+            ) as output:
+                json.dump(ordinal_metadata, output, indent=2)
+            artifacts['ordinal_metadata'] = str(ordinal_metadata_path)
         metrics_path = artifact_dir / 'metrics.json'
         with open(metrics_path, 'w', encoding='utf-8') as output:
             json.dump(

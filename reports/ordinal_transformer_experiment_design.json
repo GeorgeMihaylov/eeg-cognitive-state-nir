@@ -81,7 +81,7 @@
       }
     },
     "coral": {
-      "score": "s_i = w^T h_i",
+      "score": "s_i = w^T h_i + b",
       "cutpoints": "c_0=a; c_k=c_(k-1)+softplus(delta_k)+1e-6",
       "logits": "z[i,k] = s_i - c_k",
       "cumulative_probability": "q[i,k] = sigmoid(z[i,k])",
@@ -259,7 +259,7 @@
       "threshold_probability_0", "threshold_probability_1", "threshold_probability_2", "threshold_probability_3",
       "class_probability_0", "class_probability_1", "class_probability_2", "class_probability_3", "class_probability_4",
       "proba_0", "proba_1", "proba_2", "proba_3", "proba_4",
-      "expected_rank", "y_pred_argmax", "head_type"
+      "expected_rank", "ordinal_argmax", "y_pred_argmax", "head_type"
     ],
     "corn_optional_columns": [
       "conditional_probability_0", "conditional_probability_1", "conditional_probability_2", "conditional_probability_3"
