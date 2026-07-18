@@ -274,6 +274,21 @@ class TorchFeatureTransformerClassifier(nn.Module):
             raise RuntimeError("Ordinal head was not initialized")
         return self.ordinal_head(pooled)
 
+    def output_head_diagnostics(self) -> dict[str, float]:
+        """Expose scalar diagnostics without changing the forward contract."""
+        if self.head_type != "coral":
+            return {}
+        if not isinstance(self.ordinal_head, CoralOrdinalHead):
+            raise RuntimeError("CORAL Transformer has no CoralOrdinalHead")
+        cutpoints = self.ordinal_head.cutpoints().detach().cpu()
+        gaps = torch.diff(cutpoints)
+        diagnostics = {
+            f"cutpoint_{index}": float(value)
+            for index, value in enumerate(cutpoints.tolist())
+        }
+        diagnostics["cutpoint_min_gap"] = float(gaps.min().item())
+        return diagnostics
+
 
 def build_torch_transformer(
     input_shape: Sequence[int],

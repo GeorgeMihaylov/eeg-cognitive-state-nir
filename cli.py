@@ -363,6 +363,11 @@ Examples:
         help='Plan or run RF EEG/POW feature-group classification and regression',
     )
     parser.add_argument(
+        '--ordinal-transformer-experiment',
+        type=str,
+        help='Plan or run the one-fold ordinal Transformer technical smoke',
+    )
+    parser.add_argument(
         '--feature-groups',
         help='Comma-separated feature groups for the RF experiment',
     )
@@ -401,6 +406,48 @@ Examples:
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.ordinal_transformer_experiment:
+        conflicts = {
+            '--config': args.config,
+            '--test': args.test,
+            '--experiment-matrix': args.experiment_matrix,
+            '--calibration-experiment': args.calibration_experiment,
+            '--automl-study': args.automl_study,
+            '--statistical-analysis': args.statistical_analysis,
+            '--cross-source-experiment': args.cross_source_experiment,
+            '--feature-group-experiment': args.feature_group_experiment,
+            '--label-target-audit': args.label_target_audit,
+            '--temporal-target-audit': args.temporal_target_audit,
+            '--label-definition-sensitivity': args.label_definition_sensitivity,
+        }
+        active_conflicts = [name for name, value in conflicts.items() if value]
+        if active_conflicts:
+            parser.error(
+                '--ordinal-transformer-experiment cannot be combined with '
+                + ', '.join(active_conflicts)
+            )
+        if args.plan_only and args.run:
+            parser.error('--plan-only and --run are mutually exclusive')
+        if not args.plan_only and not args.run:
+            parser.error(
+                '--ordinal-transformer-experiment requires --plan-only or --run'
+            )
+        from bench.experiments.ordinal_transformer import (
+            OrdinalTransformerSmokeExperiment,
+        )
+
+        experiment = OrdinalTransformerSmokeExperiment(
+            args.ordinal_transformer_experiment,
+            output_dir=args.output_dir,
+        )
+        plans = experiment.plan()
+        if args.plan_only:
+            print(experiment.render_plan(plans))
+            return
+        result = experiment.execute(plans, resume=args.resume)
+        print(json.dumps(result, indent=2, default=str))
+        return
 
     if args.feature_group_experiment:
         conflicts = {

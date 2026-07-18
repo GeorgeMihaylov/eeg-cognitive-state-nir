@@ -113,6 +113,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.validation_group_column_: Optional[str] = None
         self.validation_random_state_ = self.random_state
         self.validation_split_: Optional[Dict[str, Any]] = None
+        self.objective_training_diagnostics_: Dict[str, Any] = {}
         self.inner_train_indices_: Optional[np.ndarray] = None
         self.inner_validation_indices_: Optional[np.ndarray] = None
         self._validation_groups: Optional[np.ndarray] = None
@@ -632,6 +633,11 @@ class TorchClassificationAdapter(BaseModelAdapter):
         X_validation = features[self.inner_validation_indices_]
         y_train = labels[self.inner_train_indices_]
         y_validation = labels[self.inner_validation_indices_]
+        self.objective_training_diagnostics_ = (
+            self.objective_handler.training_diagnostics(
+                torch.from_numpy(y_train)
+            )
+        )
 
         self._fit_standardizer(X_train)
         X_train = self._transform_features(X_train)
@@ -721,16 +727,22 @@ class TorchClassificationAdapter(BaseModelAdapter):
             else:
                 epochs_without_improvement += 1
 
-            self.training_log_.append(
-                {
-                    "epoch": epoch,
-                    "train_loss": train_loss,
-                    "validation_loss": validation_loss,
-                    "validation_accuracy": validation_correct / validation_count,
-                    "is_best": improved,
-                    "epoch_time_seconds": time.perf_counter() - epoch_started,
-                }
+            epoch_diagnostics = dict(self.objective_training_diagnostics_)
+            head_diagnostics = getattr(
+                self.model, "output_head_diagnostics", None
             )
+            if callable(head_diagnostics):
+                epoch_diagnostics.update(head_diagnostics())
+            self.training_log_.append({
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "validation_loss": validation_loss,
+                "validation_accuracy": validation_correct / validation_count,
+                "learning_rate": float(optimizer.param_groups[0]["lr"]),
+                "is_best": improved,
+                "epoch_time_seconds": time.perf_counter() - epoch_started,
+                **epoch_diagnostics,
+            })
             if epochs_without_improvement >= self.early_stopping_patience:
                 break
 
@@ -1016,6 +1028,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
             if self.device_.type == "cuda"
             else "CPU"
         )
+        head_diagnostics = getattr(self.model, "output_head_diagnostics", None)
         return {
             "input_shape": list(self.input_shape),
             "num_outputs": self.num_classes,
@@ -1035,6 +1048,12 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "standardize": self.standardize,
             "validation_strategy": self.validation_strategy_,
             "validation_split": self.validation_split_,
+            "objective_training_diagnostics": dict(
+                self.objective_training_diagnostics_
+            ),
+            "head_diagnostics": (
+                head_diagnostics() if callable(head_diagnostics) else {}
+            ),
         }
 
     def save(self, path: PathLike) -> None:
@@ -1143,6 +1162,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.n_epochs_trained_ = int(summary.get("epochs_trained", 0))
         self.peak_gpu_memory_bytes_ = int(
             summary.get("peak_gpu_memory_bytes", 0)
+        )
+        self.objective_training_diagnostics_ = dict(
+            summary.get("objective_training_diagnostics", {})
         )
         self.is_fitted_ = True
         return self

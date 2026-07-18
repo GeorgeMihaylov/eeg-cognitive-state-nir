@@ -386,6 +386,21 @@ class ClassificationObjectiveHandler:
     def compute_loss(self, raw_outputs: Tensor, targets: Tensor) -> Tensor:
         return self.loss_parts(raw_outputs, targets).mean
 
+    def training_diagnostics(self, targets: Tensor) -> Dict[str, int]:
+        """Return objective-specific counts for a complete training partition."""
+        if self.head_type != "corn":
+            return {}
+        _, masks = build_corn_targets_and_masks(
+            targets,
+            self.num_classes,
+            dtype=torch.float64,
+        )
+        counts = masks.sum(dim=0).to(dtype=torch.int64).cpu().tolist()
+        return {
+            f"risk_count_{threshold}": int(count)
+            for threshold, count in enumerate(counts)
+        }
+
     def decode(self, raw_outputs: Tensor) -> DecodedClassificationOutput:
         expected_width = (
             self.num_classes

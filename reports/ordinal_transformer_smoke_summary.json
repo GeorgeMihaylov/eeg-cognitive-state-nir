@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "technical_only": true,
+  "scientific_quality_claim": false,
+  "date": "2026-07-18",
+  "branch": "feature/ordinal-transformer",
+  "base_commit": "42f845c31f703a426eb126ec8bd95dd46267c17f",
+  "configuration": {
+    "feature_group": "eeg_only",
+    "input_shape": [8, 168],
+    "outer_fold": 1,
+    "seed": 42,
+    "maximum_epochs": 3,
+    "sequence_limit_applied": false,
+    "sequence_limit_reason": "no safe post-sequence limiter; full outer fold 1 used",
+    "device": "cuda",
+    "device_name": "NVIDIA GeForce RTX 5060 Ti"
+  },
+  "data": {
+    "source_parquet_sha256": "26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8",
+    "full_sequence_count": 44142,
+    "full_sequence_index_sha256": "1d0a1fe8ab8aad1c6da8637cb882c4365c01acb80c0822e34ced21ef7ee36afa",
+    "smoke_sequence_subset_sha256": "6201df099c015dbbf08cfdea20eea2aa2b80f4e8904020032e859061b6aa5c32",
+    "outer_train_sequences": 35342,
+    "inner_train_sequences": 30038,
+    "inner_validation_sequences": 5304,
+    "outer_test_sequences": 8800,
+    "outer_train_subjects": 43,
+    "inner_train_subjects": 42,
+    "inner_validation_subjects": 13,
+    "inner_train_groups": 76,
+    "inner_validation_groups": 14,
+    "outer_test_subjects": 11,
+    "class_counts": {
+      "inner_train": [5569, 6075, 6075, 6251, 6068],
+      "inner_validation": [949, 974, 1167, 1123, 1091],
+      "outer_test": [2184, 1813, 1631, 1548, 1624]
+    }
+  },
+  "leakage_and_alignment": {
+    "outer_train_test_subject_overlap": 0,
+    "inner_train_validation_group_overlap": 0,
+    "inner_outer_test_record_overlap": 0,
+    "test_identity_mismatches": {
+      "categorical": 0,
+      "coral": 0,
+      "corn": 0
+    },
+    "normalization_mean_max_abs_delta": 0.0,
+    "normalization_scale_max_abs_delta": 0.0,
+    "feature_order_equal": true,
+    "validation_splits_equal": true
+  },
+  "trials": {
+    "categorical": {
+      "parameter_count": 305029,
+      "run_directory": "benchmark_results/ordinal_transformer_smoke/runs/categorical_eeg_only/20260718_152907",
+      "epochs_trained": 3,
+      "train_loss": [1.3080974487166517, 1.164582867733179, 1.0876858677779304],
+      "validation_loss": [1.3846609552881115, 1.390572940602022, 1.358291175750226],
+      "best_epoch": 3,
+      "best_validation_loss": 1.358291175750226,
+      "training_time_seconds": 8.198488473892212,
+      "probability_audit": {
+        "shape": [8800, 5],
+        "minimum_class_probability": 4.769794941239525e-6,
+        "maximum_sum_error": 1.6774720279499888e-7
+      },
+      "metrics_technical": {
+        "accuracy": 0.3428409090909091,
+        "balanced_accuracy": 0.34553200549588203,
+        "macro_f1": 0.3478139780548256,
+        "weighted_f1": 0.3480372475937774,
+        "auc": 0.6789634431081405,
+        "kappa": 0.17947887144066688,
+        "quadratic_weighted_kappa": 0.45555061037151146,
+        "ordinal_mae": 1.0835227272727272,
+        "adjacent_accuracy": 0.6921590909090909,
+        "severe_error_rate": 0.3078409090909091
+      }
+    },
+    "coral": {
+      "parameter_count": 304517,
+      "run_directory": "benchmark_results/ordinal_transformer_smoke/runs/coral_eeg_only/20260718_152926",
+      "epochs_trained": 3,
+      "train_loss": [0.4282999036791353, 0.3716288372984389, 0.3407193568759438],
+      "validation_loss": [0.4633360998662888, 0.4166090028138542, 0.4634001467202763],
+      "best_epoch": 2,
+      "best_validation_loss": 0.4166090028138542,
+      "training_time_seconds": 7.698159456253052,
+      "cutpoints": [-1.5061053037643433, -0.3681812286376953, 0.8537536859512329, 2.1491193771362305],
+      "minimum_cutpoint_gap": 1.137924075126648,
+      "probability_audit": {
+        "shape": [8800, 5],
+        "minimum_class_probability": 0.0005110502243041992,
+        "maximum_sum_error": 1.2991949915885925e-7,
+        "maximum_monotonicity_violation": 0.0,
+        "round_off_correction_count": 0,
+        "y_pred_recomputation_mismatches": 0,
+        "ordinal_argmax_disagreement_fraction": 0.3668181818181818
+      },
+      "metrics_technical": {
+        "accuracy": 0.3251136363636364,
+        "balanced_accuracy": 0.3245232043348012,
+        "macro_f1": 0.32485467108879346,
+        "weighted_f1": 0.3274670395933625,
+        "auc": 0.6518435536499124,
+        "kappa": 0.155651646043248,
+        "quadratic_weighted_kappa": 0.4541388490038045,
+        "ordinal_mae": 1.0885227272727274,
+        "adjacent_accuracy": 0.6885227272727272,
+        "severe_error_rate": 0.3114772727272727,
+        "expected_rank_mae": 1.0597738560221412,
+        "expected_rank_spearman": 0.45702414558317744
+      }
+    },
+    "corn": {
+      "parameter_count": 304900,
+      "run_directory": "benchmark_results/ordinal_transformer_smoke/runs/corn_eeg_only/20260718_152944",
+      "epochs_trained": 3,
+      "train_loss": [0.4665788630369374, 0.4120364977199408, 0.3834982856118435],
+      "validation_loss": [0.4988029357942166, 0.46889067465158346, 0.478364686627086],
+      "best_epoch": 2,
+      "best_validation_loss": 0.46889067465158346,
+      "training_time_seconds": 7.498491048812866,
+      "risk_counts": [30038, 24469, 18394, 12319],
+      "probability_audit": {
+        "shape": [8800, 5],
+        "minimum_class_probability": 1.9610968593042344e-5,
+        "maximum_sum_error": 1.0561780072748661e-7,
+        "maximum_monotonicity_violation": 0.0,
+        "round_off_correction_count": 0,
+        "y_pred_recomputation_mismatches": 0,
+        "ordinal_argmax_disagreement_fraction": 0.2144318181818182
+      },
+      "metrics_technical": {
+        "accuracy": 0.3085227272727273,
+        "balanced_accuracy": 0.3143731155989638,
+        "macro_f1": 0.31214993168345256,
+        "weighted_f1": 0.30778378455400696,
+        "auc": 0.6586292285632432,
+        "kappa": 0.1380793833909919,
+        "quadratic_weighted_kappa": 0.41768936746533736,
+        "ordinal_mae": 1.0826136363636363,
+        "adjacent_accuracy": 0.7114772727272727,
+        "severe_error_rate": 0.28852272727272726,
+        "expected_rank_mae": 1.0747921957727522,
+        "expected_rank_spearman": 0.41428775476523183
+      }
+    }
+  },
+  "checkpoint_reload": {
+    "strict_load_all": true,
+    "y_pred_mismatches_all": 0,
+    "maximum_class_probability_delta_all": 0.0,
+    "maximum_threshold_probability_delta_all": 0.0,
+    "maximum_expected_rank_delta_all": 0.0,
+    "all_parameters_finite": true,
+    "categorical_classifier_keys_preserved": true
+  },
+  "warnings": {
+    "baseline_count": 10,
+    "final_count": 10,
+    "y_pred_contains_unseen_true_class": 4,
+    "single_label_confusion_warning": 4,
+    "undefined_single_label_kappa_warning": 2,
+    "new_relative_to_eight_warning_baseline": [
+      "one single-label UserWarning from the added QWK call",
+      "one UndefinedMetricWarning from the added QWK call"
+    ],
+    "warnings_during_real_smoke": 0,
+    "filters_added": false
+  },
+  "tests": {
+    "pre_eeg_baseline": "280 passed, 10 warnings",
+    "targeted_pre_run": "101 passed",
+    "targeted_post_run": "61 passed",
+    "final_full_suite": "289 passed, 10 warnings"
+  },
+  "generated_output_root": "benchmark_results/ordinal_transformer_smoke",
+  "ready_for_full_experiment": true,
+  "full_five_fold_run_performed": false,
+  "task_6g_started": false
+}
