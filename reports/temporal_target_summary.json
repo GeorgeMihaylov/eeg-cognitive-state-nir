@@ -1,0 +1,1231 @@
+{
+  "analysis_name": "temporal_target_audit",
+  "analysis_only": true,
+  "artifacts": {
+    "diagnostic_metrics": "benchmark_results/label_feature_audit/diagnostic_metrics.json",
+    "diagnostic_predictions": "benchmark_results/label_feature_audit/diagnostic_predictions.parquet",
+    "diagnostic_report": "reports/diagnostic_baselines.md",
+    "summary": "reports/temporal_target_summary.json",
+    "temporal_report": "reports/temporal_label_structure.md",
+    "temporal_statistics": "benchmark_results/label_feature_audit/temporal_statistics.json"
+  },
+  "blocked_time": {
+    "definition": {
+      "cross_gap": "last early label predicts first late label",
+      "early": "normalized_record_progress <= early_end",
+      "late": "normalized_record_progress >= late_start",
+      "scientific_role": "structure diagnostic, not a benchmark model"
+    },
+    "protocols": {
+      "blocked_time_cross_gap": {
+        "by_source": [
+          {
+            "accuracy": 0.3409090909090909,
+            "adjacent_accuracy": 0.5454545454545454,
+            "balanced_accuracy": 0.32476190476190475,
+            "macro_f1": 0.3071428571428571,
+            "n_classes_present": 5,
+            "n_samples": 44,
+            "ordinal_mae": 1.4090909090909092,
+            "severe_error_rate": 0.45454545454545453,
+            "source": "Old_EEG"
+          },
+          {
+            "accuracy": 0.2923076923076923,
+            "adjacent_accuracy": 0.6461538461538462,
+            "balanced_accuracy": 0.26416040100250626,
+            "macro_f1": 0.26267106549364616,
+            "n_classes_present": 5,
+            "n_samples": 65,
+            "ordinal_mae": 1.2615384615384615,
+            "severe_error_rate": 0.35384615384615387,
+            "source": "gpn_data"
+          }
+        ],
+        "gap_seconds": {
+          "count": 109,
+          "max": 2200.0,
+          "mean": 854.954128440367,
+          "median": 890.0,
+          "min": 30.0,
+          "q05": 194.00000000000006,
+          "q25": 540.0,
+          "q75": 1180.0,
+          "q95": 1425.9999999999995,
+          "std": 434.5359889055157
+        },
+        "gap_windows": {
+          "count": 109,
+          "max": 220.0,
+          "mean": 85.4954128440367,
+          "median": 89.0,
+          "min": 3.0,
+          "q05": 19.400000000000006,
+          "q25": 54.0,
+          "q75": 118.0,
+          "q95": 142.59999999999997,
+          "std": 43.45359889055157
+        },
+        "overall": {
+          "accuracy": 0.3119266055045872,
+          "adjacent_accuracy": 0.6055045871559633,
+          "balanced_accuracy": 0.2966386554621849,
+          "macro_f1": 0.2875092387287509,
+          "n_classes_present": 5,
+          "n_samples": 109,
+          "ordinal_mae": 1.3211009174311927,
+          "severe_error_rate": 0.3944954128440367
+        }
+      },
+      "blocked_time_early_adjacent": {
+        "by_source": [
+          {
+            "accuracy": 0.6091343024517248,
+            "adjacent_accuracy": 0.9486873508353222,
+            "balanced_accuracy": 0.6172812840525728,
+            "macro_f1": 0.6172068993415809,
+            "n_classes_present": 5,
+            "n_samples": 9218,
+            "ordinal_mae": 0.44640919939249296,
+            "severe_error_rate": 0.0513126491646778,
+            "source": "Old_EEG"
+          },
+          {
+            "accuracy": 0.6183641368462446,
+            "adjacent_accuracy": 0.9540896578843885,
+            "balanced_accuracy": 0.6270733553859973,
+            "macro_f1": 0.6270640586999161,
+            "n_classes_present": 5,
+            "n_samples": 10172,
+            "ordinal_mae": 0.43197011403853713,
+            "severe_error_rate": 0.045910342115611485,
+            "source": "gpn_data"
+          }
+        ],
+        "gap_seconds": {
+          "count": 19390,
+          "max": 10.0,
+          "mean": 10.0,
+          "median": 10.0,
+          "min": 10.0,
+          "q05": 10.0,
+          "q25": 10.0,
+          "q75": 10.0,
+          "q95": 10.0,
+          "std": 0.0
+        },
+        "gap_windows": {
+          "count": 19390,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "q05": 1.0,
+          "q25": 1.0,
+          "q75": 1.0,
+          "q95": 1.0,
+          "std": 0.0
+        },
+        "overall": {
+          "accuracy": 0.61397627643115,
+          "adjacent_accuracy": 0.9515214027849407,
+          "balanced_accuracy": 0.6225693464506878,
+          "macro_f1": 0.6225294258033858,
+          "n_classes_present": 5,
+          "n_samples": 19390,
+          "ordinal_mae": 0.43883445074780814,
+          "severe_error_rate": 0.04847859721505931
+        }
+      },
+      "blocked_time_late_adjacent": {
+        "by_source": [
+          {
+            "accuracy": 0.5663816947447825,
+            "adjacent_accuracy": 0.9038219763640936,
+            "balanced_accuracy": 0.5459555113669841,
+            "macro_f1": 0.5460636056827549,
+            "n_classes_present": 5,
+            "n_samples": 7954,
+            "ordinal_mae": 0.5472718129243148,
+            "severe_error_rate": 0.09617802363590647,
+            "source": "Old_EEG"
+          },
+          {
+            "accuracy": 0.5546380090497738,
+            "adjacent_accuracy": 0.9089366515837104,
+            "balanced_accuracy": 0.5410751224483287,
+            "macro_f1": 0.5412470355110341,
+            "n_classes_present": 5,
+            "n_samples": 8840,
+            "ordinal_mae": 0.5497737556561086,
+            "severe_error_rate": 0.09106334841628959,
+            "source": "gpn_data"
+          }
+        ],
+        "gap_seconds": {
+          "count": 16794,
+          "max": 10.0,
+          "mean": 10.0,
+          "median": 10.0,
+          "min": 10.0,
+          "q05": 10.0,
+          "q25": 10.0,
+          "q75": 10.0,
+          "q95": 10.0,
+          "std": 0.0
+        },
+        "gap_windows": {
+          "count": 16794,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "q05": 1.0,
+          "q25": 1.0,
+          "q75": 1.0,
+          "q95": 1.0,
+          "std": 0.0
+        },
+        "overall": {
+          "accuracy": 0.5602000714540908,
+          "adjacent_accuracy": 0.9065142312730737,
+          "balanced_accuracy": 0.5433848610896886,
+          "macro_f1": 0.5435267745980181,
+          "n_classes_present": 5,
+          "n_samples": 16794,
+          "ordinal_mae": 0.5485887817077527,
+          "severe_error_rate": 0.09348576872692628
+        }
+      }
+    }
+  },
+  "canonical_alignment": {
+    "columns": [
+      "sample_id",
+      "fold",
+      "subject_id",
+      "y_true"
+    ],
+    "exact_match": true,
+    "mismatches": {
+      "fold": 0,
+      "sample_id": 0,
+      "subject_id": 0,
+      "y_true": 0
+    },
+    "reference_path": "benchmark_results/groupkfold_rf_label_q5/20260713_182031/emotiv_cognitive/cognitive_load_5class/random_forest/group_kfold_subject/predictions.parquet",
+    "rows": 45384
+  },
+  "data_path": "data/processed/windowed_eeg_pm_dataset_w10.parquet",
+  "deep_models_trained": 0,
+  "diagnostic_baselines": {
+    "by_source": [
+      {
+        "accuracy": 0.17520178124130253,
+        "adjacent_accuracy": 0.47843028110214303,
+        "balanced_accuracy": 0.17563649417914964,
+        "diagnostic_set": "D0",
+        "macro_f1": 0.15318329112816034,
+        "model": "majority_outer_train",
+        "n_classes_present": 5,
+        "n_samples": 21558,
+        "ordinal_mae": 1.7288245662862973,
+        "severe_error_rate": 0.521569718897857,
+        "source": "Old_EEG"
+      },
+      {
+        "accuracy": 0.1686812725593889,
+        "adjacent_accuracy": 0.4880382775119617,
+        "balanced_accuracy": 0.16832260763211976,
+        "diagnostic_set": "D0",
+        "macro_f1": 0.14250136372105107,
+        "model": "majority_outer_train",
+        "n_classes_present": 5,
+        "n_samples": 23826,
+        "ordinal_mae": 1.7210190548140687,
+        "severe_error_rate": 0.5119617224880383,
+        "source": "gpn_data"
+      },
+      {
+        "accuracy": 0.1782632897300306,
+        "adjacent_accuracy": 0.4116337322571667,
+        "balanced_accuracy": 0.17231984164273884,
+        "diagnostic_set": "D1",
+        "macro_f1": 0.12177879871898263,
+        "model": "logistic_regression",
+        "n_classes_present": 5,
+        "n_samples": 21558,
+        "ordinal_mae": 1.9714723072641247,
+        "severe_error_rate": 0.5883662677428333,
+        "source": "Old_EEG"
+      },
+      {
+        "accuracy": 0.1777050281205406,
+        "adjacent_accuracy": 0.5133467640392848,
+        "balanced_accuracy": 0.17372491779326596,
+        "diagnostic_set": "D1",
+        "macro_f1": 0.13083373612525645,
+        "model": "logistic_regression",
+        "n_classes_present": 5,
+        "n_samples": 23826,
+        "ordinal_mae": 1.617560648031562,
+        "severe_error_rate": 0.4866532359607152,
+        "source": "gpn_data"
+      },
+      {
+        "accuracy": 0.1782632897300306,
+        "adjacent_accuracy": 0.4116337322571667,
+        "balanced_accuracy": 0.17231984164273884,
+        "diagnostic_set": "D1",
+        "macro_f1": 0.12177879871898263,
+        "model": "random_forest",
+        "n_classes_present": 5,
+        "n_samples": 21558,
+        "ordinal_mae": 1.9714723072641247,
+        "severe_error_rate": 0.5883662677428333,
+        "source": "Old_EEG"
+      },
+      {
+        "accuracy": 0.1777050281205406,
+        "adjacent_accuracy": 0.5133467640392848,
+        "balanced_accuracy": 0.17372491779326596,
+        "diagnostic_set": "D1",
+        "macro_f1": 0.13083373612525645,
+        "model": "random_forest",
+        "n_classes_present": 5,
+        "n_samples": 23826,
+        "ordinal_mae": 1.617560648031562,
+        "severe_error_rate": 0.4866532359607152,
+        "source": "gpn_data"
+      },
+      {
+        "accuracy": 0.2184803785137768,
+        "adjacent_accuracy": 0.5480100194823267,
+        "balanced_accuracy": 0.21658917371470063,
+        "diagnostic_set": "D2",
+        "macro_f1": 0.19976867440669613,
+        "model": "logistic_regression",
+        "n_classes_present": 5,
+        "n_samples": 21558,
+        "ordinal_mae": 1.5978754986547916,
+        "severe_error_rate": 0.45198998051767325,
+        "source": "Old_EEG"
+      },
+      {
+        "accuracy": 0.2136321665407538,
+        "adjacent_accuracy": 0.5277847729371276,
+        "balanced_accuracy": 0.21514878397021037,
+        "diagnostic_set": "D2",
+        "macro_f1": 0.19563737619639238,
+        "model": "logistic_regression",
+        "n_classes_present": 5,
+        "n_samples": 23826,
+        "ordinal_mae": 1.6359439268026525,
+        "severe_error_rate": 0.4722152270628725,
+        "source": "gpn_data"
+      },
+      {
+        "accuracy": 0.2140736617496985,
+        "adjacent_accuracy": 0.5062621764542166,
+        "balanced_accuracy": 0.21234170606568767,
+        "diagnostic_set": "D2",
+        "macro_f1": 0.20479707626834448,
+        "model": "random_forest",
+        "n_classes_present": 5,
+        "n_samples": 21558,
+        "ordinal_mae": 1.6746915298265146,
+        "severe_error_rate": 0.4937378235457835,
+        "source": "Old_EEG"
+      },
+      {
+        "accuracy": 0.21518509191639384,
+        "adjacent_accuracy": 0.5178796272979098,
+        "balanced_accuracy": 0.21603165979739716,
+        "diagnostic_set": "D2",
+        "macro_f1": 0.2090655502489398,
+        "model": "random_forest",
+        "n_classes_present": 5,
+        "n_samples": 23826,
+        "ordinal_mae": 1.650801645261479,
+        "severe_error_rate": 0.4821203727020901,
+        "source": "gpn_data"
+      },
+      {
+        "accuracy": 0.22311902773912237,
+        "adjacent_accuracy": 0.5258372761851748,
+        "balanced_accuracy": 0.22027863087294755,
+        "diagnostic_set": "D3",
+        "macro_f1": 0.19763084900498112,
+        "model": "logistic_regression",
+        "n_classes_present": 5,
+        "n_samples": 21558,
+        "ordinal_mae": 1.6546525651730215,
+        "severe_error_rate": 0.4741627238148251,
+        "source": "Old_EEG"
+      },
+      {
+        "accuracy": 0.20788214555527576,
+        "adjacent_accuracy": 0.5433140266935281,
+        "balanced_accuracy": 0.20845329467168017,
+        "diagnostic_set": "D3",
+        "macro_f1": 0.19863780163827802,
+        "model": "logistic_regression",
+        "n_classes_present": 5,
+        "n_samples": 23826,
+        "ordinal_mae": 1.5878032401578108,
+        "severe_error_rate": 0.4566859733064719,
+        "source": "gpn_data"
+      },
+      {
+        "accuracy": 0.21328509138138974,
+        "adjacent_accuracy": 0.49939697560070506,
+        "balanced_accuracy": 0.21104048278336843,
+        "diagnostic_set": "D3",
+        "macro_f1": 0.19969317322626967,
+        "model": "random_forest",
+        "n_classes_present": 5,
+        "n_samples": 21558,
+        "ordinal_mae": 1.6850821040912887,
+        "severe_error_rate": 0.5006030243992949,
+        "source": "Old_EEG"
+      },
+      {
+        "accuracy": 0.21442961470662303,
+        "adjacent_accuracy": 0.5063376143708553,
+        "balanced_accuracy": 0.21569541512383159,
+        "diagnostic_set": "D3",
+        "macro_f1": 0.20393989304139248,
+        "model": "random_forest",
+        "n_classes_present": 5,
+        "n_samples": 23826,
+        "ordinal_mae": 1.680517082179132,
+        "severe_error_rate": 0.4936623856291446,
+        "source": "gpn_data"
+      }
+    ],
+    "feature_policy": {
+      "D0": "outer-train class mode",
+      "D1": [
+        "source"
+      ],
+      "D2": [
+        "normalized_record_progress",
+        "absolute_window_index",
+        "record_duration"
+      ],
+      "D3": [
+        "source",
+        "normalized_record_progress",
+        "absolute_window_index",
+        "record_duration"
+      ],
+      "eeg_features": [],
+      "forbidden": [
+        "label_q5",
+        "record_id",
+        "sample_id",
+        "subject_id",
+        "t_end",
+        "t_start",
+        "target_focus",
+        "target_main"
+      ],
+      "pow_features": []
+    },
+    "fold_summary": [
+      {
+        "accuracy_mean": 0.1717874669763588,
+        "accuracy_std": 0.005723545296740275,
+        "adjacent_accuracy_mean": 0.48353871243244095,
+        "adjacent_accuracy_std": 0.10149521469724106,
+        "balanced_accuracy_mean": 0.2,
+        "balanced_accuracy_std": 0.0,
+        "diagnostic_set": "D0",
+        "folds": 5,
+        "macro_f1_mean": 0.05863465013981084,
+        "macro_f1_std": 0.0016682538732898354,
+        "model": "majority_outer_train",
+        "ordinal_mae_mean": 1.7245566339535323,
+        "ordinal_mae_std": 0.2998951961818285,
+        "severe_error_rate_mean": 0.516461287567559,
+        "severe_error_rate_std": 0.10149521469724107
+      },
+      {
+        "accuracy_mean": 0.17792305928387575,
+        "accuracy_std": 0.026812832925684767,
+        "adjacent_accuracy_mean": 0.4648725841016713,
+        "adjacent_accuracy_std": 0.09720989361486206,
+        "balanced_accuracy_mean": 0.19404476151846622,
+        "balanced_accuracy_std": 0.0208433791008142,
+        "diagnostic_set": "D1",
+        "folds": 5,
+        "macro_f1_mean": 0.1037921858599247,
+        "macro_f1_std": 0.014398499461647327,
+        "model": "logistic_regression",
+        "ordinal_mae_mean": 1.7863603731959592,
+        "ordinal_mae_std": 0.3240980089543205,
+        "severe_error_rate_mean": 0.5351274158983287,
+        "severe_error_rate_std": 0.09720989361486206
+      },
+      {
+        "accuracy_mean": 0.17792305928387575,
+        "accuracy_std": 0.026812832925684767,
+        "adjacent_accuracy_mean": 0.4648725841016713,
+        "adjacent_accuracy_std": 0.09720989361486206,
+        "balanced_accuracy_mean": 0.19404476151846622,
+        "balanced_accuracy_std": 0.0208433791008142,
+        "diagnostic_set": "D1",
+        "folds": 5,
+        "macro_f1_mean": 0.1037921858599247,
+        "macro_f1_std": 0.014398499461647327,
+        "model": "random_forest",
+        "ordinal_mae_mean": 1.7863603731959592,
+        "ordinal_mae_std": 0.3240980089543205,
+        "severe_error_rate_mean": 0.5351274158983287,
+        "severe_error_rate_std": 0.09720989361486206
+      },
+      {
+        "accuracy_mean": 0.21603191957025225,
+        "accuracy_std": 0.02307216976131038,
+        "adjacent_accuracy_mean": 0.5374407619381201,
+        "adjacent_accuracy_std": 0.010765613398171609,
+        "balanced_accuracy_mean": 0.22029770296562484,
+        "balanced_accuracy_std": 0.02212683160850758,
+        "diagnostic_set": "D2",
+        "folds": 5,
+        "macro_f1_mean": 0.19427805928734643,
+        "macro_f1_std": 0.024360653098616437,
+        "model": "logistic_regression",
+        "ordinal_mae_mean": 1.6176684366392506,
+        "ordinal_mae_std": 0.051935803134856795,
+        "severe_error_rate_mean": 0.4625592380618799,
+        "severe_error_rate_std": 0.010765613398171642
+      },
+      {
+        "accuracy_mean": 0.21465092307886144,
+        "accuracy_std": 0.018562271922952157,
+        "adjacent_accuracy_mean": 0.5124044383555834,
+        "adjacent_accuracy_std": 0.03131363425434001,
+        "balanced_accuracy_mean": 0.21655009787683205,
+        "balanced_accuracy_std": 0.018103220929882563,
+        "diagnostic_set": "D2",
+        "folds": 5,
+        "macro_f1_mean": 0.2050670972464867,
+        "macro_f1_std": 0.016468022898654816,
+        "model": "random_forest",
+        "ordinal_mae_mean": 1.6620816909690366,
+        "ordinal_mae_std": 0.08366712152433932,
+        "severe_error_rate_mean": 0.48759556164441664,
+        "severe_error_rate_std": 0.03131363425434002
+      },
+      {
+        "accuracy_mean": 0.21519937888234092,
+        "accuracy_std": 0.020952067161143156,
+        "adjacent_accuracy_mean": 0.535025399054908,
+        "adjacent_accuracy_std": 0.008451381994814856,
+        "balanced_accuracy_mean": 0.2199377187278043,
+        "balanced_accuracy_std": 0.01983785297365656,
+        "diagnostic_set": "D3",
+        "folds": 5,
+        "macro_f1_mean": 0.19483388580803793,
+        "macro_f1_std": 0.022040505446810254,
+        "model": "logistic_regression",
+        "ordinal_mae_mean": 1.6194741330470586,
+        "ordinal_mae_std": 0.03561356769659334,
+        "severe_error_rate_mean": 0.464974600945092,
+        "severe_error_rate_std": 0.008451381994814882
+      },
+      {
+        "accuracy_mean": 0.21389015383619742,
+        "accuracy_std": 0.024868677381436777,
+        "adjacent_accuracy_mean": 0.5030508447612346,
+        "adjacent_accuracy_std": 0.035024626418121985,
+        "balanced_accuracy_mean": 0.21545059413079862,
+        "balanced_accuracy_std": 0.020756319803757268,
+        "diagnostic_set": "D3",
+        "folds": 5,
+        "macro_f1_mean": 0.19989648676841903,
+        "macro_f1_std": 0.021607527511934455,
+        "model": "random_forest",
+        "ordinal_mae_mean": 1.6826555931338312,
+        "ordinal_mae_std": 0.09125530523974669,
+        "severe_error_rate_mean": 0.49694915523876537,
+        "severe_error_rate_std": 0.03502462641812202
+      }
+    ],
+    "overall": [
+      {
+        "diagnostic_set": "D0",
+        "feature_columns": [],
+        "metrics": {
+          "accuracy": 0.17177860038780188,
+          "adjacent_accuracy": 0.48347435219460605,
+          "balanced_accuracy": 0.17177926549189665,
+          "macro_f1": 0.14831990388716138,
+          "n_classes_present": 5,
+          "n_samples": 45384,
+          "ordinal_mae": 1.724726775956284,
+          "severe_error_rate": 0.516525647805394
+        },
+        "model": "majority_outer_train"
+      },
+      {
+        "diagnostic_set": "D1",
+        "feature_columns": [
+          "source"
+        ],
+        "metrics": {
+          "accuracy": 0.17797020976555614,
+          "adjacent_accuracy": 0.46503172924378633,
+          "balanced_accuracy": 0.1779689796648834,
+          "macro_f1": 0.1703788038673057,
+          "n_classes_present": 5,
+          "n_samples": 45384,
+          "ordinal_mae": 1.7856733650625771,
+          "severe_error_rate": 0.5349682707562137
+        },
+        "model": "logistic_regression"
+      },
+      {
+        "diagnostic_set": "D1",
+        "feature_columns": [
+          "source"
+        ],
+        "metrics": {
+          "accuracy": 0.17797020976555614,
+          "adjacent_accuracy": 0.46503172924378633,
+          "balanced_accuracy": 0.1779689796648834,
+          "macro_f1": 0.1703788038673057,
+          "n_classes_present": 5,
+          "n_samples": 45384,
+          "ordinal_mae": 1.7856733650625771,
+          "severe_error_rate": 0.5349682707562137
+        },
+        "model": "random_forest"
+      },
+      {
+        "diagnostic_set": "D2",
+        "feature_columns": [
+          "normalized_record_progress",
+          "absolute_window_index",
+          "record_duration"
+        ],
+        "metrics": {
+          "accuracy": 0.21593513132381456,
+          "adjacent_accuracy": 0.5373920324343381,
+          "balanced_accuracy": 0.21594092978381835,
+          "macro_f1": 0.1996468868519369,
+          "n_classes_present": 5,
+          "n_samples": 45384,
+          "ordinal_mae": 1.6178609201480698,
+          "severe_error_rate": 0.4626079675656619
+        },
+        "model": "logistic_regression"
+      },
+      {
+        "diagnostic_set": "D2",
+        "feature_columns": [
+          "normalized_record_progress",
+          "absolute_window_index",
+          "record_duration"
+        ],
+        "metrics": {
+          "accuracy": 0.21465714789353077,
+          "adjacent_accuracy": 0.5123611845584347,
+          "balanced_accuracy": 0.21465617339734688,
+          "macro_f1": 0.20738092199692945,
+          "n_classes_present": 5,
+          "n_samples": 45384,
+          "ordinal_mae": 1.6621496562665257,
+          "severe_error_rate": 0.4876388154415653
+        },
+        "model": "random_forest"
+      },
+      {
+        "diagnostic_set": "D3",
+        "feature_columns": [
+          "source",
+          "normalized_record_progress",
+          "absolute_window_index",
+          "record_duration"
+        ],
+        "metrics": {
+          "accuracy": 0.2151198660320818,
+          "adjacent_accuracy": 0.5350123391503614,
+          "balanced_accuracy": 0.21512666064165167,
+          "macro_f1": 0.19965775013769654,
+          "n_classes_present": 5,
+          "n_samples": 45384,
+          "ordinal_mae": 1.6195575533227569,
+          "severe_error_rate": 0.46498766084963866
+        },
+        "model": "logistic_regression"
+      },
+      {
+        "diagnostic_set": "D3",
+        "feature_columns": [
+          "source",
+          "normalized_record_progress",
+          "absolute_window_index",
+          "record_duration"
+        ],
+        "metrics": {
+          "accuracy": 0.2138859509959457,
+          "adjacent_accuracy": 0.5030407191961925,
+          "balanced_accuracy": 0.21388470474395885,
+          "macro_f1": 0.20226058435618696,
+          "n_classes_present": 5,
+          "n_samples": 45384,
+          "ordinal_mae": 1.682685527939362,
+          "severe_error_rate": 0.4969592808038075
+        },
+        "model": "random_forest"
+      }
+    ]
+  },
+  "eeg_or_pow_features_used": false,
+  "input_modified": false,
+  "input_sha256": "26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8",
+  "input_sha256_after": "26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8",
+  "input_size_bytes": 159208868,
+  "previous_label": {
+    "by_source": [
+      {
+        "accuracy": 0.5840283278199693,
+        "adjacent_accuracy": 0.9251269626799609,
+        "balanced_accuracy": 0.5814428866429397,
+        "macro_f1": 0.5814299206152518,
+        "n_classes_present": 5,
+        "n_samples": 21463,
+        "ordinal_mae": 0.501886968270978,
+        "severe_error_rate": 0.07487303732003914,
+        "source": "Old_EEG"
+      },
+      {
+        "accuracy": 0.5840640809443508,
+        "adjacent_accuracy": 0.9322091062394604,
+        "balanced_accuracy": 0.5865026036657209,
+        "macro_f1": 0.5865550776499517,
+        "n_classes_present": 5,
+        "n_samples": 23720,
+        "ordinal_mae": 0.49245362563237777,
+        "severe_error_rate": 0.06779089376053962,
+        "source": "gpn_data"
+      }
+    ],
+    "overall": {
+      "accuracy": 0.5840470973596265,
+      "adjacent_accuracy": 0.9288449195493881,
+      "balanced_accuracy": 0.5842500027168656,
+      "macro_f1": 0.5842688820066135,
+      "n_classes_present": 5,
+      "n_samples": 45183,
+      "ordinal_mae": 0.49693468782506695,
+      "severe_error_rate": 0.07115508045061196
+    }
+  },
+  "records": 119,
+  "subjects": 54,
+  "supervised_rows": 45384,
+  "temporal_statistics": {
+    "label_q5": {
+      "runs": {
+        "by_class": [
+          {
+            "class_id": 0,
+            "duration_seconds": {
+              "count": 2649,
+              "max": 560.0,
+              "mean": 34.27708569271423,
+              "median": 20.0,
+              "min": 10.0,
+              "q05": 10.0,
+              "q25": 10.0,
+              "q75": 40.0,
+              "q95": 110.0,
+              "std": 45.43861691904465
+            },
+            "length_windows": {
+              "count": 2649,
+              "max": 56.0,
+              "mean": 3.4277085692714233,
+              "median": 2.0,
+              "min": 1.0,
+              "q05": 1.0,
+              "q25": 1.0,
+              "q75": 4.0,
+              "q95": 11.0,
+              "std": 4.543861691904464
+            },
+            "runs": 2649
+          },
+          {
+            "class_id": 1,
+            "duration_seconds": {
+              "count": 4661,
+              "max": 220.0,
+              "mean": 19.470070800257457,
+              "median": 10.0,
+              "min": 10.0,
+              "q05": 10.0,
+              "q25": 10.0,
+              "q75": 20.0,
+              "q95": 50.0,
+              "std": 16.4368415018585
+            },
+            "length_windows": {
+              "count": 4661,
+              "max": 22.0,
+              "mean": 1.9470070800257455,
+              "median": 1.0,
+              "min": 1.0,
+              "q05": 1.0,
+              "q25": 1.0,
+              "q75": 2.0,
+              "q95": 5.0,
+              "std": 1.6436841501858501
+            },
+            "runs": 4661
+          },
+          {
+            "class_id": 2,
+            "duration_seconds": {
+              "count": 4927,
+              "max": 210.0,
+              "mean": 18.418916176172115,
+              "median": 10.0,
+              "min": 10.0,
+              "q05": 10.0,
+              "q25": 10.0,
+              "q75": 20.0,
+              "q95": 40.0,
+              "std": 15.485008774761539
+            },
+            "length_windows": {
+              "count": 4927,
+              "max": 21.0,
+              "mean": 1.8418916176172113,
+              "median": 1.0,
+              "min": 1.0,
+              "q05": 1.0,
+              "q25": 1.0,
+              "q75": 2.0,
+              "q95": 4.0,
+              "std": 1.5485008774761542
+            },
+            "runs": 4927
+          },
+          {
+            "class_id": 3,
+            "duration_seconds": {
+              "count": 4549,
+              "max": 270.0,
+              "mean": 19.956034293251264,
+              "median": 10.0,
+              "min": 10.0,
+              "q05": 10.0,
+              "q25": 10.0,
+              "q75": 20.0,
+              "q95": 50.0,
+              "std": 15.49953333523566
+            },
+            "length_windows": {
+              "count": 4549,
+              "max": 27.0,
+              "mean": 1.9956034293251264,
+              "median": 1.0,
+              "min": 1.0,
+              "q05": 1.0,
+              "q25": 1.0,
+              "q75": 2.0,
+              "q95": 5.0,
+              "std": 1.5499533335235658
+            },
+            "runs": 4549
+          },
+          {
+            "class_id": 4,
+            "duration_seconds": {
+              "count": 2209,
+              "max": 930.0,
+              "mean": 41.08646446355817,
+              "median": 20.0,
+              "min": 10.0,
+              "q05": 10.0,
+              "q25": 10.0,
+              "q75": 50.0,
+              "q95": 130.0,
+              "std": 55.793812337465404
+            },
+            "length_windows": {
+              "count": 2209,
+              "max": 93.0,
+              "mean": 4.108646446355817,
+              "median": 2.0,
+              "min": 1.0,
+              "q05": 1.0,
+              "q25": 1.0,
+              "q75": 5.0,
+              "q95": 13.0,
+              "std": 5.57938123374654
+            },
+            "runs": 2209
+          }
+        ],
+        "by_source": [
+          {
+            "duration_seconds": {
+              "count": 9023,
+              "max": 930.0,
+              "mean": 23.89227529646459,
+              "median": 10.0,
+              "min": 10.0,
+              "q05": 10.0,
+              "q25": 10.0,
+              "q75": 30.0,
+              "q95": 70.0,
+              "std": 31.383355746485414
+            },
+            "length_windows": {
+              "count": 9023,
+              "max": 93.0,
+              "mean": 2.389227529646459,
+              "median": 1.0,
+              "min": 1.0,
+              "q05": 1.0,
+              "q25": 1.0,
+              "q75": 3.0,
+              "q95": 7.0,
+              "std": 3.1383355746485417
+            },
+            "runs": 9023,
+            "source": "Old_EEG"
+          },
+          {
+            "duration_seconds": {
+              "count": 9972,
+              "max": 580.0,
+              "mean": 23.892900120336943,
+              "median": 10.0,
+              "min": 10.0,
+              "q05": 10.0,
+              "q25": 10.0,
+              "q75": 30.0,
+              "q95": 70.0,
+              "std": 28.73922400522459
+            },
+            "length_windows": {
+              "count": 9972,
+              "max": 58.0,
+              "mean": 2.3892900120336944,
+              "median": 1.0,
+              "min": 1.0,
+              "q05": 1.0,
+              "q25": 1.0,
+              "q75": 3.0,
+              "q95": 7.0,
+              "std": 2.8739224005224586
+            },
+            "runs": 9972,
+            "source": "gpn_data"
+          }
+        ],
+        "overall": {
+          "duration_seconds": {
+            "count": 18995,
+            "max": 930.0,
+            "mean": 23.892603316662278,
+            "median": 10.0,
+            "min": 10.0,
+            "q05": 10.0,
+            "q25": 10.0,
+            "q75": 30.0,
+            "q95": 70.0,
+            "std": 30.02349025133419
+          },
+          "length_windows": {
+            "count": 18995,
+            "max": 93.0,
+            "mean": 2.389260331666228,
+            "median": 1.0,
+            "min": 1.0,
+            "q05": 1.0,
+            "q25": 1.0,
+            "q75": 3.0,
+            "q95": 7.0,
+            "std": 3.002349025133419
+          },
+          "runs": 18995
+        }
+      },
+      "transition_counts": [
+        [
+          6431,
+          1882,
+          532,
+          178,
+          5
+        ],
+        [
+          1988,
+          4414,
+          1924,
+          627,
+          97
+        ],
+        [
+          484,
+          2190,
+          4148,
+          1872,
+          357
+        ],
+        [
+          115,
+          523,
+          2191,
+          4529,
+          1691
+        ],
+        [
+          3,
+          38,
+          256,
+          1841,
+          6867
+        ]
+      ],
+      "transition_probabilities_by_previous_class": [
+        [
+          0.7123393885688968,
+          0.2084625609215773,
+          0.05892778023925565,
+          0.019716437749224634,
+          0.0005538325210456358
+        ],
+        [
+          0.2196685082872928,
+          0.48773480662983426,
+          0.21259668508287294,
+          0.0692817679558011,
+          0.010718232044198896
+        ],
+        [
+          0.05347475417080986,
+          0.24196221411998675,
+          0.4582919014473539,
+          0.2068279748094133,
+          0.03944315545243619
+        ],
+        [
+          0.012708586584152946,
+          0.057796441595756434,
+          0.24212620179025307,
+          0.5004972925185104,
+          0.1868714775113272
+        ],
+        [
+          0.0003331482509716824,
+          0.004219877845641311,
+          0.028428650749583565,
+          0.20444197667962244,
+          0.762576346474181
+        ]
+      ],
+      "transitions": {
+        "adjacent_class_probability": 0.3447978221897616,
+        "pairs": 45183,
+        "same_class_probability": 0.5840470973596265,
+        "two_or_more_classes_probability": 0.07115508045061196
+      },
+      "transitions_by_source": [
+        {
+          "adjacent_class_probability": 0.3410986348599916,
+          "pairs": 21463,
+          "same_class_probability": 0.5840283278199693,
+          "source": "Old_EEG",
+          "two_or_more_classes_probability": 0.07487303732003914
+        },
+        {
+          "adjacent_class_probability": 0.3481450252951096,
+          "pairs": 23720,
+          "same_class_probability": 0.5840640809443508,
+          "source": "gpn_data",
+          "two_or_more_classes_probability": 0.06779089376053962
+        }
+      ]
+    },
+    "target_focus": {
+      "adjacent_change": {
+        "absolute": {
+          "count": 45183,
+          "max": 0.376367,
+          "mean": 0.04517027844543301,
+          "median": 0.03370500000000004,
+          "min": 2.000000000002e-06,
+          "q05": 0.002948999999999985,
+          "q25": 0.014844499999999983,
+          "q75": 0.06354900000000002,
+          "q95": 0.126743,
+          "std": 0.04048154154737822
+        },
+        "by_source": [
+          {
+            "absolute_change": {
+              "count": 21463,
+              "max": 0.376367,
+              "mean": 0.04635763625774589,
+              "median": 0.03481699999999999,
+              "min": 8.000000000008e-06,
+              "q05": 0.003058999999999981,
+              "q25": 0.0154445,
+              "q75": 0.0653005,
+              "q95": 0.12912739999999978,
+              "std": 0.04133273789121783
+            },
+            "signed_change": {
+              "count": 21463,
+              "max": 0.376367,
+              "mean": 5.7436751619065323e-05,
+              "median": -0.0032340000000000146,
+              "min": -0.28282900000000005,
+              "q05": -0.0982611,
+              "q25": -0.03576500000000002,
+              "q75": 0.03365849999999998,
+              "q95": 0.10776719999999995,
+              "std": 0.06210895663056077
+            },
+            "source": "Old_EEG"
+          },
+          {
+            "absolute_change": {
+              "count": 23720,
+              "max": 0.29970600000000003,
+              "mean": 0.04409589983136594,
+              "median": 0.032738499999999976,
+              "min": 2.000000000002e-06,
+              "q05": 0.002851899999999963,
+              "q25": 0.014374000000000026,
+              "q75": 0.062081500000000026,
+              "q95": 0.12441825000000002,
+              "std": 0.03966586526702343
+            },
+            "signed_change": {
+              "count": 23720,
+              "max": 0.29970600000000003,
+              "mean": 0.0001034725969645868,
+              "median": -0.0025019999999999765,
+              "min": -0.245913,
+              "q05": -0.09428850000000004,
+              "q25": -0.03370325000000002,
+              "q75": 0.03153425,
+              "q95": 0.10379019999999997,
+              "std": 0.05931189190039508
+            },
+            "source": "gpn_data"
+          }
+        ],
+        "signed": {
+          "count": 45183,
+          "max": 0.376367,
+          "mean": 8.160447513445324e-05,
+          "median": -0.002868000000000037,
+          "min": -0.28282900000000005,
+          "q05": -0.09623410000000004,
+          "q25": -0.03477649999999999,
+          "q75": 0.03250599999999998,
+          "q95": 0.10592990000000012,
+          "std": 0.06065597876559442
+        }
+      },
+      "autocorrelation": {
+        "1": {
+          "pairs": 45183,
+          "pooled_pearson": 0.8815507682935793
+        },
+        "10": {
+          "pairs": 43673,
+          "pooled_pearson": 0.4411270704054619
+        },
+        "2": {
+          "pairs": 44994,
+          "pooled_pearson": 0.7690712768381718
+        },
+        "20": {
+          "pairs": 42158,
+          "pooled_pearson": 0.4225113407795832
+        },
+        "3": {
+          "pairs": 44810,
+          "pooled_pearson": 0.6848171147464526
+        },
+        "5": {
+          "pairs": 44464,
+          "pooled_pearson": 0.5562287750481706
+        }
+      },
+      "autocorrelation_by_source": {
+        "1": {
+          "Old_EEG": {
+            "pairs": 21463,
+            "pooled_pearson": 0.884156688342267
+          },
+          "gpn_data": {
+            "pairs": 23720,
+            "pooled_pearson": 0.878668807106187
+          }
+        },
+        "10": {
+          "Old_EEG": {
+            "pairs": 20768,
+            "pooled_pearson": 0.43790541858659
+          },
+          "gpn_data": {
+            "pairs": 22905,
+            "pooled_pearson": 0.44370151506803035
+          }
+        },
+        "2": {
+          "Old_EEG": {
+            "pairs": 21373,
+            "pooled_pearson": 0.7755781211137727
+          },
+          "gpn_data": {
+            "pairs": 23621,
+            "pooled_pearson": 0.7619604607386185
+          }
+        },
+        "20": {
+          "Old_EEG": {
+            "pairs": 20092,
+            "pooled_pearson": 0.4204250284282432
+          },
+          "gpn_data": {
+            "pairs": 22066,
+            "pooled_pearson": 0.4239147355091966
+          }
+        },
+        "3": {
+          "Old_EEG": {
+            "pairs": 21286,
+            "pooled_pearson": 0.6925593970430003
+          },
+          "gpn_data": {
+            "pairs": 23524,
+            "pooled_pearson": 0.6762894276561608
+          }
+        },
+        "5": {
+          "Old_EEG": {
+            "pairs": 21126,
+            "pooled_pearson": 0.5630447450246635
+          },
+          "gpn_data": {
+            "pairs": 23338,
+            "pooled_pearson": 0.5484782124128179
+          }
+        }
+      }
+    }
+  }
+}
