@@ -1,0 +1,24 @@
+audit:
+  name: label_target_audit
+
+  data_path: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  output_dir: benchmark_results/label_feature_audit
+  report_path: reports/label_target_audit.md
+  summary_path: reports/label_target_audit_summary.json
+
+  target_column: target_focus
+  label_column: label_q5
+  n_classes: 5
+
+  # Dataset invariants make an accidental switch of input explicit.
+  expected_rows: 51308
+  expected_supervised_rows: 45384
+  expected_subjects: 55
+  expected_records: 120
+
+  provenance_evidence:
+    catalog_builder: src/02_build_emotiv_catalog.py
+    target_builder: src/04_build_windowed_pm_dataset.py
+    feature_merge: src/08_build_eeg_features.py
+    validated_columns: data/interim/emotiv_column_validation.json
+    raw_catalog: data/interim/emotiv_record_catalog.parquet

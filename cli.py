@@ -343,6 +343,11 @@ Examples:
         help='Analyze canonical completed runs without training models',
     )
     parser.add_argument(
+        '--label-target-audit',
+        type=str,
+        help='Audit target provenance and structure without training models',
+    )
+    parser.add_argument(
         '--tracks',
         help='Comma-separated statistical analysis tracks',
     )
@@ -373,6 +378,35 @@ Examples:
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.label_target_audit:
+        conflicts = {
+            '--config': args.config,
+            '--test': args.test,
+            '--experiment-matrix': args.experiment_matrix,
+            '--calibration-experiment': args.calibration_experiment,
+            '--automl-study': args.automl_study,
+            '--statistical-analysis': args.statistical_analysis,
+            '--cross-source-experiment': args.cross_source_experiment,
+        }
+        active_conflicts = [name for name, value in conflicts.items() if value]
+        if active_conflicts:
+            parser.error(
+                '--label-target-audit cannot be combined with '
+                + ', '.join(active_conflicts)
+            )
+        from bench.analysis.label_target_audit import LabelTargetAudit
+
+        analysis = LabelTargetAudit(
+            args.label_target_audit,
+            output_dir=args.output_dir,
+        )
+        if args.plan_only:
+            print(analysis.render_plan(analysis.plan()))
+            return
+        result = analysis.execute()
+        print(json.dumps(result, indent=2, default=str))
+        return
 
     if args.cross_source_experiment:
         conflicts = {
