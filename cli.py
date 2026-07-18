@@ -353,6 +353,11 @@ Examples:
         help='Audit temporal target structure with non-EEG diagnostics',
     )
     parser.add_argument(
+        '--label-definition-sensitivity',
+        type=str,
+        help='Compare global and outer-train-fitted label thresholds',
+    )
+    parser.add_argument(
         '--tracks',
         help='Comma-separated statistical analysis tracks',
     )
@@ -383,6 +388,39 @@ Examples:
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.label_definition_sensitivity:
+        conflicts = {
+            '--config': args.config,
+            '--test': args.test,
+            '--experiment-matrix': args.experiment_matrix,
+            '--calibration-experiment': args.calibration_experiment,
+            '--automl-study': args.automl_study,
+            '--statistical-analysis': args.statistical_analysis,
+            '--cross-source-experiment': args.cross_source_experiment,
+            '--label-target-audit': args.label_target_audit,
+            '--temporal-target-audit': args.temporal_target_audit,
+        }
+        active_conflicts = [name for name, value in conflicts.items() if value]
+        if active_conflicts:
+            parser.error(
+                '--label-definition-sensitivity cannot be combined with '
+                + ', '.join(active_conflicts)
+            )
+        from bench.analysis.label_definition_sensitivity import (
+            LabelDefinitionSensitivity,
+        )
+
+        analysis = LabelDefinitionSensitivity(
+            args.label_definition_sensitivity,
+            output_dir=args.output_dir,
+        )
+        if args.plan_only:
+            print(analysis.render_plan(analysis.plan()))
+            return
+        result = analysis.execute()
+        print(json.dumps(result, indent=2, default=str))
+        return
 
     if args.temporal_target_audit:
         conflicts = {
