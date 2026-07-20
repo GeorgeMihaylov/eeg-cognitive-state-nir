@@ -20,6 +20,13 @@ from .ordinal_transformer import (
     audit_prediction_probabilities,
     build_ordinal_transformer_experiment,
 )
+from .auxiliary_corn_transformer import (
+    AUXILIARY_WEIGHTS,
+    AuxiliaryCornTransformerSmokeExperiment,
+    AuxiliaryCornTrialPlan,
+    audit_auxiliary_corn_probabilities,
+    load_auxiliary_corn_smoke_spec,
+)
 from .ordinal_transformer_full import (
     OrdinalTransformerFullExperiment,
     OrdinalTransformerFullTrialPlan,
@@ -38,6 +45,11 @@ __all__ = [
     "calibration_normalization_statistics",
     "chronological_window_partition",
     "resolve_calibration_parameters",
+    "AUXILIARY_WEIGHTS",
+    "AuxiliaryCornTransformerSmokeExperiment",
+    "AuxiliaryCornTrialPlan",
+    "audit_auxiliary_corn_probabilities",
+    "load_auxiliary_corn_smoke_spec",
     "OrdinalTransformerSmokeExperiment",
     "OrdinalTransformerTrialPlan",
     "OrdinalTransformerFullExperiment",

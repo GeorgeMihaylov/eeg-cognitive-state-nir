@@ -1,0 +1,91 @@
+experiment:
+  name: auxiliary_corn_transformer_smoke
+  type: auxiliary_corn_transformer_smoke
+  output_dir: benchmark_results/auxiliary_corn_transformer_smoke
+  report_path: reports/auxiliary_corn_transformer_smoke_results.md
+  summary_path: reports/auxiliary_corn_transformer_smoke_results.json
+
+dataset:
+  name: emotiv_cognitive
+  data_path: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  target: label_q5
+  subject_col: subject_id
+  expected_supervised_rows: 45384
+  expected_sequences: 44142
+  expected_subjects: 53
+  sequence_index_sha256: 1d0a1fe8ab8aad1c6da8637cb882c4365c01acb80c0822e34ced21ef7ee36afa
+  parquet_sha256: 26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8
+
+task:
+  name: cognitive_load_5class
+  benchmark_task: cognitive_load_5class
+  num_classes: 5
+
+feature_group:
+  name: eeg_pow
+  feature_set: eeg_pow
+  feature_count: 448
+  feature_list_sha256: 8cd5d70faa8ff30fb4290dd9d9a2dde0e81f50e7682d05668b5fb47df511fd51
+
+auxiliary_weights:
+  - 0.25
+  - 0.5
+  - 1.0
+
+seeds:
+  - 42
+
+model:
+  name: torch_transformer
+  type: torch_transformer
+  params:
+    sequence_length: 8
+    d_model: 128
+    nhead: 4
+    num_layers: 2
+    dim_feedforward: 256
+    dropout: 0.1
+    activation: gelu
+    pooling: last
+    positional_encoding: learned
+    num_classes: 5
+    batch_size: 128
+    max_epochs: 3
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    validation_size: 0.15
+    early_stopping_patience: 4
+    device: auto
+    random_state: 42
+    standardize: true
+    num_workers: 0
+
+sequence:
+  length: 8
+  stride: 1
+  target_position: last
+  expected_step_seconds: 10.0
+  max_gap_seconds: 10.5
+
+validation:
+  strategy: group_record
+  group_column: record_group_id
+  validation_size: 0.15
+  random_state: 42
+
+evaluation:
+  protocol: group_kfold_subject
+  n_splits: 5
+  group_column: subject_id
+  folds:
+    - 1
+  random_state: 42
+
+protocol:
+  outer_folds:
+    - 1
+  max_sequences: null
+  max_epochs: 3
+  limitation_rule: full_outer_fold_1_no_post_sequence_sampler
+  technical_only: true
+  lambda_selection_performed: false

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "task": "7V",
+  "status": "implementation_ready_local_run_pending",
+  "source_revision": "e071904",
+  "experiment_type": "auxiliary_corn_transformer_smoke",
+  "head_type": "categorical_corn",
+  "feature_group": "eeg_pow",
+  "input_shape": [8, 448],
+  "seed": 42,
+  "outer_folds": [1],
+  "maximum_epochs": 3,
+  "auxiliary_weights": [0.25, 0.5, 1.0],
+  "parameter_count": 358153,
+  "lambda_selection_performed": false,
+  "canonical": {
+    "supervised_windows": 45384,
+    "sequences": 44142,
+    "subjects": 53,
+    "sequence_index_sha256": "1d0a1fe8ab8aad1c6da8637cb882c4365c01acb80c0822e34ced21ef7ee36afa",
+    "parquet_sha256": "26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8",
+    "feature_list_sha256": "8cd5d70faa8ff30fb4290dd9d9a2dde0e81f50e7682d05668b5fb47df511fd51"
+  },
+  "new_files": [
+    "bench/experiments/auxiliary_corn_transformer.py",
+    "experiments/auxiliary_corn_transformer_smoke.yaml",
+    "tests/test_auxiliary_corn_smoke_pipeline.py",
+    "reports/auxiliary_corn_transformer_smoke_setup.md",
+    "reports/auxiliary_corn_transformer_smoke_setup_summary.json"
+  ],
+  "modified_files": [
+    "bench/experiments/__init__.py",
+    "bench/experiments/ordinal_transformer.py"
+  ],
+  "generated_after_run": [
+    "reports/auxiliary_corn_transformer_smoke_results.md",
+    "reports/auxiliary_corn_transformer_smoke_results.json",
+    "benchmark_results/auxiliary_corn_transformer_smoke/auxiliary_corn_transformer_smoke_manifest.json"
+  ],
+  "tests": {
+    "new_and_task7b_focused": {
+      "passed": 30,
+      "skipped": 0
+    },
+    "broader_regression": {
+      "passed": 149,
+      "skipped": 3
+    },
+    "repository_without_external_artifacts": {
+      "passed": 340,
+      "skipped": 3,
+      "external_artifact_failures": 7,
+      "warnings": 11
+    }
+  },
+  "real_eeg_training_performed": false,
+  "next_action": "run plan-only and then the three-trial smoke locally"
+}

@@ -1228,6 +1228,14 @@ def build_ordinal_transformer_experiment(
         return OrdinalTransformerMultiseedExperiment(
             resolved, output_dir=output_dir
         )
+    if experiment_type == "auxiliary_corn_transformer_smoke":
+        from bench.experiments.auxiliary_corn_transformer import (
+            AuxiliaryCornTransformerSmokeExperiment,
+        )
+
+        return AuxiliaryCornTransformerSmokeExperiment(
+            resolved, output_dir=output_dir
+        )
     if experiment_type == "ordinal_transformer_smoke":
         return OrdinalTransformerSmokeExperiment(resolved, output_dir=output_dir)
     raise ValueError(
