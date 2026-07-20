@@ -826,6 +826,77 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.is_fitted_ = True
         return self
 
+    def resolve_validation_indices(
+        self,
+        y: Any,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Rebuild the deterministic inner split without fitting the model.
+
+        Group metadata must be configured through :meth:`set_validation_groups`
+        before this method is called. The method is used to reconstruct the
+        exact validation partition of an already completed checkpoint.
+        """
+        raw_labels = np.asarray(y)
+        if raw_labels.ndim != 1:
+            raise ValueError(
+                f"Validation labels must be one-dimensional, got {raw_labels.shape}"
+            )
+        labels = self._validate_labels(raw_labels, len(raw_labels))
+        train_idx, validation_idx = self._validation_indices(labels)
+        return (
+            np.asarray(train_idx, dtype=np.int64),
+            np.asarray(validation_idx, dtype=np.int64),
+        )
+
+    def validation_partition_detailed(
+        self,
+        X: Any,
+        y: Any,
+        *,
+        validation_indices: Optional[Sequence[int]] = None,
+    ) -> Dict[str, Any]:
+        """Predict the inner-validation partition with the fitted checkpoint.
+
+        The outer-test partition is never accessed. Explicit indices are useful
+        when reconstructing validation predictions for legacy checkpoints that
+        did not persist ``inner_validation_indices_``.
+        """
+        if not self.is_fitted_:
+            raise RuntimeError(
+                "The model must be fitted or loaded before validation prediction"
+            )
+        features = self._validate_features(X)
+        labels = self._validate_labels(y, len(features))
+        if validation_indices is None:
+            if self.inner_validation_indices_ is not None:
+                indices = np.asarray(
+                    self.inner_validation_indices_, dtype=np.int64
+                )
+            else:
+                _, indices = self.resolve_validation_indices(labels)
+        else:
+            indices = np.asarray(validation_indices, dtype=np.int64)
+        if indices.ndim != 1 or len(indices) == 0:
+            raise ValueError(
+                "validation_indices must be a non-empty one-dimensional array"
+            )
+        if np.any(indices < 0) or np.any(indices >= len(features)):
+            raise IndexError(
+                "validation_indices contain values outside the training partition"
+            )
+        if getattr(features, "is_lazy_raw_eeg", False):
+            validation_features = np.stack(
+                [np.asarray(features[int(index)]) for index in indices], axis=0
+            )
+        else:
+            validation_features = features[indices]
+        detailed = self.predict_detailed(validation_features)
+        return {
+            "indices": indices.copy(),
+            "y_true": labels[indices].copy(),
+            **detailed,
+        }
+
     def fine_tune(
         self,
         X_train: Any,
@@ -1175,6 +1246,20 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "training_summary": self.get_training_summary(),
             "training_log": self.training_log_,
             "validation_split": self.validation_split_,
+            "inner_train_indices": (
+                None
+                if self.inner_train_indices_ is None
+                else torch.from_numpy(
+                    np.asarray(self.inner_train_indices_, dtype=np.int64)
+                )
+            ),
+            "inner_validation_indices": (
+                None
+                if self.inner_validation_indices_ is None
+                else torch.from_numpy(
+                    np.asarray(self.inner_validation_indices_, dtype=np.int64)
+                )
+            ),
             "feature_mean": (
                 torch.from_numpy(self.feature_mean_)
                 if self.feature_mean_ is not None
@@ -1257,6 +1342,28 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.model_metadata = dict(payload.get("model_metadata", self.model_metadata))
         self.training_log_ = list(payload.get("training_log", []))
         self.validation_split_ = payload.get("validation_split")
+        stored_train_indices = payload.get("inner_train_indices")
+        stored_validation_indices = payload.get("inner_validation_indices")
+        self.inner_train_indices_ = (
+            None
+            if stored_train_indices is None
+            else np.asarray(
+                stored_train_indices.cpu()
+                if isinstance(stored_train_indices, torch.Tensor)
+                else stored_train_indices,
+                dtype=np.int64,
+            )
+        )
+        self.inner_validation_indices_ = (
+            None
+            if stored_validation_indices is None
+            else np.asarray(
+                stored_validation_indices.cpu()
+                if isinstance(stored_validation_indices, torch.Tensor)
+                else stored_validation_indices,
+                dtype=np.int64,
+            )
+        )
         summary = payload.get("training_summary", {})
         self.best_epoch_ = summary.get("best_epoch")
         self.best_validation_loss_ = summary.get("best_validation_loss")

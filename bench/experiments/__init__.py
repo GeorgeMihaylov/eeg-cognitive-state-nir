@@ -27,6 +27,15 @@ from .auxiliary_corn_transformer import (
     audit_auxiliary_corn_probabilities,
     load_auxiliary_corn_smoke_spec,
 )
+from .auxiliary_corn_lambda_selection import (
+    AuxiliaryCornLambdaSelectionSetupExperiment,
+    AuxiliaryCornLambdaSetupPlan,
+    LambdaSelectionDecision,
+    LambdaValidationResult,
+    NoEligibleAuxiliaryWeightError,
+    load_auxiliary_corn_lambda_setup_spec,
+    select_auxiliary_weight,
+)
 from .ordinal_transformer_full import (
     OrdinalTransformerFullExperiment,
     OrdinalTransformerFullTrialPlan,
@@ -50,6 +59,13 @@ __all__ = [
     "AuxiliaryCornTrialPlan",
     "audit_auxiliary_corn_probabilities",
     "load_auxiliary_corn_smoke_spec",
+    "AuxiliaryCornLambdaSelectionSetupExperiment",
+    "AuxiliaryCornLambdaSetupPlan",
+    "LambdaSelectionDecision",
+    "LambdaValidationResult",
+    "NoEligibleAuxiliaryWeightError",
+    "load_auxiliary_corn_lambda_setup_spec",
+    "select_auxiliary_weight",
     "OrdinalTransformerSmokeExperiment",
     "OrdinalTransformerTrialPlan",
     "OrdinalTransformerFullExperiment",
