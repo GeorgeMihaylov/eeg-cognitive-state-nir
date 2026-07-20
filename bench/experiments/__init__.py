@@ -36,6 +36,12 @@ from .auxiliary_corn_lambda_selection import (
     load_auxiliary_corn_lambda_setup_spec,
     select_auxiliary_weight,
 )
+from .auxiliary_corn_nested_lambda import (
+    AuxiliaryCornNestedLambdaExperiment,
+    NestedFoldPlan,
+    NestedLambdaPlan,
+    load_auxiliary_corn_nested_spec,
+)
 from .ordinal_transformer_full import (
     OrdinalTransformerFullExperiment,
     OrdinalTransformerFullTrialPlan,
@@ -66,6 +72,10 @@ __all__ = [
     "NoEligibleAuxiliaryWeightError",
     "load_auxiliary_corn_lambda_setup_spec",
     "select_auxiliary_weight",
+    "AuxiliaryCornNestedLambdaExperiment",
+    "NestedFoldPlan",
+    "NestedLambdaPlan",
+    "load_auxiliary_corn_nested_spec",
     "OrdinalTransformerSmokeExperiment",
     "OrdinalTransformerTrialPlan",
     "OrdinalTransformerFullExperiment",

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "task": "7G-2",
+  "status": "implemented_not_run",
+  "experiment_type": "auxiliary_corn_nested_lambda",
+  "feature_groups": ["eeg_pow", "eeg_only"],
+  "seeds": [7, 42, 123],
+  "outer_folds": [1, 2, 3, 4, 5],
+  "auxiliary_weights": [0.25, 0.5, 1.0],
+  "selection_units": 30,
+  "candidate_fold_fits": 90,
+  "selected_outer_evaluations": 30,
+  "selection_rule": [
+    "balanced_accuracy_guard_0.0100",
+    "minimum_severe_error_rate",
+    "minimum_ordinal_mae",
+    "minimum_auxiliary_weight"
+  ],
+  "outer_test_selected_only": true,
+  "candidate_outer_predictions": false,
+  "uses_existing_training_adapter": true,
+  "new_optimization_loop": false,
+  "targeted_tests": {
+    "passed": 48,
+    "warnings": 1
+  },
+  "regression_tests": {
+    "passed": 108,
+    "skipped": 3
+  },
+  "real_eeg_training_performed": false
+}
