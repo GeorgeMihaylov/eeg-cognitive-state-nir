@@ -42,6 +42,12 @@ from .auxiliary_corn_nested_lambda import (
     NestedLambdaPlan,
     load_auxiliary_corn_nested_spec,
 )
+from .auxiliary_corn_nested_lambda_finalize import (
+    AuxiliaryCornNestedLambdaFinalizeExperiment,
+    FinalizePlan,
+    FinalizeUnitPlan,
+    load_auxiliary_corn_finalize_spec,
+)
 from .ordinal_transformer_full import (
     OrdinalTransformerFullExperiment,
     OrdinalTransformerFullTrialPlan,
@@ -76,6 +82,10 @@ __all__ = [
     "NestedFoldPlan",
     "NestedLambdaPlan",
     "load_auxiliary_corn_nested_spec",
+    "AuxiliaryCornNestedLambdaFinalizeExperiment",
+    "FinalizePlan",
+    "FinalizeUnitPlan",
+    "load_auxiliary_corn_finalize_spec",
     "OrdinalTransformerSmokeExperiment",
     "OrdinalTransformerTrialPlan",
     "OrdinalTransformerFullExperiment",

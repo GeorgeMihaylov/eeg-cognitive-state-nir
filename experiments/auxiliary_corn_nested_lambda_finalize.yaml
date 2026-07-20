@@ -1,0 +1,29 @@
+experiment:
+  name: auxiliary_corn_nested_lambda_finalized
+  type: auxiliary_corn_nested_lambda_finalize
+  output_dir: benchmark_results/auxiliary_corn_nested_lambda_finalized
+  report_path: reports/auxiliary_corn_nested_lambda_finalized_results.md
+  summary_path: reports/auxiliary_corn_nested_lambda_finalized_results.json
+
+source:
+  experiment_name: auxiliary_corn_nested_lambda
+  summary_path: reports/auxiliary_corn_nested_lambda_results.json
+
+fallback:
+  strategy: paired_categorical_baseline
+  post_execution_protocol_amendment: true
+  preserve_original_aborted_status: true
+
+protocol:
+  selection_information: inner_validation_only
+  reuse_existing_outer_predictions: true
+  outer_test_selected_only: true
+  model_training_performed: false
+
+audit:
+  expected_selection_units: 30
+  expected_candidate_fold_fits: 90
+  expected_joint_units: 25
+  expected_fallback_units: 5
+  expected_sequences_per_policy_model: 44142
+  expected_subjects_per_policy_model: 53

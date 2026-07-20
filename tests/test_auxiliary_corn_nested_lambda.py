@@ -162,6 +162,20 @@ class _FakeModel:
         }
 
 
+class _AlwaysBadFakeModel(_FakeModel):
+    def _detailed(self, y):
+        details = super()._detailed(y)
+        y = np.asarray(y, dtype=int)
+        predicted = (y + 2) % 5
+        probabilities = self._probabilities(predicted, 0.8)
+        details["y_pred"] = predicted
+        details["class_probabilities"] = probabilities
+        details["categorical_expected_rank"] = (
+            probabilities * np.arange(5)
+        ).sum(axis=1)
+        return details
+
+
 def _write_test_spec(tmp_path: Path) -> Path:
     document = yaml.safe_load(SPEC.read_text(encoding="utf-8"))
     document["experiment"]["output_dir"] = str(tmp_path / "results")
@@ -256,3 +270,83 @@ def test_execute_never_writes_outer_predictions_for_rejected_candidates(tmp_path
         candidate = fold_plan.candidate_root / f"lambda_{str(weight).replace('.', 'p').rstrip('0').rstrip('p')}"
         assert (candidate / "validation_predictions.parquet").is_file()
         assert not (candidate / "outer_test_predictions.parquet").exists()
+
+
+def test_aborted_unit_counts_all_candidate_fits(tmp_path: Path) -> None:
+    spec = _write_test_spec(tmp_path)
+    split = _split()
+    baseline_run = tmp_path / "baseline-run-abort"
+    baseline_run.mkdir()
+    baseline_config = {
+        "output_dir": str(baseline_run),
+        "datasets": {"emotiv_cognitive": {"feature_group": "eeg_pow"}},
+        "tasks": ["cognitive_load_5class"],
+        "models": {"torch_transformer": {"type": "torch_transformer", "params": {
+            "head_type": "categorical", "random_state": 42,
+        }}},
+        "sequence": {"length": 4},
+        "validation": {"strategy": "group_record", "group_column": "record_group_id", "validation_size": 0.2, "random_state": 42},
+        "evaluation": {"protocol": "group_kfold_subject", "folds": [1], "random_state": 42},
+        "task_config": {"random_state": 42},
+    }
+    (baseline_run / "config.yaml").write_text(
+        yaml.safe_dump(baseline_config, sort_keys=False), encoding="utf-8"
+    )
+    baseline_dir = tmp_path / "baseline-abort"
+    baseline_dir.mkdir()
+    indices = np.asarray([1, 3, 5, 7, 9])
+    base = pd.DataFrame({
+        "outer_train_index": indices,
+        "outer_fold": 1,
+        "fold": 1,
+        "split": "inner_validation",
+        "feature_group": "eeg_pow",
+        "seed": 42,
+        "head_type": "categorical",
+        "sample_id": split.sample_id_train[indices],
+        "subject_id": split.subject_train[indices],
+        "record_id": split.record_id_train[indices],
+        "y_true": split.y_train[indices],
+        "y_pred": split.y_train[indices],
+        "sequence_id": split.row_metadata_train["sequence_id"][indices],
+        "record_group_id": split.row_metadata_train["record_group_id"][indices],
+        "source": split.row_metadata_train["source"][indices],
+        "target_sample_id": split.row_metadata_train["target_sample_id"][indices],
+        "target_time": split.row_metadata_train["target_time"][indices],
+    })
+    for i in range(5):
+        base[f"proba_{i}"] = (base["y_true"] == i).astype(float)
+        base[f"class_probability_{i}"] = base[f"proba_{i}"]
+    base["categorical_expected_rank"] = base["y_true"].astype(float)
+    baseline_predictions = baseline_dir / "validation_predictions.parquet"
+    baseline_metrics = baseline_dir / "validation_metrics.json"
+    base.to_parquet(baseline_predictions, index=False)
+    baseline_metrics.write_text(json.dumps({"balanced_accuracy": 1.0}), encoding="utf-8")
+
+    output = tmp_path / "results-abort"
+    fold_plan = NestedFoldPlan(
+        feature_group="eeg_pow",
+        seed=42,
+        outer_fold=1,
+        baseline_run_directory=baseline_run,
+        baseline_validation_metrics=baseline_metrics,
+        baseline_validation_predictions=baseline_predictions,
+        candidate_root=output / "candidates" / "eeg_pow" / "seed_42" / "fold_01",
+        selected_root=output / "selected" / "eeg_pow" / "seed_42" / "fold_01",
+    )
+    plan = NestedLambdaPlan(
+        folds=(fold_plan,), candidate_fold_fits=3,
+        selected_outer_evaluations=1, output_root=output,
+    )
+    experiment = AuxiliaryCornNestedLambdaExperiment(
+        spec,
+        split_builder=lambda config: {"fold_01": split},
+        model_builder=lambda *args, **kwargs: _AlwaysBadFakeModel(kwargs["params"]),
+    )
+    manifest = experiment.execute(plan, resume=False)
+    assert manifest["status"] == "incomplete"
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["candidate_fold_fits_completed"] == 3
+    assert summary["candidate_fold_fits_trained_this_run"] == 3
+    assert len(summary["outcomes"][0]["candidate_manifests"]) == 3
+    assert summary["outcomes"][0]["feature_group"] == "eeg_pow"

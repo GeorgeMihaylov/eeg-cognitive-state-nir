@@ -726,10 +726,14 @@ class AuxiliaryCornNestedLambdaExperiment:
                 failure = {
                     "status": "aborted_no_eligible_lambda",
                     "selection_id": fold_plan.selection_id,
+                    "feature_group": fold_plan.feature_group,
+                    "seed": fold_plan.seed,
+                    "outer_fold": fold_plan.outer_fold,
                     "outer_test_used": False,
                     "reason": str(error),
                     "baseline_metrics": baseline_metrics,
                     "candidates": [item.to_dict() for item in candidate_results],
+                    "candidate_manifests": candidate_manifests,
                 }
                 _write_json(
                     fold_plan.selected_root / "selection_decision.json", failure
@@ -799,7 +803,7 @@ class AuxiliaryCornNestedLambdaExperiment:
 
         candidate_actions = [
             candidate.get("action", "unknown")
-            for item in completed
+            for item in outcomes
             for candidate in item.get("candidate_manifests", [])
         ]
         selected_actions = [
@@ -816,6 +820,9 @@ class AuxiliaryCornNestedLambdaExperiment:
             "candidate_fold_fits_expected": resolved.candidate_fold_fits,
             "candidate_fold_fits_trained_this_run": candidate_actions.count("trained"),
             "candidate_fold_fits_resumed": candidate_actions.count("resumed"),
+            "candidate_fold_fits_completed": (
+                candidate_actions.count("trained") + candidate_actions.count("resumed")
+            ),
             "selected_outer_evaluations_this_run": selected_actions.count("evaluated"),
             "selected_outer_evaluations_resumed": selected_actions.count("resumed"),
             "selection_units_completed": len(completed),
@@ -836,6 +843,7 @@ class AuxiliaryCornNestedLambdaExperiment:
             f"- Selection units completed: {len(completed)}/30.",
             f"- Selection units aborted: {len(aborted)}.",
             f"- Candidate fold fits expected: {resolved.candidate_fold_fits}.",
+            f"- Candidate fold fits completed: {summary['candidate_fold_fits_completed']}.",
             f"- Selected lambda counts: {counts}.",
             "- Outer-test predictions were produced only after each validation-only selection decision.",
             f"- Ready for subject-level analysis: {summary['ready_for_subject_level_analysis']}.",
@@ -850,6 +858,7 @@ class AuxiliaryCornNestedLambdaExperiment:
             "report": _relative_path(report_path),
             "output_directory": _relative_path(self.output_root),
             "candidate_fold_fits_expected": resolved.candidate_fold_fits,
+            "candidate_fold_fits_completed": summary["candidate_fold_fits_completed"],
             "outer_test_selected_only": True,
             "ready_for_subject_level_analysis": summary[
                 "ready_for_subject_level_analysis"
