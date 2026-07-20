@@ -10,6 +10,8 @@ from torch import Tensor, nn
 
 from .adapter import TorchClassificationAdapter, seed_torch
 from .ordinal import (
+    CategoricalCornObjectiveHandler,
+    CategoricalCornOutput,
     ClassificationObjectiveHandler,
     CoralOrdinalHead,
     CornOrdinalHead,
@@ -94,6 +96,7 @@ class TorchFeatureTransformerClassifier(nn.Module):
         pooling: str = "last",
         positional_encoding: str = "learned",
         head_type: str = "categorical",
+        auxiliary_weight: float = 0.0,
     ) -> None:
         super().__init__()
         self.input_size = int(input_size)
@@ -108,6 +111,7 @@ class TorchFeatureTransformerClassifier(nn.Module):
         self.pooling = str(pooling).strip().lower()
         self.positional_encoding_kind = str(positional_encoding).strip().lower()
         self.head_type = normalize_head_type(head_type)
+        self.auxiliary_weight = float(auxiliary_weight)
         self._validate_config()
 
         self.input_projection = nn.Linear(self.input_size, self.d_model)
@@ -137,7 +141,7 @@ class TorchFeatureTransformerClassifier(nn.Module):
             num_layers=self.num_layers,
             enable_nested_tensor=False,
         )
-        if self.head_type == "categorical":
+        if self.head_type in {"categorical", "categorical_corn"}:
             # Keep this exact module layout and name for legacy strict checkpoints
             # and categorical head-only calibration.
             self.classifier = nn.Sequential(
@@ -147,9 +151,10 @@ class TorchFeatureTransformerClassifier(nn.Module):
                 nn.Dropout(self.dropout),
                 nn.Linear(self.d_model, self.num_classes),
             )
-            self.ordinal_head = None
         else:
             self.classifier = None
+
+        if self.head_type in {"coral", "corn"}:
             ordinal_head_type = (
                 CoralOrdinalHead if self.head_type == "coral" else CornOrdinalHead
             )
@@ -158,6 +163,17 @@ class TorchFeatureTransformerClassifier(nn.Module):
                 num_classes=self.num_classes,
                 dropout=self.dropout,
             )
+        else:
+            self.ordinal_head = None
+
+        if self.head_type == "categorical_corn":
+            self.auxiliary_ordinal_head = CornOrdinalHead(
+                input_dim=self.d_model,
+                num_classes=self.num_classes,
+                dropout=self.dropout,
+            )
+        else:
+            self.auxiliary_ordinal_head = None
 
     def _validate_config(self) -> None:
         if self.input_size <= 0:
@@ -174,6 +190,12 @@ class TorchFeatureTransformerClassifier(nn.Module):
             )
         if self.num_layers <= 0:
             raise ValueError("num_layers must be positive")
+        if not math.isfinite(self.auxiliary_weight) or self.auxiliary_weight < 0:
+            raise ValueError("auxiliary_weight must be finite and non-negative")
+        if self.head_type != "categorical_corn" and self.auxiliary_weight != 0:
+            raise ValueError(
+                "auxiliary_weight is only valid for head_type='categorical_corn'"
+            )
         if self.dim_feedforward <= 0:
             raise ValueError("dim_feedforward must be positive")
         if not 0 <= self.dropout < 1:
@@ -264,12 +286,19 @@ class TorchFeatureTransformerClassifier(nn.Module):
         self,
         X: Tensor,
         padding_mask: Optional[Tensor] = None,
-    ) -> Tensor:
+    ) -> Tensor | CategoricalCornOutput:
         pooled = self.encode(X, padding_mask=padding_mask)
         if self.head_type == "categorical":
             if self.classifier is None:
                 raise RuntimeError("Categorical classifier was not initialized")
             return self.classifier(pooled)
+        if self.head_type == "categorical_corn":
+            if self.classifier is None or self.auxiliary_ordinal_head is None:
+                raise RuntimeError("Auxiliary CORN heads were not initialized")
+            return CategoricalCornOutput(
+                categorical_logits=self.classifier(pooled),
+                ordinal_logits=self.auxiliary_ordinal_head(pooled),
+            )
         if self.ordinal_head is None:
             raise RuntimeError("Ordinal head was not initialized")
         return self.ordinal_head(pooled)
@@ -320,6 +349,13 @@ def build_torch_transformer(
         model_params.pop("positional_encoding", "learned")
     )
     head_type = normalize_head_type(model_params.pop("head_type", "categorical"))
+    auxiliary_weight_provided = "auxiliary_weight" in model_params
+    auxiliary_weight = float(model_params.pop("auxiliary_weight", 0.0))
+    if head_type != "categorical_corn" and auxiliary_weight_provided:
+        raise ValueError(
+            "model.params.auxiliary_weight is only valid for "
+            "head_type='categorical_corn'"
+        )
     configured_num_classes = int(
         model_params.pop("num_classes", int(num_outputs))
     )
@@ -345,10 +381,18 @@ def build_torch_transformer(
         pooling=pooling,
         positional_encoding=positional_encoding,
         head_type=head_type,
+        auxiliary_weight=auxiliary_weight,
     )
-    objective_handler = ClassificationObjectiveHandler(
-        head_type=head_type,
-        num_classes=int(num_outputs),
+    objective_handler = (
+        CategoricalCornObjectiveHandler(
+            num_classes=int(num_outputs),
+            auxiliary_weight=auxiliary_weight,
+        )
+        if head_type == "categorical_corn"
+        else ClassificationObjectiveHandler(
+            head_type=head_type,
+            num_classes=int(num_outputs),
+        )
     )
     metadata = {
         "model_type": "torch_transformer",
@@ -362,6 +406,9 @@ def build_torch_transformer(
         "activation": activation,
         "pooling": pooling,
         "positional_encoding": positional_encoding,
+        "auxiliary_weight": (
+            auxiliary_weight if head_type == "categorical_corn" else None
+        ),
         **objective_handler.to_metadata(),
         "probability_conversion_version": 1,
         "parameter_count": sum(

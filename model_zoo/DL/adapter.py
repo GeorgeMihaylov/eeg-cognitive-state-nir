@@ -66,7 +66,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         standardize: bool = True,
         num_workers: int = 0,
         model_metadata: Optional[Mapping[str, Any]] = None,
-        objective_handler: Optional[ClassificationObjectiveHandler] = None,
+        objective_handler: Optional[Any] = None,
     ) -> None:
         self.input_shape = tuple(int(dim) for dim in input_shape)
         self.num_classes = int(num_classes)
@@ -106,6 +106,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.feature_scale_: Optional[np.ndarray] = None
         self.best_epoch_: Optional[int] = None
         self.best_validation_loss_: Optional[float] = None
+        self.best_validation_components_: Dict[str, float] = {}
+        self.early_stopping_monitor_: str = "validation_loss"
         self.n_epochs_trained_: int = 0
         self.stopping_reason_: Optional[str] = None
         self.peak_gpu_memory_bytes_: int = 0
@@ -652,42 +654,73 @@ class TorchClassificationAdapter(BaseModelAdapter):
             weight_decay=self.weight_decay,
         )
         best_state: Optional[Dict[str, torch.Tensor]] = None
-        best_loss = float("inf")
+        best_monitor = float("inf")
+        best_validation_components: Dict[str, float] = {}
         epochs_without_improvement = 0
         self.training_log_ = []
         self.best_epoch_ = None
         self.best_validation_loss_ = None
+        self.best_validation_components_ = {}
+        monitor_component = str(
+            getattr(self.objective_handler, "early_stopping_component", "objective")
+        )
+        self.early_stopping_monitor_ = (
+            "validation_categorical_loss"
+            if monitor_component == "categorical"
+            else "validation_loss"
+        )
         self.stopping_reason_ = None
+
+        def aggregate_component_values(
+            numerators: Mapping[str, float],
+            denominators: Mapping[str, float],
+        ) -> Dict[str, float]:
+            if set(numerators) != set(denominators) or not numerators:
+                raise RuntimeError("Objective loss components are inconsistent")
+            values: Dict[str, float] = {}
+            for name in numerators:
+                denominator = float(denominators[name])
+                if denominator <= 0:
+                    raise RuntimeError(
+                        f"Loss denominator for {name!r} must be positive"
+                    )
+                values[name] = float(numerators[name]) / denominator
+            return values
 
         for epoch in range(1, self.max_epochs + 1):
             epoch_started = time.perf_counter()
             self.model.train()
-            train_loss_numerator = 0.0
-            train_loss_denominator = 0.0
+            train_numerators: Dict[str, float] = {}
+            train_denominators: Dict[str, float] = {}
             for batch_features, batch_labels in train_loader:
                 batch_features = batch_features.to(self.device_, non_blocking=True)
                 batch_labels = batch_labels.to(self.device_, non_blocking=True)
                 optimizer.zero_grad(set_to_none=True)
                 raw_outputs = self.model(batch_features)
-                loss_parts = self.objective_handler.loss_parts(
-                    raw_outputs,
-                    batch_labels,
+                component_parts = self.objective_handler.loss_component_parts(
+                    raw_outputs, batch_labels
                 )
-                loss = loss_parts.mean
+                component_means = {
+                    name: parts.mean for name, parts in component_parts.items()
+                }
+                loss = self.objective_handler.combine_component_means(
+                    component_means
+                )
                 if not torch.isfinite(loss):
                     raise ValueError("Training loss became NaN or infinite")
                 loss.backward()
                 optimizer.step()
-                train_loss_numerator += float(
-                    loss_parts.numerator.detach().item()
-                )
-                train_loss_denominator += float(
-                    loss_parts.denominator.detach().item()
-                )
+                for name, parts in component_parts.items():
+                    train_numerators[name] = train_numerators.get(name, 0.0) + float(
+                        parts.numerator.detach().item()
+                    )
+                    train_denominators[name] = train_denominators.get(name, 0.0) + float(
+                        parts.denominator.detach().item()
+                    )
 
             self.model.eval()
-            validation_loss_numerator = 0.0
-            validation_loss_denominator = 0.0
+            validation_numerators: Dict[str, float] = {}
+            validation_denominators: Dict[str, float] = {}
             validation_correct = 0
             validation_count = 0
             with torch.no_grad():
@@ -695,31 +728,47 @@ class TorchClassificationAdapter(BaseModelAdapter):
                     batch_features = batch_features.to(self.device_, non_blocking=True)
                     batch_labels = batch_labels.to(self.device_, non_blocking=True)
                     raw_outputs = self.model(batch_features)
-                    loss_parts = self.objective_handler.loss_parts(
-                        raw_outputs,
-                        batch_labels,
+                    component_parts = self.objective_handler.loss_component_parts(
+                        raw_outputs, batch_labels
                     )
-                    validation_loss_numerator += float(
-                        loss_parts.numerator.detach().item()
-                    )
-                    validation_loss_denominator += float(
-                        loss_parts.denominator.detach().item()
-                    )
+                    for name, parts in component_parts.items():
+                        validation_numerators[name] = (
+                            validation_numerators.get(name, 0.0)
+                            + float(parts.numerator.detach().item())
+                        )
+                        validation_denominators[name] = (
+                            validation_denominators.get(name, 0.0)
+                            + float(parts.denominator.detach().item())
+                        )
                     decoded = self.objective_handler.decode(raw_outputs)
                     validation_correct += int(
                         (decoded.y_pred == batch_labels).sum().item()
                     )
                     validation_count += len(batch_labels)
 
-            if train_loss_denominator <= 0 or validation_loss_denominator <= 0:
-                raise RuntimeError("Loss aggregation denominator must be positive")
-            train_loss = train_loss_numerator / train_loss_denominator
-            validation_loss = (
-                validation_loss_numerator / validation_loss_denominator
+            train_components = aggregate_component_values(
+                train_numerators, train_denominators
             )
-            improved = validation_loss < best_loss
+            validation_components = aggregate_component_values(
+                validation_numerators, validation_denominators
+            )
+            train_loss = float(
+                self.objective_handler.combine_component_means(train_components)
+            )
+            validation_loss = float(
+                self.objective_handler.combine_component_means(validation_components)
+            )
+            if not np.isfinite(train_loss) or not np.isfinite(validation_loss):
+                raise ValueError("Aggregated training loss became non-finite")
+            if monitor_component not in validation_components:
+                raise RuntimeError(
+                    f"Early-stopping component {monitor_component!r} is unavailable"
+                )
+            monitor_value = float(validation_components[monitor_component])
+            improved = monitor_value < best_monitor
             if improved:
-                best_loss = validation_loss
+                best_monitor = monitor_value
+                best_validation_components = dict(validation_components)
                 best_state = {
                     key: value.detach().cpu().clone()
                     for key, value in self.model.state_dict().items()
@@ -735,7 +784,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
             )
             if callable(head_diagnostics):
                 epoch_diagnostics.update(head_diagnostics())
-            self.training_log_.append({
+            log_row: Dict[str, Any] = {
                 "epoch": epoch,
                 "train_loss": train_loss,
                 "validation_loss": validation_loss,
@@ -743,8 +792,19 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 "learning_rate": float(optimizer.param_groups[0]["lr"]),
                 "is_best": improved,
                 "epoch_time_seconds": time.perf_counter() - epoch_started,
+                "early_stopping_metric": self.early_stopping_monitor_,
                 **epoch_diagnostics,
-            })
+            }
+            if self.head_type == "categorical_corn":
+                log_row.update({
+                    "train_total_loss": train_loss,
+                    "train_categorical_loss": train_components["categorical"],
+                    "train_ordinal_loss": train_components["ordinal"],
+                    "validation_total_loss": validation_loss,
+                    "validation_categorical_loss": validation_components["categorical"],
+                    "validation_ordinal_loss": validation_components["ordinal"],
+                })
+            self.training_log_.append(log_row)
             if epochs_without_improvement >= self.early_stopping_patience:
                 self.stopping_reason_ = "early_stopping_patience"
                 break
@@ -754,7 +814,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.model.load_state_dict(best_state)
         self.model.to(self.device_)
         self.model.eval()
-        self.best_validation_loss_ = best_loss
+        self.best_validation_loss_ = best_monitor
+        self.best_validation_components_ = best_validation_components
         self.n_epochs_trained_ = len(self.training_log_)
         if self.stopping_reason_ is None:
             self.stopping_reason_ = "max_epochs"
@@ -782,10 +843,15 @@ class TorchClassificationAdapter(BaseModelAdapter):
         if not self.is_fitted_:
             raise RuntimeError("A fitted or loaded base model is required")
         if self.head_type != "categorical":
-            raise NotImplementedError(
-                "Ordinal calibration is not supported yet; "
-                f"received head_type={self.head_type!r}"
+            message = (
+                "Auxiliary CORN calibration is not supported yet."
+                if self.head_type == "categorical_corn"
+                else (
+                    "Ordinal calibration is not supported yet; "
+                    f"received head_type={self.head_type!r}"
+                )
             )
+            raise NotImplementedError(message)
         features = self._validate_features(X_train)
         labels = self._validate_calibration_labels(y_train, len(features))
         has_validation = X_validation is not None or y_validation is not None
@@ -983,6 +1049,14 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "expected_rank",
             "ordinal_argmax",
             "conditional_probabilities",
+            "categorical_expected_rank",
+            "auxiliary_raw_outputs",
+            "aux_threshold_probabilities",
+            "aux_class_probabilities",
+            "aux_expected_rank",
+            "aux_ordinal_prediction",
+            "aux_ordinal_argmax",
+            "aux_conditional_probabilities",
         )
         optional_values: Dict[str, list[np.ndarray]] = {
             name: [] for name in optional_names
@@ -1012,11 +1086,15 @@ class TorchClassificationAdapter(BaseModelAdapter):
         for name, parts in optional_values.items():
             if parts:
                 result[name] = np.concatenate(parts, axis=0)
-        if self.head_type != "categorical":
+        if self.head_type in {"coral", "corn"}:
             result["threshold_logits"] = result["raw_outputs"]
-            # The implementation task names this diagnostic ordinal_argmax;
-            # keep the design-stage name as a compatibility alias.
             result["y_pred_argmax"] = result["ordinal_argmax"]
+        elif self.head_type == "categorical_corn":
+            result["categorical_logits"] = result["raw_outputs"]
+            result["aux_ordinal_logits"] = result["auxiliary_raw_outputs"]
+            result["auxiliary_weight"] = float(
+                self.objective_handler.auxiliary_weight
+            )
         return result
 
     def predict_proba(self, X: Any) -> np.ndarray:
@@ -1043,6 +1121,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "epochs_trained": self.n_epochs_trained_,
             "best_epoch": self.best_epoch_,
             "best_validation_loss": self.best_validation_loss_,
+            "best_monitor_value": self.best_validation_loss_,
+            "best_validation_components": dict(self.best_validation_components_),
+            "early_stopping_monitor": self.early_stopping_monitor_,
             "stopping_reason": self.stopping_reason_,
             "trainable_parameter_count": sum(
                 parameter.numel()
@@ -1087,6 +1168,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 "random_state": self.random_state,
                 "standardize": self.standardize,
                 "head_type": self.head_type,
+                "auxiliary_weight": getattr(
+                    self.objective_handler, "auxiliary_weight", None
+                ),
             },
             "training_summary": self.get_training_summary(),
             "training_log": self.training_log_,
@@ -1144,6 +1228,17 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 f"{stored_head_type!r} != {self.head_type!r}. Automatic head "
                 "weight conversion is not supported."
             )
+        if self.head_type == "categorical_corn":
+            stored_weight = float(stored_objective.get(
+                "auxiliary_weight",
+                payload.get("training_config", {}).get("auxiliary_weight", float("nan")),
+            ))
+            expected_weight = float(self.objective_handler.auxiliary_weight)
+            if not np.isfinite(stored_weight) or stored_weight != expected_weight:
+                raise ValueError(
+                    "Checkpoint auxiliary_weight does not match the factory-built "
+                    f"model: {stored_weight!r} != {expected_weight!r}"
+                )
         self.model.load_state_dict(payload["model_state_dict"], strict=True)
         self.model.to(self.device_)
         self.model.eval()
@@ -1165,6 +1260,12 @@ class TorchClassificationAdapter(BaseModelAdapter):
         summary = payload.get("training_summary", {})
         self.best_epoch_ = summary.get("best_epoch")
         self.best_validation_loss_ = summary.get("best_validation_loss")
+        self.best_validation_components_ = dict(
+            summary.get("best_validation_components", {})
+        )
+        self.early_stopping_monitor_ = str(
+            summary.get("early_stopping_monitor", "validation_loss")
+        )
         self.n_epochs_trained_ = int(summary.get("epochs_trained", 0))
         self.stopping_reason_ = summary.get("stopping_reason")
         self.peak_gpu_memory_bytes_ = int(

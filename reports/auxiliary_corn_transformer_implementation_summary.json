@@ -1,0 +1,100 @@
+{
+  "task": "7B",
+  "status": "implemented_and_synthetically_validated",
+  "source_revision": "26c20fd",
+  "real_eeg_training_performed": false,
+  "head_type": "categorical_corn",
+  "model_name": "torch_transformer",
+  "forward_output": {
+    "type": "CategoricalCornOutput",
+    "categorical_logits_shape": "[B, num_classes]",
+    "ordinal_logits_shape": "[B, num_classes - 1]"
+  },
+  "state_dict_prefixes": {
+    "primary": "classifier.*",
+    "auxiliary": "auxiliary_ordinal_head.*"
+  },
+  "objective": {
+    "formula": "cross_entropy + auxiliary_weight * corn_loss",
+    "corn_normalization": "sum masked BCE / valid risk-set elements",
+    "auxiliary_weight_constraints": "finite and >= 0",
+    "early_stopping_monitor": "validation_categorical_loss"
+  },
+  "primary_inference": {
+    "probabilities": "softmax(categorical_logits)",
+    "prediction": "argmax(primary class probabilities)",
+    "auc_probabilities": "primary categorical probabilities only"
+  },
+  "auxiliary_inference": {
+    "conditional_probabilities": "sigmoid(ordinal_logits)",
+    "cumulative_probabilities": "cumprod(conditional probabilities)",
+    "prediction": "count(cumulative probability >= 0.5)",
+    "used_as_primary_prediction": false
+  },
+  "checkpoint_policy": {
+    "strict_reload": true,
+    "head_conversion": false,
+    "auxiliary_weight_must_match": true
+  },
+  "calibration": {
+    "supported": false,
+    "error": "Auxiliary CORN calibration is not supported yet."
+  },
+  "tests": {
+    "new_auxiliary_corn": {
+      "passed": 24,
+      "failed": 0
+    },
+    "focused_legacy_and_new": {
+      "passed": 115,
+      "skipped": 3,
+      "failed": 0
+    },
+    "repository_without_unavailable_external_artifacts": {
+      "passed": 334,
+      "skipped": 3,
+      "deselected": 7,
+      "warnings": 11,
+      "failed": 0
+    },
+    "unavailable_external_requirements": [
+      "data/processed/windowed_eeg_pm_dataset_w10.parquet",
+      "completed canonical benchmark run artifacts"
+    ]
+  },
+  "next_stage": "7V real-data smoke validation only",
+  "parameter_counts": {
+    "eeg_only_168": 322313,
+    "eeg_pow_448": 358153
+  },
+  "synthetic_one_epoch": [
+    {
+      "auxiliary_weight": 0.25,
+      "train_total_loss": 1.8305490564,
+      "train_categorical_loss": 1.6737060547,
+      "train_ordinal_loss": 0.627372007,
+      "validation_total_loss": 1.8645794753,
+      "validation_categorical_loss": 1.7016975085,
+      "validation_ordinal_loss": 0.6515278672
+    },
+    {
+      "auxiliary_weight": 0.5,
+      "train_total_loss": 1.9873920582,
+      "train_categorical_loss": 1.6737060547,
+      "train_ordinal_loss": 0.627372007,
+      "validation_total_loss": 2.027345614,
+      "validation_categorical_loss": 1.7016196251,
+      "validation_ordinal_loss": 0.6514519778
+    },
+    {
+      "auxiliary_weight": 1.0,
+      "train_total_loss": 2.3010780617,
+      "train_categorical_loss": 1.6737060547,
+      "train_ordinal_loss": 0.627372007,
+      "validation_total_loss": 2.3532373688,
+      "validation_categorical_loss": 1.7018917402,
+      "validation_ordinal_loss": 0.6513456287
+    }
+  ],
+  "synthetic_probability_max_row_sum_error": 1.79e-07
+}

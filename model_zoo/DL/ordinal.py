@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, NamedTuple, Optional
 
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
 
-SUPPORTED_HEAD_TYPES = frozenset({"categorical", "coral", "corn"})
+SUPPORTED_HEAD_TYPES = frozenset({"categorical", "coral", "corn", "categorical_corn"})
 DEFAULT_PROBABILITY_TOLERANCE = 1e-7
 
 
@@ -223,8 +223,10 @@ def threshold_logits_to_cumulative_probabilities(
 ) -> Tensor:
     """Convert CORAL or CORN raw outputs to cumulative ``P(y > k)``."""
     normalized = normalize_head_type(head_type)
-    if normalized == "categorical":
-        raise ValueError("Categorical logits do not represent ordinal thresholds")
+    if normalized not in {"coral", "corn"}:
+        raise ValueError(
+            f"head_type={normalized!r} does not represent a single ordinal threshold head"
+        )
     if not isinstance(threshold_logits, Tensor) or threshold_logits.ndim != 2:
         shape = getattr(threshold_logits, "shape", None)
         raise ValueError(
@@ -336,6 +338,22 @@ def expected_rank(cumulative_probabilities: Tensor) -> Tensor:
     return ranks
 
 
+class CategoricalCornOutput(NamedTuple):
+    """Explicit two-head output for the auxiliary-CORN Transformer."""
+
+    categorical_logits: Tensor
+    ordinal_logits: Tensor
+
+
+@dataclass(frozen=True)
+class CompositeLoss:
+    """Differentiable losses for the categorical + auxiliary CORN objective."""
+
+    total_loss: Tensor
+    categorical_loss: Tensor
+    ordinal_loss: Tensor
+
+
 @dataclass(frozen=True)
 class DecodedClassificationOutput:
     """Unified decoded outputs consumed by the adapter and artifact writer."""
@@ -348,6 +366,14 @@ class DecodedClassificationOutput:
     expected_rank: Optional[Tensor] = None
     ordinal_argmax: Optional[Tensor] = None
     conditional_probabilities: Optional[Tensor] = None
+    categorical_expected_rank: Optional[Tensor] = None
+    auxiliary_raw_outputs: Optional[Tensor] = None
+    aux_threshold_probabilities: Optional[Tensor] = None
+    aux_class_probabilities: Optional[Tensor] = None
+    aux_expected_rank: Optional[Tensor] = None
+    aux_ordinal_prediction: Optional[Tensor] = None
+    aux_ordinal_argmax: Optional[Tensor] = None
+    aux_conditional_probabilities: Optional[Tensor] = None
 
 
 class ClassificationObjectiveHandler:
@@ -361,6 +387,10 @@ class ClassificationObjectiveHandler:
         tolerance: float = DEFAULT_PROBABILITY_TOLERANCE,
     ) -> None:
         self.head_type = normalize_head_type(head_type)
+        if self.head_type == "categorical_corn":
+            raise ValueError(
+                "categorical_corn requires CategoricalCornObjectiveHandler"
+            )
         self.num_classes = _validate_num_classes(num_classes)
         self.tolerance = float(tolerance)
         if self.tolerance <= 0:
@@ -382,6 +412,19 @@ class ClassificationObjectiveHandler:
         if self.head_type == "coral":
             return coral_loss_parts(raw_outputs, targets, self.num_classes)
         return corn_loss_parts(raw_outputs, targets, self.num_classes)
+
+    def loss_component_parts(
+        self, raw_outputs: Tensor, targets: Tensor
+    ) -> Dict[str, LossParts]:
+        return {"objective": self.loss_parts(raw_outputs, targets)}
+
+    @staticmethod
+    def combine_component_means(component_means: Mapping[str, Any]) -> Any:
+        return component_means["objective"]
+
+    @property
+    def early_stopping_component(self) -> str:
+        return "objective"
 
     def compute_loss(self, raw_outputs: Tensor, targets: Tensor) -> Tensor:
         return self.loss_parts(raw_outputs, targets).mean
@@ -414,11 +457,15 @@ class ClassificationObjectiveHandler:
         if self.head_type == "categorical":
             probabilities = torch.softmax(outputs, dim=1)
             predictions = probabilities.argmax(dim=1)
+            class_ids = torch.arange(
+                self.num_classes, device=outputs.device, dtype=outputs.dtype
+            )
             return DecodedClassificationOutput(
                 class_probabilities=probabilities,
                 y_pred=predictions,
                 raw_outputs=outputs,
                 head_type=self.head_type,
+                categorical_expected_rank=(probabilities * class_ids).sum(dim=1),
             )
 
         cumulative = threshold_logits_to_cumulative_probabilities(
@@ -467,6 +514,158 @@ class ClassificationObjectiveHandler:
                 if self.head_type == "categorical"
                 else "count_cumulative_probability_ge_0.5"
             ),
+        }
+
+
+class CategoricalCornObjectiveHandler:
+    """Composite categorical objective with an auxiliary CORN loss."""
+
+    head_type = "categorical_corn"
+
+    def __init__(
+        self,
+        num_classes: int,
+        auxiliary_weight: float,
+        *,
+        tolerance: float = DEFAULT_PROBABILITY_TOLERANCE,
+    ) -> None:
+        self.num_classes = _validate_num_classes(num_classes)
+        self.auxiliary_weight = float(auxiliary_weight)
+        self.tolerance = float(tolerance)
+        if not math.isfinite(self.auxiliary_weight) or self.auxiliary_weight < 0:
+            raise ValueError("auxiliary_weight must be finite and non-negative")
+        if self.tolerance <= 0:
+            raise ValueError("tolerance must be positive")
+
+    @property
+    def early_stopping_component(self) -> str:
+        return "categorical"
+
+    def _validate_output(self, outputs: Any) -> CategoricalCornOutput:
+        if not isinstance(outputs, CategoricalCornOutput):
+            raise TypeError(
+                "categorical_corn expects CategoricalCornOutput, got "
+                f"{type(outputs).__name__}"
+            )
+        categorical = _validate_raw_outputs(
+            outputs.categorical_logits, expected_width=self.num_classes
+        )
+        ordinal = _validate_raw_outputs(
+            outputs.ordinal_logits, expected_width=self.num_classes - 1
+        )
+        if categorical.shape[0] != ordinal.shape[0]:
+            raise ValueError("Categorical and auxiliary outputs need equal batch size")
+        return CategoricalCornOutput(categorical, ordinal)
+
+    def loss_component_parts(
+        self, outputs: Any, targets: Tensor
+    ) -> Dict[str, LossParts]:
+        validated = self._validate_output(outputs)
+        labels = _validate_class_labels(
+            targets.to(device=validated.categorical_logits.device), self.num_classes
+        )
+        categorical = LossParts(
+            numerator=F.cross_entropy(
+                validated.categorical_logits, labels, reduction="sum"
+            ),
+            denominator=validated.categorical_logits.new_tensor(
+                validated.categorical_logits.shape[0]
+            ),
+        )
+        ordinal = corn_loss_parts(
+            validated.ordinal_logits, labels, self.num_classes
+        )
+        return {"categorical": categorical, "ordinal": ordinal}
+
+    def combine_component_means(
+        self, component_means: Mapping[str, Any]
+    ) -> Any:
+        return (
+            component_means["categorical"]
+            + self.auxiliary_weight * component_means["ordinal"]
+        )
+
+    def loss_components(
+        self, outputs: Any, targets: Tensor
+    ) -> CompositeLoss:
+        parts = self.loss_component_parts(outputs, targets)
+        categorical = parts["categorical"].mean
+        ordinal = parts["ordinal"].mean
+        return CompositeLoss(
+            total_loss=self.combine_component_means(
+                {"categorical": categorical, "ordinal": ordinal}
+            ),
+            categorical_loss=categorical,
+            ordinal_loss=ordinal,
+        )
+
+    def compute_loss(self, outputs: Any, targets: Tensor) -> Tensor:
+        return self.loss_components(outputs, targets).total_loss
+
+    def training_diagnostics(self, targets: Tensor) -> Dict[str, int]:
+        _, masks = build_corn_targets_and_masks(
+            targets, self.num_classes, dtype=torch.float64
+        )
+        return {
+            f"aux_risk_count_{index}": int(count)
+            for index, count in enumerate(
+                masks.sum(dim=0).to(dtype=torch.int64).cpu().tolist()
+            )
+        }
+
+    def decode(self, outputs: Any) -> DecodedClassificationOutput:
+        validated = self._validate_output(outputs)
+        categorical_probabilities = torch.softmax(
+            validated.categorical_logits, dim=1
+        )
+        categorical_predictions = categorical_probabilities.argmax(dim=1)
+        class_ids = torch.arange(
+            self.num_classes,
+            device=categorical_probabilities.device,
+            dtype=categorical_probabilities.dtype,
+        )
+        conditional = torch.sigmoid(validated.ordinal_logits)
+        cumulative = torch.cumprod(conditional, dim=1)
+        auxiliary_class_probabilities = cumulative_to_class_probabilities(
+            cumulative, tolerance=self.tolerance
+        )
+        return DecodedClassificationOutput(
+            class_probabilities=categorical_probabilities,
+            y_pred=categorical_predictions,
+            raw_outputs=validated.categorical_logits,
+            head_type=self.head_type,
+            categorical_expected_rank=(
+                categorical_probabilities * class_ids
+            ).sum(dim=1),
+            auxiliary_raw_outputs=validated.ordinal_logits,
+            aux_threshold_probabilities=cumulative,
+            aux_class_probabilities=auxiliary_class_probabilities,
+            aux_expected_rank=expected_rank(cumulative),
+            aux_ordinal_prediction=decode_ordinal_prediction(cumulative),
+            aux_ordinal_argmax=auxiliary_class_probabilities.argmax(dim=1),
+            aux_conditional_probabilities=conditional,
+        )
+
+    def to_metadata(self) -> Dict[str, Any]:
+        return {
+            "head_type": self.head_type,
+            "num_classes": self.num_classes,
+            "num_thresholds": self.num_classes - 1,
+            "output_semantics": {
+                "primary": "categorical_class_logits",
+                "auxiliary": "corn_conditional_threshold_logits",
+            },
+            "loss_normalization": {
+                "categorical": "cross_entropy_mean_over_samples",
+                "ordinal": "unweighted_masked_bce_sum_over_valid_risk_elements",
+            },
+            "auxiliary_weight": self.auxiliary_weight,
+            "early_stopping_monitor": "validation_categorical_loss",
+            "primary_prediction_rule": "argmax_softmax",
+            "auxiliary_prediction_rule": (
+                "count_cumulative_probability_ge_0.5"
+            ),
+            "probability_tolerance": self.tolerance,
         }
 
 
@@ -572,7 +771,10 @@ class CornOrdinalHead(nn.Module):
 
 
 __all__ = [
+    "CategoricalCornObjectiveHandler",
+    "CategoricalCornOutput",
     "ClassificationObjectiveHandler",
+    "CompositeLoss",
     "CoralOrdinalHead",
     "CornOrdinalHead",
     "DecodedClassificationOutput",

@@ -3,7 +3,10 @@ from .eegnet import TorchEEGNetClassifier, build_torch_eegnet
 from .lstm import TorchLSTMClassifier, build_torch_lstm
 from .mlp import TorchMLP, build_torch_mlp
 from .ordinal import (
+    CategoricalCornObjectiveHandler,
+    CategoricalCornOutput,
     ClassificationObjectiveHandler,
+    CompositeLoss,
     CoralOrdinalHead,
     CornOrdinalHead,
     build_corn_targets_and_masks,
@@ -32,7 +35,10 @@ __all__ = [
     "TorchEEGNetClassifier",
     "TorchLSTMClassifier",
     "TorchMLP",
+    "CategoricalCornObjectiveHandler",
+    "CategoricalCornOutput",
     "ClassificationObjectiveHandler",
+    "CompositeLoss",
     "CoralOrdinalHead",
     "CornOrdinalHead",
     "TorchShallowConvNetClassifier",

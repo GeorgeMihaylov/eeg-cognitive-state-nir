@@ -572,10 +572,15 @@ class UserCalibrationExperiment:
             .get("head_type", "categorical")
         ).strip().lower()
         if head_type != "categorical":
-            raise NotImplementedError(
-                "Ordinal calibration is not supported yet; "
-                f"received head_type={head_type!r}"
+            message = (
+                "Auxiliary CORN calibration is not supported yet."
+                if head_type == "categorical_corn"
+                else (
+                    "Ordinal calibration is not supported yet; "
+                    f"received head_type={head_type!r}"
+                )
             )
+            raise NotImplementedError(message)
         self.base_manifest = json.loads(
             (self.base_run_dir / "run_manifest.json").read_text(encoding="utf-8")
         )

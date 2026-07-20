@@ -674,9 +674,42 @@ class BenchmarkRunner:
             expected_rank=(
                 None
                 if detailed_predictions is None
-                else detailed_predictions.get('expected_rank')
+                else detailed_predictions.get(
+                    'categorical_expected_rank',
+                    detailed_predictions.get('expected_rank'),
+                )
             ),
         )
+        if (
+            detailed_predictions is not None
+            and str(detailed_predictions.get('head_type', '')).strip().lower()
+            == 'categorical_corn'
+        ):
+            auxiliary_metrics = MetricsCalculator.calculate_all_metrics(
+                split.y_test,
+                np.asarray(detailed_predictions['aux_ordinal_prediction']),
+                np.asarray(detailed_predictions['aux_class_probabilities']),
+                task_type=task_type,
+                expected_rank=np.asarray(
+                    detailed_predictions['aux_expected_rank']
+                ),
+            )
+            metrics.update({
+                f'aux_{name}': value
+                for name, value in auxiliary_metrics.items()
+                if name != 'confusion_matrix'
+            })
+            metrics['aux_confusion_matrix'] = auxiliary_metrics[
+                'confusion_matrix'
+            ]
+            metrics['categorical_aux_prediction_agreement'] = float(
+                np.mean(
+                    np.asarray(y_pred)
+                    == np.asarray(
+                        detailed_predictions['aux_ordinal_prediction']
+                    )
+                )
+            )
 
         result = {
             'metrics': metrics,
@@ -893,6 +926,84 @@ class BenchmarkRunner:
                         f'conditional_probability_{threshold_index}'
                     ] = conditional_values[:, threshold_index]
 
+        if head_type == 'categorical_corn':
+            required_joint = {
+                'class_probabilities': int(model.num_classes),
+                'aux_threshold_probabilities': int(model.num_classes) - 1,
+                'aux_class_probabilities': int(model.num_classes),
+                'auxiliary_raw_outputs': int(model.num_classes) - 1,
+            }
+            joint_arrays: Dict[str, np.ndarray] = {}
+            for name, width in required_joint.items():
+                values = np.asarray(detailed_predictions[name])
+                if values.shape != (n_test, width):
+                    raise ValueError(
+                        f"Auxiliary CORN detailed output {name!r} must have "
+                        f"shape {(n_test, width)}, got {values.shape}"
+                    )
+                if not np.isfinite(values).all():
+                    raise ValueError(
+                        f"Auxiliary CORN detailed output {name!r} is not finite"
+                    )
+                joint_arrays[name] = values
+            categorical_expected = np.asarray(
+                detailed_predictions['categorical_expected_rank']
+            )
+            aux_expected = np.asarray(detailed_predictions['aux_expected_rank'])
+            aux_prediction = np.asarray(
+                detailed_predictions['aux_ordinal_prediction']
+            )
+            aux_argmax = np.asarray(detailed_predictions['aux_ordinal_argmax'])
+            for name, values in {
+                'categorical_expected_rank': categorical_expected,
+                'aux_expected_rank': aux_expected,
+                'aux_ordinal_prediction': aux_prediction,
+                'aux_ordinal_argmax': aux_argmax,
+            }.items():
+                if values.shape != (n_test,):
+                    raise ValueError(
+                        f"Auxiliary CORN detailed output {name!r} must be one-dimensional"
+                    )
+                if name.endswith('expected_rank') and not np.isfinite(values).all():
+                    raise ValueError(f"{name} contains non-finite values")
+            predictions['head_type'] = head_type
+            predictions['categorical_expected_rank'] = categorical_expected
+            predictions['aux_expected_rank'] = aux_expected
+            predictions['aux_ordinal_prediction'] = aux_prediction
+            predictions['aux_ordinal_argmax'] = aux_argmax
+            predictions['auxiliary_weight'] = float(
+                detailed_predictions['auxiliary_weight']
+            )
+            for class_index in range(int(model.num_classes)):
+                predictions[f'class_probability_{class_index}'] = (
+                    joint_arrays['class_probabilities'][:, class_index]
+                )
+                predictions[f'aux_class_probability_{class_index}'] = (
+                    joint_arrays['aux_class_probabilities'][:, class_index]
+                )
+            for threshold_index in range(int(model.num_classes) - 1):
+                predictions[f'aux_threshold_logit_{threshold_index}'] = (
+                    joint_arrays['auxiliary_raw_outputs'][:, threshold_index]
+                )
+                predictions[f'aux_threshold_probability_{threshold_index}'] = (
+                    joint_arrays['aux_threshold_probabilities'][:, threshold_index]
+                )
+            conditional = detailed_predictions.get(
+                'aux_conditional_probabilities'
+            )
+            if conditional is not None:
+                conditional_values = np.asarray(conditional)
+                if conditional_values.shape != (
+                    n_test, int(model.num_classes) - 1
+                ) or not np.isfinite(conditional_values).all():
+                    raise ValueError(
+                        'Auxiliary CORN conditional probabilities are invalid'
+                    )
+                for threshold_index in range(int(model.num_classes) - 1):
+                    predictions[f'aux_conditional_probability_{threshold_index}'] = (
+                        conditional_values[:, threshold_index]
+                    )
+
         predictions_path = artifact_dir / 'predictions.parquet'
         predictions.to_parquet(predictions_path, index=False)
         artifacts = {'predictions': str(predictions_path)}
@@ -948,6 +1059,41 @@ class BenchmarkRunner:
             ) as output:
                 json.dump(ordinal_metadata, output, indent=2)
             artifacts['ordinal_metadata'] = str(ordinal_metadata_path)
+        if head_type == 'categorical_corn':
+            auxiliary_metadata_path = artifact_dir / 'auxiliary_corn_metadata.json'
+            cumulative = joint_arrays['aux_threshold_probabilities']
+            primary_probabilities = joint_arrays['class_probabilities']
+            auxiliary_probabilities = joint_arrays['aux_class_probabilities']
+            monotonicity_violation = cumulative[:, 1:] - cumulative[:, :-1]
+            metadata = {
+                **dict(model.objective_handler.to_metadata()),
+                'primary_prediction_column': 'y_pred',
+                'auxiliary_prediction_column': 'aux_ordinal_prediction',
+                'primary_probability_columns': [
+                    f'class_probability_{index}'
+                    for index in range(int(model.num_classes))
+                ],
+                'auxiliary_threshold_probability_columns': [
+                    f'aux_threshold_probability_{index}'
+                    for index in range(int(model.num_classes) - 1)
+                ],
+                'maximum_primary_probability_row_sum_error': float(
+                    np.max(np.abs(primary_probabilities.sum(axis=1) - 1.0), initial=0.0)
+                ),
+                'maximum_auxiliary_probability_row_sum_error': float(
+                    np.max(np.abs(auxiliary_probabilities.sum(axis=1) - 1.0), initial=0.0)
+                ),
+                'maximum_auxiliary_monotonicity_violation': float(
+                    max(0.0, np.max(monotonicity_violation, initial=0.0))
+                ),
+                'categorical_aux_prediction_agreement': float(
+                    np.mean(np.asarray(y_pred) == aux_prediction)
+                ),
+            }
+            with open(auxiliary_metadata_path, 'w', encoding='utf-8') as output:
+                json.dump(metadata, output, indent=2)
+            artifacts['auxiliary_corn_metadata'] = str(auxiliary_metadata_path)
+
         metrics_path = artifact_dir / 'metrics.json'
         with open(metrics_path, 'w', encoding='utf-8') as output:
             json.dump(
