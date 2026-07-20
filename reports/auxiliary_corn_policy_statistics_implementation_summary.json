@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "task": "7G-4",
+  "status": "implemented_not_executed_on_local_results",
+  "analysis_type": "auxiliary_corn_policy_statistics",
+  "methods": [
+    "categorical",
+    "corn",
+    "policy"
+  ],
+  "feature_groups": [
+    "eeg_only",
+    "eeg_pow"
+  ],
+  "seeds": [
+    7,
+    42,
+    123
+  ],
+  "expected_subject_seed_rows": 954,
+  "expected_averaged_subject_rows": 318,
+  "independent_subjects": 53,
+  "expected_sequences_per_method_seed_group": 44142,
+  "primary_metrics": [
+    "ordinal_mae",
+    "severe_error_rate",
+    "balanced_accuracy"
+  ],
+  "model_training_performed": false,
+  "outer_test_used_for_model_selection": false,
+  "artifacts": [
+    "bench/analysis/auxiliary_corn_policy_statistics.py",
+    "experiments/auxiliary_corn_policy_statistics.yaml",
+    "tests/test_auxiliary_corn_policy_statistics.py",
+    "reports/auxiliary_corn_policy_statistics_implementation.md",
+    "reports/auxiliary_corn_policy_statistics_implementation_summary.json"
+  ],
+  "focused_tests": {
+    "passed": 4,
+    "warnings": 0
+  },
+  "related_tests": {
+    "passed": 67,
+    "warnings": 1
+  }
+}

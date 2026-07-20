@@ -1,0 +1,27 @@
+analysis:
+  name: auxiliary_corn_policy_statistics
+  type: auxiliary_corn_policy_statistics
+  ordinal_run_summary: reports/ordinal_transformer_multiseed_runs_summary.json
+  policy_summary: reports/auxiliary_corn_nested_lambda_finalized_results.json
+  output_dir: benchmark_results/auxiliary_corn_policy_statistics
+  report_path: reports/auxiliary_corn_policy_subject_analysis.md
+  summary_path: reports/auxiliary_corn_policy_subject_analysis_summary.json
+  decision_report_path: reports/auxiliary_corn_policy_decision.md
+  bootstrap_samples: 10000
+  random_state: 42
+
+expected:
+  seeds: [7, 42, 123]
+  sequences: 44142
+  subjects: 53
+  folds: 5
+  source_parquet: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  source_parquet_sha256: 26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8
+
+hypotheses:
+  primary_candidate: policy
+  primary_reference: categorical
+  primary_metrics: [ordinal_mae, severe_error_rate, balanced_accuracy]
+  secondary_reference: corn
+  feature_groups: [eeg_only, eeg_pow]
+  balanced_accuracy_guard: 0.01

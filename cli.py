@@ -455,6 +455,15 @@ Examples:
                 args.ordinal_transformer_analysis,
                 output_dir=args.output_dir,
             )
+        elif analysis_type == 'auxiliary_corn_policy_statistics':
+            from bench.analysis.auxiliary_corn_policy_statistics import (
+                AuxiliaryCornPolicyStatistics,
+            )
+
+            analysis = AuxiliaryCornPolicyStatistics(
+                args.ordinal_transformer_analysis,
+                output_dir=args.output_dir,
+            )
         else:
             from bench.analysis.ordinal_transformer_statistics import (
                 OrdinalTransformerStatistics,
