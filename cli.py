@@ -9,6 +9,8 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 from bench.bench_runner import BenchmarkRunner
+from bench.tasks.tasks_registry import TASK_REGISTRY
+from model_zoo.factory import SKLEARN_MODEL_NAMES, TORCH_MODEL_NAMES
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,14 +40,14 @@ def create_default_config() -> Dict[str, Any]:
         'output_dir': './benchmark_results',
         'datasets': {
             'emotiv_cognitive': {
-                'data_path': './data/emotiv_data.parquet',
+                'data_path': './data/processed/windowed_eeg_pm_dataset_w10.parquet',
                 'feature_set': 'pow_plus_eeg',
-                'n_classes': 3,
+                'n_classes': 5,
                 'discretize': True,
                 'max_features': 500
             }
         },
-        'tasks': ['cognitive_load_3class'],
+        'tasks': ['cognitive_load_5class'],
         'models': {
             'random_forest': {
                 'type': 'random_forest',
@@ -77,28 +79,132 @@ def create_default_config() -> Dict[str, Any]:
 
 
 def validate_config(config: Dict[str, Any]) -> bool:
-
+    # Validate the canonical benchmark configuration before loading data.
     errors = []
 
-    if 'datasets' not in config or not config['datasets']:
+    if not isinstance(config, dict):
+        logger.error("Configuration validation failed:")
+        logger.error(" - Config root must be a mapping")
+        return False
+
+    datasets = config.get('datasets')
+    models = config.get('models')
+    tasks = config.get('tasks')
+
+    if not isinstance(datasets, dict) or not datasets:
         errors.append("No datasets specified in config")
+        datasets = {}
 
-    if 'models' not in config or not config['models']:
+    if not isinstance(models, dict) or not models:
         errors.append("No models specified in config")
+        models = {}
 
-    if 'tasks' not in config or not config['tasks']:
+    if not isinstance(tasks, list) or not tasks:
         errors.append("No tasks specified in config")
+        tasks = []
+    elif not all(isinstance(task, str) and task.strip() for task in tasks):
+        errors.append("Config 'tasks' must be a list of non-empty strings")
 
-    for dataset_name, dataset_config in config.get('datasets', {}).items():
-        if 'data_path' not in dataset_config:
-            errors.append(f"Dataset '{dataset_name}' missing 'data_path'")
-        elif not Path(dataset_config['data_path']).exists():
-            errors.append(f"Dataset '{dataset_name}' data path not found: {dataset_config['data_path']}")
+    known_task_names = set(TASK_REGISTRY)
+    valid_task_names = []
+    for task_name in tasks:
+        if not isinstance(task_name, str) or not task_name.strip():
+            continue
+        if task_name not in known_task_names:
+            errors.append(
+                f"Unknown task '{task_name}'. "
+                f"Available: {sorted(known_task_names)}"
+            )
+        else:
+            valid_task_names.append(task_name)
+
+    task_types = {
+        str(
+            getattr(TASK_REGISTRY[task_name], 'task_type', 'classification')
+        ).strip().lower()
+        for task_name in valid_task_names
+    }
+    if len(task_types) > 1:
+        errors.append(
+            "A canonical benchmark config cannot mix classification and "
+            "regression tasks. Use separate experiment configs."
+        )
+    expected_task_type = next(iter(task_types), None)
+
+    known_model_types = set(SKLEARN_MODEL_NAMES) | set(TORCH_MODEL_NAMES)
+    for model_alias, model_config in models.items():
+        if not isinstance(model_alias, str) or not model_alias.strip():
+            errors.append("Model aliases must be non-empty strings")
+            continue
+        if not isinstance(model_config, dict):
+            errors.append(f"Model '{model_alias}' config must be a mapping")
+            continue
+
+        model_type = str(model_config.get('type', '')).strip().lower()
+        if not model_type:
+            errors.append(f"Model '{model_alias}' missing non-empty 'type'")
+            continue
+        if model_type not in known_model_types:
+            errors.append(
+                f"Unknown model type '{model_type}' for '{model_alias}'. "
+                f"Available: {sorted(known_model_types)}"
+            )
+            continue
+
+        declared_task_type = str(
+            model_config.get('task_type', expected_task_type or 'classification')
+        ).strip().lower()
+        normalized_task_type = {
+            'classifier': 'classification',
+            'regressor': 'regression',
+        }.get(declared_task_type, declared_task_type)
+
+        if normalized_task_type not in {'classification', 'regression'}:
+            errors.append(
+                f"Model '{model_alias}' has unsupported task_type "
+                f"'{declared_task_type}'"
+            )
+            continue
+
+        if (
+            expected_task_type is not None
+            and normalized_task_type != expected_task_type
+        ):
+            errors.append(
+                f"Model '{model_alias}' task_type '{normalized_task_type}' "
+                f"does not match configured task type '{expected_task_type}'"
+            )
+
+        if (
+            model_type in TORCH_MODEL_NAMES
+            and normalized_task_type == 'regression'
+        ):
+            errors.append(
+                f"Model '{model_alias}' uses '{model_type}', which does not "
+                "support regression yet"
+            )
+
+    for dataset_name, dataset_config in datasets.items():
+        if not isinstance(dataset_name, str) or not dataset_name.strip():
+            errors.append("Dataset names must be non-empty strings")
+            continue
+        if not isinstance(dataset_config, dict):
+            errors.append(f"Dataset '{dataset_name}' config must be a mapping")
+            continue
+
+        data_path = dataset_config.get('data_path')
+        if data_path in (None, ''):
+            errors.append(f"Dataset '{dataset_name}' missing non-empty 'data_path'")
+            continue
+        if not Path(data_path).exists():
+            errors.append(
+                f"Dataset '{dataset_name}' data path not found: {data_path}"
+            )
 
     if errors:
         logger.error("Configuration validation failed:")
         for error in errors:
-            logger.error(f"  - {error}")
+            logger.error(f" - {error}")
         return False
 
     return True

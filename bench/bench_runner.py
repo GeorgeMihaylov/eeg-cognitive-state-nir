@@ -453,7 +453,11 @@ class BenchmarkRunner:
             'timestamp': self.timestamp,
             'models': {}
         }
-        task_names = self.config.get('tasks', ['cognitive_load_3class'])
+        task_names = self.config.get('tasks')
+        if not task_names:
+            raise ValueError(
+                "Benchmark config must define at least one explicit task"
+            )
         for task_name in task_names:
             logger.info(f"  Running task: {task_name}")
             task_config = self.config.get('task_config', {})

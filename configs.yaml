@@ -1,32 +1,36 @@
-output_dir: "./benchmark_results"
+output_dir: ./benchmark_results
 
 datasets:
   emotiv_cognitive:
-    data_path:
-    feature_set: "pow_plus_eeg"
-    n_classes: 3
+    data_path: ./data/processed/windowed_eeg_pm_dataset_w10.parquet
+    feature_set: pow_plus_eeg
+    n_classes: 5
     discretize: true
     max_features: 500
 
-  wesad:
-    data_path: "./data/WESAD"
-    subject_ids: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
-    modalities: ["chest", "wrist"]
-    signals:
-      chest: ["ACC", "ECG", "EDA", "EMG", "RESP", "TEMP"]
-      wrist: ["ACC", "BVP", "EDA", "TEMP"]
-    labels: [1, 2, 3, 4]
-    sampling_rate: 700
-
 tasks:
-  - cognitive_load_3class
-  - wesad_4class
+  - cognitive_load_5class
 
 models:
-
-model_config:
+  random_forest:
+    type: random_forest
+    task_type: classification
+    params:
+      n_estimators: 200
+      max_depth: 16
+      random_state: 42
+      n_jobs: -1
 
 task_config:
   test_size: 0.15
   random_state: 42
   n_splits: 5
+
+evaluation:
+  protocol: group_kfold_subject
+  group_column: subject_id
+  n_splits: 5
+  random_state: 42
+
+run_within_subject: false
+run_loso: false
