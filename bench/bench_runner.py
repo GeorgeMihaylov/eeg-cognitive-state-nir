@@ -661,6 +661,21 @@ class BenchmarkRunner:
         start_time = time.time()
         self._configure_model_validation(model, split)
         model.fit(split.X_train, split.y_train)
+        validation_split = getattr(model, 'validation_split_', None)
+        if validation_split is not None:
+            logger.info(
+                f"      {model_name} {artifact_split_name or 'split'} inner "
+                "validation: "
+                f"strategy={validation_split.get('validation_strategy')} "
+                f"group_column={validation_split.get('validation_group_column')} "
+                f"train_samples={validation_split.get('inner_train_samples')} "
+                f"validation_samples="
+                f"{validation_split.get('inner_validation_samples')} "
+                f"train_groups={validation_split.get('inner_train_groups')} "
+                f"validation_groups="
+                f"{validation_split.get('inner_validation_groups')} "
+                f"group_overlap={validation_split.get('inner_group_overlap')}"
+            )
         detailed_predictions = None
         detailed_predictor = getattr(model, 'predict_detailed', None)
         if callable(detailed_predictor):
@@ -1408,6 +1423,48 @@ class BenchmarkRunner:
                     validation_split, output, indent=2, default=_json_default
                 )
             artifacts['validation_split'] = str(validation_split_path)
+            audit_path = artifact_dir / 'inner_validation_audit.csv'
+            audit_row = {
+                'dataset': dataset_name,
+                'task': task_name,
+                'model': model_name,
+                'outer_fold': split.metadata.get(
+                    'fold', artifact_split_name
+                ),
+                'strategy': validation_split.get('validation_strategy'),
+                'group_column': validation_split.get(
+                    'validation_group_column'
+                ),
+                'n_inner_train_samples': validation_split.get(
+                    'inner_train_samples'
+                ),
+                'n_inner_validation_samples': validation_split.get(
+                    'inner_validation_samples'
+                ),
+                'n_inner_train_groups': validation_split.get(
+                    'inner_train_groups'
+                ),
+                'n_inner_validation_groups': validation_split.get(
+                    'inner_validation_groups'
+                ),
+                'inner_overlap_count': validation_split.get(
+                    'inner_group_overlap'
+                ),
+                'train_outer_test_overlap_count': validation_split.get(
+                    'train_outer_test_overlap_count'
+                ),
+                'validation_outer_test_overlap_count': validation_split.get(
+                    'validation_outer_test_overlap_count'
+                ),
+                'seed': validation_split.get('validation_random_state'),
+                'best_epoch': getattr(model, 'best_epoch_', None),
+                'best_validation_loss': getattr(
+                    model, 'best_validation_loss_', None
+                ),
+                'fallback_reason': validation_split.get('fallback_reason'),
+            }
+            pd.DataFrame([audit_row]).to_csv(audit_path, index=False)
+            artifacts['inner_validation_audit'] = str(audit_path)
 
         if isinstance(model, BaseModelAdapter):
             model_path = artifact_dir / 'model.pt'
@@ -1468,22 +1525,49 @@ class BenchmarkRunner:
             model: ModelLike,
             split: TaskSplit
     ) -> None:
-        validation_config = self.config.get('validation')
-        if not validation_config:
+        if not hasattr(model, 'set_validation_groups'):
             return
-        observation_unit = split.metadata.get('observation_unit')
-        if observation_unit not in {'sequence', 'raw_eeg_window'}:
-            return
+        configured_validation = self.config.get('validation')
+        explicitly_configured = configured_validation is not None
+        validation_config = dict(configured_validation or {})
         strategy = str(
-            validation_config.get('strategy', 'group_record')
+            validation_config.get('strategy', 'group_holdout')
         ).strip().lower()
-        if strategy != 'group_record':
+        if strategy not in {
+            'group_holdout', 'random_holdout', 'group_record'
+        }:
             raise ValueError(
-                f"Unknown grouped validation strategy {strategy!r}. "
-                "Available: ['group_record']"
+                f"Unknown validation strategy {strategy!r}. Available: "
+                "['group_holdout', 'random_holdout', 'group_record']"
             )
+        validation_size = float(
+            validation_config.get(
+                'fraction',
+                validation_config.get('validation_size', 0.15),
+            )
+        )
+        random_state = int(validation_config.get('random_state', 42))
+        train_subjects = np.asarray(split.subject_train).astype(str)
+        test_subjects = np.asarray(split.subject_test).astype(str)
+        train_records = np.asarray(split.record_id_train).astype(str)
+        if strategy == 'random_holdout':
+            if not hasattr(model, 'set_random_validation'):
+                raise TypeError(
+                    "PyTorch model does not support random validation metadata"
+                )
+            model.set_random_validation(
+                subject_ids=train_subjects,
+                record_ids=train_records,
+                outer_test_group_ids=test_subjects,
+                validation_size=validation_size,
+                random_state=random_state,
+            )
+            return
         group_column = str(
-            validation_config.get('group_column', 'record_id')
+            validation_config.get(
+                'group_column',
+                'record_id' if strategy == 'group_record' else 'subject_id',
+            )
         )
         if group_column == 'record_id':
             train_groups = np.asarray(split.record_id_train).astype(str)
@@ -1509,30 +1593,67 @@ class BenchmarkRunner:
                 f"validation.group_column={group_column!r} is unavailable. "
                 f"Available metadata columns: {available}"
             )
-        if not hasattr(model, 'set_validation_groups'):
-            raise TypeError(
-                "PyTorch model does not support group-aware validation metadata"
-            )
-        train_subjects = np.asarray(split.subject_train).astype(str)
         outer_group_overlap = np.intersect1d(
             np.unique(train_groups), np.unique(test_groups)
         )
         if len(outer_group_overlap):
-            raise RuntimeError(
-                "Outer train/test validation groups overlap before inner "
-                f"validation: {outer_group_overlap.astype(str).tolist()}"
+            if explicitly_configured:
+                raise RuntimeError(
+                    "Outer train/test validation groups overlap before inner "
+                    f"validation: {outer_group_overlap.astype(str).tolist()}"
+                )
+            if not hasattr(model, 'set_random_validation'):
+                raise RuntimeError(
+                    "Default group_holdout is unavailable because outer "
+                    "train/test groups overlap"
+                )
+            fallback_reason = (
+                "Default group_holdout unavailable because the outer protocol "
+                f"is not {group_column}-disjoint"
             )
+            logger.warning(
+                f"{fallback_reason}; using explicit random_holdout fallback"
+            )
+            model.set_random_validation(
+                subject_ids=train_subjects,
+                record_ids=train_records,
+                outer_test_group_ids=test_subjects,
+                validation_size=validation_size,
+                random_state=random_state,
+                fallback_reason=fallback_reason,
+            )
+            return
+        if len(np.unique(train_groups)) < 2 and not explicitly_configured:
+            if not hasattr(model, 'set_random_validation'):
+                raise ValueError(
+                    "Default group_holdout requires at least two groups"
+                )
+            fallback_reason = (
+                "Default group_holdout unavailable because the outer training "
+                "partition contains fewer than two subject groups"
+            )
+            logger.warning(
+                f"{fallback_reason}; using explicit random_holdout fallback"
+            )
+            model.set_random_validation(
+                subject_ids=train_subjects,
+                record_ids=train_records,
+                outer_test_group_ids=test_subjects,
+                validation_size=validation_size,
+                random_state=random_state,
+                fallback_reason=fallback_reason,
+            )
+            return
         model.set_validation_groups(
             train_groups,
             subject_ids=train_subjects,
-            record_ids=np.asarray(split.record_id_train).astype(str),
+            record_ids=train_records,
             outer_test_record_ids=np.asarray(split.record_id_test).astype(str),
+            outer_test_group_ids=test_groups,
             strategy=strategy,
             group_column=group_column,
-            validation_size=float(
-                validation_config.get('validation_size', 0.15)
-            ),
-            random_state=int(validation_config.get('random_state', 42)),
+            validation_size=validation_size,
+            random_state=random_state,
         )
 
     @staticmethod
@@ -1754,6 +1875,7 @@ class BenchmarkRunner:
         prediction_frames = []
         per_target_frames = []
         subject_target_frames = []
+        inner_validation_audit_frames = []
         protocol = 'group_kfold_subject'
         sequence_model = model_requires_sequences(model_config.get('type', ''))
         expected_predictions = 0
@@ -1814,6 +1936,13 @@ class BenchmarkRunner:
             )
             if subject_target_path:
                 subject_target_frames.append(pd.read_csv(subject_target_path))
+            inner_validation_audit_path = result['artifacts'].get(
+                'inner_validation_audit'
+            )
+            if inner_validation_audit_path:
+                inner_validation_audit_frames.append(
+                    pd.read_csv(inner_validation_audit_path)
+                )
 
         aggregated = self._aggregate_group_metrics(per_fold_results)
         protocol_dir = (
@@ -1860,6 +1989,13 @@ class BenchmarkRunner:
             protocol_artifacts['subject_target_predictions'] = str(
                 subject_target_path
             )
+        if inner_validation_audit_frames:
+            audit_path = protocol_dir / 'inner_validation_audit.csv'
+            pd.concat(
+                inner_validation_audit_frames,
+                ignore_index=True,
+            ).to_csv(audit_path, index=False)
+            protocol_artifacts['inner_validation_audit'] = str(audit_path)
         return {
             'protocol': protocol,
             'n_folds': len(per_fold_results),

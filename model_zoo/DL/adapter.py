@@ -28,6 +28,24 @@ def seed_torch(random_state: int) -> None:
         torch.backends.cudnn.benchmark = False
 
 
+def _aggregate_loss_component_values(
+    numerators: Mapping[str, float],
+    denominators: Mapping[str, float],
+) -> Dict[str, float]:
+    """Return one dataset-level mean for each loss component."""
+    if set(numerators) != set(denominators) or not numerators:
+        raise RuntimeError("Objective loss components are inconsistent")
+    values: Dict[str, float] = {}
+    for name, numerator in numerators.items():
+        denominator = float(denominators[name])
+        if denominator <= 0:
+            raise RuntimeError(
+                f"Loss denominator for {name!r} must be positive"
+            )
+        values[name] = float(numerator) / denominator
+    return values
+
+
 class _LazyArrayDataset(Dataset):
     """Pair a NumPy-shaped lazy feature view with optional labels."""
 
@@ -148,7 +166,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self._validation_subject_ids: Optional[np.ndarray] = None
         self._validation_record_ids: Optional[np.ndarray] = None
         self._outer_test_record_ids: Optional[np.ndarray] = None
+        self._outer_test_group_ids: Optional[np.ndarray] = None
         self._validation_warning: Optional[str] = None
+        self.validation_fallback_reason_: Optional[str] = None
 
     def _validate_config(self) -> None:
         if not self.input_shape or any(dim <= 0 for dim in self.input_shape):
@@ -237,9 +257,12 @@ class TorchClassificationAdapter(BaseModelAdapter):
     def _validate_labels(self, y: Any, n_samples: int) -> np.ndarray:
         array = np.asarray(y)
         if self.task_type == "regression":
-            if array.ndim != 2 or array.shape[1] != self.num_outputs:
+            if self.num_outputs == 1 and array.ndim == 1:
+                pass
+            elif array.ndim != 2 or array.shape[1] != self.num_outputs:
                 raise ValueError(
-                    f"Expected regression y with shape [batch, {self.num_outputs}], "
+                    "Expected scalar regression y with shape [batch] or "
+                    f"multi-output y with shape [batch, {self.num_outputs}], "
                     f"got {array.shape}"
                 )
             if len(array) != n_samples:
@@ -336,6 +359,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         subject_ids: Any,
         record_ids: Any,
         outer_test_record_ids: Optional[Any] = None,
+        outer_test_group_ids: Optional[Any] = None,
         strategy: str = "group_record",
         group_column: str = "record_id",
         validation_size: Optional[float] = None,
@@ -343,9 +367,10 @@ class TorchClassificationAdapter(BaseModelAdapter):
     ) -> "TorchClassificationAdapter":
         """Configure record-disjoint validation for the next ``fit`` call."""
         normalized_strategy = strategy.strip().lower()
-        if normalized_strategy != "group_record":
+        if normalized_strategy not in {"group_record", "group_holdout"}:
             raise ValueError(
-                "Group validation currently supports strategy='group_record' only"
+                "Group validation strategy must be 'group_record' or "
+                "'group_holdout'"
             )
         group_values = np.asarray(groups)
         subject_values = np.asarray(subject_ids)
@@ -388,6 +413,82 @@ class TorchClassificationAdapter(BaseModelAdapter):
             if outer_test_record_ids is None
             else np.asarray(outer_test_record_ids).astype(str)
         )
+        self._outer_test_group_ids = (
+            None
+            if outer_test_group_ids is None
+            else np.asarray(outer_test_group_ids).astype(str)
+        )
+        if self._outer_test_group_ids is not None:
+            overlap = np.intersect1d(
+                np.unique(self._validation_groups),
+                np.unique(self._outer_test_group_ids),
+            )
+            if len(overlap):
+                raise ValueError(
+                    "Outer training validation groups overlap outer test groups: "
+                    f"{overlap.astype(str).tolist()}"
+                )
+        self.validation_fallback_reason_ = None
+        self.validation_split_ = None
+        return self
+
+    def set_random_validation(
+        self,
+        *,
+        subject_ids: Optional[Any] = None,
+        record_ids: Optional[Any] = None,
+        outer_test_group_ids: Optional[Any] = None,
+        validation_size: Optional[float] = None,
+        random_state: Optional[int] = None,
+        fallback_reason: Optional[str] = None,
+    ) -> "TorchClassificationAdapter":
+        """Configure the explicit legacy random-window validation strategy."""
+        if validation_size is not None:
+            validation_size = float(validation_size)
+            if not 0 < validation_size < 1:
+                raise ValueError("validation_size must be between 0 and 1")
+            self.validation_size = validation_size
+        self.validation_strategy_ = "random_holdout"
+        self.validation_group_column_ = None
+        self.validation_random_state_ = (
+            self.random_state if random_state is None else int(random_state)
+        )
+        self._validation_subject_ids = (
+            None
+            if subject_ids is None
+            else np.asarray(subject_ids).astype(str)
+        )
+        self._validation_record_ids = (
+            None
+            if record_ids is None
+            else np.asarray(record_ids).astype(str)
+        )
+        for name, values in {
+            "subject_ids": self._validation_subject_ids,
+            "record_ids": self._validation_record_ids,
+        }.items():
+            if values is not None and values.ndim != 1:
+                raise ValueError(
+                    f"{name} must be one-dimensional, got {values.shape}"
+                )
+        lengths = {
+            len(values)
+            for values in (
+                self._validation_subject_ids,
+                self._validation_record_ids,
+            )
+            if values is not None
+        }
+        if len(lengths) > 1:
+            raise ValueError("Random validation metadata lengths must match")
+        self._validation_groups = None
+        self._outer_test_record_ids = None
+        self._outer_test_group_ids = (
+            None
+            if outer_test_group_ids is None
+            else np.asarray(outer_test_group_ids).astype(str)
+        )
+        self.validation_fallback_reason_ = fallback_reason
         self.validation_split_ = None
         return self
 
@@ -405,7 +506,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
     ) -> tuple[np.ndarray, np.ndarray]:
         if self._validation_groups is None:
             raise ValueError(
-                "strategy='group_record' requires validation groups before fit"
+                "Grouped validation requires validation groups before fit"
             )
         if len(self._validation_groups) != len(labels):
             raise ValueError(
@@ -415,7 +516,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         unique_groups = np.unique(self._validation_groups)
         if len(unique_groups) < 2:
             raise ValueError(
-                "Group-aware validation requires at least two unique records, "
+                "Group-aware validation requires at least two unique "
+                "records/groups, "
                 f"got {len(unique_groups)}"
             )
 
@@ -485,6 +587,22 @@ class TorchClassificationAdapter(BaseModelAdapter):
 
         if best_indices is None or best_score is None:
             raise ValueError("Could not create a group-aware validation split")
+        if (
+            self.task_type == "classification"
+            and best_score[0] > 0
+            and self.validation_strategy_ == "group_holdout"
+        ):
+            distribution_by_group = {
+                str(group): self._class_distribution(
+                    labels[self._validation_groups == group]
+                )
+                for group in unique_groups
+            }
+            raise ValueError(
+                "Could not create a class-complete group_holdout split. "
+                f"Missing class partitions={best_score[0]}; "
+                f"class_distribution_by_group={distribution_by_group}"
+            )
         if self.task_type == "classification" and best_score[0] > 0:
             self._validation_warning = (
                 "Perfect class coverage is impossible for the selected record-level "
@@ -509,14 +627,14 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self,
         labels: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        if self.validation_strategy_ == "group_record":
+        if self.validation_strategy_ in {"group_record", "group_holdout"}:
             return self._group_validation_indices(labels)
         indices = np.arange(len(labels), dtype=np.int64)
         try:
             train_idx, validation_idx = train_test_split(
                 indices,
                 test_size=self.validation_size,
-                random_state=self.random_state,
+                random_state=self.validation_random_state_,
                 shuffle=True,
                 stratify=(
                     labels if self.task_type == "classification" else None
@@ -572,6 +690,15 @@ class TorchClassificationAdapter(BaseModelAdapter):
         outer_test_record_overlap = sorted(
             (set(train_records) | set(validation_records)) & outer_records
         )
+        outer_groups = set(
+            []
+            if self._outer_test_group_ids is None
+            else np.unique(self._outer_test_group_ids).tolist()
+        )
+        train_outer_group_overlap = sorted(set(train_groups) & outer_groups)
+        validation_outer_group_overlap = sorted(
+            set(validation_groups) & outer_groups
+        )
         summary = {
             "strategy": self.validation_strategy_,
             "random_state": self.validation_random_state_,
@@ -595,6 +722,32 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "group_overlap": group_overlap,
             "inner_record_overlap": len(record_overlap),
             "outer_test_record_overlap": outer_test_record_overlap,
+            "validation_strategy": self.validation_strategy_,
+            "validation_group_column": self.validation_group_column_,
+            "validation_fraction": self.validation_size,
+            "validation_random_state": self.validation_random_state_,
+            "inner_train_samples": int(len(train_idx)),
+            "inner_validation_samples": int(len(validation_idx)),
+            "inner_train_groups": int(len(train_groups)),
+            "inner_validation_groups": int(len(validation_groups)),
+            "inner_group_overlap": int(len(group_overlap)),
+            "outer_test_group_overlap": int(
+                len(
+                    set(train_outer_group_overlap)
+                    | set(validation_outer_group_overlap)
+                )
+            ),
+            "train_outer_test_overlap_count": int(
+                len(train_outer_group_overlap)
+            ),
+            "validation_outer_test_overlap_count": int(
+                len(validation_outer_group_overlap)
+            ),
+            "train_outer_test_group_overlap": train_outer_group_overlap,
+            "validation_outer_test_group_overlap": (
+                validation_outer_group_overlap
+            ),
+            "fallback_reason": self.validation_fallback_reason_,
             "class_balance_warning": self._validation_warning,
         }
         if self.task_type == "classification":
@@ -750,22 +903,6 @@ class TorchClassificationAdapter(BaseModelAdapter):
         )
         self.stopping_reason_ = None
 
-        def aggregate_component_values(
-            numerators: Mapping[str, float],
-            denominators: Mapping[str, float],
-        ) -> Dict[str, float]:
-            if set(numerators) != set(denominators) or not numerators:
-                raise RuntimeError("Objective loss components are inconsistent")
-            values: Dict[str, float] = {}
-            for name in numerators:
-                denominator = float(denominators[name])
-                if denominator <= 0:
-                    raise RuntimeError(
-                        f"Loss denominator for {name!r} must be positive"
-                    )
-                values[name] = float(numerators[name]) / denominator
-            return values
-
         for epoch in range(1, self.max_epochs + 1):
             epoch_started = time.perf_counter()
             self.model.train()
@@ -826,10 +963,10 @@ class TorchClassificationAdapter(BaseModelAdapter):
                         )
                         validation_count += len(batch_labels)
 
-            train_components = aggregate_component_values(
+            train_components = _aggregate_loss_component_values(
                 train_numerators, train_denominators
             )
-            validation_components = aggregate_component_values(
+            validation_components = _aggregate_loss_component_values(
                 validation_numerators, validation_denominators
             )
             train_loss = float(
@@ -1213,8 +1350,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
                         )
                     predictions.append(outputs.cpu().numpy())
             values = np.concatenate(predictions, axis=0)
+            y_pred = values[:, 0] if self.num_outputs == 1 else values
             return {
-                "y_pred": values,
+                "y_pred": y_pred,
                 "raw_outputs": values,
                 "head_type": "regression",
             }
@@ -1320,6 +1458,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "standardize": self.standardize,
             "validation_strategy": self.validation_strategy_,
             "validation_split": self.validation_split_,
+            "validation_fallback_reason": self.validation_fallback_reason_,
             "objective_training_diagnostics": dict(
                 self.objective_training_diagnostics_
             ),
@@ -1501,6 +1640,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
             )
         )
         summary = payload.get("training_summary", {})
+        self.validation_fallback_reason_ = summary.get(
+            "validation_fallback_reason"
+        )
         self.best_epoch_ = summary.get("best_epoch")
         self.best_validation_loss_ = summary.get("best_validation_loss")
         self.best_validation_components_ = dict(

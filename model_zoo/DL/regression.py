@@ -40,6 +40,8 @@ class RegressionObjectiveHandler:
                 f"Regression outputs must have shape [batch, {self.num_outputs}], "
                 f"got {tuple(raw_outputs.shape)}"
             )
+        if self.num_outputs == 1 and targets.ndim == 1:
+            targets = targets.unsqueeze(1)
         if targets.shape != raw_outputs.shape:
             raise ValueError(
                 "Regression targets and outputs must have equal shape: "

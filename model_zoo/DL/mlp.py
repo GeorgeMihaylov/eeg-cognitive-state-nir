@@ -22,8 +22,8 @@ class TorchMLP(nn.Module):
         hidden = tuple(int(dim) for dim in hidden_dims)
         if self.input_dim <= 0:
             raise ValueError("input_dim must be positive")
-        if self.num_classes < 2:
-            raise ValueError("num_classes must be at least 2")
+        if self.num_classes <= 0:
+            raise ValueError("num_classes/output dimension must be positive")
         if not hidden or any(dim <= 0 for dim in hidden):
             raise ValueError("hidden_dims must contain positive dimensions")
         if not 0 <= dropout < 1:

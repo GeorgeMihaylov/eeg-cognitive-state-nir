@@ -260,6 +260,51 @@ def validate_config(config: Dict[str, Any]) -> bool:
                     f"does not match {len(target_cols)} target_cols"
                 )
 
+    validation_config = config.get('validation')
+    if validation_config is not None:
+        if not isinstance(validation_config, dict):
+            errors.append("Config 'validation' must be a mapping")
+        else:
+            validation_strategy = str(
+                validation_config.get('strategy', 'group_holdout')
+            ).strip().lower()
+            supported_validation_strategies = {
+                'group_holdout',
+                'random_holdout',
+                'group_record',
+            }
+            if validation_strategy not in supported_validation_strategies:
+                errors.append(
+                    f"Unknown validation strategy '{validation_strategy}'. "
+                    f"Available: {sorted(supported_validation_strategies)}"
+                )
+            if (
+                validation_strategy in {'group_holdout', 'group_record'}
+                and not str(
+                    validation_config.get('group_column', '')
+                ).strip()
+            ):
+                errors.append(
+                    f"validation.group_column is required for "
+                    f"{validation_strategy}"
+                )
+            validation_fraction = validation_config.get(
+                'fraction',
+                validation_config.get('validation_size', 0.15),
+            )
+            try:
+                validation_fraction = float(validation_fraction)
+                if not 0 < validation_fraction < 1:
+                    raise ValueError
+            except (TypeError, ValueError):
+                errors.append(
+                    "validation.fraction/validation_size must be between 0 and 1"
+                )
+            try:
+                int(validation_config.get('random_state', 42))
+            except (TypeError, ValueError):
+                errors.append("validation.random_state must be an integer")
+
     if errors:
         logger.error("Configuration validation failed:")
         for error in errors:
