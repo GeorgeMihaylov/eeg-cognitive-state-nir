@@ -178,3 +178,30 @@ Generated benchmark outputs remain ignored and are not intended for Git.
 Recommended next stages are full five-fold validation of the direct PM
 baselines, followed by regression-capable sequence models, joint PM/proxy
 objectives, and fold-safe construction of latent proxy states.
+
+## Five-fold direct PM regression baseline
+
+A five-fold subject-independent GroupKFold experiment was completed for the
+mean baseline and a lightweight Random Forest.
+
+### Dataset
+
+- Samples: 43,174
+- Subjects: 53
+- Input features: 448 EEG + POW features
+- Outputs: 7 Performance Metrics
+- Subject overlap between train and test: none
+
+### Results
+
+| Model | Macro MAE | Macro RMSE | Macro R? | Pearson | Spearman |
+|---|---:|---:|---:|---:|---:|
+| Mean regressor | 0.1110 ? 0.0046 | 0.1443 ? 0.0046 | -0.0078 ? 0.0026 | undefined | undefined |
+| Random Forest | 0.1003 ? 0.0039 | 0.1314 ? 0.0046 | 0.1443 ? 0.0302 | 0.3838 ? 0.0329 | 0.3315 ? 0.0275 |
+
+The Random Forest consistently outperformed the mean baseline. This confirms
+that the EEG and POW feature representation contains predictive information
+for the joint Performance Metrics target.
+
+The experiment used the lightweight smoke configuration and should be treated
+as the first reproducible baseline rather than the final optimized result.
