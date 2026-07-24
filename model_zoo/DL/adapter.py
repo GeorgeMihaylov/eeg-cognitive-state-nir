@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader, Dataset, TensorDataset
 
 from ..base import BaseModelAdapter, PathLike
 from .ordinal import ClassificationObjectiveHandler
+from .regression import RegressionObjectiveHandler
 
 
 def seed_torch(random_state: int) -> None:
@@ -43,7 +44,7 @@ class _LazyArrayDataset(Dataset):
         )
         if self.labels is None:
             return (features,)
-        return features, torch.as_tensor(self.labels[index], dtype=torch.int64)
+        return features, torch.as_tensor(self.labels[index])
 
 
 class TorchClassificationAdapter(BaseModelAdapter):
@@ -55,6 +56,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         input_shape: Sequence[int],
         num_classes: int,
         *,
+        task_type: str = "classification",
+        regression_loss: str = "mse",
         batch_size: int = 256,
         max_epochs: int = 30,
         learning_rate: float = 1e-3,
@@ -70,6 +73,17 @@ class TorchClassificationAdapter(BaseModelAdapter):
     ) -> None:
         self.input_shape = tuple(int(dim) for dim in input_shape)
         self.num_classes = int(num_classes)
+        self.num_outputs = self.num_classes
+        normalized_task_type = str(task_type).strip().lower()
+        self.task_type = {
+            "classifier": "classification",
+            "regressor": "regression",
+        }.get(normalized_task_type, normalized_task_type)
+        if self.task_type not in {"classification", "regression"}:
+            raise ValueError(
+                "task_type must be 'classification' or 'regression'"
+            )
+        self.regression_loss = str(regression_loss).strip().lower()
         self.batch_size = int(batch_size)
         self.max_epochs = int(max_epochs)
         self.learning_rate = float(learning_rate)
@@ -82,7 +96,14 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.num_workers = int(num_workers)
         self.model_metadata = dict(model_metadata or {})
         self.objective_handler = (
-            ClassificationObjectiveHandler("categorical", self.num_classes)
+            (
+                ClassificationObjectiveHandler("categorical", self.num_classes)
+                if self.task_type == "classification"
+                else RegressionObjectiveHandler(
+                    self.num_outputs,
+                    self.regression_loss,
+                )
+            )
             if objective_handler is None
             else objective_handler
         )
@@ -112,7 +133,11 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.stopping_reason_: Optional[str] = None
         self.peak_gpu_memory_bytes_: int = 0
         self.is_fitted_: bool = False
-        self.validation_strategy_ = "stratified_random"
+        self.validation_strategy_ = (
+            "stratified_random"
+            if self.task_type == "classification"
+            else "random"
+        )
         self.validation_group_column_: Optional[str] = None
         self.validation_random_state_ = self.random_state
         self.validation_split_: Optional[Dict[str, Any]] = None
@@ -140,8 +165,10 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 "Four-dimensional EEG inputs must use input_shape=(1, channels, time), "
                 f"got {self.input_shape}"
             )
-        if self.num_classes < 2:
+        if self.task_type == "classification" and self.num_classes < 2:
             raise ValueError(f"num_classes must be at least 2, got {self.num_classes}")
+        if self.task_type == "regression" and self.num_outputs <= 0:
+            raise ValueError(f"num_outputs must be positive, got {self.num_outputs}")
         if self.batch_size <= 0:
             raise ValueError("batch_size must be positive")
         if self.max_epochs <= 0:
@@ -209,6 +236,22 @@ class TorchClassificationAdapter(BaseModelAdapter):
 
     def _validate_labels(self, y: Any, n_samples: int) -> np.ndarray:
         array = np.asarray(y)
+        if self.task_type == "regression":
+            if array.ndim != 2 or array.shape[1] != self.num_outputs:
+                raise ValueError(
+                    f"Expected regression y with shape [batch, {self.num_outputs}], "
+                    f"got {array.shape}"
+                )
+            if len(array) != n_samples:
+                raise ValueError(
+                    f"X and y have different lengths: {n_samples} and {len(array)}"
+                )
+            if not np.issubdtype(array.dtype, np.number):
+                raise ValueError("Regression y must contain numeric values")
+            targets = np.asarray(array, dtype=np.float32)
+            if not np.isfinite(targets).all():
+                raise ValueError("y contains NaN or infinite values")
+            return np.ascontiguousarray(targets)
         if array.ndim != 1:
             raise ValueError(f"Expected one-dimensional y, got shape {array.shape}")
         if len(array) != n_samples:
@@ -382,38 +425,59 @@ class TorchClassificationAdapter(BaseModelAdapter):
             test_size=self.validation_size,
             random_state=self.validation_random_state_,
         )
-        all_classes = np.unique(labels)
-        overall_counts = np.asarray([
-            np.sum(labels == class_label)
-            for class_label in all_classes
-        ], dtype=np.float64)
-        overall_distribution = overall_counts / overall_counts.sum()
+        if self.task_type == "classification":
+            all_classes = np.unique(labels)
+            overall_counts = np.asarray([
+                np.sum(labels == class_label)
+                for class_label in all_classes
+            ], dtype=np.float64)
+            overall_distribution = overall_counts / overall_counts.sum()
+        else:
+            overall_mean = np.mean(labels, axis=0, dtype=np.float64)
+            overall_scale = np.std(labels, axis=0, dtype=np.float64)
+            overall_scale = np.where(overall_scale < 1e-12, 1.0, overall_scale)
         best_indices: Optional[tuple[np.ndarray, np.ndarray]] = None
         best_score: Optional[tuple[int, float, float]] = None
 
         for train_idx, validation_idx in splitter.split(
             np.zeros(len(labels)), labels, self._validation_groups
         ):
-            train_classes = np.unique(labels[train_idx])
-            validation_classes = np.unique(labels[validation_idx])
-            missing_classes = (
-                len(np.setdiff1d(all_classes, train_classes))
-                + len(np.setdiff1d(all_classes, validation_classes))
-            )
             actual_fraction = len(validation_idx) / len(labels)
             size_error = abs(actual_fraction - self.validation_size)
-            train_distribution = np.asarray([
-                np.mean(labels[train_idx] == class_label)
-                for class_label in all_classes
-            ])
-            validation_distribution = np.asarray([
-                np.mean(labels[validation_idx] == class_label)
-                for class_label in all_classes
-            ])
-            balance_error = float(
-                np.abs(train_distribution - overall_distribution).sum()
-                + np.abs(validation_distribution - overall_distribution).sum()
-            )
+            if self.task_type == "classification":
+                train_classes = np.unique(labels[train_idx])
+                validation_classes = np.unique(labels[validation_idx])
+                missing_classes = (
+                    len(np.setdiff1d(all_classes, train_classes))
+                    + len(np.setdiff1d(all_classes, validation_classes))
+                )
+                train_distribution = np.asarray([
+                    np.mean(labels[train_idx] == class_label)
+                    for class_label in all_classes
+                ])
+                validation_distribution = np.asarray([
+                    np.mean(labels[validation_idx] == class_label)
+                    for class_label in all_classes
+                ])
+                balance_error = float(
+                    np.abs(train_distribution - overall_distribution).sum()
+                    + np.abs(validation_distribution - overall_distribution).sum()
+                )
+            else:
+                missing_classes = 0
+                balance_error = float(
+                    np.abs(
+                        (np.mean(labels[train_idx], axis=0) - overall_mean)
+                        / overall_scale
+                    ).sum()
+                    + np.abs(
+                        (
+                            np.mean(labels[validation_idx], axis=0)
+                            - overall_mean
+                        )
+                        / overall_scale
+                    ).sum()
+                )
             score = (missing_classes, size_error, balance_error)
             if best_score is None or score < best_score:
                 best_score = score
@@ -421,7 +485,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
 
         if best_indices is None or best_score is None:
             raise ValueError("Could not create a group-aware validation split")
-        if best_score[0] > 0:
+        if self.task_type == "classification" and best_score[0] > 0:
             self._validation_warning = (
                 "Perfect class coverage is impossible for the selected record-level "
                 f"validation split; missing class partitions={best_score[0]}"
@@ -454,11 +518,13 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 test_size=self.validation_size,
                 random_state=self.random_state,
                 shuffle=True,
-                stratify=labels,
+                stratify=(
+                    labels if self.task_type == "classification" else None
+                ),
             )
         except ValueError as exc:
             raise ValueError(
-                "Could not create a stratified validation split inside training data"
+                "Could not create a validation split inside training data"
             ) from exc
         return train_idx, validation_idx
 
@@ -506,7 +572,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         outer_test_record_overlap = sorted(
             (set(train_records) | set(validation_records)) & outer_records
         )
-        return {
+        summary = {
             "strategy": self.validation_strategy_,
             "random_state": self.validation_random_state_,
             "group_column": self.validation_group_column_,
@@ -529,20 +595,33 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "group_overlap": group_overlap,
             "inner_record_overlap": len(record_overlap),
             "outer_test_record_overlap": outer_test_record_overlap,
-            "class_distribution_train": self._class_distribution(
-                labels[train_idx]
-            ),
-            "class_distribution_validation": self._class_distribution(
-                labels[validation_idx]
-            ),
-            "inner_train_class_distribution": self._class_distribution(
-                labels[train_idx]
-            ),
-            "inner_val_class_distribution": self._class_distribution(
-                labels[validation_idx]
-            ),
             "class_balance_warning": self._validation_warning,
         }
+        if self.task_type == "classification":
+            summary.update({
+                "class_distribution_train": self._class_distribution(
+                    labels[train_idx]
+                ),
+                "class_distribution_validation": self._class_distribution(
+                    labels[validation_idx]
+                ),
+                "inner_train_class_distribution": self._class_distribution(
+                    labels[train_idx]
+                ),
+                "inner_val_class_distribution": self._class_distribution(
+                    labels[validation_idx]
+                ),
+            })
+        else:
+            summary.update({
+                "target_mean_train": np.mean(
+                    labels[train_idx], axis=0
+                ).astype(float).tolist(),
+                "target_mean_validation": np.mean(
+                    labels[validation_idx], axis=0
+                ).astype(float).tolist(),
+            })
+        return summary
 
     def _transform_features(self, X: Any) -> Any:
         if self.feature_mean_ is None or self.feature_scale_ is None:
@@ -740,11 +819,12 @@ class TorchClassificationAdapter(BaseModelAdapter):
                             validation_denominators.get(name, 0.0)
                             + float(parts.denominator.detach().item())
                         )
-                    decoded = self.objective_handler.decode(raw_outputs)
-                    validation_correct += int(
-                        (decoded.y_pred == batch_labels).sum().item()
-                    )
-                    validation_count += len(batch_labels)
+                    if self.task_type == "classification":
+                        decoded = self.objective_handler.decode(raw_outputs)
+                        validation_correct += int(
+                            (decoded.y_pred == batch_labels).sum().item()
+                        )
+                        validation_count += len(batch_labels)
 
             train_components = aggregate_component_values(
                 train_numerators, train_denominators
@@ -788,7 +868,11 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 "epoch": epoch,
                 "train_loss": train_loss,
                 "validation_loss": validation_loss,
-                "validation_accuracy": validation_correct / validation_count,
+                "validation_accuracy": (
+                    validation_correct / validation_count
+                    if validation_count
+                    else None
+                ),
                 "learning_rate": float(optimizer.param_groups[0]["lr"]),
                 "is_best": improved,
                 "epoch_time_seconds": time.perf_counter() - epoch_started,
@@ -1110,6 +1194,30 @@ class TorchClassificationAdapter(BaseModelAdapter):
             raise RuntimeError("The model must be fitted before prediction")
         features = self._transform_features(self._validate_features(X))
         loader = self._make_loader(features)
+        if self.task_type == "regression":
+            predictions: list[np.ndarray] = []
+            self.model.eval()
+            with torch.no_grad():
+                for (batch_features,) in loader:
+                    outputs = self.model(
+                        batch_features.to(self.device_, non_blocking=True)
+                    )
+                    if (
+                        outputs.ndim != 2
+                        or outputs.shape[1] != self.num_outputs
+                        or not torch.isfinite(outputs).all()
+                    ):
+                        raise ValueError(
+                            "Regression model returned invalid outputs with shape "
+                            f"{tuple(outputs.shape)}"
+                        )
+                    predictions.append(outputs.cpu().numpy())
+            values = np.concatenate(predictions, axis=0)
+            return {
+                "y_pred": values,
+                "raw_outputs": values,
+                "head_type": "regression",
+            }
         values: Dict[str, list[np.ndarray]] = {
             "class_probabilities": [],
             "y_pred": [],
@@ -1169,6 +1277,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         return result
 
     def predict_proba(self, X: Any) -> np.ndarray:
+        if self.task_type == "regression":
+            raise AttributeError("predict_proba is unavailable for regression")
         return np.asarray(self.predict_detailed(X)["class_probabilities"])
 
     def predict(self, X: Any) -> np.ndarray:
@@ -1185,7 +1295,11 @@ class TorchClassificationAdapter(BaseModelAdapter):
         head_diagnostics = getattr(self.model, "output_head_diagnostics", None)
         return {
             "input_shape": list(self.input_shape),
-            "num_outputs": self.num_classes,
+            "num_outputs": self.num_outputs,
+            "task_type": self.task_type,
+            "regression_loss": (
+                self.regression_loss if self.task_type == "regression" else None
+            ),
             "head_type": self.head_type,
             "device": str(self.device_),
             "device_name": device_name,
@@ -1226,9 +1340,11 @@ class TorchClassificationAdapter(BaseModelAdapter):
             },
             "model_metadata": self.model_metadata,
             "head_type": self.head_type,
+            "task_type": self.task_type,
             "objective": self.objective_handler.to_metadata(),
             "input_shape": self.input_shape,
             "num_classes": self.num_classes,
+            "num_outputs": self.num_outputs,
             "training_config": {
                 "batch_size": self.batch_size,
                 "max_epochs": self.max_epochs,
@@ -1239,6 +1355,12 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 "random_state": self.random_state,
                 "standardize": self.standardize,
                 "head_type": self.head_type,
+                "task_type": self.task_type,
+                "regression_loss": (
+                    self.regression_loss
+                    if self.task_type == "regression"
+                    else None
+                ),
                 "auxiliary_weight": getattr(
                     self.objective_handler, "auxiliary_weight", None
                 ),
@@ -1286,6 +1408,15 @@ class TorchClassificationAdapter(BaseModelAdapter):
             payload = torch.load(checkpoint_path, map_location=self.device_)
         stored_shape = tuple(int(value) for value in payload.get("input_shape", ()))
         stored_classes = int(payload.get("num_classes", -1))
+        stored_task_type = str(
+            payload.get(
+                "task_type",
+                payload.get("training_config", {}).get(
+                    "task_type",
+                    "classification",
+                ),
+            )
+        ).strip().lower()
         stored_metadata = dict(payload.get("model_metadata", {}))
         stored_objective = dict(payload.get("objective", {}))
         stored_head_type = str(
@@ -1306,6 +1437,11 @@ class TorchClassificationAdapter(BaseModelAdapter):
             raise ValueError(
                 f"Checkpoint num_classes {stored_classes} does not match "
                 f"adapter {self.num_classes}"
+            )
+        if stored_task_type != self.task_type:
+            raise ValueError(
+                "Checkpoint task_type does not match the factory-built model: "
+                f"{stored_task_type!r} != {self.task_type!r}"
             )
         if stored_head_type != self.head_type:
             raise ValueError(

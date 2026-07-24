@@ -436,9 +436,14 @@ class BenchmarkRunner:
             dataset = get_dataset(dataset_name, dataset_config)
             data = dataset.load()
 
+            target_description = (
+                f"{data.n_outputs} outputs"
+                if data.metadata.get('task_type') == 'regression'
+                else f"{data.n_classes} classes"
+            )
             logger.info(f"Loaded dataset '{dataset_name}': "
                         f"{data.n_samples} samples, {data.n_features} features, "
-                        f"{data.n_subjects} subjects, {data.n_classes} classes")
+                        f"{data.n_subjects} subjects, {target_description}")
 
             return data
         except Exception as e:
@@ -468,7 +473,11 @@ class BenchmarkRunner:
                 if isinstance(configured_task_type, str)
                 else 'classification'
             )
-            task_num_outputs = task.n_classes if task_type == 'classification' else 1
+            task_num_outputs = (
+                task.n_classes
+                if task_type == 'classification'
+                else task.n_outputs
+            )
             cv = CrossValidator(task)
             subject_ids = np.unique(data.subject_ids)
             evaluation_config = self.config.get('evaluation')
@@ -657,13 +666,21 @@ class BenchmarkRunner:
         if callable(detailed_predictor):
             detailed_predictions = detailed_predictor(split.X_test)
             y_pred = np.asarray(detailed_predictions['y_pred'])
-            y_proba = np.asarray(
-                detailed_predictions['class_probabilities']
+            y_proba = (
+                None
+                if task_type == 'regression'
+                else np.asarray(
+                    detailed_predictions['class_probabilities']
+                )
             )
         else:
             y_pred = model.predict(split.X_test)
             y_proba = None
-        if detailed_predictions is None and hasattr(model, 'predict_proba'):
+        if (
+            task_type != 'regression'
+            and detailed_predictions is None
+            and hasattr(model, 'predict_proba')
+        ):
             try:
                 y_proba = model.predict_proba(split.X_test)
             except Exception:
@@ -683,7 +700,27 @@ class BenchmarkRunner:
                     detailed_predictions.get('expected_rank'),
                 )
             ),
+            target_names=split.metadata.get('target_names'),
         )
+        subject_target_predictions = None
+        if (
+            task_type == 'regression'
+            and np.asarray(split.y_test).ndim == 2
+            and split.subject_test is not None
+        ):
+            subject_metrics, subject_target_predictions = (
+                MetricsCalculator.calculate_subject_regression_metrics(
+                    split.y_test,
+                    y_pred,
+                    split.subject_test,
+                    list(split.metadata.get('target_names') or []),
+                    fold=split.metadata.get(
+                        'fold',
+                        artifact_split_name,
+                    ),
+                )
+            )
+            metrics.update(subject_metrics)
         if (
             detailed_predictions is not None
             and str(detailed_predictions.get('head_type', '')).strip().lower()
@@ -739,6 +776,7 @@ class BenchmarkRunner:
                 metrics=metrics,
                 task_type=task_type,
                 detailed_predictions=detailed_predictions,
+                subject_target_predictions=subject_target_predictions,
             )
 
         return result
@@ -775,6 +813,7 @@ class BenchmarkRunner:
             metrics: Dict[str, Any],
             task_type: str = 'classification',
             detailed_predictions: Optional[Mapping[str, Any]] = None,
+            subject_target_predictions: Optional[pd.DataFrame] = None,
     ) -> Dict[str, str]:
         artifact_dir = self._model_artifact_dir(
             dataset_name, task_name, model_name
@@ -839,9 +878,32 @@ class BenchmarkRunner:
             'sample_id': sample_ids,
             'subject_id': subject_ids,
             'record_id': record_ids,
-            'y_true': np.asarray(split.y_test),
-            'y_pred': np.asarray(y_pred),
         }
+        truth_values = np.asarray(split.y_test)
+        prediction_values = np.asarray(y_pred)
+        if truth_values.ndim == 1:
+            prediction_data['y_true'] = truth_values
+            prediction_data['y_pred'] = prediction_values
+        elif truth_values.ndim == 2:
+            target_names = list(split.metadata.get('target_names') or [])
+            if (
+                prediction_values.shape != truth_values.shape
+                or len(target_names) != truth_values.shape[1]
+            ):
+                raise ValueError(
+                    'Multi-output predictions, targets and target_names are '
+                    'inconsistent'
+                )
+            for target_index, target_name in enumerate(target_names):
+                key = MetricsCalculator.normalize_target_name(target_name)
+                prediction_data[f'y_true_{key}'] = truth_values[:, target_index]
+                prediction_data[f'y_pred_{key}'] = (
+                    prediction_values[:, target_index]
+                )
+        else:
+            raise ValueError(
+                f'Unsupported regression target shape {truth_values.shape}'
+            )
         for column, values in split.row_metadata_test.items():
             row_values = np.asarray(values)
             if len(row_values) != n_test:
@@ -862,7 +924,11 @@ class BenchmarkRunner:
             for class_index in range(probabilities.shape[1]):
                 predictions[f'proba_{class_index}'] = probabilities[:, class_index]
 
-        head_type = 'categorical'
+        head_type = (
+            'regression'
+            if str(task_type).strip().lower() in {'regression', 'regressor'}
+            else 'categorical'
+        )
         if detailed_predictions is not None:
             head_type = str(
                 detailed_predictions.get('head_type', 'categorical')
@@ -1011,6 +1077,20 @@ class BenchmarkRunner:
         predictions_path = artifact_dir / 'predictions.parquet'
         predictions.to_parquet(predictions_path, index=False)
         artifacts = {'predictions': str(predictions_path)}
+        per_target = metrics.get('per_target')
+        if per_target:
+            per_target_path = artifact_dir / 'per_target_metrics.csv'
+            per_target_frame = pd.DataFrame(per_target)
+            per_target_frame.insert(0, 'fold', split.metadata.get('fold'))
+            per_target_frame.insert(0, 'model', model_name)
+            per_target_frame.insert(0, 'task', task_name)
+            per_target_frame.insert(0, 'dataset', dataset_name)
+            per_target_frame.to_csv(per_target_path, index=False)
+            artifacts['per_target_metrics'] = str(per_target_path)
+        if subject_target_predictions is not None:
+            subject_path = artifact_dir / 'subject_target_predictions.csv'
+            subject_target_predictions.to_csv(subject_path, index=False)
+            artifacts['subject_target_predictions'] = str(subject_path)
         if head_type in {'coral', 'corn'}:
             ordinal_metadata_path = artifact_dir / 'ordinal_metadata.json'
             cumulative = arrays['threshold_probabilities']
@@ -1672,6 +1752,8 @@ class BenchmarkRunner:
     ) -> Dict[str, Any]:
         per_fold_results: Dict[str, Any] = {}
         prediction_frames = []
+        per_target_frames = []
+        subject_target_frames = []
         protocol = 'group_kfold_subject'
         sequence_model = model_requires_sequences(model_config.get('type', ''))
         expected_predictions = 0
@@ -1724,6 +1806,14 @@ class BenchmarkRunner:
             prediction_frames.append(
                 pd.read_parquet(result['artifacts']['predictions'])
             )
+            per_target_path = result['artifacts'].get('per_target_metrics')
+            if per_target_path:
+                per_target_frames.append(pd.read_csv(per_target_path))
+            subject_target_path = result['artifacts'].get(
+                'subject_target_predictions'
+            )
+            if subject_target_path:
+                subject_target_frames.append(pd.read_csv(subject_target_path))
 
         aggregated = self._aggregate_group_metrics(per_fold_results)
         protocol_dir = (
@@ -1751,12 +1841,31 @@ class BenchmarkRunner:
         predictions.sort_values(['fold', identity_column]).to_parquet(
             predictions_path, index=False
         )
+        protocol_artifacts = {'predictions': str(predictions_path)}
+        if per_target_frames:
+            per_target_path = protocol_dir / 'per_target_metrics.csv'
+            pd.concat(per_target_frames, ignore_index=True).to_csv(
+                per_target_path,
+                index=False,
+            )
+            protocol_artifacts['per_target_metrics'] = str(per_target_path)
+        if subject_target_frames:
+            subject_target_path = (
+                protocol_dir / 'subject_target_predictions.csv'
+            )
+            pd.concat(subject_target_frames, ignore_index=True).to_csv(
+                subject_target_path,
+                index=False,
+            )
+            protocol_artifacts['subject_target_predictions'] = str(
+                subject_target_path
+            )
         return {
             'protocol': protocol,
             'n_folds': len(per_fold_results),
             'folds': per_fold_results,
             'aggregated': aggregated,
-            'artifacts': {'predictions': str(predictions_path)},
+            'artifacts': protocol_artifacts,
         }
 
     @staticmethod
@@ -1779,6 +1888,16 @@ class BenchmarkRunner:
             'pearson',
             'spearman',
         ]
+        dynamic_metric_names = {
+            name
+            for result in per_fold_results.values()
+            for name, value in result.get('metrics', {}).items()
+            if (
+                isinstance(value, (int, float, np.integer, np.floating))
+                and name not in {'n_samples', 'n_classes', 'n_outputs'}
+            )
+        }
+        metric_names = sorted(set(metric_names) | dynamic_metric_names)
         aggregated: Dict[str, Any] = {
             'n_folds': len(per_fold_results),
             'training_time_total': float(sum(
@@ -1976,12 +2095,29 @@ class BenchmarkRunner:
                     if 'group_kfold_subject' in model_results:
                         group_result = model_results['group_kfold_subject']
                         aggregated = group_result.get('aggregated', {})
+                        first_fold_metrics = next(
+                            (
+                                fold_result.get('metrics', {})
+                                for fold_result in group_result.get(
+                                    'folds', {}
+                                ).values()
+                            ),
+                            {},
+                        )
                         rows.append({
                             'dataset': dataset_name,
                             'task': task_name,
                             'model': model_name,
                             'evaluation': 'group_kfold_subject',
                             'n_folds': group_result.get('n_folds', 0),
+                            'n_outputs': first_fold_metrics.get(
+                                'n_outputs', 1
+                            ),
+                            'target_names': (
+                                ','.join(first_fold_metrics.get('target_names', []))
+                                if first_fold_metrics.get('target_names')
+                                else None
+                            ),
                             'accuracy': aggregated.get('accuracy_mean', np.nan),
                             'accuracy_mean': aggregated.get('accuracy_mean', np.nan),
                             'accuracy_std': aggregated.get('accuracy_std', np.nan),
@@ -2049,6 +2185,36 @@ class BenchmarkRunner:
                             ),
                             'spearman_std': aggregated.get(
                                 'spearman_std', np.nan
+                            ),
+                            'mae_macro': aggregated.get(
+                                'mae_macro_mean', np.nan
+                            ),
+                            'mae_macro_std': aggregated.get(
+                                'mae_macro_std', np.nan
+                            ),
+                            'rmse_macro': aggregated.get(
+                                'rmse_macro_mean', np.nan
+                            ),
+                            'rmse_macro_std': aggregated.get(
+                                'rmse_macro_std', np.nan
+                            ),
+                            'r2_macro': aggregated.get(
+                                'r2_macro_mean', np.nan
+                            ),
+                            'r2_macro_std': aggregated.get(
+                                'r2_macro_std', np.nan
+                            ),
+                            'pearson_macro': aggregated.get(
+                                'pearson_macro_mean', np.nan
+                            ),
+                            'pearson_macro_std': aggregated.get(
+                                'pearson_macro_std', np.nan
+                            ),
+                            'spearman_macro': aggregated.get(
+                                'spearman_macro_mean', np.nan
+                            ),
+                            'spearman_macro_std': aggregated.get(
+                                'spearman_macro_std', np.nan
                             ),
                             'training_time': aggregated.get(
                                 'training_time_total', np.nan

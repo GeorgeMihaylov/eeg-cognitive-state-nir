@@ -135,6 +135,7 @@ class CrossValidator:
                         'observation_unit', 'window'
                     ),
                     'dataset_metadata': data.metadata,
+                    'target_names': data.metadata.get('target_cols'),
                     'n_train_rows': len(train_idx),
                     'n_test_rows': len(test_idx),
                     'n_train_subjects': len(train_subjects),

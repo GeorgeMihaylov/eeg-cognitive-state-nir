@@ -60,3 +60,7 @@ class BaseTask(ABC):
     @property
     def n_classes(self) -> int:
         return len(np.unique(self.data.labels))
+
+    @property
+    def n_outputs(self) -> int:
+        return self.data.n_outputs

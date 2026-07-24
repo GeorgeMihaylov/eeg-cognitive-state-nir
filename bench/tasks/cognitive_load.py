@@ -119,6 +119,11 @@ class CognitiveLoadTask(BaseTask):
             test_idx: np.ndarray,
             metadata: Dict[str, Any]
     ) -> TaskSplit:
+        split_metadata = {
+            **metadata,
+            'dataset_metadata': self.data.metadata,
+            'target_names': self.data.metadata.get('target_cols'),
+        }
         return TaskSplit(
             X_train=self.data.data[train_idx],
             y_train=self.data.labels[train_idx],
@@ -127,7 +132,7 @@ class CognitiveLoadTask(BaseTask):
             subject_train=self.data.subject_ids[train_idx],
             subject_test=self.data.subject_ids[test_idx],
             feature_names=self.data.feature_names,
-            metadata=metadata,
+            metadata=split_metadata,
             sample_id_train=self.data.sample_ids[train_idx],
             sample_id_test=self.data.sample_ids[test_idx],
             record_id_train=self.data.record_ids[train_idx],
@@ -162,6 +167,10 @@ class FocusRegressionTask(CognitiveLoadTask):
 
     def _validate_classes(self):
         labels = np.asarray(self.data.labels, dtype=float)
+        if labels.ndim != 1:
+            raise ValueError(
+                f'Focus regression requires one-dimensional labels, got {labels.shape}'
+            )
         if not np.isfinite(labels).all():
             raise ValueError('Regression labels must be finite')
         if len(np.unique(labels)) < 2:
@@ -188,3 +197,40 @@ class FocusRegressionTask(CognitiveLoadTask):
     @property
     def name(self) -> str:
         return 'focus_regression'
+
+
+class PerformanceMetricsRegressionTask(FocusRegressionTask):
+    """Joint regression of the configured Performance Metrics targets."""
+
+    def __init__(self, data: EEGData, config: Dict[str, Any]):
+        self.target_names = list(data.metadata.get('target_cols', []))
+        configured_outputs = config.get('n_outputs')
+        self.expected_n_outputs = (
+            len(self.target_names)
+            if configured_outputs is None
+            else int(configured_outputs)
+        )
+        super().__init__(data, config)
+
+    def _validate_classes(self):
+        labels = np.asarray(self.data.labels, dtype=float)
+        if labels.ndim != 2:
+            raise ValueError(
+                'Performance Metrics regression requires two-dimensional labels, '
+                f'got {labels.shape}'
+            )
+        if labels.shape[1] != self.expected_n_outputs:
+            raise ValueError(
+                f'Expected {self.expected_n_outputs} regression outputs, '
+                f'got {labels.shape[1]}'
+            )
+        if len(self.target_names) != labels.shape[1]:
+            raise ValueError(
+                'Dataset target_cols metadata must match the regression outputs'
+            )
+        if not np.isfinite(labels).all():
+            raise ValueError('Regression labels must be finite')
+
+    @property
+    def name(self) -> str:
+        return 'performance_metrics_regression'

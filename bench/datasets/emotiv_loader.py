@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from .base_eeg_data_loader import BaseEEGDataset
 from .base_eeg_data_loader import feature_list_sha256
 from ..core.abstract_dataset import EEGData
@@ -10,6 +10,29 @@ from ..core.abstract_dataset import EEGData
 class EmotivDataset(BaseEEGDataset):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
+        if 'target_col' in config and 'target_cols' in config:
+            raise ValueError(
+                "Dataset config must define either 'target_col' or 'target_cols', "
+                'not both'
+            )
+        configured_targets = config.get('target_cols')
+        if configured_targets is not None:
+            if (
+                not isinstance(configured_targets, list)
+                or not configured_targets
+                or not all(
+                    isinstance(column, str) and column.strip()
+                    for column in configured_targets
+                )
+            ):
+                raise ValueError('target_cols must be a non-empty list of strings')
+            if len(set(configured_targets)) != len(configured_targets):
+                raise ValueError('target_cols must contain unique column names')
+        self.target_cols: Optional[List[str]] = (
+            None
+            if configured_targets is None
+            else list(configured_targets)
+        )
         self.target_col = config.get('target_col', 'target_main')
         self.target_col_explicit = 'target_col' in config
         self.subject_col = config.get('subject_col', 'subject_id')
@@ -138,7 +161,26 @@ class EmotivDataset(BaseEEGDataset):
         }
         row_metadata['record_group_id'] = logical_record_ids
         feature_cols = self._select_features(df)
-        if self.target_col not in df.columns:
+        forbidden_features = [
+            column
+            for column in feature_cols
+            if column.startswith('target_') or column.startswith('PM.')
+        ]
+        if forbidden_features:
+            raise ValueError(
+                'Target/Performance Metric columns cannot be input features: '
+                f'{forbidden_features[:20]}'
+            )
+        if self.target_cols is not None:
+            missing_targets = [
+                column for column in self.target_cols if column not in df.columns
+            ]
+            if missing_targets:
+                raise ValueError(
+                    f'Configured target columns are absent from the dataset: '
+                    f'{missing_targets}'
+                )
+        elif self.target_col not in df.columns:
             if self.target_col_explicit:
                 raise ValueError(
                     f"Configured target column {self.target_col!r} "
@@ -151,14 +193,32 @@ class EmotivDataset(BaseEEGDataset):
                     break
             else:
                 raise ValueError(f"No target column found. Available: {df.columns.tolist()[:20]}")
-        X = df[feature_cols].values.astype(np.float32)
-        y = df[self.target_col].values
-        y = self._discretize_target(y)
+        n_samples_before_target_filter = len(df)
+        X = (
+            df[feature_cols]
+            .apply(pd.to_numeric, errors='coerce')
+            .to_numpy(dtype=np.float32)
+        )
+        if self.target_cols is None:
+            y = pd.to_numeric(df[self.target_col], errors='coerce').to_numpy()
+            y = self._discretize_target(y)
+            target_valid_mask = np.isfinite(y)
+        else:
+            y = (
+                df[self.target_cols]
+                .apply(pd.to_numeric, errors='coerce')
+                .to_numpy(dtype=np.float32)
+            )
+            target_valid_mask = np.isfinite(y).all(axis=1)
         if self.subject_col in df.columns:
             subject_ids = df[self.subject_col].astype(str).values
         else:
             subject_ids = np.array(['unknown'] * len(df))
-        valid_mask = ~np.isnan(y) & ~np.isnan(X).any(axis=1)
+        feature_valid_mask = np.isfinite(X).all(axis=1)
+        valid_mask = target_valid_mask & feature_valid_mask
+        n_samples_after_target_filter = int(target_valid_mask.sum())
+        dropped_target_rows = int((~target_valid_mask).sum())
+        dropped_feature_rows = int((target_valid_mask & ~feature_valid_mask).sum())
         X = X[valid_mask]
         y = y[valid_mask]
         subject_ids = subject_ids[valid_mask]
@@ -225,7 +285,11 @@ class EmotivDataset(BaseEEGDataset):
                     column: values[selected]
                     for column, values in row_metadata.items()
                 }
-        unique_classes = np.unique(y)
+        unique_classes = (
+            np.unique(y)
+            if self.target_cols is None
+            else np.asarray([], dtype=float)
+        )
 
         return EEGData(
             data=X,
@@ -240,7 +304,25 @@ class EmotivDataset(BaseEEGDataset):
                 'n_features': len(feature_cols),
                 'feature_set': self.feature_set,
                 'feature_list_sha256': feature_list_sha256(feature_cols),
-                'target_col': self.target_col,
+                'target_col': (
+                    self.target_col if self.target_cols is None else None
+                ),
+                'target_cols': (
+                    None if self.target_cols is None else list(self.target_cols)
+                ),
+                'n_outputs': (
+                    1 if self.target_cols is None else len(self.target_cols)
+                ),
+                'task_type': (
+                    'regression'
+                    if self.target_cols is not None
+                    else self.config.get('task_type', 'classification')
+                ),
+                'n_samples_before_target_filter': n_samples_before_target_filter,
+                'n_samples_after_target_filter': n_samples_after_target_filter,
+                'n_samples_after_complete_case_filter': len(X),
+                'dropped_target_rows': dropped_target_rows,
+                'dropped_feature_rows': dropped_feature_rows,
                 'discretize': bool(self.config.get('discretize', True)),
                 'n_subjects': len(np.unique(subject_ids)),
                 'n_records': len(np.unique(record_ids)),

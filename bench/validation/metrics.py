@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import re
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import (
     accuracy_score, balanced_accuracy_score, precision_score, recall_score, f1_score,
@@ -56,10 +58,15 @@ class MetricsCalculator:
             average: str = 'weighted',
             task_type: str = 'classification',
             expected_rank: Optional[np.ndarray] = None,
+            target_names: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         normalized_task = str(task_type).strip().lower()
         if normalized_task in {'regression', 'regressor'}:
-            return MetricsCalculator.calculate_regression_metrics(y_true, y_pred)
+            return MetricsCalculator.calculate_regression_metrics(
+                y_true,
+                y_pred,
+                target_names=target_names,
+            )
         if normalized_task not in {'classification', 'classifier'}:
             raise ValueError(f'Unknown task_type {task_type!r}')
         metrics = {}
@@ -140,9 +147,10 @@ class MetricsCalculator:
     def calculate_regression_metrics(
             y_true: np.ndarray,
             y_pred: np.ndarray,
+            target_names: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        truth = np.asarray(y_true, dtype=float).reshape(-1)
-        prediction = np.asarray(y_pred, dtype=float).reshape(-1)
+        truth = np.asarray(y_true, dtype=float)
+        prediction = np.asarray(y_pred, dtype=float)
         if truth.shape != prediction.shape:
             raise ValueError(
                 f'Regression arrays must have equal shape: '
@@ -150,6 +158,90 @@ class MetricsCalculator:
             )
         if not np.isfinite(truth).all() or not np.isfinite(prediction).all():
             raise ValueError('Regression metrics require finite values')
+
+        if truth.ndim == 1:
+            return MetricsCalculator._single_regression_metrics(
+                truth,
+                prediction,
+            )
+        if truth.ndim != 2:
+            raise ValueError(
+                'Regression arrays must be one- or two-dimensional, '
+                f'got {truth.shape}'
+            )
+        n_outputs = truth.shape[1]
+        resolved_names = (
+            [f'target_{index}' for index in range(n_outputs)]
+            if target_names is None
+            else list(target_names)
+        )
+        if len(resolved_names) != n_outputs:
+            raise ValueError(
+                f'target_names must contain {n_outputs} values, '
+                f'got {len(resolved_names)}'
+            )
+        normalized_names = [
+            MetricsCalculator.normalize_target_name(name)
+            for name in resolved_names
+        ]
+        if len(set(normalized_names)) != len(normalized_names):
+            raise ValueError(
+                f'Normalized target names must be unique: {normalized_names}'
+            )
+
+        result: Dict[str, Any] = {
+            'n_samples': int(len(truth)),
+            'n_outputs': int(n_outputs),
+            'target_names': resolved_names,
+            'task_type': 'regression',
+        }
+        per_target = []
+        values_by_metric = {
+            name: [] for name in ('mae', 'rmse', 'r2', 'pearson', 'spearman')
+        }
+        for target_index, (target_name, normalized_name) in enumerate(
+            zip(resolved_names, normalized_names)
+        ):
+            target_metrics = MetricsCalculator._single_regression_metrics(
+                truth[:, target_index],
+                prediction[:, target_index],
+            )
+            per_target.append({
+                'target_name': target_name,
+                'target_key': normalized_name,
+                **{
+                    name: target_metrics[name]
+                    for name in values_by_metric
+                },
+                'n_samples': int(len(truth)),
+            })
+            for metric_name in values_by_metric:
+                value = target_metrics[metric_name]
+                values_by_metric[metric_name].append(value)
+                result[f'{metric_name}_{normalized_name}'] = value
+                result[f'window_{metric_name}_{normalized_name}'] = value
+
+        result['per_target'] = per_target
+        for metric_name, values in values_by_metric.items():
+            metric_values = np.asarray(values, dtype=float)
+            finite = metric_values[np.isfinite(metric_values)]
+            macro = (
+                float(np.mean(finite))
+                if len(finite)
+                else np.nan
+            )
+            result[f'{metric_name}_macro'] = macro
+            result[f'window_{metric_name}_macro'] = macro
+            result[f'{metric_name}_valid_targets'] = int(len(finite))
+        return result
+
+    @staticmethod
+    def _single_regression_metrics(
+            truth: np.ndarray,
+            prediction: np.ndarray,
+    ) -> Dict[str, Any]:
+        truth = np.asarray(truth, dtype=float).reshape(-1)
+        prediction = np.asarray(prediction, dtype=float).reshape(-1)
 
         has_truth_variation = len(truth) >= 2 and np.ptp(truth) > 0
         has_prediction_variation = len(prediction) >= 2 and np.ptp(prediction) > 0
@@ -177,6 +269,64 @@ class MetricsCalculator:
             'n_samples': int(len(truth)),
             'task_type': 'regression',
         }
+
+    @staticmethod
+    def normalize_target_name(target_name: str) -> str:
+        normalized = str(target_name).strip()
+        if normalized.lower().startswith('target_'):
+            normalized = normalized[7:]
+        normalized = re.sub(r'[^0-9A-Za-z]+', '_', normalized)
+        return normalized.strip('_').lower()
+
+    @staticmethod
+    def calculate_subject_regression_metrics(
+            y_true: np.ndarray,
+            y_pred: np.ndarray,
+            subject_ids: np.ndarray,
+            target_names: List[str],
+            fold: Any,
+    ) -> tuple[Dict[str, Any], pd.DataFrame]:
+        truth = np.asarray(y_true, dtype=float)
+        prediction = np.asarray(y_pred, dtype=float)
+        subjects = np.asarray(subject_ids).astype(str)
+        if truth.ndim != 2 or truth.shape != prediction.shape:
+            raise ValueError('Subject-level regression requires equal 2D arrays')
+        if len(subjects) != len(truth):
+            raise ValueError('subject_ids must match regression rows')
+        if len(target_names) != truth.shape[1]:
+            raise ValueError('target_names must match regression outputs')
+
+        rows = []
+        subject_truth = []
+        subject_prediction = []
+        for subject_id in sorted(np.unique(subjects).tolist()):
+            mask = subjects == subject_id
+            truth_mean = np.mean(truth[mask], axis=0)
+            prediction_mean = np.mean(prediction[mask], axis=0)
+            subject_truth.append(truth_mean)
+            subject_prediction.append(prediction_mean)
+            for target_index, target_name in enumerate(target_names):
+                rows.append({
+                    'fold': fold,
+                    'subject_id': subject_id,
+                    'target_name': target_name,
+                    'y_true_mean': float(truth_mean[target_index]),
+                    'y_pred_mean': float(prediction_mean[target_index]),
+                    'n_windows': int(mask.sum()),
+                })
+        subject_metrics = MetricsCalculator.calculate_regression_metrics(
+            np.asarray(subject_truth),
+            np.asarray(subject_prediction),
+            target_names=target_names,
+        )
+        prefixed = {
+            f'subject_{key}': value
+            for key, value in subject_metrics.items()
+            if key not in {'task_type', 'target_names', 'per_target'}
+        }
+        prefixed['subject_per_target'] = subject_metrics['per_target']
+        prefixed['subject_n_subjects'] = int(len(subject_truth))
+        return prefixed, pd.DataFrame(rows)
 
     @staticmethod
     def get_baseline_accuracy(n_classes: int) -> float:

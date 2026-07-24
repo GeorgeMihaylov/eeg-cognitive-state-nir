@@ -3,6 +3,7 @@ from .cognitive_load import (
     CognitiveLoad5ClassTask,
     CognitiveLoadTask,
     FocusRegressionTask,
+    PerformanceMetricsRegressionTask,
 )
 from .wesad_task import WESADTask
 from ..core.abstract_task import BaseTask
@@ -12,6 +13,7 @@ TASK_REGISTRY: Dict[str, Type[BaseTask]] = {
     'cognitive_load_3class': CognitiveLoadTask,
     'cognitive_load_5class': CognitiveLoad5ClassTask,
     'focus_regression': FocusRegressionTask,
+    'performance_metrics_regression': PerformanceMetricsRegressionTask,
     'wesad_4class': WESADTask,
 }
 

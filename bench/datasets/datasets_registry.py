@@ -8,6 +8,7 @@ from .wesad_loader import WESADDataset
 
 DATASET_REGISTRY: Dict[str, Type[BaseDataset]] = {
     'emotiv_cognitive': EmotivDataset,
+    'emotiv_pm_regression': EmotivDataset,
     'emotiv_raw_eeg': RawEEGWindowDataset,
     'wesad': WESADDataset,
 }

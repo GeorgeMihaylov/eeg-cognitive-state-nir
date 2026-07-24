@@ -179,10 +179,16 @@ def validate_config(config: Dict[str, Any]) -> bool:
         if (
             model_type in TORCH_MODEL_NAMES
             and normalized_task_type == 'regression'
+            and model_type != 'torch_mlp'
         ):
             errors.append(
                 f"Model '{model_alias}' uses '{model_type}', which does not "
                 "support regression yet"
+            )
+        if model_type == 'mean_regressor' and normalized_task_type != 'regression':
+            errors.append(
+                f"Model '{model_alias}' uses mean_regressor, which is "
+                'regression-only'
             )
 
     for dataset_name, dataset_config in datasets.items():
@@ -201,6 +207,58 @@ def validate_config(config: Dict[str, Any]) -> bool:
             errors.append(
                 f"Dataset '{dataset_name}' data path not found: {data_path}"
             )
+        has_target_col = 'target_col' in dataset_config
+        has_target_cols = 'target_cols' in dataset_config
+        if has_target_col and has_target_cols:
+            errors.append(
+                f"Dataset '{dataset_name}' must not define both target_col "
+                'and target_cols'
+            )
+        target_cols = dataset_config.get('target_cols')
+        if has_target_cols and (
+            not isinstance(target_cols, list)
+            or not target_cols
+            or not all(
+                isinstance(column, str) and column.strip()
+                for column in target_cols
+            )
+        ):
+            errors.append(
+                f"Dataset '{dataset_name}' target_cols must be a non-empty "
+                'list of strings'
+            )
+        elif has_target_cols and len(set(target_cols)) != len(target_cols):
+            errors.append(
+                f"Dataset '{dataset_name}' target_cols must be unique"
+            )
+        if expected_task_type == 'classification' and has_target_cols:
+            errors.append(
+                f"Classification dataset '{dataset_name}' cannot use target_cols"
+            )
+        if 'performance_metrics_regression' in valid_task_names:
+            if not has_target_cols:
+                errors.append(
+                    f"Dataset '{dataset_name}' must define target_cols for "
+                    'performance_metrics_regression'
+                )
+            if dataset_config.get('discretize', True) is not False:
+                errors.append(
+                    f"Dataset '{dataset_name}' must set discretize: false for "
+                    'performance_metrics_regression'
+                )
+            configured_outputs = dataset_config.get(
+                'n_outputs',
+                config.get('task_config', {}).get('n_outputs'),
+            )
+            if (
+                isinstance(target_cols, list)
+                and configured_outputs is not None
+                and int(configured_outputs) != len(target_cols)
+            ):
+                errors.append(
+                    f"Dataset '{dataset_name}' n_outputs={configured_outputs} "
+                    f"does not match {len(target_cols)} target_cols"
+                )
 
     if errors:
         logger.error("Configuration validation failed:")

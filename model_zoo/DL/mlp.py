@@ -68,6 +68,7 @@ def build_torch_mlp(
     input_shape: Sequence[int],
     num_outputs: int,
     params: Optional[Mapping[str, Any]] = None,
+    task_type: str = "classification",
 ) -> TorchClassificationAdapter:
     shape = tuple(int(dim) for dim in input_shape)
     if len(shape) != 1:
@@ -77,6 +78,7 @@ def build_torch_mlp(
     dropout = model_params.pop("dropout", 0.3)
     activation = model_params.pop("activation", "relu")
     random_state = int(model_params.get("random_state", 42))
+    regression_loss = model_params.pop("regression_loss", "mse")
     seed_torch(random_state)
     model = TorchMLP(
         input_dim=shape[0],
@@ -90,11 +92,20 @@ def build_torch_mlp(
             model=model,
             input_shape=shape,
             num_classes=num_outputs,
+            task_type=task_type,
+            regression_loss=regression_loss,
             model_metadata={
                 "model_type": "torch_mlp",
+                "task_type": str(task_type),
                 "hidden_dims": list(hidden_dims),
                 "dropout": float(dropout),
                 "activation": str(activation),
+                "regression_loss": (
+                    str(regression_loss)
+                    if str(task_type).strip().lower()
+                    in {"regression", "regressor"}
+                    else None
+                ),
             },
             **model_params,
         )

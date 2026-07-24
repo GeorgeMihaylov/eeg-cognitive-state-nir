@@ -7,7 +7,7 @@ CLASSIFICATION_MODEL_NAMES = frozenset(
     {"logistic_regression", "mlp", "random_forest", "svm", "xgboost"}
 )
 REGRESSION_MODEL_NAMES = frozenset(
-    {"mlp", "random_forest", "svm", "xgboost"}
+    {"mean_regressor", "mlp", "random_forest", "svm", "xgboost"}
 )
 SKLEARN_MODEL_NAMES = CLASSIFICATION_MODEL_NAMES | REGRESSION_MODEL_NAMES
 
@@ -76,6 +76,11 @@ def build_sklearn_model(
         from sklearn.ensemble import RandomForestRegressor
 
         return RandomForestRegressor(**model_params)
+    if normalized_name == "mean_regressor":
+        from sklearn.dummy import DummyRegressor
+
+        model_params.setdefault("strategy", "mean")
+        return DummyRegressor(**model_params)
     if normalized_name == "svm":
         from sklearn.svm import SVR
 

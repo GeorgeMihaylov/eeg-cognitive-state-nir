@@ -72,6 +72,11 @@ class EEGData:
     def n_classes(self) -> int:
         return len(np.unique(self.labels))
 
+    @property
+    def n_outputs(self) -> int:
+        labels = np.asarray(self.labels)
+        return 1 if labels.ndim == 1 else int(labels.shape[1])
+
 
 class BaseDataset(ABC):
     def __init__(self, config: Dict[str, Any]):

@@ -48,7 +48,15 @@ def build_model(
         return cast(ModelLike, model)
 
     if normalized_name in TORCH_MODEL_NAMES:
-        if task_type.strip().lower() not in {"classification", "classifier"}:
+        normalized_task_type = task_type.strip().lower()
+        is_classification = normalized_task_type in {
+            "classification",
+            "classifier",
+        }
+        is_regression = normalized_task_type in {"regression", "regressor"}
+        if not is_classification and not (
+            normalized_name == "torch_mlp" and is_regression
+        ):
             raise ValueError(f"{normalized_name} currently supports classification only")
         if input_shape is None:
             raise ValueError(
@@ -65,6 +73,9 @@ def build_model(
                     input_shape=input_shape,
                     num_outputs=int(num_outputs),
                     params=params,
+                    task_type=(
+                        "regression" if is_regression else "classification"
+                    ),
                 ),
             )
 
