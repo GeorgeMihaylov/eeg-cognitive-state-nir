@@ -37,6 +37,8 @@ def test_default_config_uses_explicit_five_class_task() -> None:
 
     assert config["tasks"] == ["cognitive_load_5class"]
     assert config["datasets"]["emotiv_cognitive"]["n_classes"] == 5
+    assert config["datasets"]["emotiv_cognitive"]["target_col"] == "label_q5"
+    assert config["datasets"]["emotiv_cognitive"]["discretize"] is False
     assert (
         config["datasets"]["emotiv_cognitive"]["data_path"]
         == "./data/processed/windowed_eeg_pm_dataset_w10.parquet"

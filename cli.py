@@ -42,8 +42,9 @@ def create_default_config() -> Dict[str, Any]:
             'emotiv_cognitive': {
                 'data_path': './data/processed/windowed_eeg_pm_dataset_w10.parquet',
                 'feature_set': 'pow_plus_eeg',
+                'target_col': 'label_q5',
                 'n_classes': 5,
-                'discretize': True,
+                'discretize': False,
                 'max_features': 500
             }
         },

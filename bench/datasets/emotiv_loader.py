@@ -11,6 +11,7 @@ class EmotivDataset(BaseEEGDataset):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.target_col = config.get('target_col', 'target_main')
+        self.target_col_explicit = 'target_col' in config
         self.subject_col = config.get('subject_col', 'subject_id')
 
     def load(self) -> EEGData:
@@ -138,6 +139,11 @@ class EmotivDataset(BaseEEGDataset):
         row_metadata['record_group_id'] = logical_record_ids
         feature_cols = self._select_features(df)
         if self.target_col not in df.columns:
+            if self.target_col_explicit:
+                raise ValueError(
+                    f"Configured target column {self.target_col!r} "
+                    "is absent from the dataset"
+                )
             target_candidates = ['target_main', 'label_q5'] + [c for c in df.columns if c.startswith('target_')]
             for candidate in target_candidates:
                 if candidate in df.columns:
@@ -234,6 +240,8 @@ class EmotivDataset(BaseEEGDataset):
                 'n_features': len(feature_cols),
                 'feature_set': self.feature_set,
                 'feature_list_sha256': feature_list_sha256(feature_cols),
+                'target_col': self.target_col,
+                'discretize': bool(self.config.get('discretize', True)),
                 'n_subjects': len(np.unique(subject_ids)),
                 'n_records': len(np.unique(record_ids)),
                 'max_windows': max_windows,

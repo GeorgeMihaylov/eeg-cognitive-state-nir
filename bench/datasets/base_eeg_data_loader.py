@@ -100,37 +100,54 @@ class BaseEEGDataset(BaseDataset):
         return include
 
     def _discretize_target(self, y: np.ndarray) -> np.ndarray:
+        # Preserve missing values and avoid rediscretizing stored class labels.
+        values = np.asarray(y, dtype=float)
+
         if not self.config.get('discretize', True):
-            return y
+            return values
 
-        valid_mask = ~np.isnan(y)
-        y_valid = y[valid_mask]
+        valid_mask = np.isfinite(values)
+        result = np.full(values.shape, np.nan, dtype=float)
+        y_valid = values[valid_mask]
 
-        if len(y_valid) < self.n_classes * 2:
-            return pd.qcut(y_valid, q=self.n_classes, labels=False, duplicates='drop').values
+        if y_valid.size == 0:
+            return result
+
+        unique_values = np.unique(y_valid)
+        integer_like = np.allclose(
+            unique_values,
+            np.round(unique_values),
+        )
+        configured_classes = set(range(int(self.n_classes)))
+        observed_classes = {
+            int(value)
+            for value in unique_values.tolist()
+        }
+
+        if integer_like and observed_classes == configured_classes:
+            result[valid_mask] = y_valid
+            return result
 
         try:
-            labels = pd.qcut(y_valid, q=self.n_classes, labels=False, duplicates='drop')
-            result = np.full(len(y), -1, dtype=int)
-            result[valid_mask] = labels.values
-            result[result == -1] = 0
-            unique = np.unique(result)
-            if len(unique) < self.n_classes:
-                for i in range(self.n_classes):
-                    if i not in unique:
-                        result[result >= i] += 1
+            labels = pd.qcut(
+                y_valid,
+                q=self.n_classes,
+                labels=False,
+                duplicates='drop',
+            )
+            result[valid_mask] = np.asarray(labels, dtype=float)
+        except (ValueError, TypeError):
+            bins = np.linspace(
+                float(y_valid.min()),
+                float(y_valid.max()),
+                self.n_classes + 1,
+            )
+            result[valid_mask] = np.digitize(
+                y_valid,
+                bins[1:-1],
+            ).astype(float)
 
-            return result
-        except Exception as e:
-            y_valid = y[valid_mask]
-            bins = np.linspace(y_valid.min(), y_valid.max(), self.n_classes + 1)
-            labels = np.digitize(y_valid, bins[1:-1])
-
-            result = np.full(len(y), -1, dtype=int)
-            result[valid_mask] = labels
-            result[result == -1] = 0
-
-            return result
+        return result
 
     def get_description(self) -> Dict[str, Any]:
         return {
