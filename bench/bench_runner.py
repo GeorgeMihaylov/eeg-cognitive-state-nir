@@ -419,7 +419,30 @@ class BenchmarkRunner:
                 f"      Built model '{model_type}' with input_shape={input_shape}, "
                 f"num_outputs={num_outputs}"
             )
+        self._configure_model_feature_preprocessing(
+            model, model_config, split
+        )
         return model
+
+    def _configure_model_feature_preprocessing(
+            self,
+            model: ModelLike,
+            model_config: Mapping[str, Any],
+            split: TaskSplit,
+    ) -> None:
+        """Apply one feature transform contract to every evaluation protocol."""
+        configure_preprocessing = getattr(
+            model, 'configure_feature_preprocessing', None
+        )
+        if not callable(configure_preprocessing):
+            return
+        feature_scaling = model_config.get(
+            'feature_scaling', self.config.get('feature_scaling')
+        )
+        configure_preprocessing(
+            feature_scaling,
+            feature_names=split.feature_names,
+        )
 
     def load_dataset(self, dataset_name: str) -> EEGData:
         try:
@@ -1489,6 +1512,207 @@ class BenchmarkRunner:
                     json.dump(normalization, output, indent=2)
                 artifacts['normalization_stats'] = str(normalization_path)
 
+            get_preprocessing_state = getattr(
+                model, 'get_feature_preprocessing_state', None
+            )
+            preprocessing_state = (
+                get_preprocessing_state()
+                if callable(get_preprocessing_state)
+                else None
+            )
+            if preprocessing_state is not None:
+                scaling_path = artifact_dir / 'feature_scaling.json'
+                with open(scaling_path, 'w', encoding='utf-8') as output:
+                    json.dump(
+                        preprocessing_state,
+                        output,
+                        indent=2,
+                        default=_json_default,
+                    )
+                artifacts['feature_scaling'] = str(scaling_path)
+
+                clipping_path = artifact_dir / 'feature_clipping.json'
+                clipping_state = {
+                    'scope': preprocessing_state['scope'],
+                    'train_only': preprocessing_state['train_only'],
+                    'enabled': preprocessing_state['clipping_enabled'],
+                    'percentiles': preprocessing_state['clip_percentiles'],
+                    'lower': preprocessing_state['clip_lower'],
+                    'upper': preprocessing_state['clip_upper'],
+                    'feature_hash': preprocessing_state['feature_hash'],
+                }
+                with open(clipping_path, 'w', encoding='utf-8') as output:
+                    json.dump(clipping_state, output, indent=2)
+                artifacts['feature_clipping'] = str(clipping_path)
+
+                diagnostics = dict(
+                    getattr(
+                        model,
+                        'feature_preprocessing_diagnostics_',
+                        {},
+                    )
+                )
+                feature_diagnostics = getattr(
+                    model, 'feature_transform_diagnostics', None
+                )
+                if callable(feature_diagnostics):
+                    diagnostics['outer_test'] = feature_diagnostics(
+                        split.X_test
+                    )
+                transform_path = artifact_dir / 'feature_transform.json'
+                transform_state = {
+                    'scope': preprocessing_state['scope'],
+                    'train_only': preprocessing_state['train_only'],
+                    'strategy': preprocessing_state['strategy'],
+                    'pow_log_enabled': preprocessing_state['pow_log_enabled'],
+                    'pow_log_rule': preprocessing_state['pow_log_rule'],
+                    'pow_feature_indices': preprocessing_state[
+                        'pow_feature_indices'
+                    ],
+                    'feature_hash': preprocessing_state['feature_hash'],
+                    'diagnostics': diagnostics,
+                    'leakage_audit': {
+                        'fit_sample_count': preprocessing_state[
+                            'n_fit_samples'
+                        ],
+                        'fit_group_count': (
+                            validation_split or {}
+                        ).get('inner_train_groups'),
+                        'validation_group_count': (
+                            validation_split or {}
+                        ).get('inner_validation_groups'),
+                        'test_group_count': int(
+                            len(np.unique(np.asarray(split.subject_test)))
+                        ),
+                        'fit_validation_overlap': (
+                            validation_split or {}
+                        ).get('inner_group_overlap'),
+                        'fit_test_overlap': (
+                            validation_split or {}
+                        ).get('train_outer_test_overlap_count'),
+                        'inner_train_groups': (
+                            validation_split or {}
+                        ).get('inner_train_groups'),
+                        'inner_validation_groups': (
+                            validation_split or {}
+                        ).get('inner_validation_groups'),
+                        'inner_group_overlap': (
+                            validation_split or {}
+                        ).get('inner_group_overlap'),
+                        'train_outer_test_overlap_count': (
+                            validation_split or {}
+                        ).get('train_outer_test_overlap_count'),
+                        'validation_outer_test_overlap_count': (
+                            validation_split or {}
+                        ).get('validation_outer_test_overlap_count'),
+                    },
+                }
+                with open(transform_path, 'w', encoding='utf-8') as output:
+                    json.dump(
+                        transform_state,
+                        output,
+                        indent=2,
+                        default=_json_default,
+                    )
+                artifacts['feature_transform'] = str(transform_path)
+
+                validation_details = getattr(
+                    model, 'validation_partition_detailed', None
+                )
+                if (
+                    str(task_type).strip().lower()
+                    in {'regression', 'regressor'}
+                    and callable(validation_details)
+                ):
+                    detailed = validation_details(
+                        split.X_train, split.y_train
+                    )
+                    indices = np.asarray(detailed['indices'], dtype=np.int64)
+                    validation_subjects = np.asarray(
+                        split.subject_train
+                    )[indices]
+                    validation_sources = np.asarray(
+                        split.row_metadata_train.get(
+                            'source',
+                            np.full(
+                                len(split.y_train),
+                                'unknown',
+                                dtype=object,
+                            ),
+                        )
+                    )[indices]
+                    truth = np.asarray(detailed['y_true'], dtype=float)
+                    predicted = np.asarray(detailed['y_pred'], dtype=float)
+                    absolute_predictions = np.abs(predicted)
+                    transform_state['validation_prediction_diagnostics'] = {
+                        'max_abs': float(np.max(absolute_predictions)),
+                        'p99_abs': float(np.percentile(
+                            absolute_predictions, 99
+                        )),
+                        'nonfinite_values': int(np.sum(
+                            ~np.isfinite(predicted)
+                        )),
+                    }
+                    with open(
+                        transform_path, 'w', encoding='utf-8'
+                    ) as output:
+                        json.dump(
+                            transform_state,
+                            output,
+                            indent=2,
+                            default=_json_default,
+                        )
+                    subject_rows = []
+                    for subject in np.unique(validation_subjects):
+                        mask = validation_subjects == subject
+                        errors = predicted[mask] - truth[mask]
+                        transformed_subject = feature_diagnostics(
+                            split.X_train[indices[mask]]
+                        )
+                        subject_rows.append({
+                            'dataset': dataset_name,
+                            'task': task_name,
+                            'model': model_name,
+                            'fold': split.metadata.get('fold'),
+                            'subject_id': str(subject),
+                            'source': '|'.join(sorted(
+                                set(
+                                    validation_sources[mask]
+                                    .astype(str)
+                                    .tolist()
+                                )
+                            )),
+                            'windows': int(np.sum(mask)),
+                            'mse': float(np.mean(np.square(errors))),
+                            'mae': float(np.mean(np.abs(errors))),
+                            'max_abs_prediction': float(
+                                np.max(np.abs(predicted[mask]))
+                            ),
+                            'p99_abs_prediction': float(
+                                np.percentile(
+                                    np.abs(predicted[mask]), 99
+                                )
+                            ),
+                            'max_abs_target': float(
+                                np.max(np.abs(truth[mask]))
+                            ),
+                            'max_abs_transformed_feature': (
+                                transformed_subject['max_abs']
+                            ),
+                            'p99_abs_transformed_feature': (
+                                transformed_subject['p99_abs']
+                            ),
+                        })
+                    subject_metrics_path = (
+                        artifact_dir / 'robust_scaling_subject_metrics.csv'
+                    )
+                    pd.DataFrame(subject_rows).to_csv(
+                        subject_metrics_path, index=False
+                    )
+                    artifacts['robust_scaling_subject_metrics'] = str(
+                        subject_metrics_path
+                    )
+
         return artifacts
 
     @staticmethod
@@ -1818,6 +2042,9 @@ class BenchmarkRunner:
             input_shape=tuple(split.X_train.shape[1:]),
             num_outputs=num_outputs,
         )
+        self._configure_model_feature_preprocessing(
+            model, split_model_config, split
+        )
         split_name = str(split.metadata['fold_name'])
         logger.info(
             f"      {model_name} {split_name}: "
@@ -1907,6 +2134,9 @@ class BenchmarkRunner:
                 split_model_config,
                 input_shape=tuple(split.X_train.shape[1:]),
                 num_outputs=num_outputs,
+            )
+            self._configure_model_feature_preprocessing(
+                model, split_model_config, split
             )
             logger.info(
                 f"      {model_name} {fold_name}: "
@@ -2085,6 +2315,9 @@ class BenchmarkRunner:
                     model_config,
                     input_shape=tuple(split.X_train.shape[1:]),
                     num_outputs=num_outputs,
+                )
+                self._configure_model_feature_preprocessing(
+                    fold_model, model_config, split
                 )
             if fold_model is None:
                 raise ValueError(f"Model '{model_name}' has not been initialized")

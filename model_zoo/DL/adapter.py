@@ -12,6 +12,7 @@ from torch import nn
 from torch.utils.data import DataLoader, Dataset, TensorDataset
 
 from ..base import BaseModelAdapter, PathLike
+from .feature_preprocessing import FeaturePreprocessor
 from .ordinal import ClassificationObjectiveHandler
 from .regression import RegressionObjectiveHandler
 
@@ -85,6 +86,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         device: str = "auto",
         random_state: int = 42,
         standardize: bool = True,
+        feature_scaling: Optional[Mapping[str, Any]] = None,
+        feature_names: Optional[Sequence[str]] = None,
         num_workers: int = 0,
         model_metadata: Optional[Mapping[str, Any]] = None,
         objective_handler: Optional[Any] = None,
@@ -111,6 +114,15 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.requested_device = str(device)
         self.random_state = int(random_state)
         self.standardize = bool(standardize)
+        self.feature_scaling_config_ = dict(
+            feature_scaling
+            or {"strategy": "standard" if self.standardize else "none"}
+        )
+        self.feature_names_ = (
+            None
+            if feature_names is None
+            else tuple(str(name) for name in feature_names)
+        )
         self.num_workers = int(num_workers)
         self.model_metadata = dict(model_metadata or {})
         self.objective_handler = (
@@ -143,6 +155,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.training_log_: List[Dict[str, Any]] = []
         self.feature_mean_: Optional[np.ndarray] = None
         self.feature_scale_: Optional[np.ndarray] = None
+        self.feature_preprocessor_: Optional[FeaturePreprocessor] = None
+        self.feature_preprocessing_diagnostics_: Dict[str, Any] = {}
         self.best_epoch_: Optional[int] = None
         self.best_validation_loss_: Optional[float] = None
         self.best_validation_components_: Dict[str, float] = {}
@@ -328,29 +342,66 @@ class TorchClassificationAdapter(BaseModelAdapter):
         return labels
 
     def _fit_standardizer(self, X_train: Any) -> None:
-        if not self.standardize:
+        strategy = str(
+            self.feature_scaling_config_.get(
+                "strategy", "standard" if self.standardize else "none"
+            )
+        ).strip().lower()
+        if strategy == "none":
             self.feature_mean_ = None
             self.feature_scale_ = None
+            self.feature_preprocessor_ = None
             return
         if getattr(X_train, "is_lazy_raw_eeg", False):
+            if strategy != "standard":
+                raise ValueError(
+                    f"Feature scaling strategy {strategy!r} is only supported "
+                    "for in-memory feature matrices and sequences"
+                )
             mean, scale = X_train.compute_channel_statistics()
             self.feature_mean_ = np.asarray(mean, dtype=np.float32)
             self.feature_scale_ = np.asarray(scale, dtype=np.float32)
             return
         if X_train.ndim == 4:
+            if strategy != "standard":
+                raise ValueError(
+                    f"Feature scaling strategy {strategy!r} is not supported "
+                    "for raw EEG tensors"
+                )
             mean = X_train.mean(axis=(0, 1, 3), dtype=np.float64)
             scale = X_train.std(axis=(0, 1, 3), dtype=np.float64)
-        else:
-            statistics_rows = (
-                X_train.reshape(-1, X_train.shape[-1])
-                if X_train.ndim == 3
-                else X_train
+            scale = np.where(scale < 1e-8, 1.0, scale)
+            self.feature_mean_ = mean.astype(np.float32)
+            self.feature_scale_ = scale.astype(np.float32)
+            return
+        self.feature_preprocessor_ = FeaturePreprocessor(
+            self.feature_scaling_config_,
+            feature_names=self.feature_names_,
+        ).fit(X_train)
+        self.feature_mean_ = self.feature_preprocessor_.center_.copy()
+        self.feature_scale_ = self.feature_preprocessor_.scale_.copy()
+
+    def configure_feature_preprocessing(
+        self,
+        config: Optional[Mapping[str, Any]],
+        *,
+        feature_names: Optional[Sequence[str]] = None,
+    ) -> "TorchClassificationAdapter":
+        """Configure a train-only transform before fitting this adapter."""
+        if self.is_fitted_:
+            raise RuntimeError(
+                "Feature preprocessing must be configured before model fitting"
             )
-            mean = statistics_rows.mean(axis=0, dtype=np.float64)
-            scale = statistics_rows.std(axis=0, dtype=np.float64)
-        scale = np.where(scale < 1e-8, 1.0, scale)
-        self.feature_mean_ = mean.astype(np.float32)
-        self.feature_scale_ = scale.astype(np.float32)
+        self.feature_scaling_config_ = dict(
+            config
+            or {"strategy": "standard" if self.standardize else "none"}
+        )
+        self.feature_names_ = (
+            None
+            if feature_names is None
+            else tuple(str(name) for name in feature_names)
+        )
+        return self
 
     def set_validation_groups(
         self,
@@ -777,6 +828,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         return summary
 
     def _transform_features(self, X: Any) -> Any:
+        if self.feature_preprocessor_ is not None:
+            return self.feature_preprocessor_.transform(X)
         if self.feature_mean_ is None or self.feature_scale_ is None:
             return X
         if getattr(X, "is_lazy_raw_eeg", False):
@@ -818,7 +871,42 @@ class TorchClassificationAdapter(BaseModelAdapter):
             raise ValueError("Normalization scale must be positive")
         self.feature_mean_ = mean_array.copy()
         self.feature_scale_ = scale_array.copy()
+        self.feature_preprocessor_ = None
         return self
+
+    def get_feature_preprocessing_state(self) -> Optional[Dict[str, Any]]:
+        """Return JSON-safe fitted feature preprocessing metadata."""
+        if self.feature_preprocessor_ is None:
+            return None
+        return self.feature_preprocessor_.to_state()
+
+    def transform_features_for_audit(self, X: Any) -> np.ndarray:
+        """Apply the fitted transform without running model inference."""
+        if not self.is_fitted_:
+            raise RuntimeError("The model must be fitted before feature audit")
+        transformed = self._transform_features(self._validate_features(X))
+        if getattr(transformed, "is_lazy_raw_eeg", False):
+            raise ValueError("Lazy raw EEG transforms cannot be materialized for audit")
+        return np.asarray(transformed, dtype=np.float32)
+
+    def feature_transform_diagnostics(self, X: Any) -> Dict[str, Any]:
+        """Describe transformed magnitudes for an arbitrary partition."""
+        if self.feature_preprocessor_ is None:
+            transformed = self.transform_features_for_audit(X)
+            absolute = np.abs(np.asarray(transformed, dtype=np.float64))
+            return {
+                "samples": int(len(transformed)),
+                "values": int(transformed.size),
+                "max_abs": float(np.max(absolute)),
+                "p95_abs": float(np.percentile(absolute, 95)),
+                "p99_abs": float(np.percentile(absolute, 99)),
+                "values_abs_gt_5": int(np.sum(absolute > 5)),
+                "values_abs_gt_10": int(np.sum(absolute > 10)),
+                "values_abs_gt_100": int(np.sum(absolute > 100)),
+                "values_abs_gt_1000": int(np.sum(absolute > 1000)),
+                "nonfinite_values": int(np.sum(~np.isfinite(transformed))),
+            }
+        return self.feature_preprocessor_.diagnostics(X)
 
     def _make_loader(
         self,
@@ -877,6 +965,16 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self._fit_standardizer(X_train)
         X_train = self._transform_features(X_train)
         X_validation = self._transform_features(X_validation)
+        self.feature_preprocessing_diagnostics_ = {}
+        if self.feature_preprocessor_ is not None:
+            self.feature_preprocessing_diagnostics_ = {
+                "inner_train": self.feature_preprocessor_.diagnostics(
+                    features[self.inner_train_indices_]
+                ),
+                "inner_validation": self.feature_preprocessor_.diagnostics(
+                    features[self.inner_validation_indices_]
+                ),
+            }
         train_loader = self._make_loader(X_train, y_train, shuffle=True)
         validation_loader = self._make_loader(X_validation, y_validation)
 
@@ -1058,10 +1156,6 @@ class TorchClassificationAdapter(BaseModelAdapter):
         exact validation partition of an already completed checkpoint.
         """
         raw_labels = np.asarray(y)
-        if raw_labels.ndim != 1:
-            raise ValueError(
-                f"Validation labels must be one-dimensional, got {raw_labels.shape}"
-            )
         labels = self._validate_labels(raw_labels, len(raw_labels))
         train_idx, validation_idx = self._validation_indices(labels)
         return (
@@ -1456,6 +1550,12 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "peak_gpu_memory_bytes": self.peak_gpu_memory_bytes_,
             "validation_size": self.validation_size,
             "standardize": self.standardize,
+            "feature_scaling_strategy": self.feature_scaling_config_.get(
+                "strategy", "standard" if self.standardize else "none"
+            ),
+            "feature_preprocessing_diagnostics": dict(
+                self.feature_preprocessing_diagnostics_
+            ),
             "validation_strategy": self.validation_strategy_,
             "validation_split": self.validation_split_,
             "validation_fallback_reason": self.validation_fallback_reason_,
@@ -1493,6 +1593,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 "early_stopping_patience": self.early_stopping_patience,
                 "random_state": self.random_state,
                 "standardize": self.standardize,
+                "feature_scaling": dict(self.feature_scaling_config_),
                 "head_type": self.head_type,
                 "task_type": self.task_type,
                 "regression_loss": (
@@ -1530,6 +1631,11 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 torch.from_numpy(self.feature_scale_)
                 if self.feature_scale_ is not None
                 else None
+            ),
+            "feature_preprocessor_state": (
+                None
+                if self.feature_preprocessor_ is None
+                else self.feature_preprocessor_.to_state()
             ),
         }
         torch.save(payload, output_path)
@@ -1614,6 +1720,24 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.feature_scale_ = (
             None if scale is None else np.asarray(scale.cpu(), dtype=np.float32)
         )
+        preprocessor_state = payload.get("feature_preprocessor_state")
+        self.feature_preprocessor_ = (
+            None
+            if preprocessor_state is None
+            else FeaturePreprocessor.from_state(preprocessor_state)
+        )
+        if self.feature_preprocessor_ is not None:
+            self.feature_scaling_config_ = {
+                "strategy": self.feature_preprocessor_.strategy,
+                "quantile_range": list(
+                    self.feature_preprocessor_.quantile_range
+                ),
+                "clip_percentiles": list(
+                    self.feature_preprocessor_.clip_percentiles
+                ),
+                "scale_floor": self.feature_preprocessor_.scale_floor,
+            }
+            self.feature_names_ = self.feature_preprocessor_.feature_names
         self.model_metadata = dict(payload.get("model_metadata", self.model_metadata))
         self.training_log_ = list(payload.get("training_log", []))
         self.validation_split_ = payload.get("validation_split")
@@ -1658,6 +1782,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
         )
         self.objective_training_diagnostics_ = dict(
             summary.get("objective_training_diagnostics", {})
+        )
+        self.feature_preprocessing_diagnostics_ = dict(
+            summary.get("feature_preprocessing_diagnostics", {})
         )
         self.is_fitted_ = True
         return self

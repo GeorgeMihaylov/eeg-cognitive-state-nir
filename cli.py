@@ -10,6 +10,9 @@ from typing import Dict, Any, Optional
 
 from bench.bench_runner import BenchmarkRunner
 from bench.tasks.tasks_registry import TASK_REGISTRY
+from model_zoo.DL.feature_preprocessing import (
+    SUPPORTED_FEATURE_SCALING_STRATEGIES,
+)
 from model_zoo.factory import SKLEARN_MODEL_NAMES, TORCH_MODEL_NAMES
 
 logging.basicConfig(
@@ -133,6 +136,52 @@ def validate_config(config: Dict[str, Any]) -> bool:
     expected_task_type = next(iter(task_types), None)
 
     known_model_types = set(SKLEARN_MODEL_NAMES) | set(TORCH_MODEL_NAMES)
+
+    def validate_feature_scaling(
+        scaling_config: Any,
+        *,
+        location: str,
+    ) -> None:
+        if not isinstance(scaling_config, dict):
+            errors.append(f"{location} must be a mapping")
+            return
+        strategy = str(
+            scaling_config.get('strategy', 'standard')
+        ).strip().lower()
+        if strategy not in SUPPORTED_FEATURE_SCALING_STRATEGIES:
+            errors.append(
+                f"{location}.strategy '{strategy}' is unknown. Available: "
+                f"{sorted(SUPPORTED_FEATURE_SCALING_STRATEGIES)}"
+            )
+        for key in ('quantile_range', 'clip_percentiles'):
+            if key not in scaling_config:
+                continue
+            values = scaling_config[key]
+            try:
+                low, high = (float(value) for value in values)
+            except (TypeError, ValueError):
+                errors.append(f"{location}.{key} must contain two numbers")
+                continue
+            if not 0 <= low < high <= 100:
+                errors.append(
+                    f"{location}.{key} must satisfy "
+                    "0 <= low < high <= 100"
+                )
+        if 'scale_floor' in scaling_config:
+            try:
+                if float(scaling_config['scale_floor']) <= 0:
+                    raise ValueError
+            except (TypeError, ValueError):
+                errors.append(
+                    f"{location}.scale_floor must be positive"
+                )
+
+    if 'feature_scaling' in config:
+        validate_feature_scaling(
+            config['feature_scaling'],
+            location='feature_scaling',
+        )
+
     for model_alias, model_config in models.items():
         if not isinstance(model_alias, str) or not model_alias.strip():
             errors.append("Model aliases must be non-empty strings")
@@ -189,6 +238,16 @@ def validate_config(config: Dict[str, Any]) -> bool:
             errors.append(
                 f"Model '{model_alias}' uses mean_regressor, which is "
                 'regression-only'
+            )
+        if 'feature_scaling' in model_config:
+            if model_type not in TORCH_MODEL_NAMES:
+                errors.append(
+                    f"Model '{model_alias}' cannot configure feature_scaling "
+                    "because it is not a Torch model"
+                )
+            validate_feature_scaling(
+                model_config['feature_scaling'],
+                location=f"models.{model_alias}.feature_scaling",
             )
 
     for dataset_name, dataset_config in datasets.items():
