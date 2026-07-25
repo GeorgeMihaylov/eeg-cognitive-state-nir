@@ -318,6 +318,11 @@ class TorchClassificationAdapter(BaseModelAdapter):
         n_samples: int,
     ) -> np.ndarray:
         """Validate calibration labels without requiring class coverage."""
+        if self.task_type == "regression":
+            labels = self._validate_labels(y, n_samples)
+            if len(labels) == 0:
+                raise ValueError("Calibration targets cannot be empty")
+            return labels
         array = np.asarray(y)
         if array.ndim != 1:
             raise ValueError(f"Expected one-dimensional y, got shape {array.shape}")
@@ -1230,7 +1235,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         """Fine-tune loaded weights on explicit calibration-only partitions."""
         if not self.is_fitted_:
             raise RuntimeError("A fitted or loaded base model is required")
-        if self.head_type != "categorical":
+        if self.head_type not in {"categorical", "regression"}:
             message = (
                 "Auxiliary CORN calibration is not supported yet."
                 if self.head_type == "categorical_corn"
@@ -1344,36 +1349,41 @@ class TorchClassificationAdapter(BaseModelAdapter):
         for epoch in range(1, epochs + 1):
             epoch_started = time.perf_counter()
             self.model.train()
-            train_loss_numerator = 0.0
-            train_loss_denominator = 0.0
+            train_numerators: Dict[str, float] = {}
+            train_denominators: Dict[str, float] = {}
             for batch_features, batch_labels in train_loader:
                 batch_features = batch_features.to(self.device_, non_blocking=True)
                 batch_labels = batch_labels.to(self.device_, non_blocking=True)
                 optimizer.zero_grad(set_to_none=True)
                 raw_outputs = self.model(batch_features)
-                loss_parts = self.objective_handler.loss_parts(
-                    raw_outputs,
-                    batch_labels,
+                component_parts = self.objective_handler.loss_component_parts(
+                    raw_outputs, batch_labels
                 )
-                loss = loss_parts.mean
+                loss = self.objective_handler.combine_component_means({
+                    name: parts.mean
+                    for name, parts in component_parts.items()
+                })
                 if not torch.isfinite(loss):
                     raise ValueError("Fine-tuning loss became NaN or infinite")
                 loss.backward()
                 optimizer.step()
-                train_loss_numerator += float(
-                    loss_parts.numerator.detach().item()
-                )
-                train_loss_denominator += float(
-                    loss_parts.denominator.detach().item()
-                )
+                for name, parts in component_parts.items():
+                    train_numerators[name] = (
+                        train_numerators.get(name, 0.0)
+                        + float(parts.numerator.detach().item())
+                    )
+                    train_denominators[name] = (
+                        train_denominators.get(name, 0.0)
+                        + float(parts.denominator.detach().item())
+                    )
 
             validation_loss: Optional[float] = None
             validation_accuracy: Optional[float] = None
             improved = False
             if validation_loader is not None:
                 self.model.eval()
-                validation_loss_numerator = 0.0
-                validation_loss_denominator = 0.0
+                validation_numerators: Dict[str, float] = {}
+                validation_denominators: Dict[str, float] = {}
                 validation_correct = 0
                 validation_count = 0
                 with torch.no_grad():
@@ -1385,29 +1395,38 @@ class TorchClassificationAdapter(BaseModelAdapter):
                             self.device_, non_blocking=True
                         )
                         raw_outputs = self.model(batch_features)
-                        loss_parts = self.objective_handler.loss_parts(
-                            raw_outputs,
-                            batch_labels,
+                        component_parts = (
+                            self.objective_handler.loss_component_parts(
+                                raw_outputs, batch_labels
+                            )
                         )
-                        validation_loss_numerator += float(
-                            loss_parts.numerator.detach().item()
-                        )
-                        validation_loss_denominator += float(
-                            loss_parts.denominator.detach().item()
-                        )
-                        decoded = self.objective_handler.decode(raw_outputs)
-                        validation_correct += int(
-                            (decoded.y_pred == batch_labels).sum().item()
-                        )
-                        validation_count += len(batch_labels)
-                if validation_loss_denominator <= 0:
-                    raise RuntimeError(
-                        "Validation loss denominator must be positive"
-                    )
-                validation_loss = (
-                    validation_loss_numerator / validation_loss_denominator
+                        for name, parts in component_parts.items():
+                            validation_numerators[name] = (
+                                validation_numerators.get(name, 0.0)
+                                + float(parts.numerator.detach().item())
+                            )
+                            validation_denominators[name] = (
+                                validation_denominators.get(name, 0.0)
+                                + float(parts.denominator.detach().item())
+                            )
+                        if self.task_type == "classification":
+                            decoded = self.objective_handler.decode(raw_outputs)
+                            validation_correct += int(
+                                (decoded.y_pred == batch_labels).sum().item()
+                            )
+                            validation_count += len(batch_labels)
+                validation_components = _aggregate_loss_component_values(
+                    validation_numerators, validation_denominators
                 )
-                validation_accuracy = validation_correct / validation_count
+                validation_loss = float(
+                    self.objective_handler.combine_component_means(
+                        validation_components
+                    )
+                )
+                if self.task_type == "classification":
+                    validation_accuracy = (
+                        validation_correct / validation_count
+                    )
                 improved = validation_loss < best_loss
                 if improved:
                     best_loss = validation_loss
@@ -1420,9 +1439,17 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 else:
                     epochs_without_improvement += 1
 
+            train_components = _aggregate_loss_component_values(
+                train_numerators, train_denominators
+            )
+            train_loss = float(
+                self.objective_handler.combine_component_means(
+                    train_components
+                )
+            )
             self.training_log_.append({
                 "epoch": epoch,
-                "train_loss": train_loss_numerator / train_loss_denominator,
+                "train_loss": train_loss,
                 "validation_loss": validation_loss,
                 "validation_accuracy": validation_accuracy,
                 "is_best": improved,

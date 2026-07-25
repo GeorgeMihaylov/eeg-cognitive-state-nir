@@ -222,7 +222,11 @@ class MetricsCalculator:
         }
         per_target = []
         values_by_metric = {
-            name: [] for name in ('mae', 'rmse', 'r2', 'pearson', 'spearman')
+            name: []
+            for name in (
+                'mae', 'rmse', 'r2', 'pearson', 'spearman',
+                'mean_error', 'abs_bias',
+            )
         }
         for target_index, (target_name, normalized_name) in enumerate(
             zip(resolved_names, normalized_names)
@@ -285,12 +289,15 @@ class MetricsCalculator:
             if has_truth_variation and has_prediction_variation
             else np.nan
         )
+        mean_error = float(np.mean(prediction - truth))
         return {
             'mae': float(mean_absolute_error(truth, prediction)),
             'rmse': float(np.sqrt(mean_squared_error(truth, prediction))),
             'r2': r2,
             'pearson': pearson,
             'spearman': spearman,
+            'mean_error': mean_error,
+            'abs_bias': abs(mean_error),
             'n_samples': int(len(truth)),
             'task_type': 'regression',
         }
