@@ -1,0 +1,49 @@
+experiment:
+  type: user_calibration_multiseed
+  name: label_q5_finetuning_multiseed_20pct
+  output_dir: ./benchmark_results/calibration_label_q5_multiseed_20pct
+  split_seed: 42
+  model_seeds: [7, 42, 2026]
+  resume: true
+  require_cuda: true
+  bootstrap_samples: 1000
+  global_max_epochs: 8
+  seed_42_source_run: ./benchmark_results/calibration_label_q5_full_subjects/personalization/20260725_145534
+
+base_template:
+  config_path: ./experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml
+  dataset: emotiv_cognitive
+  task: cognitive_load_5class
+  model: torch_mlp
+
+calibration:
+  target_subjects: []
+  budgets_fraction: [0.20]
+  methods: [zero_shot, head_only, full_model]
+  window_seconds: 10
+  max_gap_seconds: 10.5
+
+  defaults:
+    split_strategy: chronological_prefix
+    fraction_allocation: global_prefix
+    purge_windows: 0
+    max_epochs: 5
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    early_stopping_patience: 3
+    calibration_validation_fraction: 0.2
+    fallback_fixed_epochs: 3
+    min_calibration_sequences: 1
+    min_evaluation_sequences: 20
+    minimum_calibration_samples: 5
+    minimum_evaluation_samples: 20
+    minimum_adaptation_train_samples: 2
+    minimum_adaptation_validation_samples: 1
+    minimum_final_evaluation_samples: 20
+    random_state: 42
+
+  method_params:
+    head_only:
+      learning_rate: 0.001
+    full_model:
+      learning_rate: 0.0001

@@ -1074,8 +1074,6 @@ Examples:
                 '--calibration-experiment cannot be combined with '
                 '--config, --test, or --experiment-matrix'
             )
-        from bench.experiments.user_calibration import UserCalibrationExperiment
-
         budgets = (
             None
             if args.calibration_budgets is None
@@ -1094,18 +1092,52 @@ Examples:
                 if value.strip()
             ]
         )
-        experiment = UserCalibrationExperiment(args.calibration_experiment)
-        result = experiment.execute(
-            fold_limit=args.fold_limit,
-            subject_limit=args.subject_limit,
-            budgets_seconds=budgets,
-            methods=methods,
-            max_epochs=args.max_calibration_epochs,
-            random_state=args.seed,
-            output_dir=args.output_dir,
-            write_reports=True,
-            resume=args.resume,
+        calibration_path = Path(args.calibration_experiment)
+        calibration_document = (
+            yaml.safe_load(calibration_path.read_text(encoding='utf-8')) or {}
+            if calibration_path.is_file()
+            else {}
         )
+        calibration_type = str(
+            calibration_document.get('experiment', {}).get('type', '')
+        )
+        if calibration_type == 'user_calibration_multiseed':
+            if budgets is not None or methods is not None or args.seed is not None:
+                parser.error(
+                    'Multiseed calibration takes model seeds, the 20% budget, '
+                    'and methods from its config'
+                )
+            from bench.experiments.user_calibration_multiseed import (
+                UserCalibrationMultiseedExperiment,
+            )
+
+            experiment = UserCalibrationMultiseedExperiment(
+                args.calibration_experiment
+            )
+            result = experiment.execute(
+                fold_limit=args.fold_limit,
+                subject_limit=args.subject_limit,
+                max_epochs=args.max_calibration_epochs,
+                output_dir=args.output_dir,
+                resume=args.resume,
+            )
+        else:
+            from bench.experiments.user_calibration import (
+                UserCalibrationExperiment,
+            )
+
+            experiment = UserCalibrationExperiment(args.calibration_experiment)
+            result = experiment.execute(
+                fold_limit=args.fold_limit,
+                subject_limit=args.subject_limit,
+                budgets_seconds=budgets,
+                methods=methods,
+                max_epochs=args.max_calibration_epochs,
+                random_state=args.seed,
+                output_dir=args.output_dir,
+                write_reports=True,
+                resume=args.resume,
+            )
         print(json.dumps(result, indent=2, default=str))
         return
 
