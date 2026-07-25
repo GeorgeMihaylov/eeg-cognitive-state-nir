@@ -10,7 +10,10 @@ import torch
 from bench.experiments.user_calibration import (
     CalibrationSpec,
     UserCalibrationExperiment,
+    _aggregate_metric_rows,
     _as_window_observations,
+    _bootstrap_mean_interval,
+    _normalized_subject_metrics,
     _parameter_audit,
     _state_digest,
     _use_reference_evaluation,
@@ -138,6 +141,96 @@ def test_smaller_budgets_share_fixed_final_evaluation() -> None:
         | set(small.evaluation_metadata.sample_id)
     )
     assert len(all_ids) == 200
+
+
+def test_global_fractional_prefix_uses_exact_nested_subject_budget() -> None:
+    X, y, metadata = _windows(rows_per_record=101)
+    spec = CalibrationSpec.from_dict({
+        **_fraction_spec(0.20).to_dict(),
+        "fraction_allocation": "global_prefix",
+    })
+    partition = chronological_window_partition(
+        X,
+        y,
+        metadata,
+        spec,
+        window_seconds=10.0,
+        max_gap_seconds=10.5,
+    )
+    assert len(partition.calibration_X) == 40
+    assert len(partition.evaluation_X) == 162
+    assert partition.actual_fraction == 40 / 202
+    assert partition.calibration_metadata.sample_id.is_unique
+
+
+def test_too_small_adaptation_validation_uses_fixed_epochs() -> None:
+    partition = _partition(0.01)
+    spec = CalibrationSpec.from_dict({
+        **_fraction_spec(0.01).to_dict(),
+        "minimum_adaptation_validation_samples": 10,
+    })
+    train, validation, strategy = UserCalibrationExperiment._calibration_validation(
+        object(),
+        partition,
+        spec,
+        None,
+        window_seconds=10.0,
+        max_gap_seconds=10.5,
+    )
+    assert len(train.X) == len(partition.calibration_X)
+    assert validation is None
+    assert strategy == "none_fixed_epochs"
+
+
+def test_bootstrap_and_full_subject_aggregation_are_deterministic() -> None:
+    first = _bootstrap_mean_interval([0.0, 0.1, 0.2], samples=100, random_state=42)
+    second = _bootstrap_mean_interval([0.0, 0.1, 0.2], samples=100, random_state=42)
+    assert first == second
+    raw = pd.DataFrame({
+        "outer_fold": ["fold_01", "fold_02"],
+        "subject_id": ["s1", "s2"],
+        "source": ["gpn_data", "Old_EEG"],
+        "seed": [42, 42],
+        "calibration_method": ["head_only", "head_only"],
+        "budget": [0.05, 0.05],
+        "budget_fraction": [0.05, 0.05],
+        "requested_calibration_duration": [100.0, 100.0],
+        "actual_calibration_duration": [90.0, 90.0],
+        "actual_calibration_fraction": [0.045, 0.045],
+        "calibration_samples": [9, 9],
+        "reserved_samples": [31, 31],
+        "adaptation_train_samples": [7, 7],
+        "adaptation_validation_samples": [2, 2],
+        "evaluation_samples": [160, 160],
+        "status": ["valid", "valid"],
+        "accuracy_before": [0.2, 0.3],
+        "accuracy": [0.3, 0.2],
+        "accuracy_absolute_gain": [0.1, -0.1],
+        "balanced_accuracy_before": [0.2, 0.3],
+        "balanced_accuracy": [0.3, 0.2],
+        "balanced_accuracy_absolute_gain": [0.1, -0.1],
+        "macro_f1_before": [0.2, 0.3],
+        "macro_f1": [0.3, 0.2],
+        "macro_f1_absolute_gain": [0.1, -0.1],
+        "weighted_f1_before": [0.2, 0.3],
+        "weighted_f1": [0.3, 0.2],
+        "ordinal_mae_before": [1.0, 1.0],
+        "ordinal_mae": [0.9, 1.1],
+        "severe_error_rate_before": [0.3, 0.3],
+        "severe_error_rate": [0.2, 0.4],
+    })
+    normalized = _normalized_subject_metrics(raw)
+    aggregate = _aggregate_metric_rows(
+        normalized,
+        scope="overall",
+        source="overall",
+        bootstrap_samples=100,
+        random_state=42,
+    )
+    accuracy = aggregate.loc[aggregate.metric == "accuracy"].iloc[0]
+    assert accuracy["n_subjects"] == 2
+    assert accuracy["subjects_improved"] == 1
+    assert accuracy["mean_gain"] == 0.0
 
 
 def test_zero_budget_is_valid_without_calibration() -> None:

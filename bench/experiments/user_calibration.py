@@ -9,6 +9,7 @@ import json
 import logging
 import shutil
 import time
+import traceback
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
@@ -103,6 +104,7 @@ class CalibrationSpec:
     budget_seconds: Optional[float] = 0.0
     budget_fraction: Optional[float] = None
     split_strategy: str = "chronological_prefix"
+    fraction_allocation: str = "per_record_prefix"
     purge_windows: int = 7
     max_epochs: int = 20
     learning_rate: float = 1e-3
@@ -114,6 +116,9 @@ class CalibrationSpec:
     min_evaluation_sequences: int = 20
     minimum_calibration_samples: int = 1
     minimum_evaluation_samples: int = 20
+    minimum_adaptation_train_samples: int = 1
+    minimum_adaptation_validation_samples: int = 1
+    minimum_final_evaluation_samples: Optional[int] = None
     random_state: int = 42
 
     def __post_init__(self) -> None:
@@ -136,6 +141,13 @@ class CalibrationSpec:
             )
         if self.split_strategy != "chronological_prefix":
             raise ValueError("Only split_strategy='chronological_prefix' is supported")
+        if self.fraction_allocation not in {
+            "per_record_prefix", "global_prefix"
+        }:
+            raise ValueError(
+                "fraction_allocation must be 'per_record_prefix' or "
+                "'global_prefix'"
+            )
         if self.budget_seconds is not None and self.budget_fraction is not None:
             raise ValueError("Set either budget_seconds or budget_fraction, not both")
         if self.budget_seconds is None and self.budget_fraction is None:
@@ -162,6 +174,24 @@ class CalibrationSpec:
             raise ValueError("minimum_calibration_samples must be positive")
         if self.minimum_evaluation_samples <= 0:
             raise ValueError("minimum_evaluation_samples must be positive")
+        if self.minimum_adaptation_train_samples <= 0:
+            raise ValueError(
+                "minimum_adaptation_train_samples must be positive"
+            )
+        if self.minimum_adaptation_validation_samples <= 0:
+            raise ValueError(
+                "minimum_adaptation_validation_samples must be positive"
+            )
+        if self.minimum_final_evaluation_samples is None:
+            object.__setattr__(
+                self,
+                "minimum_final_evaluation_samples",
+                self.minimum_evaluation_samples,
+            )
+        elif self.minimum_final_evaluation_samples <= 0:
+            raise ValueError(
+                "minimum_final_evaluation_samples must be positive"
+            )
 
     @classmethod
     def from_dict(cls, values: Mapping[str, Any]) -> "CalibrationSpec":
@@ -298,36 +328,60 @@ def chronological_window_partition(
     purged_rows: list[int] = []
     actual_seconds = 0.0
     remaining = requested_seconds
-    for segment_key, _ in segment_durations:
-        group = ordered.loc[ordered["_segment_key"] == segment_key]
-        row_indices = group["_row_index"].to_numpy(dtype=np.int64)
-        times = group[time_column].to_numpy(dtype=np.float64)
-        if spec.budget_fraction is not None:
-            count = int(np.floor(len(group) * float(spec.budget_fraction)))
-            if count <= 0:
+    if (
+        spec.budget_fraction is not None
+        and spec.fraction_allocation == "global_prefix"
+    ):
+        count = int(np.floor(len(ordered) * float(spec.budget_fraction)))
+        calibration_rows.extend(
+            ordered["_row_index"].to_numpy(dtype=np.int64)[:count].tolist()
+        )
+        actual_seconds = float(count * window_seconds)
+        if count < len(ordered) and spec.purge_windows:
+            selected_segment = (
+                None if count == 0 else ordered.iloc[count - 1]["_segment_key"]
+            )
+            following = ordered.iloc[count:]
+            if selected_segment is not None:
+                following = following.loc[
+                    following["_segment_key"] == selected_segment
+                ]
+            purged_rows.extend(
+                following["_row_index"].to_numpy(dtype=np.int64)[
+                    : spec.purge_windows
+                ].tolist()
+            )
+    else:
+        for segment_key, _ in segment_durations:
+            group = ordered.loc[ordered["_segment_key"] == segment_key]
+            row_indices = group["_row_index"].to_numpy(dtype=np.int64)
+            times = group[time_column].to_numpy(dtype=np.float64)
+            if spec.budget_fraction is not None:
+                count = int(np.floor(len(group) * float(spec.budget_fraction)))
+                if count <= 0:
+                    continue
+                calibration_rows.extend(row_indices[:count].tolist())
+                consumed = float(times[count - 1] - times[0] + window_seconds)
+                actual_seconds += consumed
+                if count < len(group) and spec.purge_windows:
+                    purge_stop = min(len(group), count + spec.purge_windows)
+                    purged_rows.extend(row_indices[count:purge_stop].tolist())
                 continue
+            if remaining <= 1e-9:
+                continue
+            cumulative = times - times[0] + window_seconds
+            count = min(
+                len(group),
+                int(np.searchsorted(cumulative, remaining, side="left") + 1),
+            )
             calibration_rows.extend(row_indices[:count].tolist())
-            consumed = float(times[count - 1] - times[0] + window_seconds)
+            consumed = float(cumulative[count - 1])
             actual_seconds += consumed
-            if count < len(group) and spec.purge_windows:
+            remaining = max(0.0, requested_seconds - actual_seconds)
+            if count < len(group):
                 purge_stop = min(len(group), count + spec.purge_windows)
                 purged_rows.extend(row_indices[count:purge_stop].tolist())
-            continue
-        if remaining <= 1e-9:
-            continue
-        cumulative = times - times[0] + window_seconds
-        count = min(
-            len(group),
-            int(np.searchsorted(cumulative, remaining, side="left") + 1),
-        )
-        calibration_rows.extend(row_indices[:count].tolist())
-        consumed = float(cumulative[count - 1])
-        actual_seconds += consumed
-        remaining = max(0.0, requested_seconds - actual_seconds)
-        if count < len(group):
-            purge_stop = min(len(group), count + spec.purge_windows)
-            purged_rows.extend(row_indices[count:purge_stop].tolist())
-            remaining = 0.0
+                remaining = 0.0
 
     calibration_index = np.asarray(sorted(set(calibration_rows)), dtype=np.int64)
     purged_index = np.asarray(sorted(set(purged_rows)), dtype=np.int64)
@@ -553,6 +607,332 @@ def _parameter_audit(
         sum(counts[name] for name in trainable),
         sum(counts[name] for name in frozen),
     )
+
+
+def _implementation_hash() -> str:
+    """Hash the small implementation surface that defines calibration results."""
+    digest = hashlib.sha256()
+    paths = (
+        Path(__file__),
+        REPO_ROOT / "bench" / "validation" / "metrics.py",
+        REPO_ROOT / "model_zoo" / "DL" / "adapter.py",
+        REPO_ROOT / "model_zoo" / "DL" / "mlp.py",
+    )
+    for path in paths:
+        digest.update(str(path.relative_to(REPO_ROOT)).encode("utf-8"))
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def _bootstrap_mean_interval(
+    values: Sequence[float],
+    *,
+    samples: int = 1000,
+    random_state: int = 42,
+) -> tuple[Optional[float], Optional[float]]:
+    array = np.asarray(values, dtype=float)
+    array = array[np.isfinite(array)]
+    if len(array) == 0:
+        return None, None
+    rng = np.random.default_rng(random_state)
+    means = np.asarray([
+        rng.choice(array, size=len(array), replace=True).mean()
+        for _ in range(int(samples))
+    ])
+    return (
+        float(np.quantile(means, 0.025)),
+        float(np.quantile(means, 0.975)),
+    )
+
+
+def _normalized_subject_metrics(subjects: pd.DataFrame) -> pd.DataFrame:
+    """Expose the full-experiment column contract without breaking legacy CSVs."""
+    frame = subjects.copy()
+    frame["method"] = frame["calibration_method"]
+    frame["budget_requested"] = frame["budget"]
+    frame["budget_actual"] = frame["actual_calibration_fraction"].where(
+        frame["budget_fraction"].notna(),
+        frame["actual_calibration_duration"] / frame[
+            "requested_calibration_duration"
+        ].replace(0, np.nan),
+    ).fillna(0.0)
+    frame["n_total_target_samples"] = (
+        frame["calibration_samples"]
+        + frame.get("reserved_samples", 0)
+        + frame["evaluation_samples"]
+    )
+    frame["n_calibration_pool"] = frame["calibration_samples"]
+    frame["n_adaptation_train"] = frame["adaptation_train_samples"]
+    frame["n_adaptation_validation"] = frame[
+        "adaptation_validation_samples"
+    ]
+    frame["n_final_evaluation"] = frame["evaluation_samples"]
+    for metric in (
+        "accuracy",
+        "balanced_accuracy",
+        "macro_f1",
+        "weighted_f1",
+        "ordinal_mae",
+        "severe_error_rate",
+    ):
+        frame[f"{metric}_after"] = frame[metric]
+    frame["accuracy_gain"] = frame["accuracy_absolute_gain"]
+    frame["balanced_accuracy_gain"] = frame[
+        "balanced_accuracy_absolute_gain"
+    ]
+    frame["macro_f1_gain"] = frame["macro_f1_absolute_gain"]
+    frame["accuracy_at_least_075"] = frame["accuracy_after"] >= 0.75
+    frame["status"] = frame["status"].replace({
+        "valid": "completed",
+        "insufficient_calibration_data": "insufficient_calibration_samples",
+        "insufficient_evaluation_data": "insufficient_evaluation_samples",
+        "insufficient_sequence_context": "insufficient_target_samples",
+    })
+    return frame
+
+
+def _aggregate_metric_rows(
+    metrics: pd.DataFrame,
+    *,
+    scope: str,
+    source: str,
+    bootstrap_samples: int = 1000,
+    random_state: int = 42,
+) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+    completed = metrics.loc[metrics["status"] == "completed"].copy()
+    for (method, budget), group in completed.groupby(
+        ["method", "budget"], sort=True
+    ):
+        for metric in ("accuracy", "balanced_accuracy", "macro_f1"):
+            after = pd.to_numeric(
+                group[f"{metric}_after"], errors="coerce"
+            ).dropna()
+            gains = pd.to_numeric(
+                group[f"{metric}_gain"], errors="coerce"
+            ).dropna()
+            low, high = _bootstrap_mean_interval(
+                gains,
+                samples=bootstrap_samples,
+                random_state=random_state,
+            )
+            rows.append({
+                "scope": scope,
+                "source": source,
+                "method": method,
+                "budget": float(budget),
+                "metric": metric,
+                "mean": None if after.empty else float(after.mean()),
+                "median": None if after.empty else float(after.median()),
+                "std": None if len(after) < 2 else float(after.std(ddof=1)),
+                "min": None if after.empty else float(after.min()),
+                "max": None if after.empty else float(after.max()),
+                "q25": None if after.empty else float(after.quantile(0.25)),
+                "q75": None if after.empty else float(after.quantile(0.75)),
+                "mean_gain": None if gains.empty else float(gains.mean()),
+                "median_gain": None if gains.empty else float(gains.median()),
+                "gain_bootstrap_ci_low": low,
+                "gain_bootstrap_ci_high": high,
+                "bootstrap_resamples": int(bootstrap_samples),
+                "n_subjects": int(group["subject_id"].nunique()),
+                "subjects_improved": int((gains > 0).sum()),
+                "subjects_improved_fraction": (
+                    None if gains.empty else float((gains > 0).mean())
+                ),
+                "subjects_accuracy_at_least_075": int(
+                    group.loc[
+                        group["accuracy_after"] >= 0.75, "subject_id"
+                    ].nunique()
+                ),
+                "subjects_accuracy_at_least_075_fraction": (
+                    None
+                    if group.empty
+                    else float((group["accuracy_after"] >= 0.75).mean())
+                ),
+            })
+    return pd.DataFrame(rows)
+
+
+def _source_subject_metrics(
+    predictions: pd.DataFrame,
+    subject_metrics: pd.DataFrame,
+) -> pd.DataFrame:
+    """Calculate per-source metrics without duplicating shared identities."""
+    if predictions.empty:
+        return pd.DataFrame()
+    rows: list[dict[str, Any]] = []
+    probability_columns = sorted(
+        [
+            column for column in predictions.columns
+            if str(column).startswith("proba_")
+        ],
+        key=lambda value: int(str(value).split("_")[-1]),
+    )
+    keys = [
+        "outer_fold", "subject_id", "source", "seed",
+        "calibration_method", "budget",
+    ]
+    for values, group in predictions.groupby(keys, sort=True):
+        metrics = MetricsCalculator.calculate_all_metrics(
+            group["y_true"].to_numpy(dtype=int),
+            group["y_pred"].to_numpy(dtype=int),
+            group[probability_columns].to_numpy(dtype=float),
+            labels=np.arange(len(probability_columns)),
+        )
+        rows.append({
+            **dict(zip(keys, values)),
+            "method": values[4],
+            "status": "completed",
+            "n_final_evaluation": int(len(group)),
+            "accuracy_after": metrics["accuracy"],
+            "balanced_accuracy_after": metrics["balanced_accuracy"],
+            "macro_f1_after": metrics["macro_f1"],
+        })
+    frame = pd.DataFrame(rows)
+    baseline = frame.loc[
+        frame["method"] == "zero_shot",
+        [
+            "outer_fold", "subject_id", "source", "seed", "budget",
+            "accuracy_after", "balanced_accuracy_after", "macro_f1_after",
+        ],
+    ].rename(columns={
+        metric + "_after": metric + "_before"
+        for metric in ("accuracy", "balanced_accuracy", "macro_f1")
+    })
+    frame = frame.merge(
+        baseline,
+        on=["outer_fold", "subject_id", "source", "seed", "budget"],
+        how="left",
+        validate="many_to_one",
+    )
+    for metric in ("accuracy", "balanced_accuracy", "macro_f1"):
+        frame[f"{metric}_gain"] = (
+            frame[f"{metric}_after"] - frame[f"{metric}_before"]
+        )
+    calibration = subject_metrics.loc[
+        :,
+        [
+            "outer_fold", "subject_id", "seed", "method", "budget",
+            "n_calibration_pool", "number_of_classes",
+        ],
+    ]
+    return frame.merge(
+        calibration,
+        on=["outer_fold", "subject_id", "seed", "method", "budget"],
+        how="left",
+        validate="many_to_one",
+    )
+
+
+def _paired_comparison_rows(
+    metrics: pd.DataFrame,
+    *,
+    bootstrap_samples: int = 1000,
+    random_state: int = 42,
+) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+    completed = metrics.loc[metrics["status"] == "completed"].copy()
+    comparisons = (
+        ("head_only", "zero_shot"),
+        ("full_model", "zero_shot"),
+        ("full_model", "head_only"),
+    )
+    for budget, budget_group in completed.groupby("budget", sort=True):
+        for left, right in comparisons:
+            for metric in ("accuracy", "balanced_accuracy", "macro_f1"):
+                pivot = budget_group.pivot_table(
+                    index="subject_id",
+                    columns="method",
+                    values=f"{metric}_after",
+                    aggfunc="first",
+                )
+                if left not in pivot or right not in pivot:
+                    continue
+                differences = (pivot[left] - pivot[right]).dropna()
+                low, high = _bootstrap_mean_interval(
+                    differences.to_numpy(),
+                    samples=bootstrap_samples,
+                    random_state=random_state,
+                )
+                rows.append({
+                    "budget": float(budget),
+                    "left_method": left,
+                    "right_method": right,
+                    "metric": metric,
+                    "n_subjects": int(len(differences)),
+                    "mean_difference": (
+                        None
+                        if differences.empty
+                        else float(differences.mean())
+                    ),
+                    "median_difference": (
+                        None
+                        if differences.empty
+                        else float(differences.median())
+                    ),
+                    "positive_fraction": (
+                        None
+                        if differences.empty
+                        else float((differences > 0).mean())
+                    ),
+                    "bootstrap_ci_low": low,
+                    "bootstrap_ci_high": high,
+                    "bootstrap_resamples": int(bootstrap_samples),
+                })
+    return pd.DataFrame(rows)
+
+
+def _threshold_summary(metrics: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    completed = metrics.loc[metrics["status"] == "completed"].copy()
+    summary_rows: list[dict[str, Any]] = []
+    for source, source_group in [
+        ("overall", completed),
+        *[
+            (str(value), completed.loc[completed["source"] == value])
+            for value in sorted(completed["source"].dropna().unique())
+        ],
+    ]:
+        for (method, budget), group in source_group.groupby(
+            ["method", "budget"], sort=True
+        ):
+            accuracy = pd.to_numeric(
+                group["accuracy_after"], errors="coerce"
+            ).dropna()
+            reached = group.loc[group["accuracy_after"] >= 0.75]
+            summary_rows.append({
+                "method": method,
+                "budget": float(budget),
+                "source": source,
+                "n_subjects": int(group["subject_id"].nunique()),
+                "n_subjects_accuracy_ge_075": int(
+                    reached["subject_id"].nunique()
+                ),
+                "fraction_accuracy_ge_075": (
+                    None if group.empty else float(
+                        (group["accuracy_after"] >= 0.75).mean()
+                    )
+                ),
+                "mean_accuracy": (
+                    None if accuracy.empty else float(accuracy.mean())
+                ),
+                "median_accuracy": (
+                    None if accuracy.empty else float(accuracy.median())
+                ),
+                "min_accuracy": (
+                    None if accuracy.empty else float(accuracy.min())
+                ),
+                "max_accuracy": (
+                    None if accuracy.empty else float(accuracy.max())
+                ),
+            })
+    reached_columns = [
+        "subject_id", "source", "outer_fold", "seed", "method", "budget",
+        "accuracy_after", "balanced_accuracy_after", "macro_f1_after",
+    ]
+    reached = completed.loc[
+        completed["accuracy_after"] >= 0.75, reached_columns
+    ].copy()
+    return pd.DataFrame(summary_rows), reached
 
 
 def _checkpoint_payload(path: Path) -> Mapping[str, Any]:
@@ -906,7 +1286,9 @@ class UserCalibrationExperiment:
                 return "insufficient_calibration_data"
             if len(calibration_sequences.X) < spec.min_calibration_sequences:
                 return "insufficient_sequence_context"
-        if len(partition.evaluation_X) < spec.minimum_evaluation_samples:
+        if len(partition.evaluation_X) < int(
+            spec.minimum_final_evaluation_samples
+        ):
             return "insufficient_evaluation_data"
         if len(evaluation_sequences.X) < spec.min_evaluation_sequences:
             return "insufficient_evaluation_data"
@@ -927,6 +1309,7 @@ class UserCalibrationExperiment:
             budget_seconds=None,
             budget_fraction=train_fraction,
             split_strategy=spec.split_strategy,
+            fraction_allocation=spec.fraction_allocation,
             purge_windows=spec.purge_windows,
             max_epochs=spec.max_epochs,
             learning_rate=spec.learning_rate,
@@ -938,6 +1321,15 @@ class UserCalibrationExperiment:
             min_evaluation_sequences=spec.min_evaluation_sequences,
             minimum_calibration_samples=spec.minimum_calibration_samples,
             minimum_evaluation_samples=spec.minimum_evaluation_samples,
+            minimum_adaptation_train_samples=(
+                spec.minimum_adaptation_train_samples
+            ),
+            minimum_adaptation_validation_samples=(
+                spec.minimum_adaptation_validation_samples
+            ),
+            minimum_final_evaluation_samples=(
+                spec.minimum_final_evaluation_samples
+            ),
             random_state=spec.random_state,
         )
         inner = chronological_window_partition(
@@ -960,7 +1352,11 @@ class UserCalibrationExperiment:
             inner.evaluation_metadata,
             sequence_config,
         )
-        if len(train_sequences.X) and len(validation_sequences.X):
+        if (
+            len(train_sequences.X) >= spec.minimum_adaptation_train_samples
+            and len(validation_sequences.X)
+            >= spec.minimum_adaptation_validation_samples
+        ):
             return train_sequences, validation_sequences, "chronological_holdout"
         all_sequences = _build_model_inputs(
             partition.calibration_X,
@@ -1097,6 +1493,7 @@ class UserCalibrationExperiment:
         frame = pd.DataFrame({
             "outer_fold": fold_name,
             "subject_id": str(subject_id),
+            "source": metadata["source"].astype(str),
             "record_id": metadata["record_id"].astype(str),
             "record_group_id": metadata["record_group_id"].astype(str),
             "sample_id": metadata["target_sample_id"].astype(str),
@@ -1109,6 +1506,7 @@ class UserCalibrationExperiment:
                 if spec.budget_fraction is not None
                 else spec.budget_seconds
             ),
+            "seed": int(spec.random_state),
             "y_true": sequences.y.astype(int),
             "y_pred": np.asarray(predictions, dtype=int),
             "is_calibration_sample": False,
@@ -1132,6 +1530,7 @@ class UserCalibrationExperiment:
         random_state: Optional[int] = None,
         output_dir: Optional[str | Path] = None,
         write_reports: bool = True,
+        resume: bool = False,
     ) -> dict[str, Any]:
         dataset_name, task_name, model_name = self._identities()
         specs = self._specs(
@@ -1158,11 +1557,18 @@ class UserCalibrationExperiment:
                 f"({sequence_length - 1})"
             )
         calibration_config = self.document["calibration"]
+        experiment_config = self.document["experiment"]
+        require_cuda = bool(experiment_config.get("require_cuda", False))
+        if require_cuda and not torch.cuda.is_available():
+            raise RuntimeError(
+                "CUDA is required by this calibration experiment, but is unavailable"
+            )
         window_seconds = float(calibration_config.get("window_seconds", 10.0))
         max_gap_seconds = float(
             calibration_config.get("max_gap_seconds", window_seconds * 1.05)
         )
 
+        code_hash = _implementation_hash()
         resolved = {
             "schema_version": CALIBRATION_SCHEMA_VERSION,
             "base_run": deepcopy(self.document["base_run"]),
@@ -1171,6 +1577,7 @@ class UserCalibrationExperiment:
             "fold_limit": fold_limit,
             "subject_limit": subject_limit,
             "input_mode": "sequences" if uses_sequences else "feature_windows",
+            "implementation_hash": code_hash,
         }
         config_hash = _canonical_hash(resolved)
         root = _repo_path(
@@ -1178,11 +1585,58 @@ class UserCalibrationExperiment:
             if output_dir is not None
             else self.document["experiment"]["output_dir"]
         )
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        run_dir = root / timestamp
-        run_dir.mkdir(parents=True, exist_ok=False)
-        with open(run_dir / "resolved_calibration.yaml", "w", encoding="utf-8") as output:
-            yaml.safe_dump(resolved, output, sort_keys=False)
+        resume_enabled = bool(resume or experiment_config.get("resume", False))
+        run_dir: Optional[Path] = None
+        if resume_enabled and root.is_dir():
+            for candidate in sorted(
+                (path for path in root.iterdir() if path.is_dir()),
+                reverse=True,
+            ):
+                progress_path = candidate / "progress.json"
+                if not progress_path.is_file():
+                    continue
+                progress = json.loads(progress_path.read_text(encoding="utf-8"))
+                if progress.get("config_hash") != config_hash:
+                    continue
+                if progress.get("implementation_hash") != code_hash:
+                    raise RuntimeError(
+                        "Resume state implementation hash does not match current code"
+                    )
+                run_dir = candidate
+                manifest_path = run_dir / "run_manifest.json"
+                if (
+                    progress.get("status") == "completed"
+                    and manifest_path.is_file()
+                ):
+                    manifest = json.loads(
+                        manifest_path.read_text(encoding="utf-8")
+                    )
+                    manifest["resumed"] = True
+                    manifest["resume_skipped_completed_conditions"] = int(
+                        progress.get("completed_conditions", 0)
+                    )
+                    return manifest
+                break
+        if run_dir is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            run_dir = root / timestamp
+            run_dir.mkdir(parents=True, exist_ok=False)
+            with open(
+                run_dir / "resolved_calibration.yaml", "w", encoding="utf-8"
+            ) as output:
+                yaml.safe_dump(resolved, output, sort_keys=False)
+            _write_json(
+                run_dir / "progress.json",
+                {
+                    "schema_version": CALIBRATION_SCHEMA_VERSION,
+                    "status": "running",
+                    "config_hash": config_hash,
+                    "implementation_hash": code_hash,
+                    "completed_conditions": 0,
+                    "failed_conditions": 0,
+                    "condition_keys": [],
+                },
+            )
 
         runner = BenchmarkRunner(deepcopy(self.base_config))
         data = runner.load_dataset(dataset_name)
@@ -1217,15 +1671,83 @@ class UserCalibrationExperiment:
         split_audit_rows: list[dict[str, Any]] = []
         checkpoint_audit_rows: list[dict[str, Any]] = []
         prediction_frames: list[pd.DataFrame] = []
+        failure_rows: list[dict[str, Any]] = []
+        global_fold_rows: list[dict[str, Any]] = []
+        completed_condition_keys: set[str] = set()
+        for condition_path in sorted(run_dir.rglob("condition_result.json")):
+            payload = json.loads(condition_path.read_text(encoding="utf-8"))
+            condition_key = str(payload["condition_key"])
+            if condition_key in completed_condition_keys:
+                raise RuntimeError(
+                    f"Duplicate resume condition key: {condition_key}"
+                )
+            completed_condition_keys.add(condition_key)
+            subject_rows.append(dict(payload["subject_metrics"]))
+            split_audit_rows.append(dict(payload["split_audit"]))
+            checkpoint_audit_rows.append(dict(payload["checkpoint_audit"]))
+            prediction_path = condition_path.parent / "predictions.parquet"
+            if not prediction_path.is_file():
+                raise RuntimeError(
+                    f"Completed condition is missing predictions: {prediction_path}"
+                )
+            prediction_frames.append(pd.read_parquet(prediction_path))
+        failures_path = run_dir / "failures.csv"
+        if failures_path.is_file():
+            failure_rows = pd.read_csv(failures_path).to_dict("records")
+
+        def persist_progress() -> None:
+            raw_subjects = pd.DataFrame(subject_rows)
+            normalized = (
+                pd.DataFrame()
+                if raw_subjects.empty
+                else _normalized_subject_metrics(raw_subjects)
+            )
+            normalized.to_csv(
+                run_dir / "calibration_subject_metrics.csv", index=False
+            )
+            pd.DataFrame(split_audit_rows).to_csv(
+                run_dir / "calibration_split_audit.csv", index=False
+            )
+            pd.DataFrame(checkpoint_audit_rows).to_csv(
+                run_dir / "checkpoint_audit.csv", index=False
+            )
+            pd.DataFrame(
+                failure_rows,
+                columns=[
+                    "outer_fold", "subject_id", "budget", "method", "seed",
+                    "status", "error_type", "error_message", "traceback",
+                ],
+            ).to_csv(failures_path, index=False)
+            _write_json(
+                run_dir / "progress.json",
+                {
+                    "schema_version": CALIBRATION_SCHEMA_VERSION,
+                    "status": "running",
+                    "config_hash": config_hash,
+                    "implementation_hash": code_hash,
+                    "completed_conditions": len(completed_condition_keys),
+                    "failed_conditions": len(failure_rows),
+                    "condition_keys": sorted(completed_condition_keys),
+                },
+            )
+
+        persist_progress()
         device_info: Optional[dict[str, str]] = None
         started = time.perf_counter()
         for fold_name, outer_split in folds.items():
+            if require_cuda:
+                torch.cuda.empty_cache()
             if outer_split.metadata.get("subject_overlap"):
                 raise RuntimeError(f"Outer subject leakage in {fold_name}")
             checkpoint = self._fold_checkpoint(
                 fold_name, dataset_name, task_name, model_name
             )
             base_adapter = self._load_fold_adapter(checkpoint, model_name)
+            if require_cuda and base_adapter.device_.type != "cuda":
+                raise RuntimeError(
+                    f"{fold_name} checkpoint loaded on {base_adapter.device_}; "
+                    "CUDA is required"
+                )
             if device_info is None:
                 device_info = {
                     "device": str(base_adapter.device_),
@@ -1256,6 +1778,79 @@ class UserCalibrationExperiment:
             train_subjects = set(np.unique(outer_split.subject_train).astype(str))
             if train_subjects & set(test_subjects):
                 raise RuntimeError(f"Outer train/test subject leakage in {fold_name}")
+            validation_split = base_adapter.validation_split_ or {}
+            global_train_subjects = {
+                str(value) for value in
+                validation_split.get("inner_train_subject_ids", [])
+            }
+            global_validation_subjects = {
+                str(value) for value in
+                validation_split.get("inner_validation_subject_ids", [])
+            }
+            all_outer_test_subjects = {
+                str(value) for value in np.unique(outer_split.subject_test)
+            }
+            preprocessing_state = base_adapter.get_feature_preprocessing_state()
+            fit_test_overlap = sorted(
+                global_train_subjects & all_outer_test_subjects
+            )
+            if fit_test_overlap:
+                raise RuntimeError(
+                    f"Preprocessing subject leakage in {fold_name}: "
+                    f"{fit_test_overlap}"
+                )
+            base_fold = self.base_results[dataset_name]["models"][task_name][
+                model_name
+            ]["group_kfold_subject"]["folds"][fold_name]
+            training_metadata = dict(base_fold.get("training", {}))
+            clip_percentiles = (
+                []
+                if preprocessing_state is None
+                else preprocessing_state.get("clip_percentiles", [])
+            )
+            global_fold_rows.append({
+                "outer_fold": fold_name,
+                "seed": int(evaluation.get("random_state", 42)),
+                "n_outer_train_subjects": len(train_subjects),
+                "n_outer_test_subjects": len(all_outer_test_subjects),
+                "n_inner_train_subjects": len(global_train_subjects),
+                "n_inner_validation_subjects": len(
+                    global_validation_subjects
+                ),
+                "n_train_samples": int(base_fold.get("n_train", 0)),
+                "n_test_samples": int(base_fold.get("n_test", 0)),
+                "training_time_seconds": float(
+                    base_fold.get("training_time", 0.0)
+                ),
+                "epochs_trained": training_metadata.get("epochs_trained"),
+                "best_epoch": training_metadata.get("best_epoch"),
+                "best_validation_loss": training_metadata.get(
+                    "best_validation_loss"
+                ),
+                "device_type": training_metadata.get("device"),
+                "device_name": training_metadata.get("device_name"),
+                "peak_gpu_memory_bytes": training_metadata.get(
+                    "peak_gpu_memory_bytes", 0
+                ),
+                "preprocessor_fit_subjects": json.dumps(
+                    sorted(global_train_subjects)
+                ),
+                "outer_test_subjects": json.dumps(
+                    sorted(all_outer_test_subjects)
+                ),
+                "fit_test_overlap": len(fit_test_overlap),
+                "feature_hash": (
+                    None
+                    if preprocessing_state is None
+                    else preprocessing_state.get("feature_hash")
+                ),
+                "lower_quantile": (
+                    None if not clip_percentiles else clip_percentiles[0]
+                ),
+                "upper_quantile": (
+                    None if not clip_percentiles else clip_percentiles[1]
+                ),
+            })
             LOGGER.info(
                 "Calibration %s: global_train_subjects=%d target_subjects=%d "
                 "checkpoint_restored=%s",
@@ -1271,6 +1866,14 @@ class UserCalibrationExperiment:
                 subject_X = np.asarray(outer_split.X_test)[subject_mask]
                 subject_y = np.asarray(outer_split.y_test)[subject_mask]
                 subject_metadata = test_metadata.loc[subject_mask].reset_index(drop=True)
+                subject_sources = sorted(
+                    subject_metadata["source"].astype(str).unique().tolist()
+                )
+                subject_source = (
+                    subject_sources[0]
+                    if len(subject_sources) == 1
+                    else "both"
+                )
                 subject_root = (
                     run_dir / fold_name / _safe_component(subject_id)
                 )
@@ -1359,6 +1962,21 @@ class UserCalibrationExperiment:
                     coverage = _class_coverage(calibration_sequences.y)
 
                     for spec in budget_specs:
+                        condition_key = "|".join([
+                            fold_name,
+                            subject_id,
+                            f"{budget_kind}:{budget_value:.8f}",
+                            spec.method,
+                            str(spec.random_state),
+                        ])
+                        if condition_key in completed_condition_keys:
+                            LOGGER.info(
+                                "Resume skip completed condition %s",
+                                condition_key,
+                            )
+                            continue
+                        if require_cuda:
+                            torch.cuda.reset_peak_memory_stats()
                         status = self._status(
                             spec,
                             partition,
@@ -1491,26 +2109,55 @@ class UserCalibrationExperiment:
                                 )
                                 fit_started = time.perf_counter()
                                 adapted.random_state = spec.random_state
-                                adapted.fine_tune(
-                                    train_sequences.X,
-                                    train_sequences.y,
-                                    mode=spec.method,
-                                    X_validation=(
-                                        None
-                                        if validation_sequences is None
-                                        else validation_sequences.X
-                                    ),
-                                    y_validation=(
-                                        None
-                                        if validation_sequences is None
-                                        else validation_sequences.y
-                                    ),
-                                    max_epochs=fit_epochs,
-                                    learning_rate=spec.learning_rate,
-                                    weight_decay=spec.weight_decay,
-                                    early_stopping_patience=spec.early_stopping_patience,
-                                    random_state=spec.random_state,
-                                )
+                                try:
+                                    adapted.fine_tune(
+                                        train_sequences.X,
+                                        train_sequences.y,
+                                        mode=spec.method,
+                                        X_validation=(
+                                            None
+                                            if validation_sequences is None
+                                            else validation_sequences.X
+                                        ),
+                                        y_validation=(
+                                            None
+                                            if validation_sequences is None
+                                            else validation_sequences.y
+                                        ),
+                                        max_epochs=fit_epochs,
+                                        learning_rate=spec.learning_rate,
+                                        weight_decay=spec.weight_decay,
+                                        early_stopping_patience=(
+                                            spec.early_stopping_patience
+                                        ),
+                                        random_state=spec.random_state,
+                                    )
+                                except Exception as exc:
+                                    failure = {
+                                        "outer_fold": fold_name,
+                                        "subject_id": subject_id,
+                                        "budget": budget_value,
+                                        "method": spec.method,
+                                        "seed": int(spec.random_state),
+                                        "status": "training_failed",
+                                        "error_type": type(exc).__name__,
+                                        "error_message": str(exc),
+                                        "traceback": traceback.format_exc(),
+                                    }
+                                    failure_rows.append(failure)
+                                    _write_json(
+                                        artifact_dir / "failure.json", failure
+                                    )
+                                    persist_progress()
+                                    LOGGER.exception(
+                                        "Calibration condition failed: %s",
+                                        condition_key,
+                                    )
+                                    del adapted
+                                    gc.collect()
+                                    if torch.cuda.is_available():
+                                        torch.cuda.empty_cache()
+                                    continue
                                 training_time = time.perf_counter() - fit_started
                                 training_log = pd.DataFrame(adapted.training_log_)
 
@@ -1521,7 +2168,30 @@ class UserCalibrationExperiment:
                             if not np.isfinite(probabilities).all() or not np.allclose(
                                 probabilities.sum(axis=1), 1.0, atol=1e-5
                             ):
-                                raise RuntimeError("Invalid calibrated probabilities")
+                                failure = {
+                                    "outer_fold": fold_name,
+                                    "subject_id": subject_id,
+                                    "budget": budget_value,
+                                    "method": spec.method,
+                                    "seed": int(spec.random_state),
+                                    "status": "non_finite_predictions",
+                                    "error_type": "InvalidProbabilities",
+                                    "error_message": (
+                                        "Probabilities are non-finite or do not "
+                                        "sum to one"
+                                    ),
+                                    "traceback": "",
+                                }
+                                failure_rows.append(failure)
+                                _write_json(
+                                    artifact_dir / "failure.json", failure
+                                )
+                                persist_progress()
+                                del adapted
+                                gc.collect()
+                                if torch.cuda.is_available():
+                                    torch.cuda.empty_cache()
+                                continue
                             metrics = MetricsCalculator.calculate_all_metrics(
                                 evaluation_sequences.y,
                                 predictions,
@@ -1769,10 +2439,10 @@ class UserCalibrationExperiment:
                             )
                         if predictions_frame.empty:
                             predictions_frame = pd.DataFrame(columns=[
-                                "outer_fold", "subject_id", "record_id",
+                                "outer_fold", "subject_id", "source", "record_id",
                                 "record_group_id", "sample_id", "sequence_id",
                                 "calibration_method", "budget_seconds",
-                                "budget_fraction", "budget", "y_true",
+                                "budget_fraction", "budget", "seed", "y_true",
                                 "y_pred", "proba_0", "proba_1", "proba_2",
                                 "proba_3", "proba_4", "is_calibration_sample",
                                 "calibration_start", "calibration_end",
@@ -1785,6 +2455,9 @@ class UserCalibrationExperiment:
                         row = {
                             "outer_fold": fold_name,
                             "subject_id": subject_id,
+                            "source": subject_source,
+                            "source_membership": json.dumps(subject_sources),
+                            "seed": int(spec.random_state),
                             "calibration_method": spec.method,
                             "budget_seconds": budget_seconds,
                             "budget_fraction": budget_fraction,
@@ -1803,6 +2476,7 @@ class UserCalibrationExperiment:
                                 partition.actual_fraction
                             ),
                             "calibration_samples": len(partition.calibration_X),
+                            "reserved_samples": len(partition.reserved_metadata),
                             "n_calibration": len(partition.calibration_X),
                             "adaptation_train_samples": (
                                 0
@@ -1823,6 +2497,18 @@ class UserCalibrationExperiment:
                             ),
                             "calibration_validation_mode": validation_mode,
                             "training_time_seconds": training_time,
+                            "fine_tuning_time_seconds": training_time,
+                            "device_type": str(base_adapter.device_.type),
+                            "device_name": (
+                                None
+                                if device_info is None
+                                else device_info["device_name"]
+                            ),
+                            "peak_gpu_memory_bytes": (
+                                int(torch.cuda.max_memory_allocated())
+                                if base_adapter.device_.type == "cuda"
+                                else 0
+                            ),
                             "global_checkpoint_hash": global_hash,
                             "fine_tune_initial_hash": initial_hash,
                             "fine_tune_final_hash": final_hash,
@@ -1907,8 +2593,11 @@ class UserCalibrationExperiment:
                             row["evaluation_class_counts"], sort_keys=True
                         )
                         subject_rows.append(row)
-                        split_audit_rows.append({
+                        split_audit_row = {
+                            "outer_fold": fold_name,
                             "subject_id": subject_id,
+                            "seed": int(spec.random_state),
+                            "method": spec.method,
                             "budget": row["budget"],
                             "split_strategy": spec.split_strategy,
                             "n_global_train_subjects": len(
@@ -1949,9 +2638,12 @@ class UserCalibrationExperiment:
                                     split_manifest["evaluation_sample_ids"]
                                 )
                             ),
-                        })
-                        checkpoint_audit_rows.append({
+                        }
+                        split_audit_rows.append(split_audit_row)
+                        checkpoint_audit_row = {
+                            "outer_fold": fold_name,
                             "subject_id": subject_id,
+                            "seed": int(spec.random_state),
                             "budget": row["budget"],
                             "method": spec.method,
                             "global_checkpoint_hash": global_hash,
@@ -1968,7 +2660,19 @@ class UserCalibrationExperiment:
                             "trainable_hash_after": trainable_hash_after,
                             "trainable_parameter_count": trainable_count,
                             "frozen_parameter_count": frozen_count,
-                        })
+                        }
+                        checkpoint_audit_rows.append(checkpoint_audit_row)
+                        _write_json(
+                            artifact_dir / "condition_result.json",
+                            {
+                                "condition_key": condition_key,
+                                "subject_metrics": row,
+                                "split_audit": split_audit_row,
+                                "checkpoint_audit": checkpoint_audit_row,
+                            },
+                        )
+                        completed_condition_keys.add(condition_key)
+                        persist_progress()
                         LOGGER.info(
                             "Calibration subject=%s budget=%s method=%s "
                             "pool=%d adaptation_train=%d adaptation_validation=%d "
@@ -2008,6 +2712,7 @@ class UserCalibrationExperiment:
                 raise RuntimeError(f"Base fold model was modified in {fold_name}")
 
         subjects = pd.DataFrame(subject_rows)
+        normalized_subjects = _normalized_subject_metrics(subjects)
         summary = self._aggregate_subjects(subjects)
         fold_summary = self._aggregate_folds(subjects)
         subjects_path = run_dir / "user_calibration_subjects.csv"
@@ -2022,7 +2727,9 @@ class UserCalibrationExperiment:
         subjects.to_csv(subjects_path, index=False)
         summary.to_csv(summary_path, index=False)
         fold_summary.to_csv(fold_path, index=False)
-        subjects.to_csv(calibration_subject_metrics_path, index=False)
+        normalized_subjects.to_csv(
+            calibration_subject_metrics_path, index=False
+        )
         summary.to_csv(calibration_summary_path, index=False)
         pd.DataFrame(split_audit_rows).to_csv(split_audit_path, index=False)
         pd.DataFrame(checkpoint_audit_rows).to_csv(
@@ -2044,10 +2751,62 @@ class UserCalibrationExperiment:
                 run_dir / "predictions.parquet", index=False
             )
 
+        bootstrap_samples = int(
+            experiment_config.get("bootstrap_samples", 1000)
+        )
+        source_subject_metrics = _source_subject_metrics(
+            unified_predictions, normalized_subjects
+        )
+        source_subject_metrics_path = run_dir / "source_subject_metrics.csv"
+        source_subject_metrics.to_csv(source_subject_metrics_path, index=False)
+        aggregate_frames = [
+            _aggregate_metric_rows(
+                normalized_subjects,
+                scope="overall",
+                source="overall",
+                bootstrap_samples=bootstrap_samples,
+                random_state=int(evaluation.get("random_state", 42)),
+            )
+        ]
+        if not source_subject_metrics.empty:
+            for source, source_group in source_subject_metrics.groupby(
+                "source", sort=True
+            ):
+                aggregate_frames.append(_aggregate_metric_rows(
+                    source_group,
+                    scope="source",
+                    source=str(source),
+                    bootstrap_samples=bootstrap_samples,
+                    random_state=int(evaluation.get("random_state", 42)),
+                ))
+        aggregate_metrics = pd.concat(aggregate_frames, ignore_index=True)
+        aggregate_metrics_path = run_dir / "aggregate_metrics.csv"
+        aggregate_metrics.to_csv(aggregate_metrics_path, index=False)
+        source_summary_path = run_dir / "source_summary.csv"
+        aggregate_metrics.loc[
+            aggregate_metrics["scope"] == "source"
+        ].to_csv(source_summary_path, index=False)
+        paired_comparisons_path = run_dir / "paired_comparisons.csv"
+        _paired_comparison_rows(
+            normalized_subjects,
+            bootstrap_samples=bootstrap_samples,
+            random_state=int(evaluation.get("random_state", 42)),
+        ).to_csv(paired_comparisons_path, index=False)
+        threshold, reached = _threshold_summary(normalized_subjects)
+        threshold_path = run_dir / "threshold_75_summary.csv"
+        reached_path = run_dir / "subjects_accuracy_ge_075.csv"
+        threshold.to_csv(threshold_path, index=False)
+        reached.to_csv(reached_path, index=False)
+        global_fold_path = run_dir / "global_fold_summary.csv"
+        pd.DataFrame(global_fold_rows).drop_duplicates(
+            "outer_fold"
+        ).to_csv(global_fold_path, index=False)
+
         manifest = {
             "schema_version": CALIBRATION_SCHEMA_VERSION,
             "status": "completed",
             "config_hash": config_hash,
+            "implementation_hash": code_hash,
             "base_config_hash": self.base_hash,
             "base_run_directory": str(self.base_run_dir),
             "run_directory": str(run_dir),
@@ -2055,6 +2814,8 @@ class UserCalibrationExperiment:
             "subjects": int(subjects["subject_id"].nunique()),
             "subject_budget_method_rows": int(len(subjects)),
             "evaluation_predictions": int(len(unified_predictions)),
+            "completed_conditions": len(completed_condition_keys),
+            "failed_conditions": len(failure_rows),
             "elapsed_seconds": time.perf_counter() - started,
             **dict(device_info or {}),
             "artifacts": {
@@ -2067,10 +2828,30 @@ class UserCalibrationExperiment:
                 "calibration_summary": str(calibration_summary_path),
                 "calibration_split_audit": str(split_audit_path),
                 "checkpoint_audit": str(checkpoint_audit_path),
+                "failures": str(failures_path),
+                "global_fold_summary": str(global_fold_path),
+                "aggregate_metrics": str(aggregate_metrics_path),
+                "source_summary": str(source_summary_path),
+                "source_subject_metrics": str(source_subject_metrics_path),
+                "paired_comparisons": str(paired_comparisons_path),
+                "threshold_75_summary": str(threshold_path),
+                "subjects_accuracy_ge_075": str(reached_path),
                 "predictions": str(run_dir / "predictions.parquet"),
             },
         }
         _write_json(run_dir / "run_manifest.json", manifest)
+        _write_json(
+            run_dir / "progress.json",
+            {
+                "schema_version": CALIBRATION_SCHEMA_VERSION,
+                "status": "completed",
+                "config_hash": config_hash,
+                "implementation_hash": code_hash,
+                "completed_conditions": len(completed_condition_keys),
+                "failed_conditions": len(failure_rows),
+                "condition_keys": sorted(completed_condition_keys),
+            },
+        )
         if write_reports:
             self._write_reports(subjects, summary, run_dir, manifest)
         return manifest

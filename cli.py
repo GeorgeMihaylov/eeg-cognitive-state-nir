@@ -1104,6 +1104,7 @@ Examples:
             random_state=args.seed,
             output_dir=args.output_dir,
             write_reports=True,
+            resume=args.resume,
         )
         print(json.dumps(result, indent=2, default=str))
         return
