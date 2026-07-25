@@ -1121,6 +1121,26 @@ Examples:
                 output_dir=args.output_dir,
                 resume=args.resume,
             )
+        elif calibration_type == 'pm_regression_personalization_multiseed':
+            if budgets is not None or methods is not None or args.seed is not None:
+                parser.error(
+                    'PM regression multiseed personalization takes seeds, '
+                    'the 20% budget, and methods from its config'
+                )
+            from bench.experiments.pm_regression_personalization_multiseed import (
+                PMRegressionPersonalizationMultiseedExperiment,
+            )
+
+            experiment = PMRegressionPersonalizationMultiseedExperiment(
+                args.calibration_experiment
+            )
+            result = experiment.execute(
+                fold_limit=args.fold_limit,
+                subject_limit=args.subject_limit,
+                max_epochs=args.max_calibration_epochs,
+                output_dir=args.output_dir,
+                resume=args.resume,
+            )
         elif calibration_type == 'pm_regression_personalization':
             if budgets is not None or args.seed is not None:
                 parser.error(

@@ -1,0 +1,58 @@
+experiment:
+  name: pm_regression_personalization_multiseed_cuda_smoke
+  type: pm_regression_personalization_multiseed
+  output_dir: ./benchmark_results/pm_regression_personalization_multiseed_cuda_smoke
+  split_seed: 42
+  model_seeds: [7, 2026]
+  outer_folds: [1]
+  global_max_epochs: 2
+  require_cuda: true
+  resume: true
+  seed_42_source_root: ./benchmark_results/pm_regression_personalization_20pct
+
+base_template:
+  config_path: ./experiments/calibration/pm_regression_personalization_20pct_base.yaml
+  dataset: emotiv_pm_regression
+  model: torch_mlp
+
+targets:
+  - target_attention
+  - target_engagement
+  - target_excitement
+  - target_stress
+  - target_relaxation
+  - target_interest
+  - target_focus
+
+calibration:
+  maximum_calibration_fraction: 0.20
+  budgets: [0.20]
+  methods:
+    - zero_shot
+    - head_only
+    - full_model
+  target_subjects:
+    - 7092f07b
+    - 71a251fa
+  adaptation_validation_fraction: 0.20
+  fraction_allocation: global_prefix
+  window_seconds: 10.0
+  max_gap_seconds: 10.5
+  minimum_calibration_samples: 5
+  minimum_adaptation_train_samples: 4
+  minimum_evaluation_samples: 20
+  method_params:
+    head_only:
+      max_epochs: 2
+      learning_rate: 0.001
+      weight_decay: 0.0001
+      early_stopping_patience: 2
+    full_model:
+      max_epochs: 2
+      learning_rate: 0.0001
+      weight_decay: 0.0001
+      early_stopping_patience: 2
+
+statistics:
+  bootstrap_samples: 1000
+  bootstrap_seed: 42

@@ -96,6 +96,10 @@ def _json_text(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
 
+def _ordered_hash(values: Sequence[Any]) -> str:
+    return _canonical_hash([str(value) for value in values])
+
+
 def fit_bias_correction(
     y_true: Any,
     y_pred: Any,
@@ -606,15 +610,36 @@ class PMRegressionPersonalizationExperiment:
             raise ValueError("This experiment fixes the calibration budget at 20%")
         model_seed = int(experiment_config.get("model_seed", 42))
         split_seed = int(experiment_config.get("split_seed", 42))
-        if model_seed != 42 or split_seed != 42:
-            raise ValueError("Task 9В.1 is a single-seed experiment fixed at seed 42")
+        dataset_name, task_name, model_name = self._identities()
+        if model_seed < 0 or split_seed != 42:
+            raise ValueError(
+                "model_seed must be non-negative and split_seed must remain 42"
+            )
+        configured_model_seed = int(
+            self.base_config["models"][model_name]["params"].get(
+                "random_state", -1
+            )
+        )
+        if configured_model_seed != model_seed:
+            raise ValueError(
+                "Base model random_state must equal experiment.model_seed: "
+                f"{configured_model_seed} != {model_seed}"
+            )
+        for section in ("validation", "evaluation", "task_config"):
+            configured_split_seed = int(
+                self.base_config.get(section, {}).get("random_state", -1)
+            )
+            if configured_split_seed != split_seed:
+                raise ValueError(
+                    f"{section}.random_state must equal split_seed: "
+                    f"{configured_split_seed} != {split_seed}"
+                )
 
         base_run = self._ensure_base_run()
         base_run_dir = base_run.run_directory
         base_results = json.loads(
             (base_run_dir / "metrics.json").read_text(encoding="utf-8")
         )
-        dataset_name, task_name, model_name = self._identities()
         dataset_path = _repo_path(
             self.base_config["datasets"][dataset_name]["data_path"]
         )
@@ -816,8 +841,11 @@ class PMRegressionPersonalizationExperiment:
             global_training = fold_result.get("training", {})
             global_rows.append({
                 "outer_fold": fold_name,
+                "split_seed": split_seed,
+                "model_seed": model_seed,
                 "checkpoint": str(checkpoint),
-                "global_checkpoint_hash": checkpoint_sha,
+                "global_checkpoint_hash": global_hash,
+                "global_checkpoint_file_hash": checkpoint_sha,
                 "global_model_state_hash": global_hash,
                 "n_outer_train_subjects": int(len(np.unique(split.subject_train))),
                 "n_outer_test_subjects": int(len(outer_test_subjects)),
@@ -853,6 +881,8 @@ class PMRegressionPersonalizationExperiment:
                 "peak_gpu_memory_bytes": global_training.get(
                     "peak_gpu_memory_bytes", 0
                 ),
+                "torch_version": torch.__version__,
+                "cuda_version": torch.version.cuda,
             })
             test_metadata = runner._partition_sequence_metadata(split, "test")
             subjects = sorted(outer_test_subjects)
@@ -933,6 +963,8 @@ class PMRegressionPersonalizationExperiment:
                     "outer_fold": fold_name,
                     "subject_id": subject_id,
                     "source": source,
+                    "split_seed": split_seed,
+                    "model_seed": model_seed,
                     "total_target_samples": int(len(subject_X)),
                     "calibration_pool_samples": int(len(partition.calibration_X)),
                     "adaptation_train_samples": int(
@@ -963,6 +995,28 @@ class PMRegressionPersonalizationExperiment:
                     "duplicate_sample_ids": int(
                         metadata["sample_id"].astype(str).duplicated().sum()
                     ),
+                    "outer_train_subject_hash": _ordered_hash(
+                        sorted(np.unique(split.subject_train).astype(str))
+                    ),
+                    "inner_train_subject_hash": _ordered_hash(
+                        sorted(inner_train_subjects)
+                    ),
+                    "inner_validation_subject_hash": _ordered_hash(
+                        sorted(inner_validation_subjects)
+                    ),
+                    "calibration_sample_hash": _ordered_hash(
+                        sorted(calibration_ids)
+                    ),
+                    "adaptation_train_sample_hash": _ordered_hash(
+                        sorted(adaptation_train_ids)
+                    ),
+                    "adaptation_validation_sample_hash": _ordered_hash(
+                        sorted(adaptation_validation_ids)
+                    ),
+                    "evaluation_sample_hash": _ordered_hash(
+                        sorted(evaluation_ids)
+                    ),
+                    "preprocessor_hash": preprocessing_hash,
                     "sort_order": "source,record_id,t_start,sample_id",
                 }
                 base_adaptation_predictions = base_adapter.predict(
@@ -1117,7 +1171,10 @@ class PMRegressionPersonalizationExperiment:
                         "outer_fold": fold_name,
                         "subject_id": subject_id,
                         "method": method,
-                        "global_checkpoint_hash": checkpoint_sha,
+                        "split_seed": split_seed,
+                        "model_seed": model_seed,
+                        "global_checkpoint_hash": global_hash,
+                        "global_checkpoint_file_hash": checkpoint_sha,
                         "global_model_state_hash": global_hash,
                         "fine_tune_initial_hash": initial_hash,
                         "fine_tune_final_hash": final_hash,
@@ -1131,6 +1188,11 @@ class PMRegressionPersonalizationExperiment:
                         "trainable_parameter_count": trainable_count,
                         "frozen_parameter_count": frozen_count,
                         "preprocessor_hash": preprocessing_hash,
+                        "peak_gpu_memory_bytes": int(
+                            adapted.peak_gpu_memory_bytes_
+                            if method in {"head_only", "full_model"}
+                            else 0
+                        ),
                     }
                     if status == COMPLETED_STATUS:
                         before_metrics, after_metrics, gains = _metric_bundle(
@@ -1147,14 +1209,29 @@ class PMRegressionPersonalizationExperiment:
                             improvement_counts[
                                 f"targets_{metric}_improved_count"
                             ] = int(np.sum(values > 0))
+                        condition_training_time = (
+                            time.perf_counter() - condition_started
+                        )
                         subject_metrics = {
                             "outer_fold": fold_name,
                             "subject_id": subject_id,
                             "source": source,
                             "method": method,
+                            "split_seed": split_seed,
                             "model_seed": model_seed,
                             "budget": budget,
                             "status": status,
+                            "n_total_target_samples": int(len(subject_X)),
+                            "n_calibration": int(len(partition.calibration_X)),
+                            "n_adaptation_train": int(
+                                len(adaptation.calibration_X)
+                            ),
+                            "n_adaptation_validation": int(
+                                len(adaptation.evaluation_X)
+                            ),
+                            "n_final_evaluation": int(
+                                len(partition.evaluation_X)
+                            ),
                             "calibration_sample_count": int(
                                 len(partition.calibration_X)
                             ),
@@ -1167,6 +1244,26 @@ class PMRegressionPersonalizationExperiment:
                             "evaluation_sample_count": int(
                                 len(partition.evaluation_X)
                             ),
+                            "evaluation_sample_hash": split_audit[
+                                "evaluation_sample_hash"
+                            ],
+                            "calibration_sample_hash": split_audit[
+                                "calibration_sample_hash"
+                            ],
+                            "adaptation_train_sample_hash": split_audit[
+                                "adaptation_train_sample_hash"
+                            ],
+                            "adaptation_validation_sample_hash": split_audit[
+                                "adaptation_validation_sample_hash"
+                            ],
+                            "preprocessor_hash": preprocessing_hash,
+                            "global_checkpoint_hash": global_hash,
+                            "fine_tune_initial_hash": initial_hash,
+                            "fine_tune_final_hash": final_hash,
+                            "training_time_seconds": condition_training_time,
+                            "peak_gpu_memory_bytes": checkpoint_audit[
+                                "peak_gpu_memory_bytes"
+                            ],
                             **{
                                 f"{key}_before": value
                                 for key, value in before_metrics.items()
