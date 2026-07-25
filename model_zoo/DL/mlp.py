@@ -51,6 +51,15 @@ class TorchMLP(nn.Module):
             previous_dim = hidden_dim
         layers.append(nn.Linear(previous_dim, self.num_classes))
         self.network = nn.Sequential(*layers)
+        self.output_head_index = len(self.network) - 1
+
+    def get_output_head(self) -> nn.Module:
+        """Return the explicit classification/regression output head."""
+        return self.network[self.output_head_index]
+
+    def output_head_parameter_prefixes(self) -> tuple[str, ...]:
+        """Return stable state-dict prefixes for head-only fine-tuning."""
+        return (f"network.{self.output_head_index}.",)
 
     def forward(self, X: Tensor) -> Tensor:
         if X.ndim != 2:

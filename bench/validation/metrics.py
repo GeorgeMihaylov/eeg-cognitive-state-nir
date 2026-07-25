@@ -59,6 +59,7 @@ class MetricsCalculator:
             task_type: str = 'classification',
             expected_rank: Optional[np.ndarray] = None,
             target_names: Optional[List[str]] = None,
+            labels: Optional[np.ndarray] = None,
     ) -> Dict[str, Any]:
         normalized_task = str(task_type).strip().lower()
         if normalized_task in {'regression', 'regressor'}:
@@ -69,13 +70,28 @@ class MetricsCalculator:
             )
         if normalized_task not in {'classification', 'classifier'}:
             raise ValueError(f'Unknown task_type {task_type!r}')
+        resolved_labels = (
+            None if labels is None else np.asarray(labels).reshape(-1)
+        )
         metrics = {}
         metrics['accuracy'] = accuracy_score(y_true, y_pred)
         metrics['balanced_accuracy'] = balanced_accuracy_score(y_true, y_pred)
-        metrics['precision'] = precision_score(y_true, y_pred, average=average, zero_division=0)
-        metrics['recall'] = recall_score(y_true, y_pred, average=average, zero_division=0)
-        metrics['macro_f1'] = f1_score(y_true, y_pred, average='macro', zero_division=0)
-        metrics['weighted_f1'] = f1_score(y_true, y_pred, average='weighted', zero_division=0)
+        metrics['precision'] = precision_score(
+            y_true, y_pred, labels=resolved_labels,
+            average=average, zero_division=0,
+        )
+        metrics['recall'] = recall_score(
+            y_true, y_pred, labels=resolved_labels,
+            average=average, zero_division=0,
+        )
+        metrics['macro_f1'] = f1_score(
+            y_true, y_pred, labels=resolved_labels,
+            average='macro', zero_division=0,
+        )
+        metrics['weighted_f1'] = f1_score(
+            y_true, y_pred, labels=resolved_labels,
+            average='weighted', zero_division=0,
+        )
         # Backward-compatible keys used by the existing runner and summaries.
         metrics['f1_macro'] = metrics['macro_f1']
         metrics['f1_weighted'] = metrics['weighted_f1']
@@ -84,6 +100,9 @@ class MetricsCalculator:
             None if y_proba is None else np.asarray(y_proba)
         )
         qwk_labels = (
+            resolved_labels.tolist()
+            if resolved_labels is not None
+            else
             list(range(probability_array.shape[1]))
             if probability_array is not None and probability_array.ndim == 2
             else None
@@ -101,7 +120,9 @@ class MetricsCalculator:
         metrics['ordinal_mae'] = float(np.mean(ordinal_distance))
         metrics['adjacent_accuracy'] = float(np.mean(ordinal_distance <= 1.0))
         metrics['severe_error_rate'] = float(np.mean(ordinal_distance >= 2.0))
-        metrics['confusion_matrix'] = confusion_matrix(y_true, y_pred).tolist()
+        metrics['confusion_matrix'] = confusion_matrix(
+            y_true, y_pred, labels=resolved_labels
+        ).tolist()
         if y_proba is not None:
             try:
                 n_classes = probability_array.shape[1]
@@ -139,7 +160,11 @@ class MetricsCalculator:
                 else np.nan
             )
         metrics['n_samples'] = len(y_true)
-        metrics['n_classes'] = len(np.unique(y_true))
+        metrics['n_classes'] = (
+            len(np.unique(y_true))
+            if resolved_labels is None
+            else len(resolved_labels)
+        )
 
         return metrics
 

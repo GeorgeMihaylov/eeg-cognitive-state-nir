@@ -6,9 +6,11 @@ import gc
 import hashlib
 import html
 import json
+import logging
+import shutil
 import time
 from copy import deepcopy
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
@@ -28,7 +30,7 @@ from model_zoo.DL.sequence_utils import (
     SequenceBuildResult,
     build_sequences,
 )
-from model_zoo.factory import build_model
+from model_zoo.factory import build_model, model_requires_sequences
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -36,6 +38,7 @@ CALIBRATION_SCHEMA_VERSION = "user-calibration-v1"
 CALIBRATION_METHODS = frozenset(
     {"zero_shot", "subject_normalization", "head_only", "full_model"}
 )
+LOGGER = logging.getLogger(__name__)
 
 
 def _repo_path(value: str | Path) -> Path:
@@ -82,6 +85,16 @@ def _safe_component(value: Any) -> str:
     return text or "unnamed"
 
 
+def _is_zero_budget(spec: "CalibrationSpec") -> bool:
+    return (
+        spec.budget_seconds is not None
+        and float(spec.budget_seconds) == 0.0
+    ) or (
+        spec.budget_fraction is not None
+        and float(spec.budget_fraction) == 0.0
+    )
+
+
 @dataclass(frozen=True)
 class CalibrationSpec:
     """Serializable, AutoML-ready calibration protocol parameters."""
@@ -99,6 +112,8 @@ class CalibrationSpec:
     fallback_fixed_epochs: int = 3
     min_calibration_sequences: int = 1
     min_evaluation_sequences: int = 20
+    minimum_calibration_samples: int = 1
+    minimum_evaluation_samples: int = 20
     random_state: int = 42
 
     def __post_init__(self) -> None:
@@ -107,7 +122,10 @@ class CalibrationSpec:
             "normalization": "subject_normalization",
             "subject_norm": "subject_normalization",
             "head": "head_only",
+            "head_only_finetuning": "head_only",
             "full": "full_model",
+            "full_finetuning": "full_model",
+            "no_adaptation": "zero_shot",
         }
         normalized = aliases.get(normalized, normalized)
         object.__setattr__(self, "method", normalized)
@@ -124,8 +142,8 @@ class CalibrationSpec:
             raise ValueError("A calibration budget is required")
         if self.budget_seconds is not None and self.budget_seconds < 0:
             raise ValueError("budget_seconds cannot be negative")
-        if self.budget_fraction is not None and not 0 < self.budget_fraction < 1:
-            raise ValueError("budget_fraction must be between 0 and 1")
+        if self.budget_fraction is not None and not 0 <= self.budget_fraction < 1:
+            raise ValueError("budget_fraction must be in [0, 1)")
         if self.purge_windows < 0:
             raise ValueError("purge_windows cannot be negative")
         if self.max_epochs <= 0 or self.fallback_fixed_epochs <= 0:
@@ -140,6 +158,10 @@ class CalibrationSpec:
             raise ValueError("min_calibration_sequences must be positive")
         if self.min_evaluation_sequences <= 0:
             raise ValueError("min_evaluation_sequences must be positive")
+        if self.minimum_calibration_samples <= 0:
+            raise ValueError("minimum_calibration_samples must be positive")
+        if self.minimum_evaluation_samples <= 0:
+            raise ValueError("minimum_evaluation_samples must be positive")
 
     @classmethod
     def from_dict(cls, values: Mapping[str, Any]) -> "CalibrationSpec":
@@ -190,6 +212,9 @@ class WindowPartition:
     actual_seconds: float
     available_seconds: float
     time_column: str
+    requested_fraction: Optional[float] = None
+    actual_fraction: float = 0.0
+    reserved_metadata: pd.DataFrame = field(default_factory=pd.DataFrame)
 
 
 def _time_column(metadata: pd.DataFrame) -> str:
@@ -277,6 +302,17 @@ def chronological_window_partition(
         group = ordered.loc[ordered["_segment_key"] == segment_key]
         row_indices = group["_row_index"].to_numpy(dtype=np.int64)
         times = group[time_column].to_numpy(dtype=np.float64)
+        if spec.budget_fraction is not None:
+            count = int(np.floor(len(group) * float(spec.budget_fraction)))
+            if count <= 0:
+                continue
+            calibration_rows.extend(row_indices[:count].tolist())
+            consumed = float(times[count - 1] - times[0] + window_seconds)
+            actual_seconds += consumed
+            if count < len(group) and spec.purge_windows:
+                purge_stop = min(len(group), count + spec.purge_windows)
+                purged_rows.extend(row_indices[count:purge_stop].tolist())
+            continue
         if remaining <= 1e-9:
             continue
         cumulative = times - times[0] + window_seconds
@@ -316,6 +352,81 @@ def chronological_window_partition(
         actual_seconds=actual_seconds,
         available_seconds=available_seconds,
         time_column=time_column,
+        requested_fraction=spec.budget_fraction,
+        actual_fraction=(
+            0.0 if len(features) == 0 else len(calibration_index) / len(features)
+        ),
+    )
+
+
+def _as_window_observations(
+    X: np.ndarray,
+    y: np.ndarray,
+    metadata: pd.DataFrame,
+) -> SequenceBuildResult:
+    """Expose feature windows through the existing calibration result contract."""
+    frame = metadata.reset_index(drop=True).copy()
+    required = {"sample_id", "record_id", "subject_id", "source"}
+    missing = sorted(required - set(frame.columns))
+    if missing:
+        raise ValueError(f"Window metadata is missing columns: {missing}")
+    frame["record_group_id"] = frame.get("record_group_id", frame["record_id"])
+    frame["target_sample_id"] = frame["sample_id"].astype(str)
+    frame["sequence_id"] = frame["sample_id"].astype(str)
+    frame["sequence_length"] = 1
+    return SequenceBuildResult(
+        X=np.ascontiguousarray(np.asarray(X, dtype=np.float32)),
+        y=np.asarray(y),
+        metadata=frame,
+        stats={
+            "mode": "feature_windows",
+            "input_windows": int(len(frame)),
+            "output_sequences": int(len(frame)),
+            "sequence_length": 1,
+        },
+    )
+
+
+def _use_reference_evaluation(
+    partition: WindowPartition,
+    reference: WindowPartition,
+) -> WindowPartition:
+    """Use one fixed late evaluation suffix for every calibration budget."""
+    calibration_ids = set(
+        partition.calibration_metadata["sample_id"].astype(str)
+    )
+    evaluation_ids = set(
+        reference.evaluation_metadata["sample_id"].astype(str)
+    )
+    if calibration_ids & evaluation_ids:
+        raise RuntimeError("Calibration overlaps the fixed final evaluation")
+    all_metadata = pd.concat(
+        [
+            partition.calibration_metadata,
+            partition.evaluation_metadata,
+            partition.purged_metadata,
+        ],
+        ignore_index=True,
+    ).drop_duplicates("sample_id")
+    used_ids = calibration_ids | evaluation_ids
+    reserved = all_metadata.loc[
+        ~all_metadata["sample_id"].astype(str).isin(used_ids)
+    ].reset_index(drop=True)
+    return WindowPartition(
+        calibration_X=partition.calibration_X,
+        calibration_y=partition.calibration_y,
+        calibration_metadata=partition.calibration_metadata,
+        evaluation_X=reference.evaluation_X,
+        evaluation_y=reference.evaluation_y,
+        evaluation_metadata=reference.evaluation_metadata,
+        purged_metadata=reference.purged_metadata,
+        requested_seconds=partition.requested_seconds,
+        actual_seconds=partition.actual_seconds,
+        available_seconds=partition.available_seconds,
+        time_column=partition.time_column,
+        requested_fraction=partition.requested_fraction,
+        actual_fraction=partition.actual_fraction,
+        reserved_metadata=reserved,
     )
 
 
@@ -337,6 +448,17 @@ def _build_sequences(
         expected_step_seconds=float(sequence_config["expected_step_seconds"]),
         max_gap_seconds=float(sequence_config["max_gap_seconds"]),
     )
+
+
+def _build_model_inputs(
+    X: np.ndarray,
+    y: np.ndarray,
+    metadata: pd.DataFrame,
+    sequence_config: Optional[Mapping[str, Any]],
+) -> SequenceBuildResult:
+    if sequence_config is None:
+        return _as_window_observations(X, y, metadata)
+    return _build_sequences(X, y, metadata, sequence_config)
 
 
 def _class_coverage(labels: np.ndarray) -> dict[str, Any]:
@@ -380,6 +502,59 @@ def _state_digest(adapter: TorchClassificationAdapter) -> str:
     return digest.hexdigest()
 
 
+def _parameter_digest(
+    adapter: TorchClassificationAdapter,
+    names: Sequence[str],
+) -> str:
+    selected = set(str(name) for name in names)
+    digest = hashlib.sha256()
+    for name, parameter in sorted(adapter.model.named_parameters()):
+        if name not in selected:
+            continue
+        digest.update(name.encode("utf-8"))
+        digest.update(parameter.detach().cpu().numpy().tobytes())
+    return digest.hexdigest()
+
+
+def _parameter_audit(
+    adapter: TorchClassificationAdapter,
+    method: str,
+) -> tuple[list[str], list[str], int, int]:
+    if method == "head_only":
+        resolver = getattr(
+            adapter.model, "output_head_parameter_prefixes", None
+        )
+        if not callable(resolver):
+            raise ValueError(
+                "Head-only calibration requires "
+                "output_head_parameter_prefixes()"
+            )
+        prefixes = tuple(str(value) for value in resolver())
+        trainable = [
+            name for name, _ in adapter.model.named_parameters()
+            if any(name.startswith(prefix) for prefix in prefixes)
+        ]
+    elif method == "full_model":
+        trainable = [name for name, _ in adapter.model.named_parameters()]
+    else:
+        trainable = []
+    trainable_set = set(trainable)
+    frozen = [
+        name for name, _ in adapter.model.named_parameters()
+        if name not in trainable_set
+    ]
+    counts = {
+        name: int(parameter.numel())
+        for name, parameter in adapter.model.named_parameters()
+    }
+    return (
+        trainable,
+        frozen,
+        sum(counts[name] for name in trainable),
+        sum(counts[name] for name in frozen),
+    )
+
+
 def _checkpoint_payload(path: Path) -> Mapping[str, Any]:
     try:
         return torch.load(path, map_location="cpu", weights_only=False)
@@ -398,7 +573,7 @@ def _svg_line_chart(
     ].copy()
     width, height = 820, 460
     left, right, top, bottom = 80, 30, 35, 65
-    x_values = sorted(frame["budget_seconds"].unique())
+    x_values = sorted(frame["budget"].unique())
     y_values = frame[metric].to_numpy(dtype=float)
     y_min = float(np.min(y_values)) - 0.01
     y_max = float(np.max(y_values)) + 0.01
@@ -431,12 +606,12 @@ def _svg_line_chart(
     for value in x_values:
         position = x(value)
         parts.append(
-            f'<text x="{position:.1f}" y="{height-bottom+22}" text-anchor="middle" font-size="12">{value/60:g}</text>'
+            f'<text x="{position:.1f}" y="{height-bottom+22}" text-anchor="middle" font-size="12">{value:g}</text>'
         )
     for method, group in frame.groupby("method", sort=False):
-        group = group.sort_values("budget_seconds")
+        group = group.sort_values("budget")
         points = " ".join(
-            f'{x(row.budget_seconds):.1f},{y(getattr(row, metric)):.1f}'
+            f'{x(row.budget):.1f},{y(getattr(row, metric)):.1f}'
             for row in group.itertuples()
         )
         color = colors.get(str(method), "#777")
@@ -445,7 +620,7 @@ def _svg_line_chart(
         )
         for row in group.itertuples():
             parts.append(
-                f'<circle cx="{x(row.budget_seconds):.1f}" cy="{y(getattr(row, metric)):.1f}" r="4" fill="{color}"/>'
+                f'<circle cx="{x(row.budget):.1f}" cy="{y(getattr(row, metric)):.1f}" r="4" fill="{color}"/>'
             )
     legend_x = left
     for method in frame["method"].drop_duplicates():
@@ -456,7 +631,7 @@ def _svg_line_chart(
         ])
         legend_x += 155
     parts.extend([
-        f'<text x="{(left+width-right)/2:.1f}" y="{height-15}" text-anchor="middle" font-size="13">Calibration duration (minutes)</text>',
+        f'<text x="{(left+width-right)/2:.1f}" y="{height-15}" text-anchor="middle" font-size="13">Calibration budget (fraction or seconds)</text>',
         f'<text x="18" y="{height/2:.1f}" text-anchor="middle" font-size="13" transform="rotate(-90 18 {height/2:.1f})">{html.escape(label)}</text>',
         "</svg>",
     ])
@@ -470,7 +645,7 @@ def _svg_heatmap(subjects: pd.DataFrame, output_path: Path) -> None:
     ].copy()
     frame["condition"] = (
         frame["calibration_method"].astype(str) + "_"
-        + frame["budget_seconds"].astype(int).astype(str) + "s"
+        + frame["budget"].astype(str)
     )
     pivot = frame.pivot_table(
         index="subject_id",
@@ -557,10 +732,28 @@ class UserCalibrationExperiment:
             self.document = yaml.safe_load(input_file) or {}
         if self.document.get("experiment", {}).get("type") != "user_calibration":
             raise ValueError("experiment.type must be 'user_calibration'")
-        self.base_run_dir = _repo_path(self.document["base_run"]["run_directory"])
-        self.base_config = yaml.safe_load(
-            (self.base_run_dir / "config.yaml").read_text(encoding="utf-8")
-        )
+        base_run = self.document["base_run"]
+        if "config_path" in base_run:
+            base_config_path = _repo_path(base_run["config_path"])
+            self.base_config = yaml.safe_load(
+                base_config_path.read_text(encoding="utf-8")
+            )
+            completed = BenchmarkRunner.find_completed_run(self.base_config)
+            if completed is None and bool(base_run.get("train_if_missing", False)):
+                base_runner = BenchmarkRunner(deepcopy(self.base_config))
+                base_runner.run()
+                completed = base_runner.completed_run()
+            if completed is None:
+                raise FileNotFoundError(
+                    "No completed base benchmark matches "
+                    f"{base_config_path}; run it first or set train_if_missing: true"
+                )
+            self.base_run_dir = completed.run_directory
+        else:
+            self.base_run_dir = _repo_path(base_run["run_directory"])
+            self.base_config = yaml.safe_load(
+                (self.base_run_dir / "config.yaml").read_text(encoding="utf-8")
+            )
         configured_model = str(
             self.document["base_run"].get(
                 "model", next(iter(self.base_config["models"]))
@@ -581,15 +774,22 @@ class UserCalibrationExperiment:
                 )
             )
             raise NotImplementedError(message)
-        self.base_manifest = json.loads(
-            (self.base_run_dir / "run_manifest.json").read_text(encoding="utf-8")
+        manifest_path = self.base_run_dir / "run_manifest.json"
+        self.base_manifest = (
+            json.loads(manifest_path.read_text(encoding="utf-8"))
+            if manifest_path.is_file()
+            else {}
         )
         self.base_hash = benchmark_config_hash(self.base_config)
         BenchmarkRunner.validate_completed_run(
             self.base_run_dir,
             expected_config_hash=self.base_hash,
-            result_file=_repo_path(self.base_manifest["benchmark_result_file"]),
-            manifest_file=self.base_run_dir / "run_manifest.json",
+            result_file=(
+                None
+                if not self.base_manifest
+                else _repo_path(self.base_manifest["benchmark_result_file"])
+            ),
+            manifest_file=manifest_path if manifest_path.is_file() else None,
         )
         self.base_results = json.loads(
             (self.base_run_dir / "metrics.json").read_text(encoding="utf-8")
@@ -644,9 +844,17 @@ class UserCalibrationExperiment:
         random_state: Optional[int] = None,
     ) -> list[CalibrationSpec]:
         config = self.document["calibration"]
-        selected_budgets = list(
-            config["budgets_seconds"] if budgets_seconds is None else budgets_seconds
-        )
+        configured_fractions = config.get("budgets_fraction")
+        if budgets_seconds is None and configured_fractions is not None:
+            selected_budgets = list(configured_fractions)
+            budget_mode = "fraction"
+        else:
+            selected_budgets = list(
+                config["budgets_seconds"]
+                if budgets_seconds is None
+                else budgets_seconds
+            )
+            budget_mode = "seconds"
         selected_methods = list(config["methods"] if methods is None else methods)
         shared = dict(config.get("defaults", {}))
         method_parameters = config.get("method_params", {})
@@ -657,10 +865,21 @@ class UserCalibrationExperiment:
                     **shared,
                     **dict(method_parameters.get(str(method), {})),
                     "method": str(method),
-                    "budget_seconds": float(budget),
-                    "budget_fraction": None,
+                    "budget_seconds": (
+                        None
+                        if budget_mode == "fraction"
+                        else float(budget)
+                    ),
+                    "budget_fraction": (
+                        float(budget)
+                        if budget_mode == "fraction"
+                        else None
+                    ),
                 }
-                if max_epochs is not None and str(method) in {"head_only", "full_model"}:
+                normalized_method = CalibrationSpec.from_dict(values).method
+                if max_epochs is not None and normalized_method in {
+                    "head_only", "full_model"
+                }:
                     values["max_epochs"] = int(max_epochs)
                     values["fallback_fixed_epochs"] = min(
                         int(values.get("fallback_fixed_epochs", 3)), int(max_epochs)
@@ -677,13 +896,18 @@ class UserCalibrationExperiment:
         calibration_sequences: SequenceBuildResult,
         evaluation_sequences: SequenceBuildResult,
     ) -> str:
-        if spec.method != "zero_shot":
+        if spec.method != "zero_shot" and not _is_zero_budget(spec):
             if len(partition.calibration_X) == 0 or (
                 partition.actual_seconds + 1e-6 < partition.requested_seconds
+                and spec.budget_fraction is None
             ):
+                return "insufficient_calibration_data"
+            if len(partition.calibration_X) < spec.minimum_calibration_samples:
                 return "insufficient_calibration_data"
             if len(calibration_sequences.X) < spec.min_calibration_sequences:
                 return "insufficient_sequence_context"
+        if len(partition.evaluation_X) < spec.minimum_evaluation_samples:
+            return "insufficient_evaluation_data"
         if len(evaluation_sequences.X) < spec.min_evaluation_sequences:
             return "insufficient_evaluation_data"
         return "valid"
@@ -692,7 +916,10 @@ class UserCalibrationExperiment:
         self,
         partition: WindowPartition,
         spec: CalibrationSpec,
-        sequence_config: Mapping[str, Any],
+        sequence_config: Optional[Mapping[str, Any]],
+        *,
+        window_seconds: float,
+        max_gap_seconds: float,
     ) -> tuple[SequenceBuildResult, Optional[SequenceBuildResult], str]:
         train_fraction = 1.0 - spec.calibration_validation_fraction
         validation_spec = CalibrationSpec(
@@ -709,6 +936,8 @@ class UserCalibrationExperiment:
             fallback_fixed_epochs=spec.fallback_fixed_epochs,
             min_calibration_sequences=spec.min_calibration_sequences,
             min_evaluation_sequences=spec.min_evaluation_sequences,
+            minimum_calibration_samples=spec.minimum_calibration_samples,
+            minimum_evaluation_samples=spec.minimum_evaluation_samples,
             random_state=spec.random_state,
         )
         inner = chronological_window_partition(
@@ -716,16 +945,16 @@ class UserCalibrationExperiment:
             partition.calibration_y,
             partition.calibration_metadata,
             validation_spec,
-            window_seconds=float(sequence_config["expected_step_seconds"]),
-            max_gap_seconds=float(sequence_config["max_gap_seconds"]),
+            window_seconds=window_seconds,
+            max_gap_seconds=max_gap_seconds,
         )
-        train_sequences = _build_sequences(
+        train_sequences = _build_model_inputs(
             inner.calibration_X,
             inner.calibration_y,
             inner.calibration_metadata,
             sequence_config,
         )
-        validation_sequences = _build_sequences(
+        validation_sequences = _build_model_inputs(
             inner.evaluation_X,
             inner.evaluation_y,
             inner.evaluation_metadata,
@@ -733,13 +962,13 @@ class UserCalibrationExperiment:
         )
         if len(train_sequences.X) and len(validation_sequences.X):
             return train_sequences, validation_sequences, "chronological_holdout"
-        all_sequences = _build_sequences(
+        all_sequences = _build_model_inputs(
             partition.calibration_X,
             partition.calibration_y,
             partition.calibration_metadata,
             sequence_config,
         )
-        return all_sequences, None, "fixed_epochs_no_validation"
+        return all_sequences, None, "none_fixed_epochs"
 
     @staticmethod
     def _split_manifest(
@@ -748,6 +977,8 @@ class UserCalibrationExperiment:
         evaluation_sequences: SequenceBuildResult,
         coverage: Mapping[str, Any],
         validation_mode: str,
+        adaptation_train: Optional[SequenceBuildResult] = None,
+        adaptation_validation: Optional[SequenceBuildResult] = None,
     ) -> dict[str, Any]:
         time_column = partition.time_column
         calibration_ids = partition.calibration_metadata.get(
@@ -759,9 +990,31 @@ class UserCalibrationExperiment:
         evaluation_ids = partition.evaluation_metadata.get(
             "sample_id", pd.Series(dtype=object)
         ).astype(str).tolist()
+        reserved_ids = partition.reserved_metadata.get(
+            "sample_id", pd.Series(dtype=object)
+        ).astype(str).tolist()
         overlap = sorted(set(calibration_ids) & set(evaluation_ids))
         if overlap:
             raise RuntimeError(f"Calibration/evaluation sample overlap: {overlap[:10]}")
+        adaptation_train_ids = (
+            []
+            if adaptation_train is None
+            else adaptation_train.metadata["target_sample_id"].astype(str).tolist()
+        )
+        adaptation_validation_ids = (
+            []
+            if adaptation_validation is None
+            else adaptation_validation.metadata["target_sample_id"].astype(str).tolist()
+        )
+        adaptation_overlap = sorted(
+            set(adaptation_train_ids) & set(adaptation_validation_ids)
+        )
+        evaluation_adaptation_overlap = sorted(
+            (set(adaptation_train_ids) | set(adaptation_validation_ids))
+            & set(evaluation_ids)
+        )
+        if adaptation_overlap or evaluation_adaptation_overlap:
+            raise RuntimeError("Adaptation partitions overlap each other or evaluation")
         return {
             "split_strategy": "chronological_prefix",
             "time_column": time_column,
@@ -770,13 +1023,39 @@ class UserCalibrationExperiment:
             "available_subject_duration_seconds": partition.available_seconds,
             "calibration_windows": len(calibration_ids),
             "purged_windows": len(purged_ids),
+            "reserved_windows": len(reserved_ids),
             "evaluation_windows": len(evaluation_ids),
+            "requested_calibration_fraction": partition.requested_fraction,
+            "actual_calibration_fraction": partition.actual_fraction,
             "calibration_sequences": int(len(calibration_sequences.X)),
             "evaluation_sequences": int(len(evaluation_sequences.X)),
             "calibration_sample_ids": calibration_ids,
             "purged_sample_ids": purged_ids,
+            "reserved_sample_ids": reserved_ids,
             "evaluation_sample_ids": evaluation_ids,
             "window_overlap": overlap,
+            "adaptation_train_samples": len(adaptation_train_ids),
+            "adaptation_validation_samples": len(adaptation_validation_ids),
+            "adaptation_train_sample_ids": adaptation_train_ids,
+            "adaptation_validation_sample_ids": adaptation_validation_ids,
+            "adaptation_validation_overlap": adaptation_overlap,
+            "evaluation_adaptation_overlap": evaluation_adaptation_overlap,
+            "calibration_class_distribution": _class_coverage(
+                calibration_sequences.y
+            ),
+            "adaptation_train_class_distribution": _class_coverage(
+                np.asarray([])
+                if adaptation_train is None
+                else adaptation_train.y
+            ),
+            "adaptation_validation_class_distribution": _class_coverage(
+                np.asarray([])
+                if adaptation_validation is None
+                else adaptation_validation.y
+            ),
+            "evaluation_class_distribution": _class_coverage(
+                evaluation_sequences.y
+            ),
             "calibration_record_ids": sorted(
                 partition.calibration_metadata.get(
                     "record_id", pd.Series(dtype=object)
@@ -824,6 +1103,12 @@ class UserCalibrationExperiment:
             "sequence_id": metadata["sequence_id"].astype(str),
             "calibration_method": spec.method,
             "budget_seconds": spec.budget_seconds,
+            "budget_fraction": spec.budget_fraction,
+            "budget": (
+                spec.budget_fraction
+                if spec.budget_fraction is not None
+                else spec.budget_seconds
+            ),
             "y_true": sequences.y.astype(int),
             "y_pred": np.asarray(predictions, dtype=int),
             "is_calibration_sample": False,
@@ -855,13 +1140,28 @@ class UserCalibrationExperiment:
             max_epochs=max_epochs,
             random_state=random_state,
         )
-        sequence_config = self.base_config["sequence"]
-        sequence_length = int(sequence_config["length"])
+        model_type = str(self.base_config["models"][model_name]["type"])
+        uses_sequences = model_requires_sequences(model_type)
+        sequence_config = (
+            self.base_config.get("sequence") if uses_sequences else None
+        )
+        if uses_sequences and sequence_config is None:
+            raise ValueError("Sequence calibration requires base sequence config")
+        sequence_length = (
+            int(sequence_config["length"])
+            if sequence_config is not None
+            else 1
+        )
         if any(spec.purge_windows < sequence_length - 1 for spec in specs):
             raise ValueError(
                 f"purge_windows must be at least sequence_length - 1 "
                 f"({sequence_length - 1})"
             )
+        calibration_config = self.document["calibration"]
+        window_seconds = float(calibration_config.get("window_seconds", 10.0))
+        max_gap_seconds = float(
+            calibration_config.get("max_gap_seconds", window_seconds * 1.05)
+        )
 
         resolved = {
             "schema_version": CALIBRATION_SCHEMA_VERSION,
@@ -870,6 +1170,7 @@ class UserCalibrationExperiment:
             "specs": [spec.to_dict() for spec in specs],
             "fold_limit": fold_limit,
             "subject_limit": subject_limit,
+            "input_mode": "sequences" if uses_sequences else "feature_windows",
         }
         config_hash = _canonical_hash(resolved)
         root = _repo_path(
@@ -893,12 +1194,28 @@ class UserCalibrationExperiment:
             random_state=int(evaluation.get("random_state", 42)),
             precomputed_fold_column=evaluation.get("precomputed_fold_column"),
         )
+        requested_folds = evaluation.get("folds")
+        if requested_folds is not None:
+            requested_names = {
+                f"fold_{int(fold):02d}" for fold in requested_folds
+            }
+            unknown = requested_names.difference(folds)
+            if unknown:
+                raise ValueError(
+                    f"Requested evaluation folds do not exist: {sorted(unknown)}"
+                )
+            folds = {
+                name: split for name, split in folds.items()
+                if name in requested_names
+            }
         if fold_limit is not None:
             if fold_limit <= 0:
                 raise ValueError("fold_limit must be positive")
             folds = dict(list(folds.items())[: int(fold_limit)])
 
         subject_rows: list[dict[str, Any]] = []
+        split_audit_rows: list[dict[str, Any]] = []
+        checkpoint_audit_rows: list[dict[str, Any]] = []
         prediction_frames: list[pd.DataFrame] = []
         device_info: Optional[dict[str, str]] = None
         started = time.perf_counter()
@@ -921,6 +1238,17 @@ class UserCalibrationExperiment:
             base_digest = _state_digest(base_adapter)
             checkpoint_digest = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
             test_subjects = sorted(np.unique(outer_split.subject_test).astype(str))
+            configured_subjects = {
+                str(value)
+                for value in self.document["calibration"].get(
+                    "target_subjects", []
+                )
+            }
+            if configured_subjects:
+                test_subjects = [
+                    value for value in test_subjects
+                    if value in configured_subjects
+                ]
             if subject_limit is not None:
                 if subject_limit <= 0:
                     raise ValueError("subject_limit must be positive")
@@ -928,6 +1256,14 @@ class UserCalibrationExperiment:
             train_subjects = set(np.unique(outer_split.subject_train).astype(str))
             if train_subjects & set(test_subjects):
                 raise RuntimeError(f"Outer train/test subject leakage in {fold_name}")
+            LOGGER.info(
+                "Calibration %s: global_train_subjects=%d target_subjects=%d "
+                "checkpoint_restored=%s",
+                fold_name,
+                len(train_subjects),
+                len(test_subjects),
+                checkpoint,
+            )
             test_metadata = runner._partition_sequence_metadata(outer_split, "test")
 
             for subject_id in test_subjects:
@@ -935,13 +1271,65 @@ class UserCalibrationExperiment:
                 subject_X = np.asarray(outer_split.X_test)[subject_mask]
                 subject_y = np.asarray(outer_split.y_test)[subject_mask]
                 subject_metadata = test_metadata.loc[subject_mask].reset_index(drop=True)
-                budget_values = sorted(
-                    {float(spec.budget_seconds or 0.0) for spec in specs}
+                subject_root = (
+                    run_dir / fold_name / _safe_component(subject_id)
                 )
-                for budget_seconds in budget_values:
+                subject_root.mkdir(parents=True, exist_ok=True)
+                subject_checkpoint = subject_root / "global_model.pt"
+                shutil.copy2(checkpoint, subject_checkpoint)
+                if hashlib.sha256(subject_checkpoint.read_bytes()).hexdigest() != (
+                    checkpoint_digest
+                ):
+                    raise RuntimeError(
+                        "Copied subject-level global checkpoint hash mismatch"
+                    )
+                _write_json(
+                    subject_root / "global_checkpoint.json",
+                    {
+                        "source_checkpoint": str(checkpoint),
+                        "saved_checkpoint": str(subject_checkpoint),
+                        "sha256": checkpoint_digest,
+                        "model_state_hash": base_digest,
+                    },
+                )
+                budget_values = sorted({
+                    (
+                        "fraction",
+                        float(spec.budget_fraction or 0.0),
+                    )
+                    if spec.budget_fraction is not None
+                    else ("seconds", float(spec.budget_seconds or 0.0))
+                    for spec in specs
+                }, key=lambda value: (value[0], value[1]))
+                maximum_spec = max(
+                    specs,
+                    key=lambda item: (
+                        float(item.budget_fraction or 0.0),
+                        float(item.budget_seconds or 0.0),
+                    ),
+                )
+                reference_partition = chronological_window_partition(
+                    subject_X,
+                    subject_y,
+                    subject_metadata,
+                    maximum_spec,
+                    window_seconds=window_seconds,
+                    max_gap_seconds=max_gap_seconds,
+                )
+                for budget_kind, budget_value in budget_values:
                     budget_specs = [
                         spec for spec in specs
-                        if float(spec.budget_seconds or 0.0) == budget_seconds
+                        if (
+                            (
+                                "fraction",
+                                float(spec.budget_fraction or 0.0),
+                            )
+                            if spec.budget_fraction is not None
+                            else (
+                                "seconds",
+                                float(spec.budget_seconds or 0.0),
+                            )
+                        ) == (budget_kind, budget_value)
                     ]
                     split_spec = budget_specs[0]
                     partition = chronological_window_partition(
@@ -949,16 +1337,20 @@ class UserCalibrationExperiment:
                         subject_y,
                         subject_metadata,
                         split_spec,
-                        window_seconds=float(sequence_config["expected_step_seconds"]),
-                        max_gap_seconds=float(sequence_config["max_gap_seconds"]),
+                        window_seconds=window_seconds,
+                        max_gap_seconds=max_gap_seconds,
                     )
-                    calibration_sequences = _build_sequences(
+                    if self.document["calibration"].get("budgets_fraction") is not None:
+                        partition = _use_reference_evaluation(
+                            partition, reference_partition
+                        )
+                    calibration_sequences = _build_model_inputs(
                         partition.calibration_X,
                         partition.calibration_y,
                         partition.calibration_metadata,
                         sequence_config,
                     )
-                    evaluation_sequences = _build_sequences(
+                    evaluation_sequences = _build_model_inputs(
                         partition.evaluation_X,
                         partition.evaluation_y,
                         partition.evaluation_metadata,
@@ -975,7 +1367,11 @@ class UserCalibrationExperiment:
                         )
                         artifact_dir = (
                             run_dir / fold_name / _safe_component(subject_id)
-                            / f"budget_{int(budget_seconds):04d}s" / spec.method
+                            / (
+                                f"budget_{budget_value:.4f}"
+                                + ("fraction" if budget_kind == "fraction" else "s")
+                            )
+                            / spec.method
                         )
                         artifact_dir.mkdir(parents=True, exist_ok=True)
                         with open(
@@ -1000,16 +1396,66 @@ class UserCalibrationExperiment:
                         training_log = pd.DataFrame()
                         training_time = 0.0
                         metrics: dict[str, Any] = {}
+                        metrics_before: dict[str, Any] = {}
                         predictions_frame = pd.DataFrame()
                         adapted: Optional[TorchClassificationAdapter] = None
                         normalization_metadata: Optional[dict[str, Any]] = None
+                        train_sequences: Optional[SequenceBuildResult] = None
+                        validation_sequences: Optional[SequenceBuildResult] = None
+                        global_hash = base_digest
+                        initial_hash: Optional[str] = None
+                        final_hash: Optional[str] = None
+                        initial_predictions_match = False
+                        frozen_unchanged: Optional[bool] = None
+                        trainable_names: list[str] = []
+                        frozen_names: list[str] = []
+                        trainable_count = 0
+                        frozen_count = 0
+                        frozen_hash_before: Optional[str] = None
+                        frozen_hash_after: Optional[str] = None
+                        trainable_hash_before: Optional[str] = None
+                        trainable_hash_after: Optional[str] = None
                         if status == "valid":
-                            adapted = (
-                                base_adapter
-                                if spec.method == "zero_shot"
-                                else base_adapter.clone()
+                            base_probabilities = base_adapter.predict_proba(
+                                evaluation_sequences.X
                             )
-                            if spec.method == "subject_normalization":
+                            base_predictions = base_probabilities.argmax(axis=1)
+                            metrics_before = MetricsCalculator.calculate_all_metrics(
+                                evaluation_sequences.y,
+                                base_predictions,
+                                base_probabilities,
+                                labels=np.arange(base_adapter.num_classes),
+                            )
+                            adapted = base_adapter.clone()
+                            initial_hash = _state_digest(adapted)
+                            initial_clone_probabilities = adapted.predict_proba(
+                                evaluation_sequences.X
+                            )
+                            initial_predictions_match = bool(np.allclose(
+                                initial_clone_probabilities,
+                                base_probabilities,
+                                atol=1e-7,
+                                rtol=1e-7,
+                            ))
+                            if initial_hash != global_hash or not initial_predictions_match:
+                                raise RuntimeError(
+                                    "Fine-tuning clone does not match global checkpoint"
+                                )
+                            (
+                                trainable_names,
+                                frozen_names,
+                                trainable_count,
+                                frozen_count,
+                            ) = _parameter_audit(adapted, spec.method)
+                            frozen_hash_before = _parameter_digest(
+                                adapted, frozen_names
+                            )
+                            trainable_hash_before = _parameter_digest(
+                                adapted, trainable_names
+                            )
+                            if _is_zero_budget(spec):
+                                validation_mode = "zero_budget_no_adaptation"
+                            elif spec.method == "subject_normalization":
                                 subject_mean, subject_scale = (
                                     calibration_normalization_statistics(
                                         partition.calibration_X
@@ -1029,7 +1475,11 @@ class UserCalibrationExperiment:
                             elif spec.method in {"head_only", "full_model"}:
                                 train_sequences, validation_sequences, validation_mode = (
                                     self._calibration_validation(
-                                        partition, spec, sequence_config
+                                        partition,
+                                        spec,
+                                        sequence_config,
+                                        window_seconds=window_seconds,
+                                        max_gap_seconds=max_gap_seconds,
                                     )
                                 )
                                 fit_epochs = (
@@ -1044,6 +1494,7 @@ class UserCalibrationExperiment:
                                 adapted.fine_tune(
                                     train_sequences.X,
                                     train_sequences.y,
+                                    mode=spec.method,
                                     X_validation=(
                                         None
                                         if validation_sequences is None
@@ -1054,36 +1505,14 @@ class UserCalibrationExperiment:
                                         if validation_sequences is None
                                         else validation_sequences.y
                                     ),
-                                    trainable_parameter_prefixes=(
-                                        ("classifier.",)
-                                        if spec.method == "head_only"
-                                        else None
-                                    ),
                                     max_epochs=fit_epochs,
                                     learning_rate=spec.learning_rate,
                                     weight_decay=spec.weight_decay,
                                     early_stopping_patience=spec.early_stopping_patience,
+                                    random_state=spec.random_state,
                                 )
                                 training_time = time.perf_counter() - fit_started
                                 training_log = pd.DataFrame(adapted.training_log_)
-                                state = {
-                                    key: value.detach().cpu()
-                                    for key, value in adapted.model.state_dict().items()
-                                    if spec.method == "full_model"
-                                    or key.startswith("classifier.")
-                                }
-                                torch.save(
-                                    {
-                                        "base_reference": model_reference,
-                                        "method": spec.method,
-                                        "model_state_dict": state,
-                                    },
-                                    artifact_dir / (
-                                        "calibrated_model.pt"
-                                        if spec.method == "full_model"
-                                        else "calibrated_head.pt"
-                                    ),
-                                )
 
                             probabilities = adapted.predict_proba(
                                 evaluation_sequences.X
@@ -1094,8 +1523,31 @@ class UserCalibrationExperiment:
                             ):
                                 raise RuntimeError("Invalid calibrated probabilities")
                             metrics = MetricsCalculator.calculate_all_metrics(
-                                evaluation_sequences.y, predictions, probabilities
+                                evaluation_sequences.y,
+                                predictions,
+                                probabilities,
+                                labels=np.arange(adapted.num_classes),
                             )
+                            final_hash = _state_digest(adapted)
+                            frozen_hash_after = _parameter_digest(
+                                adapted, frozen_names
+                            )
+                            trainable_hash_after = _parameter_digest(
+                                adapted, trainable_names
+                            )
+                            frozen_unchanged = (
+                                frozen_hash_before == frozen_hash_after
+                            )
+                            if (
+                                spec.method == "zero_shot" or _is_zero_budget(spec)
+                            ) and final_hash != initial_hash:
+                                raise RuntimeError(
+                                    "No-adaptation model state unexpectedly changed"
+                                )
+                            if spec.method == "head_only" and not frozen_unchanged:
+                                raise RuntimeError(
+                                    "Frozen body parameters changed in head-only mode"
+                                )
                             predictions_frame = self._prediction_frame(
                                 fold_name,
                                 subject_id,
@@ -1106,6 +1558,24 @@ class UserCalibrationExperiment:
                                 probabilities,
                             )
                             prediction_frames.append(predictions_frame)
+                            before_frame = self._prediction_frame(
+                                fold_name,
+                                subject_id,
+                                spec,
+                                partition,
+                                evaluation_sequences,
+                                base_predictions,
+                                base_probabilities,
+                            )
+                            before_frame.to_parquet(
+                                artifact_dir / "predictions_before.parquet",
+                                index=False,
+                            )
+                            predictions_frame.to_parquet(
+                                artifact_dir / "predictions_after.parquet",
+                                index=False,
+                            )
+                            adapted.save(artifact_dir / "model.pt")
 
                         split_manifest = self._split_manifest(
                             partition,
@@ -1113,16 +1583,86 @@ class UserCalibrationExperiment:
                             evaluation_sequences,
                             coverage,
                             validation_mode,
+                            adaptation_train=train_sequences,
+                            adaptation_validation=validation_sequences,
                         )
                         split_manifest["status"] = status
                         split_manifest["purge_windows"] = spec.purge_windows
                         split_manifest["evaluation_used_for_normalization"] = False
                         split_manifest["evaluation_used_for_early_stopping"] = False
+                        validation_split = base_adapter.validation_split_ or {}
+                        global_train_subjects = set(
+                            str(value) for value in
+                            validation_split.get("inner_train_subject_ids", [])
+                        )
+                        global_validation_subjects = set(
+                            str(value) for value in
+                            validation_split.get(
+                                "inner_validation_subject_ids", []
+                            )
+                        )
+                        global_target_overlap = int(
+                            subject_id in global_train_subjects
+                            or subject_id in global_validation_subjects
+                        )
+                        if global_target_overlap:
+                            raise RuntimeError(
+                                "Target subject reached global train/validation"
+                            )
+                        preprocessing_state = (
+                            base_adapter.get_feature_preprocessing_state()
+                        )
+                        preprocessing_audit = {
+                            "strategy": (
+                                None
+                                if preprocessing_state is None
+                                else preprocessing_state.get("strategy")
+                            ),
+                            "preprocessor_fit_subjects": sorted(
+                                global_train_subjects
+                            ),
+                            "target_subject": subject_id,
+                            "fit_target_overlap": int(
+                                subject_id in global_train_subjects
+                            ),
+                            "n_fit_samples": (
+                                None
+                                if preprocessing_state is None
+                                else preprocessing_state.get("n_fit_samples")
+                            ),
+                            "state_hash": (
+                                None
+                                if preprocessing_state is None
+                                else _canonical_hash(preprocessing_state)
+                            ),
+                        }
+                        if preprocessing_audit["fit_target_overlap"]:
+                            raise RuntimeError(
+                                "Target subject reached preprocessing fit"
+                            )
+                        _write_json(
+                            artifact_dir / "preprocessing_audit.json",
+                            preprocessing_audit,
+                        )
+
                         _write_json(
                             artifact_dir / "calibration_split.json", split_manifest
                         )
                         training_log.to_csv(
                             artifact_dir / "calibration_training_log.csv", index=False
+                        )
+                        training_log.to_csv(
+                            artifact_dir / "training_log.csv", index=False
+                        )
+                        budget_seconds = (
+                            None
+                            if spec.budget_seconds is None
+                            else float(spec.budget_seconds)
+                        )
+                        budget_fraction = (
+                            None
+                            if spec.budget_fraction is None
+                            else float(spec.budget_fraction)
                         )
                         metric_payload = {
                             "status": status,
@@ -1130,12 +1670,97 @@ class UserCalibrationExperiment:
                             "subject_id": subject_id,
                             "calibration_method": spec.method,
                             "budget_seconds": budget_seconds,
+                            "budget_fraction": budget_fraction,
                             "training_time_seconds": training_time,
                             "calibration_validation_mode": validation_mode,
                             "metrics": metrics,
                         }
                         _write_json(
                             artifact_dir / "calibration_metrics.json", metric_payload
+                        )
+                        _write_json(
+                            artifact_dir / "metrics_before.json", metrics_before
+                        )
+                        _write_json(
+                            artifact_dir / "metrics_after.json", metrics
+                        )
+                        fine_tuning_summary = {
+                            "status": status,
+                            "method": spec.method,
+                            "global_checkpoint_hash": global_hash,
+                            "fine_tune_initial_hash": initial_hash,
+                            "fine_tune_final_hash": final_hash,
+                            "initial_matches_global": initial_hash == global_hash,
+                            "initial_predictions_match_global": (
+                                initial_predictions_match
+                            ),
+                            "frozen_parameters_unchanged": frozen_unchanged,
+                            "frozen_hash_before": frozen_hash_before,
+                            "frozen_hash_after": frozen_hash_after,
+                            "trainable_hash_before": trainable_hash_before,
+                            "trainable_hash_after": trainable_hash_after,
+                            "trainable_parameter_names": trainable_names,
+                            "frozen_parameter_names": frozen_names,
+                            "trainable_parameter_count": trainable_count,
+                            "frozen_parameter_count": frozen_count,
+                            "epochs_trained": (
+                                0
+                                if (
+                                    spec.method == "zero_shot"
+                                    or _is_zero_budget(spec)
+                                    or adapted is None
+                                )
+                                else adapted.n_epochs_trained_
+                            ),
+                            "best_epoch": (
+                                None
+                                if (
+                                    spec.method == "zero_shot"
+                                    or _is_zero_budget(spec)
+                                    or adapted is None
+                                )
+                                else adapted.best_epoch_
+                            ),
+                            "best_validation_loss": (
+                                None
+                                if adapted is None or _is_zero_budget(spec)
+                                else adapted.best_validation_loss_
+                            ),
+                            "fine_tuning_validation_strategy": validation_mode,
+                            "evaluation_used_for_early_stopping": False,
+                        }
+                        _write_json(
+                            artifact_dir / "fine_tuning_summary.json",
+                            fine_tuning_summary,
+                        )
+                        with open(
+                            artifact_dir / "config.yaml", "w", encoding="utf-8"
+                        ) as output:
+                            yaml.safe_dump(
+                                {
+                                    "base_run": model_reference,
+                                    "calibration": spec.to_dict(),
+                                },
+                                output,
+                                sort_keys=False,
+                            )
+                        calibration_samples = partition.calibration_metadata.copy()
+                        calibration_samples["label_q5"] = partition.calibration_y
+                        calibration_samples.loc[
+                            :, ["sample_id", "source", "subject_id", "record_id",
+                                partition.time_column, "label_q5"]
+                        ].to_parquet(
+                            artifact_dir / "calibration_samples.parquet",
+                            index=False,
+                        )
+                        evaluation_samples = partition.evaluation_metadata.copy()
+                        evaluation_samples["label_q5"] = partition.evaluation_y
+                        evaluation_samples.loc[
+                            :, ["sample_id", "source", "subject_id", "record_id",
+                                partition.time_column, "label_q5"]
+                        ].to_parquet(
+                            artifact_dir / "evaluation_samples.parquet",
+                            index=False,
                         )
                         if normalization_metadata is not None:
                             _write_json(
@@ -1146,7 +1771,8 @@ class UserCalibrationExperiment:
                             predictions_frame = pd.DataFrame(columns=[
                                 "outer_fold", "subject_id", "record_id",
                                 "record_group_id", "sample_id", "sequence_id",
-                                "calibration_method", "budget_seconds", "y_true",
+                                "calibration_method", "budget_seconds",
+                                "budget_fraction", "budget", "y_true",
                                 "y_pred", "proba_0", "proba_1", "proba_2",
                                 "proba_3", "proba_4", "is_calibration_sample",
                                 "calibration_start", "calibration_end",
@@ -1161,9 +1787,35 @@ class UserCalibrationExperiment:
                             "subject_id": subject_id,
                             "calibration_method": spec.method,
                             "budget_seconds": budget_seconds,
+                            "budget_fraction": budget_fraction,
+                            "budget": (
+                                budget_fraction
+                                if budget_fraction is not None
+                                else budget_seconds
+                            ),
                             "status": status,
                             "requested_calibration_duration": partition.requested_seconds,
                             "actual_calibration_duration": partition.actual_seconds,
+                            "requested_calibration_fraction": (
+                                partition.requested_fraction
+                            ),
+                            "actual_calibration_fraction": (
+                                partition.actual_fraction
+                            ),
+                            "calibration_samples": len(partition.calibration_X),
+                            "n_calibration": len(partition.calibration_X),
+                            "adaptation_train_samples": (
+                                0
+                                if train_sequences is None
+                                else len(train_sequences.X)
+                            ),
+                            "adaptation_validation_samples": (
+                                0
+                                if validation_sequences is None
+                                else len(validation_sequences.X)
+                            ),
+                            "evaluation_samples": len(partition.evaluation_X),
+                            "n_evaluation": len(partition.evaluation_X),
                             "calibration_sequences": len(calibration_sequences.X),
                             "evaluation_sequences": len(evaluation_sequences.X),
                             "record_coverage": len(
@@ -1171,16 +1823,181 @@ class UserCalibrationExperiment:
                             ),
                             "calibration_validation_mode": validation_mode,
                             "training_time_seconds": training_time,
+                            "global_checkpoint_hash": global_hash,
+                            "fine_tune_initial_hash": initial_hash,
+                            "fine_tune_final_hash": final_hash,
+                            "initial_matches_global": initial_hash == global_hash,
+                            "frozen_parameters_unchanged": frozen_unchanged,
+                            "frozen_hash_before": frozen_hash_before,
+                            "frozen_hash_after": frozen_hash_after,
+                            "trainable_hash_before": trainable_hash_before,
+                            "trainable_hash_after": trainable_hash_after,
+                            "trainable_parameter_count": trainable_count,
+                            "frozen_parameter_count": frozen_count,
+                            "epochs_trained": (
+                                0
+                                if (
+                                    spec.method == "zero_shot"
+                                    or _is_zero_budget(spec)
+                                    or adapted is None
+                                )
+                                else adapted.n_epochs_trained_
+                            ),
+                            "best_epoch": (
+                                None
+                                if (
+                                    spec.method == "zero_shot"
+                                    or _is_zero_budget(spec)
+                                    or adapted is None
+                                )
+                                else adapted.best_epoch_
+                            ),
+                            "best_validation_loss": (
+                                None
+                                if (
+                                    spec.method == "zero_shot"
+                                    or _is_zero_budget(spec)
+                                    or adapted is None
+                                )
+                                else adapted.best_validation_loss_
+                            ),
+                            **{
+                                f"{name}_before": value
+                                for name, value in metrics_before.items()
+                            },
                             **coverage,
+                            "classes_in_evaluation": split_manifest[
+                                "evaluation_class_distribution"
+                            ]["classes_present"],
+                            "number_of_classes_in_evaluation": split_manifest[
+                                "evaluation_class_distribution"
+                            ]["number_of_classes"],
+                            "evaluation_class_counts": split_manifest[
+                                "evaluation_class_distribution"
+                            ]["class_counts"],
                             **metrics,
                         }
+                        for metric_name in (
+                            "accuracy", "balanced_accuracy", "macro_f1"
+                        ):
+                            before = metrics_before.get(metric_name)
+                            after = metrics.get(metric_name)
+                            absolute = (
+                                None
+                                if before is None or after is None
+                                else float(after - before)
+                            )
+                            relative = (
+                                None
+                                if absolute is None or abs(float(before)) < 1e-12
+                                else float(absolute / float(before))
+                            )
+                            row[f"{metric_name}_absolute_gain"] = absolute
+                            row[f"{metric_name}_relative_gain"] = relative
                         row["class_counts"] = json.dumps(
                             row["class_counts"], sort_keys=True
                         )
                         row["classes_present"] = json.dumps(
                             row["classes_present"]
                         )
+                        row["classes_in_evaluation"] = json.dumps(
+                            row["classes_in_evaluation"]
+                        )
+                        row["evaluation_class_counts"] = json.dumps(
+                            row["evaluation_class_counts"], sort_keys=True
+                        )
                         subject_rows.append(row)
+                        split_audit_rows.append({
+                            "subject_id": subject_id,
+                            "budget": row["budget"],
+                            "split_strategy": spec.split_strategy,
+                            "n_global_train_subjects": len(
+                                global_train_subjects
+                            ),
+                            "n_global_validation_subjects": len(
+                                global_validation_subjects
+                            ),
+                            "n_calibration_pool": len(partition.calibration_X),
+                            "n_adaptation_train": row[
+                                "adaptation_train_samples"
+                            ],
+                            "n_adaptation_validation": row[
+                                "adaptation_validation_samples"
+                            ],
+                            "n_final_evaluation": len(partition.evaluation_X),
+                            "global_target_overlap": global_target_overlap,
+                            "calibration_evaluation_overlap": len(
+                                split_manifest["window_overlap"]
+                            ),
+                            "adaptation_validation_overlap": len(
+                                split_manifest["adaptation_validation_overlap"]
+                            ),
+                            "evaluation_overlap": len(
+                                split_manifest["evaluation_adaptation_overlap"]
+                            ),
+                            "duplicate_sample_ids": int(
+                                len(set(
+                                    split_manifest["calibration_sample_ids"]
+                                ))
+                                != len(
+                                    split_manifest["calibration_sample_ids"]
+                                )
+                                or len(set(
+                                    split_manifest["evaluation_sample_ids"]
+                                ))
+                                != len(
+                                    split_manifest["evaluation_sample_ids"]
+                                )
+                            ),
+                        })
+                        checkpoint_audit_rows.append({
+                            "subject_id": subject_id,
+                            "budget": row["budget"],
+                            "method": spec.method,
+                            "global_checkpoint_hash": global_hash,
+                            "fine_tune_initial_hash": initial_hash,
+                            "fine_tune_final_hash": final_hash,
+                            "initial_matches_global": initial_hash == global_hash,
+                            "initial_predictions_match_global": (
+                                initial_predictions_match
+                            ),
+                            "frozen_parameters_unchanged": frozen_unchanged,
+                            "frozen_hash_before": frozen_hash_before,
+                            "frozen_hash_after": frozen_hash_after,
+                            "trainable_hash_before": trainable_hash_before,
+                            "trainable_hash_after": trainable_hash_after,
+                            "trainable_parameter_count": trainable_count,
+                            "frozen_parameter_count": frozen_count,
+                        })
+                        LOGGER.info(
+                            "Calibration subject=%s budget=%s method=%s "
+                            "pool=%d adaptation_train=%d adaptation_validation=%d "
+                            "evaluation=%d initial_matches_global=%s "
+                            "trainable_parameters=%d epochs=%s best_validation_loss=%s "
+                            "accuracy=%.4f->%.4f balanced_accuracy=%.4f->%.4f "
+                            "macro_f1=%.4f->%.4f",
+                            subject_id,
+                            row["budget"],
+                            spec.method,
+                            len(partition.calibration_X),
+                            row["adaptation_train_samples"],
+                            row["adaptation_validation_samples"],
+                            len(partition.evaluation_X),
+                            initial_hash == global_hash,
+                            trainable_count,
+                            row["epochs_trained"],
+                            row["best_validation_loss"],
+                            float(metrics_before.get("accuracy", float("nan"))),
+                            float(metrics.get("accuracy", float("nan"))),
+                            float(metrics_before.get(
+                                "balanced_accuracy", float("nan")
+                            )),
+                            float(metrics.get(
+                                "balanced_accuracy", float("nan")
+                            )),
+                            float(metrics_before.get("macro_f1", float("nan"))),
+                            float(metrics.get("macro_f1", float("nan"))),
+                        )
                         if adapted is not None and adapted is not base_adapter:
                             del adapted
                         gc.collect()
@@ -1196,9 +2013,21 @@ class UserCalibrationExperiment:
         subjects_path = run_dir / "user_calibration_subjects.csv"
         summary_path = run_dir / "user_calibration_summary.csv"
         fold_path = run_dir / "user_calibration_folds.csv"
+        calibration_subject_metrics_path = (
+            run_dir / "calibration_subject_metrics.csv"
+        )
+        calibration_summary_path = run_dir / "calibration_summary.csv"
+        split_audit_path = run_dir / "calibration_split_audit.csv"
+        checkpoint_audit_path = run_dir / "checkpoint_audit.csv"
         subjects.to_csv(subjects_path, index=False)
         summary.to_csv(summary_path, index=False)
         fold_summary.to_csv(fold_path, index=False)
+        subjects.to_csv(calibration_subject_metrics_path, index=False)
+        summary.to_csv(calibration_summary_path, index=False)
+        pd.DataFrame(split_audit_rows).to_csv(split_audit_path, index=False)
+        pd.DataFrame(checkpoint_audit_rows).to_csv(
+            checkpoint_audit_path, index=False
+        )
         unified_predictions = (
             pd.concat(prediction_frames, ignore_index=True)
             if prediction_frames
@@ -1207,7 +2036,7 @@ class UserCalibrationExperiment:
         if not unified_predictions.empty:
             identity = [
                 "outer_fold", "subject_id", "calibration_method",
-                "budget_seconds", "sequence_id",
+                "budget", "sequence_id",
             ]
             if unified_predictions.duplicated(identity).any():
                 raise RuntimeError("Unified calibration predictions are not unique")
@@ -1232,6 +2061,12 @@ class UserCalibrationExperiment:
                 "subjects": str(subjects_path),
                 "summary": str(summary_path),
                 "fold_summary": str(fold_path),
+                "calibration_subject_metrics": str(
+                    calibration_subject_metrics_path
+                ),
+                "calibration_summary": str(calibration_summary_path),
+                "calibration_split_audit": str(split_audit_path),
+                "checkpoint_audit": str(checkpoint_audit_path),
                 "predictions": str(run_dir / "predictions.parquet"),
             },
         }
@@ -1245,26 +2080,36 @@ class UserCalibrationExperiment:
         rows: list[dict[str, Any]] = []
         valid = subjects.loc[subjects["status"] == "valid"].copy()
         zero = valid.loc[valid["calibration_method"] == "zero_shot", [
-            "outer_fold", "subject_id", "budget_seconds", "balanced_accuracy"
+            "outer_fold", "subject_id", "budget", "balanced_accuracy"
         ]].rename(columns={"balanced_accuracy": "zero_shot_balanced_accuracy"})
         valid = valid.merge(
             zero,
-            on=["outer_fold", "subject_id", "budget_seconds"],
+            on=["outer_fold", "subject_id", "budget"],
             how="left",
         )
         valid["delta_balanced_accuracy_vs_zero_shot"] = (
             valid["balanced_accuracy"] - valid["zero_shot_balanced_accuracy"]
         )
         for (method, budget), all_group in subjects.groupby(
-            ["calibration_method", "budget_seconds"], sort=True
+            ["calibration_method", "budget"], sort=True, dropna=False
         ):
             group = valid.loc[
                 (valid["calibration_method"] == method)
-                & (valid["budget_seconds"] == budget)
+                & (valid["budget"] == budget)
             ]
             row: dict[str, Any] = {
                 "method": method,
-                "budget_seconds": float(budget),
+                "budget": float(budget),
+                "budget_seconds": (
+                    None
+                    if all_group["budget_seconds"].isna().all()
+                    else float(all_group["budget_seconds"].dropna().iloc[0])
+                ),
+                "budget_fraction": (
+                    None
+                    if all_group["budget_fraction"].isna().all()
+                    else float(all_group["budget_fraction"].dropna().iloc[0])
+                ),
                 "valid_subjects": int(len(group)),
                 "total_subjects": int(len(all_group)),
             }
@@ -1279,6 +2124,44 @@ class UserCalibrationExperiment:
                 row[f"{metric}_subject_sd"] = (
                     None if len(values) < 2 else float(values.std(ddof=1))
                 )
+                row[f"{metric}_median"] = (
+                    None if values.empty else float(values.median())
+                )
+                row[f"{metric}_min"] = (
+                    None if values.empty else float(values.min())
+                )
+                row[f"{metric}_max"] = (
+                    None if values.empty else float(values.max())
+                )
+                before_values = pd.to_numeric(
+                    group.get(f"{metric}_before"), errors="coerce"
+                ).dropna()
+                row[f"{metric}_before_mean"] = (
+                    None if before_values.empty else float(before_values.mean())
+                )
+                absolute_column = group.get(f"{metric}_absolute_gain")
+                absolute_values = (
+                    pd.Series(dtype=float)
+                    if absolute_column is None
+                    else pd.to_numeric(absolute_column, errors="coerce").dropna()
+                )
+                if not absolute_values.empty:
+                    row[f"{metric}_absolute_gain_mean"] = float(
+                        absolute_values.mean()
+                    )
+                    row[f"{metric}_improved_fraction"] = float(
+                        (absolute_values > 0).mean()
+                    )
+                relative_column = group.get(f"{metric}_relative_gain")
+                relative_values = (
+                    pd.Series(dtype=float)
+                    if relative_column is None
+                    else pd.to_numeric(relative_column, errors="coerce").dropna()
+                )
+                if not relative_values.empty:
+                    row[f"{metric}_relative_gain_mean"] = float(
+                        relative_values.mean()
+                    )
             deltas = pd.to_numeric(
                 group.get("delta_balanced_accuracy_vs_zero_shot"),
                 errors="coerce",
@@ -1288,6 +2171,14 @@ class UserCalibrationExperiment:
             )
             row["subjects_improved"] = int((deltas > 0).sum())
             row["subjects_degraded"] = int((deltas < 0).sum())
+            accuracy_values = pd.to_numeric(
+                group.get("accuracy"), errors="coerce"
+            ).dropna()
+            row["accuracy_at_least_0_75_fraction"] = (
+                None
+                if accuracy_values.empty
+                else float((accuracy_values >= 0.75).mean())
+            )
             row["mean_number_of_classes"] = (
                 None if group.empty else float(group["number_of_classes"].mean())
             )
@@ -1303,8 +2194,9 @@ class UserCalibrationExperiment:
             return pd.DataFrame()
         return (
             valid.groupby(
-                ["outer_fold", "calibration_method", "budget_seconds"],
+                ["outer_fold", "calibration_method", "budget"],
                 as_index=False,
+                dropna=False,
             )
             .agg(
                 valid_subjects=("subject_id", "count"),
@@ -1330,7 +2222,7 @@ class UserCalibrationExperiment:
             (report_subjects["status"] == "valid")
             & (report_subjects["calibration_method"] == "zero_shot"),
             [
-                "outer_fold", "subject_id", "budget_seconds",
+                "outer_fold", "subject_id", "budget",
                 "balanced_accuracy", "macro_f1",
             ],
         ].rename(columns={
@@ -1339,7 +2231,7 @@ class UserCalibrationExperiment:
         })
         report_subjects = report_subjects.merge(
             valid_zero,
-            on=["outer_fold", "subject_id", "budget_seconds"],
+            on=["outer_fold", "subject_id", "budget"],
             how="left",
         )
         report_subjects["delta_balanced_accuracy_vs_zero_shot"] = (
@@ -1365,10 +2257,12 @@ class UserCalibrationExperiment:
                 figure, axis = plt.subplots(figsize=(7, 4))
                 for method, group in valid_summary.groupby("method"):
                     axis.plot(
-                        group["budget_seconds"] / 60.0,
+                        group["budget"],
                         group[metric], marker="o", label=method,
                     )
-                axis.set_xlabel("Calibration duration (minutes)")
+                axis.set_xlabel(
+                    "Calibration budget (fraction or seconds, per config)"
+                )
                 axis.set_ylabel(metric.replace("_mean", ""))
                 axis.legend()
                 figure.tight_layout()
@@ -1385,7 +2279,7 @@ class UserCalibrationExperiment:
             if not delta_methods.empty:
                 delta_methods["condition"] = (
                     delta_methods["calibration_method"] + "_"
-                    + delta_methods["budget_seconds"].astype(int).astype(str) + "s"
+                    + delta_methods["budget"].astype(str)
                 )
                 pivot = delta_methods.pivot_table(
                     index="subject_id", columns="condition", values="delta", aggfunc="mean"
@@ -1440,7 +2334,7 @@ class UserCalibrationExperiment:
             )
 
         display_columns = [
-            "method", "budget_seconds", "valid_subjects",
+            "method", "budget", "valid_subjects",
             "balanced_accuracy_mean", "balanced_accuracy_subject_sd",
             "macro_f1_mean", "macro_f1_subject_sd",
             "delta_balanced_accuracy_vs_zero_shot", "subjects_improved",
@@ -1454,7 +2348,7 @@ class UserCalibrationExperiment:
         if not head.empty:
             head_pivot = head.pivot_table(
                 index="subject_id",
-                columns="budget_seconds",
+                columns="budget",
                 values="balanced_accuracy",
             )
             if {180.0, 300.0, 600.0}.issubset(head_pivot.columns):
@@ -1488,7 +2382,7 @@ class UserCalibrationExperiment:
         )
         coverage_table = (
             coverage.groupby(
-                ["budget_seconds", "number_of_classes"], as_index=False
+                ["budget", "number_of_classes"], as_index=False
             )
             .agg(
                 subjects=("subject_id", "count"),

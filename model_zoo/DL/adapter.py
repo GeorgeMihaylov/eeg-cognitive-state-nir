@@ -1217,6 +1217,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         X_train: Any,
         y_train: Any,
         *,
+        mode: Optional[str] = None,
         X_validation: Optional[Any] = None,
         y_validation: Optional[Any] = None,
         trainable_parameter_prefixes: Optional[Sequence[str]] = None,
@@ -1224,6 +1225,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         learning_rate: Optional[float] = None,
         weight_decay: Optional[float] = None,
         early_stopping_patience: Optional[int] = None,
+        random_state: Optional[int] = None,
     ) -> "TorchClassificationAdapter":
         """Fine-tune loaded weights on explicit calibration-only partitions."""
         if not self.is_fitted_:
@@ -1267,6 +1269,34 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 "and weight decay non-negative"
             )
 
+        normalized_mode = None if mode is None else str(mode).strip().lower()
+        mode_aliases = {
+            "head_only_finetuning": "head_only",
+            "full_finetuning": "full_model",
+            "full": "full_model",
+        }
+        normalized_mode = mode_aliases.get(normalized_mode, normalized_mode)
+        if normalized_mode not in {None, "head_only", "full_model"}:
+            raise ValueError(
+                "Fine-tuning mode must be 'head_only' or 'full_model', "
+                f"got {mode!r}"
+            )
+        if normalized_mode is not None and trainable_parameter_prefixes is not None:
+            raise ValueError(
+                "Set either mode or trainable_parameter_prefixes, not both"
+            )
+        if normalized_mode == "head_only":
+            prefix_resolver = getattr(
+                self.model, "output_head_parameter_prefixes", None
+            )
+            if not callable(prefix_resolver):
+                raise ValueError(
+                    "The model does not expose output_head_parameter_prefixes()"
+                )
+            trainable_parameter_prefixes = tuple(prefix_resolver())
+        elif normalized_mode == "full_model":
+            trainable_parameter_prefixes = None
+
         prefixes = (
             None
             if trainable_parameter_prefixes is None
@@ -1282,7 +1312,10 @@ class TorchClassificationAdapter(BaseModelAdapter):
         if not trainable_names:
             raise ValueError("No model parameters were selected for fine-tuning")
 
-        seed_torch(self.random_state)
+        fine_tuning_seed = (
+            self.random_state if random_state is None else int(random_state)
+        )
+        seed_torch(fine_tuning_seed)
         self.model.to(self.device_)
         if self.device_.type == "cuda":
             torch.cuda.reset_peak_memory_stats(self.device_)
