@@ -1,0 +1,984 @@
+schema_version: 1
+
+experiments:
+  - experiment_id: label_q5_random_forest_groupkfold
+    title: Random Forest baseline для label_q5
+    category: model
+    status: baseline
+    task: cognitive_load_5class
+    target: label_q5
+    model: random_forest
+    feature_set: pow_plus_eeg
+    preprocessing: none
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    seeds: [42]
+    n_subjects: 54
+    primary_metric:
+      name: macro_f1
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: benchmark_results/groupkfold_rf_label_q5/summary_20260713_182031.csv
+        filters:
+          model: random_forest
+        column: macro_f1_mean
+        aggregation: first
+        optional_runtime: true
+    secondary_metrics:
+      - name: balanced_accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/groupkfold_rf_label_q5/summary_20260713_182031.csv
+          filters:
+            model: random_forest
+          column: balanced_accuracy_mean
+          aggregation: first
+          optional_runtime: true
+      - name: accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/groupkfold_rf_label_q5/summary_20260713_182031.csv
+          filters:
+            model: random_forest
+          column: accuracy_mean
+          aggregation: first
+          optional_runtime: true
+    report_path: reports/transformer_benchmark_report.md
+    runtime_path: benchmark_results/groupkfold_rf_label_q5
+    config_path: configs/groupkfold_rf_label_q5.yaml
+    commit: e87fa46
+    result_summary: Оконный классический baseline с macro F1 0.2955.
+    limitations:
+      - Не моделирует временной контекст между окнами.
+    tags: [classification, feature_window, classical_ml]
+
+  - experiment_id: label_q5_torch_mlp_groupkfold
+    title: Torch MLP baseline для label_q5
+    category: model
+    status: baseline
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_mlp
+    feature_set: pow_plus_eeg
+    preprocessing: standard
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    seeds: [42]
+    n_subjects: 54
+    primary_metric:
+      name: macro_f1
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: benchmark_results/groupkfold_torch_mlp_label_q5/summary_20260713_182057.csv
+        filters:
+          model: torch_mlp
+        column: macro_f1_mean
+        aggregation: first
+        optional_runtime: true
+    secondary_metrics:
+      - name: balanced_accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/groupkfold_torch_mlp_label_q5/summary_20260713_182057.csv
+          filters:
+            model: torch_mlp
+          column: balanced_accuracy_mean
+          aggregation: first
+          optional_runtime: true
+      - name: accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/groupkfold_torch_mlp_label_q5/summary_20260713_182057.csv
+          filters:
+            model: torch_mlp
+          column: accuracy_mean
+          aggregation: first
+          optional_runtime: true
+    report_path: reports/transformer_benchmark_report.md
+    runtime_path: benchmark_results/groupkfold_torch_mlp_label_q5
+    config_path: configs/groupkfold_torch_mlp_label_q5.yaml
+    commit: e87fa46
+    result_summary: Базовый feature MLP уступил RF и временным моделям.
+    limitations:
+      - Использует отдельные окна без межоконного контекста.
+    tags: [classification, feature_window, torch]
+
+  - experiment_id: label_q5_gapaware_lstm_groupkfold
+    title: Gap-aware LSTM для label_q5
+    category: model
+    status: baseline
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_lstm_gapaware
+    feature_set: pow_plus_eeg_sequences
+    preprocessing: standard
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    seeds: [42]
+    n_subjects: 54
+    primary_metric:
+      name: macro_f1
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: benchmark_results/groupkfold_torch_lstm_gapaware_label_q5/summary_20260714_151907.csv
+        filters:
+          model: torch_lstm_gapaware
+        column: macro_f1_mean
+        aggregation: first
+        optional_runtime: true
+    secondary_metrics:
+      - name: balanced_accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/groupkfold_torch_lstm_gapaware_label_q5/summary_20260714_151907.csv
+          filters:
+            model: torch_lstm_gapaware
+          column: balanced_accuracy_mean
+          aggregation: first
+          optional_runtime: true
+      - name: accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/groupkfold_torch_lstm_gapaware_label_q5/summary_20260714_151907.csv
+          filters:
+            model: torch_lstm_gapaware
+          column: accuracy_mean
+          aggregation: first
+          optional_runtime: true
+    report_path: reports/transformer_benchmark_report.md
+    runtime_path: benchmark_results/groupkfold_torch_lstm_gapaware_label_q5
+    config_path: configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+    commit: e87fa46
+    result_summary: Сильный recurrent baseline; macro F1 0.3555.
+    limitations:
+      - Последовательности длины 10 не выровнены один-к-одному с Transformer.
+    tags: [classification, sequence, recurrent]
+
+  - experiment_id: label_q5_gapaware_bilstm_groupkfold
+    title: Gap-aware BiLSTM для label_q5
+    category: model
+    status: baseline
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_bilstm_gapaware
+    feature_set: pow_plus_eeg_sequences
+    preprocessing: standard
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    seeds: [42]
+    n_subjects: 54
+    primary_metric:
+      name: macro_f1
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: benchmark_results/groupkfold_torch_bilstm_gapaware_label_q5/summary_20260714_152020.csv
+        filters:
+          model: torch_bilstm_gapaware
+        column: macro_f1_mean
+        aggregation: first
+        optional_runtime: true
+    secondary_metrics:
+      - name: balanced_accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/groupkfold_torch_bilstm_gapaware_label_q5/summary_20260714_152020.csv
+          filters:
+            model: torch_bilstm_gapaware
+          column: balanced_accuracy_mean
+          aggregation: first
+          optional_runtime: true
+      - name: accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/groupkfold_torch_bilstm_gapaware_label_q5/summary_20260714_152020.csv
+          filters:
+            model: torch_bilstm_gapaware
+          column: accuracy_mean
+          aggregation: first
+          optional_runtime: true
+    report_path: reports/transformer_benchmark_report.md
+    runtime_path: benchmark_results/groupkfold_torch_bilstm_gapaware_label_q5
+    config_path: configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+    commit: e87fa46
+    result_summary: Recurrent baseline с macro F1 0.3570.
+    limitations:
+      - Выполнен только seed 42.
+    tags: [classification, sequence, recurrent]
+
+  - experiment_id: label_q5_transformer_multiseed
+    title: Transformer для label_q5
+    category: model
+    status: final
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_transformer
+    feature_set: pow_plus_eeg_sequences
+    preprocessing: standard
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    seeds: [7, 42, 123]
+    n_subjects: 54
+    primary_metric:
+      name: macro_f1
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/transformer_benchmark_folds.csv
+        filters:
+          model: torch_transformer
+        column: macro_f1
+        aggregation: mean
+        optional_runtime: true
+    secondary_metrics:
+      - name: balanced_accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: reports/transformer_benchmark_folds.csv
+          filters:
+            model: torch_transformer
+          column: balanced_accuracy
+          aggregation: mean
+          optional_runtime: true
+      - name: accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: reports/transformer_benchmark_folds.csv
+          filters:
+            model: torch_transformer
+          column: accuracy
+          aggregation: mean
+          optional_runtime: true
+    report_path: reports/transformer_benchmark_report.md
+    runtime_path: benchmark_results/groupkfold_torch_transformer_label_q5
+    config_path: configs/groupkfold_torch_transformer_label_q5.yaml
+    commit: e87fa46
+    result_summary: Устойчивый temporal encoder, близкий к LSTM/BiLSTM без явного общего превосходства.
+    limitations:
+      - Sequence identities отличаются от recurrent baseline.
+    tags: [classification, sequence, multiseed, transformer]
+
+  - experiment_id: label_q5_eegnet_raw_dedup_multiseed
+    title: EEGNet на deduplicated raw EEG
+    category: model
+    status: baseline
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_eegnet
+    feature_set: raw_eeg
+    preprocessing: raw_deduplicated
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    seeds: [7, 42, 123]
+    n_subjects: 54
+    primary_metric:
+      name: macro_f1
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/raw_eeg_cnn_model_comparison.csv
+        filters:
+          model: torch_eegnet
+        column: macro_f1
+        aggregation: mean
+        optional_runtime: true
+    secondary_metrics:
+      - name: balanced_accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: reports/raw_eeg_cnn_model_comparison.csv
+          filters:
+            model: torch_eegnet
+          column: balanced_accuracy
+          aggregation: mean
+          optional_runtime: true
+      - name: accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: reports/raw_eeg_cnn_model_comparison.csv
+          filters:
+            model: torch_eegnet
+          column: accuracy
+          aggregation: mean
+          optional_runtime: true
+    report_path: reports/raw_eeg_cnn_model_comparison.md
+    runtime_path: benchmark_results/groupkfold_torch_eegnet_raw_dedup_label_q5
+    config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+    commit: 50d35ac
+    result_summary: Валидный raw-EEG baseline, уступающий ShallowConvNet и feature sequences.
+    limitations:
+      - Гиперпараметры EEGNet не оптимизировались.
+    tags: [classification, raw_eeg, cnn, multiseed]
+
+  - experiment_id: label_q5_shallowconvnet_raw_dedup_multiseed
+    title: ShallowConvNet на deduplicated raw EEG
+    category: model
+    status: final
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_shallow_convnet
+    feature_set: raw_eeg
+    preprocessing: raw_deduplicated
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    seeds: [7, 42, 123]
+    n_subjects: 54
+    primary_metric:
+      name: macro_f1
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/raw_eeg_cnn_model_comparison.csv
+        filters:
+          model: torch_shallow_convnet
+        column: macro_f1
+        aggregation: mean
+        optional_runtime: true
+    secondary_metrics:
+      - name: balanced_accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: reports/raw_eeg_cnn_model_comparison.csv
+          filters:
+            model: torch_shallow_convnet
+          column: balanced_accuracy
+          aggregation: mean
+          optional_runtime: true
+      - name: accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: reports/raw_eeg_cnn_model_comparison.csv
+          filters:
+            model: torch_shallow_convnet
+          column: accuracy
+          aggregation: mean
+          optional_runtime: true
+    report_path: reports/raw_eeg_cnn_model_comparison.md
+    runtime_path: benchmark_results/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed42
+    config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+    commit: 50d35ac
+    result_summary: Лучший из двух проверенных raw-CNN; macro F1 0.2647 по трём seeds.
+    limitations:
+      - Сравнение архитектур описательное, без утверждения значимости.
+    tags: [classification, raw_eeg, cnn, multiseed]
+
+  - experiment_id: shallowconvnet_preprocessing_ablation
+    title: Абляция предобработки raw EEG A–H
+    category: preprocessing
+    status: diagnostic
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_shallow_convnet
+    feature_set: raw_eeg
+    preprocessing: factorial_raw_bandpass_notch_car
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    seeds: [7, 42, 123]
+    n_subjects: 54
+    primary_metric:
+      name: raw_macro_f1
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/preprocessing_selected_trials_multiseed.csv
+        filters:
+          trial: A
+        column: macro_f1
+        aggregation: mean
+    secondary_metrics:
+      - name: raw_balanced_accuracy
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: reports/preprocessing_selected_trials_multiseed.csv
+          filters:
+            trial: A
+          column: balanced_accuracy
+          aggregation: mean
+    report_path: reports/preprocessing_selected_trials_multiseed.md
+    runtime_path: benchmark_results/preprocessing_ablation_shallowconvnet
+    config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+    commit: 63dda2c
+    result_summary: Band-pass и notch дали малые нестабильные BA-изменения; CAR ухудшал seed-42 contrasts, значимость не заявлялась.
+    limitations:
+      - Полный A–H factorial выполнен только для seed 42.
+    tags: [diagnostic, raw_eeg, preprocessing, multiseed]
+
+  - experiment_id: pm_standard_clip_audit
+    title: Leakage-safe standard_clip для EEG+POW
+    category: preprocessing
+    status: diagnostic
+    task: performance_metrics_regression
+    target: performance_metrics_7
+    model: torch_mlp
+    feature_set: pow_plus_eeg
+    preprocessing: standard_clip
+    evaluation_protocol: GroupKFold fold 1 diagnostic
+    seeds: [42]
+    n_subjects: 53
+    primary_metric:
+      name: macro_mae
+      direction: lower_is_better
+      value_source:
+        type: constant
+        value: 0.1049
+    secondary_metrics:
+      - name: macro_rmse
+        direction: lower_is_better
+        value_source:
+          type: constant
+          value: 0.1399
+      - name: macro_r2
+        direction: higher_is_better
+        value_source:
+          type: constant
+          value: 0.0471
+    report_path: reports/integration/robust_feature_scaling_audit.md
+    runtime_path: benchmark_results/pm_regression_robust_scaling_smoke
+    config_path: experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
+    commit: b965506
+    result_summary: Train-only clipping q0.5/q99.5 стабилизировало feature MLP и стало production preprocessing.
+    limitations:
+      - Диагностический fold 1, не самостоятельный финальный benchmark.
+    tags: [diagnostic, regression, robust_scaling]
+
+  - experiment_id: pm_robust_scaling_unwired_groupkfold
+    title: Первый GroupKFold run robust scaling без model-level config
+    category: preprocessing
+    status: invalidated
+    task: performance_metrics_regression
+    target: performance_metrics_7
+    model: torch_mlp
+    feature_set: pow_plus_eeg
+    preprocessing: requested_but_not_applied
+    evaluation_protocol: GroupKFold fold 1 diagnostic
+    seeds: [42]
+    n_subjects: 53
+    primary_metric:
+      name: validation_status
+      direction: null
+      value_source:
+        type: report_only
+    report_path: reports/integration/robust_feature_scaling_audit.md
+    runtime_path: benchmark_results/pm_regression_group_validation_smoke
+    config_path: null
+    commit: b965506
+    result_summary: Исключён, потому что model-level scaling config не дошёл до GroupKFold model build.
+    invalidation_reason: Feature scaling не был фактически применён в GroupKFold path.
+    superseded_by: pm_standard_clip_audit
+    limitations:
+      - Метрики нельзя интерпретировать как результат robust scaling.
+    tags: [invalidated, regression, robust_scaling]
+
+  - experiment_id: pm_regression_mean_baseline_5fold
+    title: Mean baseline многовыходной PM-регрессии
+    category: regression
+    status: baseline
+    task: performance_metrics_regression
+    target: performance_metrics_7
+    model: mean_regressor
+    feature_set: pow_plus_eeg
+    preprocessing: none
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    seeds: [42]
+    n_subjects: 53
+    primary_metric:
+      name: macro_mae
+      direction: lower_is_better
+      value_source:
+        type: csv_filter
+        path: benchmark_results/pm_regression_baseline_5fold/summary_20260724_121853.csv
+        filters:
+          model: mean_regressor
+        column: mae_macro
+        aggregation: first
+        optional_runtime: true
+    secondary_metrics:
+      - name: macro_rmse
+        direction: lower_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_baseline_5fold/summary_20260724_121853.csv
+          filters:
+            model: mean_regressor
+          column: rmse_macro
+          aggregation: first
+          optional_runtime: true
+      - name: macro_r2
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_baseline_5fold/summary_20260724_121853.csv
+          filters:
+            model: mean_regressor
+          column: r2_macro
+          aggregation: first
+          optional_runtime: true
+    report_path: reports/integration/pm_multioutput_regression.md
+    runtime_path: benchmark_results/pm_regression_baseline_5fold
+    config_path: null
+    commit: 733a85c
+    result_summary: Наивная нижняя граница качества для семи PM targets.
+    limitations:
+      - Не использует EEG+POW признаки.
+    tags: [regression, baseline, multioutput]
+
+  - experiment_id: pm_regression_random_forest_5fold
+    title: Random Forest baseline многовыходной PM-регрессии
+    category: regression
+    status: baseline
+    task: performance_metrics_regression
+    target: performance_metrics_7
+    model: random_forest
+    feature_set: pow_plus_eeg
+    preprocessing: none
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    seeds: [42]
+    n_subjects: 53
+    primary_metric:
+      name: macro_mae
+      direction: lower_is_better
+      value_source:
+        type: csv_filter
+        path: benchmark_results/pm_regression_baseline_5fold/summary_20260724_121853.csv
+        filters:
+          model: random_forest
+        column: mae_macro
+        aggregation: first
+        optional_runtime: true
+    secondary_metrics:
+      - name: macro_rmse
+        direction: lower_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_baseline_5fold/summary_20260724_121853.csv
+          filters:
+            model: random_forest
+          column: rmse_macro
+          aggregation: first
+          optional_runtime: true
+      - name: macro_r2
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_baseline_5fold/summary_20260724_121853.csv
+          filters:
+            model: random_forest
+          column: r2_macro
+          aggregation: first
+          optional_runtime: true
+      - name: macro_spearman
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_baseline_5fold/summary_20260724_121853.csv
+          filters:
+            model: random_forest
+          column: spearman_macro
+          aggregation: first
+          optional_runtime: true
+    report_path: reports/integration/pm_multioutput_regression.md
+    runtime_path: benchmark_results/pm_regression_baseline_5fold
+    config_path: null
+    commit: 733a85c
+    result_summary: RF устойчиво превзошёл mean baseline по всем пяти folds.
+    limitations:
+      - Классический оконный baseline без персонализации.
+    tags: [regression, baseline, multioutput, classical_ml]
+
+  - experiment_id: label_q5_personalization_multiseed_20pct
+    title: Трёхсидовая персонализация label_q5
+    category: personalization
+    status: final
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_mlp
+    feature_set: pow_plus_eeg
+    preprocessing: standard_clip
+    evaluation_protocol: 5-fold GroupKFold plus chronological user calibration
+    seeds: [7, 42, 2026]
+    n_subjects: 53
+    primary_metric:
+      name: macro_f1_gain
+      direction: higher_is_better
+      value_source: &classification_personalization_gain
+        type: csv_filter
+        path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+        filters:
+          method: full_model
+          metric: macro_f1
+        column: mean_gain
+        aggregation: first
+        optional_runtime: true
+    secondary_metrics:
+      - name: accuracy_gain
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: accuracy
+          column: mean_gain
+          aggregation: first
+          optional_runtime: true
+      - name: balanced_accuracy_gain
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: balanced_accuracy
+          column: mean_gain
+          aggregation: first
+          optional_runtime: true
+    personalization:
+      method: full_model
+      calibration_budget: 0.2
+      baseline_metric:
+        value_source:
+          type: csv_filter
+          path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+          filters:
+            method: zero_shot
+            metric: macro_f1
+          column: mean_over_subject_seed_means
+          aggregation: first
+          optional_runtime: true
+      personalized_metric:
+        value_source:
+          type: csv_filter
+          path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: macro_f1
+          column: mean_over_subject_seed_means
+          aggregation: first
+          optional_runtime: true
+      gain_metric: macro_f1_gain
+      gain_value:
+        value_source: *classification_personalization_gain
+      bootstrap_ci_low:
+        value_source:
+          type: csv_filter
+          path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: macro_f1
+          column: bootstrap_ci_low
+          aggregation: first
+          optional_runtime: true
+      bootstrap_ci_high:
+        value_source:
+          type: csv_filter
+          path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: macro_f1
+          column: bootstrap_ci_high
+          aggregation: first
+          optional_runtime: true
+      improved_subject_fraction:
+        value_source:
+          type: csv_filter
+          path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: macro_f1
+          column: positive_subject_fraction
+          aggregation: first
+          optional_runtime: true
+    report_path: reports/integration/personalization_multiseed_20pct.md
+    runtime_path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240
+    config_path: experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+    commit: 255d802
+    result_summary: Full-model дал положительный macro F1 gain с subject-bootstrap CI выше нуля.
+    limitations:
+      - Проверены только MLP, три seeds и бюджет 20%.
+    tags: [classification, personalization, multiseed, cuda]
+
+  - experiment_id: pm_regression_personalization_multiseed_20pct
+    title: Трёхсидовая персонализация PM-регрессии
+    category: personalization
+    status: final
+    task: performance_metrics_regression
+    target: performance_metrics_7
+    model: torch_mlp
+    feature_set: pow_plus_eeg
+    preprocessing: standard_clip
+    evaluation_protocol: 5-fold GroupKFold plus chronological user calibration
+    seeds: [7, 42, 2026]
+    n_subjects: 53
+    primary_metric:
+      name: macro_mae_gain
+      direction: higher_is_better
+      value_source: &pm_personalization_gain
+        type: csv_filter
+        path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+        filters:
+          method: full_model
+          metric: macro_mae
+        column: mean_subject_gain
+        aggregation: first
+        optional_runtime: true
+    secondary_metrics:
+      - name: macro_rmse_gain
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: macro_rmse
+          column: mean_subject_gain
+          aggregation: first
+          optional_runtime: true
+      - name: macro_spearman_gain
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: macro_spearman
+          column: mean_subject_gain
+          aggregation: first
+          optional_runtime: true
+    personalization:
+      method: full_model
+      calibration_budget: 0.2
+      baseline_metric:
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+          filters:
+            method: zero_shot
+            metric: macro_mae
+          column: mean_subject_metric
+          aggregation: first
+          optional_runtime: true
+      personalized_metric:
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: macro_mae
+          column: mean_subject_metric
+          aggregation: first
+          optional_runtime: true
+      gain_metric: macro_mae_gain
+      gain_value:
+        value_source: *pm_personalization_gain
+      bootstrap_ci_low:
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: macro_mae
+          column: bootstrap_ci_low
+          aggregation: first
+          optional_runtime: true
+      bootstrap_ci_high:
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: macro_mae
+          column: bootstrap_ci_high
+          aggregation: first
+          optional_runtime: true
+      improved_subject_fraction:
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+          filters:
+            method: full_model
+            metric: macro_mae
+          column: positive_subject_fraction
+          aggregation: first
+          optional_runtime: true
+    report_path: reports/integration/pm_regression_personalization_multiseed_20pct.md
+    runtime_path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221
+    config_path: experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+    commit: 6c0b77f
+    result_summary: Full-model устойчиво снижает macro MAE во всех трёх seeds.
+    limitations:
+      - Проверены только MLP, три seeds и бюджет 20%.
+    tags: [regression, personalization, multiseed, cuda]
+
+  - experiment_id: mixin_transfer_learning_audit
+    title: Аудит Transfer learning mixin
+    category: mixin
+    status: diagnostic
+    task: mixin_audit
+    target: null
+    model: historical_transfer_mixin
+    feature_set: not_applicable
+    preprocessing: not_applicable
+    evaluation_protocol: isolated smoke plus production-path comparison
+    seeds: [42]
+    n_subjects: null
+    primary_metric:
+      name: audit_decision
+      direction: null
+      value_source:
+        type: report_only
+    mixin_name: Transfer learning
+    audit_status: tested
+    prototype_runnable: diagnostic_only
+    integration_status: integrated_as_reimplemented_pipeline
+    decision: keep
+    decision_reason: Старый prototype сбрасывал pretrained weights; назначение реализовано через leakage-safe fine-tuning.
+    report_path: reports/integration/feature_benchmarking_mixins_audit.md
+    runtime_path: benchmark_results/mixin_smoke/transfer_learning
+    config_path: null
+    commit: 671809c
+    result_summary: Исторический класс не production-ready, функциональность интегрирована заново.
+    limitations:
+      - Нельзя использовать старый calibration path как доказательство transfer gain.
+    tags: [mixin, transfer, audit]
+
+  - experiment_id: mixin_domain_adaptation_audit
+    title: Аудит Domain adaptation mixin
+    category: mixin
+    status: diagnostic
+    task: mixin_audit
+    target: null
+    model: historical_dann_mixin
+    feature_set: not_applicable
+    preprocessing: not_applicable
+    evaluation_protocol: isolated contract audit
+    seeds: [42]
+    n_subjects: null
+    primary_metric:
+      name: audit_decision
+      direction: null
+      value_source:
+        type: report_only
+    mixin_name: Domain adaptation
+    audit_status: tested
+    prototype_runnable: "no"
+    integration_status: not_integrated
+    decision: defer
+    decision_reason: Нет runner/source-target contract и обоснованной cross-device domain-задачи.
+    report_path: reports/integration/feature_benchmarking_mixins_audit.md
+    runtime_path: benchmark_results/mixin_smoke/domain_adaptation
+    config_path: null
+    commit: 671809c
+    result_summary: DANN не интегрирован и требует нового encoder/domain contract.
+    limitations:
+      - gpn_data и Old_EEG нельзя автоматически трактовать как разные устройства.
+    tags: [mixin, dann, deferred]
+
+  - experiment_id: mixin_meta_learning_audit
+    title: Аудит Meta-learning mixin
+    category: mixin
+    status: diagnostic
+    task: mixin_audit
+    target: null
+    model: historical_maml_mixin
+    feature_set: not_applicable
+    preprocessing: not_applicable
+    evaluation_protocol: dependency and episodic-contract audit
+    seeds: [42]
+    n_subjects: null
+    primary_metric:
+      name: audit_decision
+      direction: null
+      value_source:
+        type: report_only
+    mixin_name: Meta-learning
+    audit_status: tested
+    prototype_runnable: "no"
+    integration_status: not_integrated
+    decision: defer
+    decision_reason: Нет learn2learn, runnable task и обоснованного episodic protocol.
+    report_path: reports/integration/feature_benchmarking_mixins_audit.md
+    runtime_path: benchmark_results/mixin_smoke/metalearning
+    config_path: null
+    commit: 671809c
+    result_summary: MAML отложен; validated fine-tuning остаётся более обоснованным.
+    limitations:
+      - Опциональная зависимость и runner path отсутствуют.
+    tags: [mixin, maml, deferred]
+
+  - experiment_id: mixin_contrastive_learning_audit
+    title: Аудит Contrastive learning mixin
+    category: mixin
+    status: diagnostic
+    task: mixin_audit
+    target: null
+    model: historical_contrastive_mixin
+    feature_set: not_applicable
+    preprocessing: not_applicable
+    evaluation_protocol: isolated synthetic encoder smoke
+    seeds: [42]
+    n_subjects: null
+    primary_metric:
+      name: audit_decision
+      direction: null
+      value_source:
+        type: report_only
+    mixin_name: Contrastive learning
+    audit_status: tested
+    prototype_runnable: synthetic_only
+    integration_status: not_integrated
+    decision: defer
+    decision_reason: Encoder не подключён downstream; нужен shared encoder API, а 448 features не являются raw EEG.
+    report_path: reports/integration/feature_benchmarking_mixins_audit.md
+    runtime_path: benchmark_results/mixin_smoke/contrastive_learning
+    config_path: null
+    commit: 671809c
+    result_summary: Synthetic smoke выполнен, но contrastive pipeline не интегрирован.
+    limitations:
+      - Псевдо-raw reshaping агрегированных признаков методологически неприемлем.
+    tags: [mixin, contrastive, deferred]
+
+unresolved_entries:
+  - experiment_id: label_q5_lightgbm_baseline
+    missing_field: structured final result and primary metric
+    checked_paths:
+      - reports
+      - benchmark_results
+      - configs
+      - experiments
+    recommended_action: Выполнить или импортировать канонический 5-fold GroupKFold run и tracked report.
+
+  - experiment_id: label_q5_histgradientboosting_baseline
+    missing_field: structured final result and primary metric
+    checked_paths:
+      - reports
+      - benchmark_results
+      - configs
+      - experiments
+    recommended_action: Добавить канонический config и 5-fold GroupKFold baseline.
+
+  - experiment_id: label_q5_logistic_regression_baseline
+    missing_field: EEG+POW GroupKFold result
+    checked_paths:
+      - reports
+      - benchmark_results
+      - configs
+      - experiments
+    recommended_action: Не использовать temporal diagnostic D1–D3; выполнить отдельный EEG+POW baseline.
+
+  - experiment_id: pm_regression_torch_mlp_5fold
+    missing_field: comparable five-fold final result
+    checked_paths:
+      - reports/integration/pm_multioutput_regression.md
+      - benchmark_results/pm_regression_smoke
+      - experiments/pm_regression
+    recommended_action: Зарегистрировать после отдельного полного five-fold run; текущий Torch MLP является fold-1 smoke.
