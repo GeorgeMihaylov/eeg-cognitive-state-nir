@@ -1,0 +1,416 @@
+schema_version: 1
+purpose: Deterministic provenance manifest for the colleague-facing metrics package.
+pm_target_order:
+- target_attention
+- target_engagement
+- target_excitement
+- target_stress
+- target_relaxation
+- target_interest
+- target_focus
+classification:
+- row_id: label_q5_random_forest_groupkfold
+  experiment_id: label_q5_random_forest_groupkfold
+  metric_source_type: structured_csv
+  metric_source_path: reports/transformer_benchmark_folds.csv
+  source_model: random_forest
+  model_family: classical_ml
+  input_type: feature_window
+  n_samples: 45384
+  config_path: configs/groupkfold_rf_label_q5.yaml
+  report_path: reports/transformer_benchmark_report.md
+  runtime_path: benchmark_results/groupkfold_rf_label_q5
+  commit: e87fa46
+  status: baseline
+  notes: Single-seed aggregated-feature GroupKFold baseline.
+- row_id: label_q5_torch_mlp_groupkfold
+  experiment_id: label_q5_torch_mlp_groupkfold
+  metric_source_type: structured_csv
+  metric_source_path: reports/transformer_benchmark_folds.csv
+  source_model: torch_mlp
+  model_family: feedforward
+  input_type: feature_window
+  n_samples: 45384
+  config_path: configs/groupkfold_torch_mlp_label_q5.yaml
+  report_path: reports/transformer_benchmark_report.md
+  runtime_path: benchmark_results/groupkfold_torch_mlp_label_q5
+  commit: e87fa46
+  status: baseline
+  notes: Single-seed aggregated-feature GroupKFold baseline.
+- row_id: label_q5_gapaware_lstm_groupkfold
+  experiment_id: label_q5_gapaware_lstm_groupkfold
+  metric_source_type: structured_csv
+  metric_source_path: reports/transformer_benchmark_folds.csv
+  source_model: torch_lstm_gapaware
+  model_family: recurrent
+  input_type: feature_sequence
+  n_samples: 43828
+  config_path: configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+  report_path: reports/transformer_benchmark_report.md
+  runtime_path: benchmark_results/groupkfold_torch_lstm_gapaware_label_q5
+  commit: e87fa46
+  status: baseline
+  notes: Gap-aware feature sequences; single seed.
+- row_id: label_q5_gapaware_bilstm_groupkfold
+  experiment_id: label_q5_gapaware_bilstm_groupkfold
+  metric_source_type: structured_csv
+  metric_source_path: reports/transformer_benchmark_folds.csv
+  source_model: torch_bilstm_gapaware
+  model_family: recurrent
+  input_type: feature_sequence
+  n_samples: 43828
+  config_path: configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+  report_path: reports/transformer_benchmark_report.md
+  runtime_path: benchmark_results/groupkfold_torch_bilstm_gapaware_label_q5
+  commit: e87fa46
+  status: baseline
+  notes: Gap-aware feature sequences; single seed.
+- row_id: label_q5_transformer_multiseed
+  experiment_id: label_q5_transformer_multiseed
+  metric_source_type: structured_csv
+  metric_source_path: reports/transformer_benchmark_folds.csv
+  source_model: torch_transformer
+  model_family: transformer
+  input_type: feature_sequence
+  n_samples: 44142
+  config_path: configs/groupkfold_torch_transformer_label_q5.yaml
+  report_path: reports/transformer_benchmark_report.md
+  runtime_path: benchmark_results/groupkfold_torch_transformer_label_q5
+  commit: e87fa46
+  status: final
+  notes: Three-seed gap-aware feature-sequence result.
+- row_id: label_q5_eegnet_raw_dedup_multiseed
+  experiment_id: label_q5_eegnet_raw_dedup_multiseed
+  metric_source_type: structured_csv
+  metric_source_path: reports/raw_eeg_cnn_model_comparison.csv
+  source_model: torch_eegnet
+  model_family: raw_cnn
+  input_type: raw_eeg_window
+  n_samples: 30958
+  config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+  report_path: reports/raw_eeg_cnn_model_comparison.md
+  runtime_path: benchmark_results/groupkfold_torch_eegnet_raw_dedup_label_q5
+  commit: 50d35ac
+  status: baseline
+  notes: Three-seed deduplicated raw-EEG result.
+- row_id: label_q5_shallowconvnet_raw_dedup_multiseed
+  experiment_id: label_q5_shallowconvnet_raw_dedup_multiseed
+  metric_source_type: structured_csv
+  metric_source_path: reports/raw_eeg_cnn_model_comparison.csv
+  source_model: torch_shallow_convnet
+  model_family: raw_cnn
+  input_type: raw_eeg_window
+  n_samples: 30958
+  config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+  report_path: reports/raw_eeg_cnn_model_comparison.md
+  runtime_path: benchmark_results/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed42
+  commit: 50d35ac
+  status: final
+  notes: Three-seed deduplicated raw-EEG result.
+pm_regression:
+- row_id: pm_regression_mean_baseline_5fold
+  experiment_id: pm_regression_mean_baseline_5fold
+  metric_source_type: structured_csv
+  metric_source_path: benchmark_results/pm_regression_baseline_5fold/summary_20260724_121853.csv
+  source_model: mean_regressor
+  per_target_metrics_source: benchmark_results/pm_regression_baseline_5fold/20260724_121853/emotiv_pm_regression/performance_metrics_regression/mean_regressor/group_kfold_subject/per_target_metrics.csv
+  config_path: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
+  report_path: reports/integration/pm_multioutput_regression.md
+  runtime_path: benchmark_results/pm_regression_baseline_5fold
+  commit: 733a85c
+  status: baseline
+  notes: Five-fold mean-prediction reference baseline.
+- row_id: pm_regression_random_forest_5fold
+  experiment_id: pm_regression_random_forest_5fold
+  metric_source_type: structured_csv
+  metric_source_path: benchmark_results/pm_regression_baseline_5fold/summary_20260724_121853.csv
+  source_model: random_forest
+  per_target_metrics_source: benchmark_results/pm_regression_baseline_5fold/20260724_121853/emotiv_pm_regression/performance_metrics_regression/random_forest/group_kfold_subject/per_target_metrics.csv
+  config_path: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
+  report_path: reports/integration/pm_multioutput_regression.md
+  runtime_path: benchmark_results/pm_regression_baseline_5fold
+  commit: 733a85c
+  status: baseline
+  notes: Five-fold multi-output Random Forest baseline.
+personalization:
+- row_id: label_q5_personalization_zero_shot
+  experiment_id: label_q5_personalization_multiseed_20pct
+  task: classification
+  method: zero_shot
+  primary_metric: macro_f1
+  metric_source_type: structured_csv
+  metric_source_path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+  stability_source: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/stability_summary.csv
+  comparison_source: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/paired_comparisons_multiseed.csv
+  config_path: experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+  report_path: reports/integration/personalization_multiseed_20pct.md
+  runtime_path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240
+  commit: 255d802
+  status: final
+  notes: No target-user fine-tuning; reference for personalization gains.
+- row_id: label_q5_personalization_head_only
+  experiment_id: label_q5_personalization_multiseed_20pct
+  task: classification
+  method: head_only
+  primary_metric: macro_f1
+  metric_source_type: structured_csv
+  metric_source_path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+  stability_source: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/stability_summary.csv
+  comparison_source: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/paired_comparisons_multiseed.csv
+  config_path: experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+  report_path: reports/integration/personalization_multiseed_20pct.md
+  runtime_path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240
+  commit: 255d802
+  status: final
+  notes: Leakage-safe classifier-head fine-tuning.
+- row_id: label_q5_personalization_full_model
+  experiment_id: label_q5_personalization_multiseed_20pct
+  task: classification
+  method: full_model
+  primary_metric: macro_f1
+  metric_source_type: structured_csv
+  metric_source_path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_aggregate.csv
+  stability_source: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/stability_summary.csv
+  comparison_source: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/paired_comparisons_multiseed.csv
+  config_path: experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+  report_path: reports/integration/personalization_multiseed_20pct.md
+  runtime_path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240
+  commit: 255d802
+  status: final
+  notes: Leakage-safe full-model fine-tuning.
+- row_id: pm_regression_personalization_zero_shot
+  experiment_id: pm_regression_personalization_multiseed_20pct
+  task: pm_regression
+  method: zero_shot
+  primary_metric: macro_mae
+  metric_source_type: structured_csv
+  metric_source_path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+  stability_source: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/stability_summary.csv
+  comparison_source: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/paired_comparisons_multiseed.csv
+  target_source: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_target_summary.csv
+  config_path: experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+  report_path: reports/integration/pm_regression_personalization_multiseed_20pct.md
+  runtime_path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221
+  commit: 6c0b77f
+  status: final
+  notes: No target-user fine-tuning; reference for MAE reduction.
+- row_id: pm_regression_personalization_head_only
+  experiment_id: pm_regression_personalization_multiseed_20pct
+  task: pm_regression
+  method: head_only
+  primary_metric: macro_mae
+  metric_source_type: structured_csv
+  metric_source_path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+  stability_source: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/stability_summary.csv
+  comparison_source: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/paired_comparisons_multiseed.csv
+  target_source: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_target_summary.csv
+  config_path: experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+  report_path: reports/integration/pm_regression_personalization_multiseed_20pct.md
+  runtime_path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221
+  commit: 6c0b77f
+  status: final
+  notes: Leakage-safe regression-head fine-tuning.
+- row_id: pm_regression_personalization_full_model
+  experiment_id: pm_regression_personalization_multiseed_20pct
+  task: pm_regression
+  method: full_model
+  primary_metric: macro_mae
+  metric_source_type: structured_csv
+  metric_source_path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_aggregate.csv
+  stability_source: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/stability_summary.csv
+  comparison_source: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/paired_comparisons_multiseed.csv
+  target_source: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221/multiseed_target_summary.csv
+  config_path: experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+  report_path: reports/integration/pm_regression_personalization_multiseed_20pct.md
+  runtime_path: benchmark_results/pm_regression_personalization_multiseed_20pct/20260725_222221
+  commit: 6c0b77f
+  status: final
+  notes: Leakage-safe full-model regression fine-tuning.
+preprocessing:
+- row_id: preprocessing_trial_A
+  experiment_id: shallowconvnet_preprocessing_ablation
+  trial_id: A
+  preprocessing_steps: raw
+  metric_source_type: structured_csv
+  metric_source_path: reports/preprocessing_factorial_ablation_trials.csv
+  config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+  report_path: reports/preprocessing_factorial_ablation.md
+  runtime_path: benchmark_results/preprocessing_ablation_shallowconvnet
+  commit: 63dda2c
+  status: diagnostic
+  notes: Factorial seed-42 result; differences were not declared statistically significant.
+- row_id: preprocessing_trial_B
+  experiment_id: shallowconvnet_preprocessing_ablation
+  trial_id: B
+  preprocessing_steps: band-pass
+  metric_source_type: structured_csv
+  metric_source_path: reports/preprocessing_factorial_ablation_trials.csv
+  config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+  report_path: reports/preprocessing_factorial_ablation.md
+  runtime_path: benchmark_results/preprocessing_ablation_shallowconvnet
+  commit: 63dda2c
+  status: diagnostic
+  notes: Factorial seed-42 result; differences were not declared statistically significant.
+- row_id: preprocessing_trial_C
+  experiment_id: shallowconvnet_preprocessing_ablation
+  trial_id: C
+  preprocessing_steps: notch
+  metric_source_type: structured_csv
+  metric_source_path: reports/preprocessing_factorial_ablation_trials.csv
+  config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+  report_path: reports/preprocessing_factorial_ablation.md
+  runtime_path: benchmark_results/preprocessing_ablation_shallowconvnet
+  commit: 63dda2c
+  status: diagnostic
+  notes: Factorial seed-42 result; differences were not declared statistically significant.
+- row_id: preprocessing_trial_D
+  experiment_id: shallowconvnet_preprocessing_ablation
+  trial_id: D
+  preprocessing_steps: CAR
+  metric_source_type: structured_csv
+  metric_source_path: reports/preprocessing_factorial_ablation_trials.csv
+  config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+  report_path: reports/preprocessing_factorial_ablation.md
+  runtime_path: benchmark_results/preprocessing_ablation_shallowconvnet
+  commit: 63dda2c
+  status: diagnostic
+  notes: Factorial seed-42 result; differences were not declared statistically significant.
+- row_id: preprocessing_trial_E
+  experiment_id: shallowconvnet_preprocessing_ablation
+  trial_id: E
+  preprocessing_steps: band-pass + notch
+  metric_source_type: structured_csv
+  metric_source_path: reports/preprocessing_factorial_ablation_trials.csv
+  config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+  report_path: reports/preprocessing_factorial_ablation.md
+  runtime_path: benchmark_results/preprocessing_ablation_shallowconvnet
+  commit: 63dda2c
+  status: diagnostic
+  notes: Factorial seed-42 result; differences were not declared statistically significant.
+- row_id: preprocessing_trial_F
+  experiment_id: shallowconvnet_preprocessing_ablation
+  trial_id: F
+  preprocessing_steps: band-pass + CAR
+  metric_source_type: structured_csv
+  metric_source_path: reports/preprocessing_factorial_ablation_trials.csv
+  config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+  report_path: reports/preprocessing_factorial_ablation.md
+  runtime_path: benchmark_results/preprocessing_ablation_shallowconvnet
+  commit: 63dda2c
+  status: diagnostic
+  notes: Factorial seed-42 result; differences were not declared statistically significant.
+- row_id: preprocessing_trial_G
+  experiment_id: shallowconvnet_preprocessing_ablation
+  trial_id: G
+  preprocessing_steps: notch + CAR
+  metric_source_type: structured_csv
+  metric_source_path: reports/preprocessing_factorial_ablation_trials.csv
+  config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+  report_path: reports/preprocessing_factorial_ablation.md
+  runtime_path: benchmark_results/preprocessing_ablation_shallowconvnet
+  commit: 63dda2c
+  status: diagnostic
+  notes: Factorial seed-42 result; differences were not declared statistically significant.
+- row_id: preprocessing_trial_H
+  experiment_id: shallowconvnet_preprocessing_ablation
+  trial_id: H
+  preprocessing_steps: band-pass + notch + CAR
+  metric_source_type: structured_csv
+  metric_source_path: reports/preprocessing_factorial_ablation_trials.csv
+  config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+  report_path: reports/preprocessing_factorial_ablation.md
+  runtime_path: benchmark_results/preprocessing_ablation_shallowconvnet
+  commit: 63dda2c
+  status: diagnostic
+  notes: Factorial seed-42 result; differences were not declared statistically significant.
+- row_id: pm_standard_clip_audit
+  experiment_id: pm_standard_clip_audit
+  trial_id: standard_clip
+  preprocessing_steps: train-only standardization + quantile clipping
+  metric_source_type: tracked_report
+  metric_source_path: reports/integration/robust_feature_scaling_audit.md
+  tracked_values:
+    validation_max_train_relative_z_before: 41472.62
+    validation_max_train_relative_z_after: 11.93
+    outlier_subject_mse_before: 2564.3972
+    outlier_subject_mse_after: 0.02872
+    one_fold_mae_before: 0.1102
+    one_fold_mae_after: 0.1049
+    one_fold_rmse_before: 0.1524
+    one_fold_rmse_after: 0.1399
+  config_path: experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
+  report_path: reports/integration/robust_feature_scaling_audit.md
+  runtime_path: benchmark_results/pm_regression_robust_scaling_smoke
+  commit: b965506
+  status: diagnostic
+  notes: One-fold diagnostic only; not a final model comparison.
+preprocessing_factor_effects:
+  metric_source_type: tracked_report
+  metric_source_path: reports/preprocessing_factorial_ablation.md
+  values:
+    balanced_accuracy:
+      band_pass_mean_effect: -0.00309
+      band_pass_effect_std: 0.01158
+      notch_mean_effect: 0.00085
+      notch_effect_std: 0.0034
+      car_mean_effect: -0.02854
+      car_effect_std: 0.01496
+  notes: Factorial descriptive effects; no statistical-significance claim.
+mixins:
+- experiment_id: mixin_transfer_learning_audit
+  method: Transfer learning
+  tested: true
+  integrated: integrated_as_reimplemented_pipeline
+  decision: keep
+  reason: Historical prototype reset pretrained weights; leakage-safe head_only and full_model pipelines implement its intended
+    function.
+- experiment_id: mixin_domain_adaptation_audit
+  method: Domain adaptation
+  tested: true
+  integrated: not_integrated
+  decision: defer
+  reason: No valid source/target runner contract or justified cross-device domain task.
+- experiment_id: mixin_meta_learning_audit
+  method: Meta-learning
+  tested: true
+  integrated: not_integrated
+  decision: defer
+  reason: No runnable production path or integrated episodic protocol.
+- experiment_id: mixin_contrastive_learning_audit
+  method: Contrastive learning
+  tested: true
+  integrated: not_integrated
+  decision: defer
+  reason: Encoder is not connected downstream and aggregated features are not raw EEG.
+unresolved_results:
+- experiment_id: label_q5_lightgbm_baseline
+  config_found: false
+  report_found: false
+  metrics_found: false
+  reason: No structured final 5-fold GroupKFold result and primary metric.
+- experiment_id: label_q5_histgradientboosting_baseline
+  config_found: false
+  report_found: false
+  metrics_found: false
+  reason: No canonical config or structured final 5-fold GroupKFold result.
+- experiment_id: label_q5_logistic_regression_baseline
+  config_found: true
+  report_found: true
+  metrics_found: true
+  reason: Existing temporal diagnostic metrics do not use the comparable EEG+POW GroupKFold input.
+- experiment_id: pm_regression_torch_mlp_5fold
+  config_found: true
+  report_found: true
+  metrics_found: true
+  reason: Available Torch MLP metrics are a one-fold smoke, not a comparable five-fold baseline.
+excluded_results:
+- experiment_id: pm_robust_scaling_unwired_groupkfold
+  status: invalidated
+  reason: Requested robust preprocessing was not applied in the historical run.
+- category: smoke
+  status: smoke
+  reason: Smoke results validate wiring and are excluded from scientific rankings.
+notes:
+  ordinal_transformer: Ordinal Transformer results remain a separately tracked diagnostic/noncanonical slice and are not mixed
+    into the canonical seven-model table.
+  random_window_split: Random-window results are diagnostic/legacy comparisons and are not mixed with cross-subject GroupKFold.
