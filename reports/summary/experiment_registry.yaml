@@ -224,6 +224,13 @@ experiments:
     preprocessing: standard
     evaluation_protocol: 5-fold GroupKFold by subject_id
     seeds: [7, 42, 123]
+    seed_provenance:
+      mode: repeated benchmark CLI runs with seed overrides
+      primary_config_seed: 42
+      runs:
+        7: benchmark_results/groupkfold_torch_transformer_label_q5_seed7/20260716_191618/run_manifest.json
+        42: benchmark_results/groupkfold_torch_transformer_label_q5/20260716_191246/run_manifest.json
+        123: benchmark_results/groupkfold_torch_transformer_label_q5_seed123/20260716_191837/run_manifest.json
     n_subjects: 54
     primary_metric:
       name: macro_f1
@@ -330,6 +337,11 @@ experiments:
     preprocessing: raw_deduplicated
     evaluation_protocol: 5-fold GroupKFold by subject_id
     seeds: [7, 42, 123]
+    seed_provenance:
+      primary_config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+      sibling_config_paths:
+        - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+        - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
     n_subjects: 54
     primary_metric:
       name: macro_f1
@@ -383,6 +395,15 @@ experiments:
     preprocessing: factorial_raw_bandpass_notch_car
     evaluation_protocol: 5-fold GroupKFold by subject_id
     seeds: [7, 42, 123]
+    seed_provenance:
+      mode: preprocessing matrix CLI seed override
+      source: cli.py --experiment-matrix experiments/preprocessing_ablation_shallowconvnet.yaml --seed
+      primary_config_seed: 42
+      external_seeds: [7, 123]
+      representative_runs:
+        7: benchmark_results/preprocessing_ablation_shallowconvnet/runs/14c967f7ff382bc0e87e/20260716_152802/run_manifest.json
+        42: benchmark_results/preprocessing_ablation_shallowconvnet/full/trial_A/seed_42/20260716_131347
+        123: benchmark_results/preprocessing_ablation_shallowconvnet/runs/cb823a65948bcb046918/20260716_161035/run_manifest.json
     n_subjects: 54
     primary_metric:
       name: raw_macro_f1
@@ -485,6 +506,14 @@ experiments:
     status: baseline
     task: performance_metrics_regression
     target: performance_metrics_7
+    target_order:
+      - target_attention
+      - target_engagement
+      - target_excitement
+      - target_stress
+      - target_relaxation
+      - target_interest
+      - target_focus
     model: mean_regressor
     feature_set: pow_plus_eeg
     preprocessing: none
@@ -525,7 +554,7 @@ experiments:
           optional_runtime: true
     report_path: reports/integration/pm_multioutput_regression.md
     runtime_path: benchmark_results/pm_regression_baseline_5fold
-    config_path: null
+    config_path: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
     commit: 733a85c
     result_summary: Наивная нижняя граница качества для семи PM targets.
     limitations:
@@ -538,6 +567,14 @@ experiments:
     status: baseline
     task: performance_metrics_regression
     target: performance_metrics_7
+    target_order:
+      - target_attention
+      - target_engagement
+      - target_excitement
+      - target_stress
+      - target_relaxation
+      - target_interest
+      - target_focus
     model: random_forest
     feature_set: pow_plus_eeg
     preprocessing: none
@@ -588,7 +625,7 @@ experiments:
           optional_runtime: true
     report_path: reports/integration/pm_multioutput_regression.md
     runtime_path: benchmark_results/pm_regression_baseline_5fold
-    config_path: null
+    config_path: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
     commit: 733a85c
     result_summary: RF устойчиво превзошёл mean baseline по всем пяти folds.
     limitations:

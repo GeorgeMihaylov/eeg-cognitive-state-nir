@@ -1,0 +1,1535 @@
+schema_version: 1
+
+protected_defaults: &protected
+  safe_to_move: false
+  safe_to_edit: false
+  protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+
+families:
+  analysis:
+    canonical_config: experiments/statistical_analysis.yaml
+    canonical_smoke_config: null
+    base_configs: []
+    legacy_configs: []
+    diagnostic_configs:
+      - experiments/statistical_analysis.yaml
+    protected_configs:
+      - experiments/statistical_analysis.yaml
+    decision_reason: >
+      Общий статистический анализ завершённых запусков является основной
+      точкой входа семейства; target-аудиты сохранены отдельными семействами.
+    evidence:
+      - reports/statistical_model_comparison.md
+      - commit:02334e6
+
+  automl:
+    canonical_config: experiments/automl_transformer_label_q5.yaml
+    canonical_smoke_config: null
+    base_configs:
+      - configs/groupkfold_torch_transformer_label_q5.yaml
+    legacy_configs: []
+    diagnostic_configs:
+      - experiments/automl_transformer_label_q5.yaml
+    protected_configs:
+      - experiments/automl_transformer_label_q5.yaml
+      - configs/groupkfold_torch_transformer_label_q5.yaml
+    decision_reason: >
+      Единственный текущий AutoML study использует канонический Transformer
+      как отдельно загружаемый base и остаётся диагностическим pilot.
+    evidence:
+      - reports/automl_transformer_pilot.md
+      - bench/automl/study_runner.py
+
+  classification:
+    canonical_config: configs/groupkfold_rf_label_q5.yaml
+    canonical_smoke_config: configs/smoke_rf_label_q5.yaml
+    base_configs: []
+    legacy_configs: []
+    diagnostic_configs:
+      - configs.yaml
+    protected_configs:
+      - configs/groupkfold_rf_label_q5.yaml
+      - configs/groupkfold_torch_mlp_label_q5.yaml
+    decision_reason: >
+      Random Forest — канонический классический baseline label_q5; Torch MLP
+      сохраняется как отдельный neural feature baseline.
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/integration/canonical_label_q5_smoke.md
+
+  classification_personalization:
+    canonical_config: experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+    canonical_smoke_config: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke.yaml
+    base_configs:
+      - experiments/calibration/label_q5_finetuning_base_smoke.yaml
+      - experiments/calibration/label_q5_finetuning_cuda_smoke_base.yaml
+      - experiments/calibration/label_q5_finetuning_full_base.yaml
+      - experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml
+      - experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke_base.yaml
+    legacy_configs:
+      - experiments/user_calibration_transformer_label_q5.yaml
+    diagnostic_configs: []
+    protected_configs:
+      - experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+      - experiments/calibration/label_q5_finetuning_full_subjects.yaml
+      - experiments/user_calibration_transformer_label_q5.yaml
+    decision_reason: >
+      Multiseed 20% MLP fine-tuning является текущим финальным протоколом;
+      single-seed и Transformer calibration сохраняются для provenance.
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/integration/personalization_multiseed_20pct.md
+
+  cross_source:
+    canonical_config: experiments/cross_source_generalization.yaml
+    canonical_smoke_config: null
+    base_configs:
+      - configs/groupkfold_source_gpn_rf_transformer_label_q5.yaml
+      - configs/groupkfold_source_old_eeg_rf_transformer_label_q5.yaml
+    legacy_configs: []
+    diagnostic_configs:
+      - experiments/cross_source_generalization.yaml
+    protected_configs:
+      - experiments/cross_source_generalization.yaml
+      - configs/groupkfold_source_gpn_rf_transformer_label_q5.yaml
+      - configs/groupkfold_source_old_eeg_rf_transformer_label_q5.yaml
+    decision_reason: >
+      Матрица cross-source и два in-domain reference-конфига образуют один
+      специализированный диагностический протокол и не должны смешиваться с
+      обычным GroupKFold.
+    evidence:
+      - reports/cross_source_generalization_report.md
+      - bench/experiments/cross_source_generalization.py
+
+  feature_groups:
+    canonical_config: experiments/feature_group_rf_ablation.yaml
+    canonical_smoke_config: null
+    base_configs: []
+    legacy_configs: []
+    diagnostic_configs:
+      - experiments/feature_group_rf_ablation.yaml
+      - experiments/feature_group_transformer_ablation.yaml
+    protected_configs:
+      - experiments/feature_group_rf_ablation.yaml
+      - experiments/feature_group_transformer_ablation.yaml
+    decision_reason: >
+      RF и Transformer ablation имеют разные model families; RF выбран
+      семейным entry point, Transformer остаётся отдельным подсемейством.
+    evidence:
+      - reports/feature_group_rf_ablation.md
+      - reports/feature_group_transformer_ablation.md
+
+  ordinal_transformer:
+    canonical_config: experiments/ordinal_transformer_multiseed.yaml
+    canonical_smoke_config: experiments/ordinal_transformer_smoke.yaml
+    base_configs: []
+    legacy_configs: []
+    diagnostic_configs:
+      - experiments/ordinal_transformer_multiseed_statistics.yaml
+      - experiments/ordinal_transformer_statistics.yaml
+      - experiments/auxiliary_corn_policy_statistics.yaml
+    protected_configs:
+      - experiments/ordinal_transformer_full_seed42.yaml
+      - experiments/ordinal_transformer_multiseed.yaml
+      - experiments/auxiliary_corn_lambda_selection_setup.yaml
+      - experiments/auxiliary_corn_nested_lambda.yaml
+    decision_reason: >
+      Multiseed matrix является наиболее полным воспроизводимым ordinal
+      протоколом; seed-42, CORN selection и analyses остаются отдельными.
+    evidence:
+      - reports/ordinal_transformer_multiseed_runs.md
+      - reports/ordinal_transformer_multiseed_decision.md
+
+  pm_personalization:
+    canonical_config: experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+    canonical_smoke_config: experiments/calibration/pm_regression_personalization_multiseed_cuda_smoke.yaml
+    base_configs:
+      - experiments/calibration/pm_regression_personalization_20pct_base.yaml
+      - experiments/calibration/pm_regression_personalization_cuda_smoke_base.yaml
+    legacy_configs: []
+    diagnostic_configs: []
+    protected_configs:
+      - experiments/calibration/pm_regression_personalization_20pct.yaml
+      - experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+    decision_reason: >
+      Multiseed 20% PM personalization является финальным протоколом;
+      single-seed run остаётся baseline provenance.
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/integration/pm_regression_personalization_multiseed_20pct.md
+
+  pm_regression:
+    canonical_config: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
+    canonical_smoke_config: experiments/pm_regression/pm_regression_smoke.yaml
+    base_configs: []
+    legacy_configs: []
+    diagnostic_configs:
+      - experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
+    protected_configs:
+      - experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
+      - experiments/pm_regression/pm_regression_smoke.yaml
+      - experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
+    decision_reason: >
+      Новый канонический full YAML дословно фиксирует семантический протокол
+      завершённого пятифолдового mean/RF baseline; существующий smoke остаётся
+      отдельной технической точкой входа.
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/integration/pm_multioutput_regression.md
+
+  preprocessing_ablation:
+    canonical_config: experiments/preprocessing_ablation_shallowconvnet.yaml
+    canonical_smoke_config: null
+    base_configs:
+      - configs/raw_preprocessing_a_raw.yaml
+      - configs/raw_preprocessing_b_bandpass.yaml
+      - configs/raw_preprocessing_c_bandpass_notch.yaml
+      - configs/raw_preprocessing_d_bandpass_notch_car.yaml
+    legacy_configs: []
+    diagnostic_configs:
+      - experiments/preprocessing_ablation_shallowconvnet.yaml
+    protected_configs:
+      - experiments/preprocessing_ablation_shallowconvnet.yaml
+      - configs/raw_preprocessing_a_raw.yaml
+      - configs/raw_preprocessing_b_bandpass.yaml
+      - configs/raw_preprocessing_c_bandpass_notch.yaml
+      - configs/raw_preprocessing_d_bandpass_notch_car.yaml
+    decision_reason: >
+      Factorial matrix является каноническим entry point; четыре raw
+      fragments являются компонентами cache/preprocessing, а не запусками.
+    evidence:
+      - reports/preprocessing_selected_trials_multiseed.md
+      - reports/preprocessing_ablation_implementation_audit.md
+
+  raw_eeg:
+    canonical_config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+    canonical_smoke_config: configs/smoke_torch_shallow_convnet_label_q5.yaml
+    base_configs: []
+    legacy_configs:
+      - configs/groupkfold_torch_eegnet_label_q5.yaml
+    diagnostic_configs:
+      - configs/groupkfold_torch_eegnet_preprocessed_dedup_label_q5.yaml
+      - configs/groupkfold_torch_eegnet_raw_all_label_q5.yaml
+    protected_configs:
+      - configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+      - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+      - configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml
+      - configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml
+      - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+      - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
+    decision_reason: >
+      ShallowConvNet raw-deduplicated — финальный CNN entry point; EEGNet
+      raw-deduplicated сохраняется отдельным baseline и имеет собственные seed
+      configs. Raw-all/filtered варианты остаются diagnostic provenance.
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/raw_eeg_cnn_model_comparison.md
+
+  sensitivity:
+    canonical_config: experiments/label_definition_sensitivity.yaml
+    canonical_smoke_config: null
+    base_configs: []
+    legacy_configs: []
+    diagnostic_configs:
+      - experiments/label_definition_sensitivity.yaml
+    protected_configs:
+      - experiments/label_definition_sensitivity.yaml
+    decision_reason: >
+      Единственный leakage-safe sensitivity analysis для определения label_q5.
+    evidence:
+      - reports/label_definition_sensitivity.md
+      - commit:75d3775
+
+  sequence_models:
+    canonical_config: configs/groupkfold_torch_transformer_label_q5.yaml
+    canonical_smoke_config: configs/smoke_torch_lstm_label_q5.yaml
+    base_configs: []
+    legacy_configs:
+      - configs/groupkfold_torch_lstm_label_q5.yaml
+      - configs/groupkfold_torch_bilstm_label_q5.yaml
+      - configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+      - configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+    diagnostic_configs: []
+    protected_configs:
+      - configs/groupkfold_torch_transformer_label_q5.yaml
+      - configs/groupkfold_torch_lstm_label_q5.yaml
+      - configs/groupkfold_torch_bilstm_label_q5.yaml
+      - configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+      - configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+    decision_reason: >
+      Transformer length-8 является текущим финальным sequence entry point;
+      обычные и gap-aware length-10 LSTM/BiLSTM сохраняются как отдельные
+      завершённые historical baselines, причём gap-aware варианты являются
+      научно более безопасными reference-конфигами.
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/transformer_benchmark_report.md
+
+  target_audit:
+    canonical_config: experiments/label_target_audit.yaml
+    canonical_smoke_config: null
+    base_configs: []
+    legacy_configs: []
+    diagnostic_configs:
+      - experiments/label_target_audit.yaml
+      - experiments/temporal_target_audit.yaml
+    protected_configs:
+      - experiments/label_target_audit.yaml
+      - experiments/temporal_target_audit.yaml
+    decision_reason: >
+      Provenance audit является основной точкой входа; temporal audit —
+      отдельное дополнение без EEG model training.
+    evidence:
+      - reports/label_target_audit.md
+      - reports/temporal_label_structure.md
+
+configs:
+  - config_path: configs.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Канонический root diagnostic benchmark, не full result.
+    canonical_config: configs.yaml
+    result_status: diagnostic
+    config_role: root
+    linked_experiments: []
+    evidence: [reports/integration/canonical_label_q5_smoke.md, commit:3549b1b]
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_rf_label_q5.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Канонический classical ML baseline label_q5.
+    canonical_config: configs/groupkfold_rf_label_q5.yaml
+    result_status: baseline
+    canonical_status: completed
+    provenance_status: documented
+    config_role: full
+    linked_experiments: [label_q5_random_forest_groupkfold]
+    evidence: [reports/summary/experiment_registry.yaml, commit:50d35ac]
+    linked_report: reports/transformer_benchmark_report.md
+    linked_runtime: benchmark_results/groupkfold_rf_label_q5
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_mlp_label_q5.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Отдельный feature-based Torch MLP baseline.
+    canonical_config: configs/groupkfold_torch_mlp_label_q5.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: [label_q5_torch_mlp_groupkfold]
+    evidence: [reports/summary/experiment_registry.yaml, commit:50d35ac]
+    notes: []
+    <<: *protected
+
+  - config_path: configs/smoke_rf_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Технический random-window RF smoke, не научный результат.
+    canonical_config: configs/smoke_rf_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [cli.py, commit:50d35ac]
+    unlinked_category: smoke support
+    notes: []
+    <<: *protected
+
+  - config_path: configs/smoke_torch_mlp_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Технический feature Torch MLP smoke.
+    canonical_config: configs/smoke_torch_mlp_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [tests/test_bench_runner.py, commit:50d35ac]
+    unlinked_category: smoke support
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/label_q5_finetuning_base_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Base run для single-seed calibration smoke.
+    canonical_config: experiments/calibration/label_q5_finetuning_base_smoke.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+      - experiments/calibration/label_q5_finetuning_smoke.yaml
+      - commit:3c47ce3
+    unlinked_category: base dependency
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/label_q5_finetuning_cuda_smoke_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Base run для CUDA integration smoke.
+    canonical_config: experiments/calibration/label_q5_finetuning_cuda_smoke_base.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+      - experiments/calibration/label_q5_finetuning_cuda_integration_smoke.yaml
+      - commit:275fadb
+    unlinked_category: base dependency
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/label_q5_finetuning_full_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Global base run для full-subject single-seed personalization.
+    canonical_config: experiments/calibration/label_q5_finetuning_full_base.yaml
+    result_status: baseline
+    config_role: base
+    linked_experiments: []
+    evidence:
+      - experiments/calibration/label_q5_finetuning_full_subjects.yaml
+      - reports/integration/personalization_full_subjects.md
+    unlinked_category: base dependency
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Template base для финальной multiseed personalization.
+    canonical_config: experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml
+    result_status: baseline
+    config_role: base
+    linked_experiments: []
+    evidence:
+      - experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+      - commit:255d802
+    unlinked_category: base dependency
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Template base для multiseed CUDA smoke.
+    canonical_config: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke_base.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+      - experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke.yaml
+      - commit:255d802
+    unlinked_category: base dependency
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/label_q5_finetuning_full_subjects.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Завершённый single-seed full-subject personalization baseline.
+    canonical_config: experiments/calibration/label_q5_finetuning_full_subjects.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - reports/integration/personalization_full_subjects.md
+      - commit:275fadb
+    notes: [Не заменять автоматически multiseed-конфигом.]
+    <<: *protected
+
+  - config_path: experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Финальный multiseed 20% classification personalization.
+    canonical_config: experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+    result_status: final
+    canonical_status: completed
+    provenance_status: documented
+    config_role: full
+    linked_experiments: [label_q5_personalization_multiseed_20pct]
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/integration/personalization_multiseed_20pct.md
+    linked_report: reports/integration/personalization_multiseed_20pct.md
+    linked_runtime: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240
+    orchestration_provenance:
+      split_seed: 42
+      model_seeds: [7, 42, 2026]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/user_calibration_transformer_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: >
+      Завершённый Transformer calibration protocol предшествует текущему MLP
+      fine-tuning и нужен для воспроизводимости статистического inventory.
+    canonical_config: experiments/user_calibration_transformer_label_q5.yaml
+    result_status: baseline
+    config_role: legacy
+    linked_experiments: []
+    evidence:
+      - reports/user_calibration_report.md
+      - experiments/statistical_analysis.yaml
+      - commit:43ee533
+    unlinked_category: legacy reproducibility
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/label_q5_finetuning_cuda_integration_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: CUDA integration smoke для classification fine-tuning.
+    canonical_config: experiments/calibration/label_q5_finetuning_cuda_integration_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [tests/test_personalization_finetuning.py, commit:275fadb]
+    unlinked_category: smoke support
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: CUDA smoke для multiseed classification orchestration.
+    canonical_config: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [tests/test_personalization_multiseed.py, commit:255d802]
+    unlinked_category: smoke support
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/label_q5_finetuning_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Первый leakage-safe single-seed fine-tuning smoke.
+    canonical_config: experiments/calibration/label_q5_finetuning_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+      - reports/integration/personalization_finetuning_smoke.md
+      - commit:3c47ce3
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/feature_group_rf_ablation.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Каноническая RF feature-group ablation.
+    canonical_config: experiments/feature_group_rf_ablation.yaml
+    result_status: diagnostic
+    config_role: ablation
+    linked_experiments: []
+    evidence: [reports/feature_group_rf_ablation.md, commit:9115f2b]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/auxiliary_corn_lambda_selection_setup.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Infrastructure/setup для leakage-safe CORN lambda selection.
+    canonical_config: experiments/auxiliary_corn_lambda_selection_setup.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+      - reports/auxiliary_corn_lambda_selection_setup.md
+      - commit:27c657b
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/auxiliary_corn_nested_lambda.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Nested CORN lambda diagnostic matrix.
+    canonical_config: experiments/auxiliary_corn_nested_lambda.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+      - reports/auxiliary_corn_nested_lambda_results.md
+      - commit:533d6df
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/ordinal_transformer_full_seed42.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Полный seed-42 ordinal reference, используемый multiseed analysis.
+    canonical_config: experiments/ordinal_transformer_full_seed42.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - reports/ordinal_transformer_full_seed42.md
+      - reports/ordinal_transformer_statistical_analysis.md
+      - commit:ad3365a
+    unlinked_category: active but undocumented
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/ordinal_transformer_multiseed.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Полная multiseed ordinal Transformer matrix.
+    canonical_config: experiments/ordinal_transformer_multiseed.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - reports/ordinal_transformer_multiseed_runs.md
+      - reports/ordinal_transformer_multiseed_decision.md
+      - commit:d8428d9
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/auxiliary_corn_transformer_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Технический smoke категориальной головы с auxiliary CORN loss.
+    canonical_config: experiments/auxiliary_corn_transformer_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+      - reports/auxiliary_corn_transformer_smoke_results.md
+      - commit:6ea8363
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/ordinal_transformer_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Канонический ordinal Transformer technical smoke.
+    canonical_config: experiments/ordinal_transformer_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [reports/ordinal_transformer_smoke.md, commit:b7255cc]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/auxiliary_corn_nested_lambda_finalize.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Финализация сохранённых nested-lambda predictions без обучения.
+    canonical_config: experiments/auxiliary_corn_nested_lambda_finalize.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+      - reports/auxiliary_corn_nested_lambda_finalized_results.md
+      - commit:b9a94bb
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/auxiliary_corn_policy_statistics.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Статистическая проверка auxiliary-CORN policy.
+    canonical_config: experiments/auxiliary_corn_policy_statistics.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence: [reports/auxiliary_corn_policy_decision.md, commit:790a0c5]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/ordinal_transformer_multiseed_statistics.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Paired subject-level анализ ordinal multiseed runs.
+    canonical_config: experiments/ordinal_transformer_multiseed_statistics.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+      - reports/ordinal_transformer_multiseed_statistics.md
+      - commit:d8428d9
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/ordinal_transformer_statistics.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Seed-42 paired ordinal statistical analysis.
+    canonical_config: experiments/ordinal_transformer_statistics.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+      - reports/ordinal_transformer_statistical_analysis.md
+      - commit:577536e
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: >
+      Каноническая воспроизводимая точка входа завершённого пятифолдового
+      mean/RF baseline многовыходной PM-регрессии.
+    canonical_config: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
+    result_status: baseline
+    canonical_status: completed
+    provenance_status: documented
+    config_role: full
+    linked_experiments:
+      - pm_regression_mean_baseline_5fold
+      - pm_regression_random_forest_5fold
+    evidence:
+      - reports/integration/pm_multioutput_regression.md
+      - reports/summary/experiment_registry.yaml
+      - commit:733a85c
+    linked_report: reports/integration/pm_multioutput_regression.md
+    linked_runtime: benchmark_results/pm_regression_baseline_5fold/20260724_121853
+    orchestration_provenance:
+      resolved_config: benchmark_results/pm_regression_baseline_5fold/20260724_121853/config.yaml
+      run_manifest: benchmark_results/pm_regression_baseline_5fold/20260724_121853/run_manifest.json
+      dataset_sha256_current_file: 26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8
+      dataset_hash_limitation: runtime manifest did not persist the dataset hash
+    notes:
+      - Explicit preprocessing none is metadata-equivalent to the completed resolved config.
+    <<: *protected
+
+  - config_path: experiments/pm_regression/pm_regression_group_validation_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Torch PM group-validation integration smoke.
+    canonical_config: experiments/pm_regression/pm_regression_group_validation_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [reports/integration/torch_group_validation.md, commit:30e2221]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Ограниченный robust-scaling diagnostic, не full PM baseline.
+    canonical_config: experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
+    result_status: diagnostic
+    config_role: smoke
+    linked_experiments: [pm_standard_clip_audit]
+    evidence:
+      - reports/integration/robust_feature_scaling_audit.md
+      - reports/summary/experiment_registry.yaml
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/pm_regression/pm_regression_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Технический multi-output PM regression smoke.
+    canonical_config: experiments/pm_regression/pm_regression_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [reports/integration/pm_multioutput_regression.md, commit:1d1e462]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/pm_regression_personalization_20pct_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Global base/template для PM personalization.
+    canonical_config: experiments/calibration/pm_regression_personalization_20pct_base.yaml
+    result_status: baseline
+    config_role: base
+    linked_experiments: []
+    evidence:
+      - experiments/calibration/pm_regression_personalization_20pct.yaml
+      - experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+      - commit:b1f47f4
+    unlinked_category: base dependency
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/pm_regression_personalization_cuda_smoke_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Global base для PM CUDA smoke.
+    canonical_config: experiments/calibration/pm_regression_personalization_cuda_smoke_base.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+      - experiments/calibration/pm_regression_personalization_cuda_smoke.yaml
+      - commit:b1f47f4
+    unlinked_category: base dependency
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/pm_regression_personalization_20pct.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Завершённый single-seed PM personalization baseline.
+    canonical_config: experiments/calibration/pm_regression_personalization_20pct.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - reports/integration/pm_regression_personalization_20pct.md
+      - commit:b1f47f4
+    unlinked_category: active but undocumented
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Финальный multiseed PM personalization protocol.
+    canonical_config: experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+    result_status: final
+    config_role: full
+    linked_experiments: [pm_regression_personalization_multiseed_20pct]
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/integration/pm_regression_personalization_multiseed_20pct.md
+    orchestration_provenance:
+      split_seed: 42
+      model_seeds: [7, 42, 2026]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/pm_regression_personalization_cuda_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Single-seed PM personalization CUDA smoke.
+    canonical_config: experiments/calibration/pm_regression_personalization_cuda_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [tests/test_pm_regression_personalization.py, commit:b1f47f4]
+    unlinked_category: smoke support
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/calibration/pm_regression_personalization_multiseed_cuda_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Multiseed PM personalization CUDA smoke.
+    canonical_config: experiments/calibration/pm_regression_personalization_multiseed_cuda_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+      - tests/test_pm_regression_personalization_multiseed.py
+      - commit:6c0b77f
+    unlinked_category: smoke support
+    notes: []
+    <<: *protected
+
+  - config_path: configs/raw_preprocessing_a_raw.yaml
+    review_status: not_applicable
+    decision: keep_as_base
+    decision_reason: Raw preprocessing fragment A; не standalone run.
+    canonical_config: configs/raw_preprocessing_a_raw.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence: [reports/preprocessing_ablation_implementation_audit.md, commit:50d35ac]
+    notes: []
+    <<: *protected
+
+  - config_path: configs/raw_preprocessing_b_bandpass.yaml
+    review_status: not_applicable
+    decision: keep_as_base
+    decision_reason: Band-pass preprocessing fragment B; не standalone run.
+    canonical_config: configs/raw_preprocessing_b_bandpass.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence: [reports/preprocessing_ablation_implementation_audit.md, commit:50d35ac]
+    notes: []
+    <<: *protected
+
+  - config_path: configs/raw_preprocessing_c_bandpass_notch.yaml
+    review_status: not_applicable
+    decision: keep_as_base
+    decision_reason: Band-pass+notch fragment C; не standalone run.
+    canonical_config: configs/raw_preprocessing_c_bandpass_notch.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence: [reports/preprocessing_ablation_implementation_audit.md, commit:50d35ac]
+    notes: []
+    <<: *protected
+
+  - config_path: configs/raw_preprocessing_d_bandpass_notch_car.yaml
+    review_status: not_applicable
+    decision: keep_as_base
+    decision_reason: Full-filter fragment D; не standalone run.
+    canonical_config: configs/raw_preprocessing_d_bandpass_notch_car.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence: [reports/preprocessing_ablation_implementation_audit.md, commit:50d35ac]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Каноническая factorial preprocessing matrix.
+    canonical_config: experiments/preprocessing_ablation_shallowconvnet.yaml
+    result_status: diagnostic
+    config_role: ablation
+    linked_experiments: [shallowconvnet_preprocessing_ablation]
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/preprocessing_selected_trials_multiseed.md
+    orchestration_provenance:
+      split_seed: 42
+      external_model_seeds: [7, 42, 123]
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_eegnet_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: >
+      Завершённый исходный EEGNet run до logical-record dedup; сохраняется
+      рядом с актуальным raw-deduplicated baseline.
+    canonical_config: configs/groupkfold_torch_eegnet_label_q5.yaml
+    result_status: baseline
+    config_role: legacy
+    linked_experiments: []
+    evidence:
+      - reports/raw_eegnet_label_q5_report.md
+      - reports/raw_eeg_logical_dedup_preprocessing_ablation.md
+      - commit:50d35ac
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_eegnet_preprocessed_dedup_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Filtered deduplicated raw-EEG preprocessing comparison.
+    canonical_config: configs/groupkfold_torch_eegnet_preprocessed_dedup_label_q5.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+      - reports/raw_eeg_logical_dedup_preprocessing_ablation.md
+      - commit:50d35ac
+    unlinked_category: diagnostic utility
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_eegnet_raw_all_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Raw-all logical-duplicate sensitivity comparison.
+    canonical_config: configs/groupkfold_torch_eegnet_raw_all_label_q5.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+      - reports/raw_eeg_logical_dedup_preprocessing_ablation.md
+      - commit:50d35ac
+    unlinked_category: diagnostic utility
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Канонический EEGNet raw-deduplicated multiseed baseline seed 42.
+    canonical_config: configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: [label_q5_eegnet_raw_dedup_multiseed]
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/raw_eeg_cnn_model_comparison.md
+    orchestration_provenance:
+      primary_seed: 42
+      sibling_seeds: [7, 123]
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Отдельный seed-7 EEGNet config; runner не принимает seed list.
+    canonical_config: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - reports/raw_eeg_cnn_model_comparison.md
+      - experiments/statistical_analysis.yaml
+      - commit:50d35ac
+    unlinked_category: active but undocumented
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Отдельный seed-123 EEGNet config; runner не принимает seed list.
+    canonical_config: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - reports/raw_eeg_cnn_model_comparison.md
+      - experiments/statistical_analysis.yaml
+      - commit:50d35ac
+    unlinked_category: active but undocumented
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Канонический final ShallowConvNet raw-deduplicated seed-42 config.
+    canonical_config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+    result_status: final
+    canonical_status: completed
+    provenance_status: documented
+    config_role: full
+    linked_experiments: [label_q5_shallowconvnet_raw_dedup_multiseed]
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/raw_eeg_cnn_model_comparison.md
+    linked_report: reports/raw_eeg_cnn_model_comparison.md
+    linked_runtime: benchmark_results/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed42
+    orchestration_provenance:
+      primary_seed: 42
+      sibling_seeds: [7, 123]
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Отдельный seed-7 ShallowConvNet final-family config.
+    canonical_config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+    result_status: final
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - reports/raw_eeg_cnn_model_comparison.md
+      - experiments/statistical_analysis.yaml
+      - commit:50d35ac
+    unlinked_category: active but undocumented
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Отдельный seed-123 ShallowConvNet final-family config.
+    canonical_config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
+    result_status: final
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - reports/raw_eeg_cnn_model_comparison.md
+      - experiments/statistical_analysis.yaml
+      - commit:50d35ac
+    unlinked_category: active but undocumented
+    notes: []
+    <<: *protected
+
+  - config_path: configs/smoke_torch_eegnet_dedup_preprocessed_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Filtered deduplicated EEGNet technical smoke.
+    canonical_config: configs/smoke_torch_eegnet_dedup_preprocessed_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [tests/test_torch_eegnet.py, commit:50d35ac]
+    unlinked_category: smoke support
+    notes: []
+    <<: *protected
+
+  - config_path: configs/smoke_torch_eegnet_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Original EEGNet technical smoke.
+    canonical_config: configs/smoke_torch_eegnet_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [reports/raw_eegnet_label_q5_report.md, commit:50d35ac]
+    notes: []
+    <<: *protected
+
+  - config_path: configs/smoke_torch_shallow_convnet_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Канонический ShallowConvNet technical smoke.
+    canonical_config: configs/smoke_torch_shallow_convnet_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [tests/test_torch_shallow_convnet.py, commit:50d35ac]
+    unlinked_category: smoke support
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_source_gpn_rf_transformer_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: In-domain gpn_data reference для cross-source protocol.
+    canonical_config: configs/groupkfold_source_gpn_rf_transformer_label_q5.yaml
+    result_status: diagnostic
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - experiments/cross_source_generalization.yaml
+      - reports/cross_source_summary.json
+      - commit:1ac7d0f
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_source_old_eeg_rf_transformer_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: In-domain Old_EEG reference для cross-source protocol.
+    canonical_config: configs/groupkfold_source_old_eeg_rf_transformer_label_q5.yaml
+    result_status: diagnostic
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - experiments/cross_source_generalization.yaml
+      - reports/cross_source_summary.json
+      - commit:1ac7d0f
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_bilstm_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: >
+      Завершённый исторический five-fold BiLSTM baseline без gap-aware
+      continuity checks и явного group-record inner validation; сохраняется
+      отдельно и не объявляется заменённым другим протоколом.
+    canonical_config: configs/groupkfold_torch_bilstm_label_q5.yaml
+    result_status: baseline
+    canonical_status: historical
+    provenance_status: documented
+    config_role: legacy
+    linked_experiments: []
+    evidence: [commit:50d35ac]
+    linked_runtime: benchmark_results/groupkfold_torch_bilstm_label_q5/20260714_150400
+    orchestration_provenance:
+      related_gapaware_config: configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+      relationship: distinct completed historical protocol
+    unlinked_category: historical runtime provenance
+    notes:
+      - Gap-aware BiLSTM is the scientifically safer current sequence reference.
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_lstm_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: >
+      Завершённый исторический five-fold LSTM baseline без gap-aware
+      continuity checks и явного group-record inner validation; сохраняется
+      отдельно и не объявляется заменённым другим протоколом.
+    canonical_config: configs/groupkfold_torch_lstm_label_q5.yaml
+    result_status: baseline
+    canonical_status: historical
+    provenance_status: documented
+    config_role: legacy
+    linked_experiments: []
+    evidence: [commit:50d35ac]
+    linked_runtime: benchmark_results/groupkfold_torch_lstm_label_q5/20260714_150259
+    orchestration_provenance:
+      related_gapaware_config: configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+      relationship: distinct completed historical protocol
+    unlinked_category: historical runtime provenance
+    notes:
+      - Gap-aware LSTM is the scientifically safer current sequence reference.
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_transformer_label_q5.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Канонический final categorical Transformer config.
+    canonical_config: configs/groupkfold_torch_transformer_label_q5.yaml
+    result_status: final
+    config_role: full
+    linked_experiments: [label_q5_transformer_multiseed]
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - reports/transformer_benchmark_report.md
+    orchestration_provenance:
+      primary_seed: 42
+      external_seeds: [7, 123]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/automl_transformer_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Nested AutoML pilot, не финальный model-selection protocol.
+    canonical_config: experiments/automl_transformer_label_q5.yaml
+    result_status: diagnostic
+    canonical_status: completed
+    provenance_status: documented
+    config_role: diagnostic
+    linked_experiments: []
+    evidence: [reports/automl_transformer_pilot.md, commit:54c98fc]
+    linked_report: reports/automl_transformer_pilot.md
+    linked_runtime: benchmark_results/automl/transformer_label_q5/transformer_label_q5_pilot
+    unlinked_category: diagnostic utility
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/cross_source_generalization.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: >
+      Завершённая проверка по data subsets/protocol organization; не
+      интерпретировать как cross-device final result.
+    canonical_config: experiments/cross_source_generalization.yaml
+    result_status: diagnostic
+    config_role: full
+    linked_experiments: []
+    evidence:
+      - reports/cross_source_generalization_report.md
+      - commit:1ac7d0f
+    notes: []
+    <<: *protected
+
+  - config_path: configs/smoke_torch_lstm_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Sequence model technical smoke.
+    canonical_config: configs/smoke_torch_lstm_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [tests/test_torch_lstm.py, commit:50d35ac]
+    unlinked_category: smoke support
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/feature_group_transformer_ablation.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Transformer feature-group ablation, отдельная от RF.
+    canonical_config: experiments/feature_group_transformer_ablation.yaml
+    result_status: diagnostic
+    config_role: ablation
+    linked_experiments: []
+    evidence: [reports/feature_group_transformer_ablation.md, commit:d234f71]
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: Completed length-10 gap-aware BiLSTM baseline.
+    canonical_config: configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+    result_status: baseline
+    config_role: legacy
+    linked_experiments: [label_q5_gapaware_bilstm_groupkfold]
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - experiments/statistical_analysis.yaml
+      - commit:50d35ac
+    notes: []
+    <<: *protected
+
+  - config_path: configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: Completed length-10 gap-aware LSTM baseline.
+    canonical_config: configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+    result_status: baseline
+    config_role: legacy
+    linked_experiments: [label_q5_gapaware_lstm_groupkfold]
+    evidence:
+      - reports/summary/experiment_registry.yaml
+      - experiments/statistical_analysis.yaml
+      - commit:50d35ac
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/label_definition_sensitivity.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Leakage-safe label-definition sensitivity analysis.
+    canonical_config: experiments/label_definition_sensitivity.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence: [reports/label_definition_sensitivity.md, commit:75d3775]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/label_target_audit.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Target provenance and structure audit.
+    canonical_config: experiments/label_target_audit.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence: [reports/label_target_audit.md, commit:83b289a]
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/statistical_analysis.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Canonical completed-run statistical analysis specification.
+    canonical_config: experiments/statistical_analysis.yaml
+    result_status: diagnostic
+    canonical_status: completed
+    provenance_status: documented
+    config_role: diagnostic
+    linked_experiments: []
+    evidence: [reports/statistical_model_comparison.md, commit:02334e6]
+    linked_report: reports/statistical_model_comparison.md
+    linked_runtime: benchmark_results/analysis
+    unlinked_category: diagnostic utility
+    notes: []
+    <<: *protected
+
+  - config_path: experiments/temporal_target_audit.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Temporal target structure and non-EEG diagnostic analysis.
+    canonical_config: experiments/temporal_target_audit.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence: [reports/temporal_label_structure.md, commit:968aeef]
+    notes: []
+    <<: *protected
+
+duplicate_groups:
+  - group_id: classification_personalization_smoke_base
+    configs:
+      - experiments/calibration/label_q5_finetuning_cuda_smoke_base.yaml
+      - experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke_base.yaml
+    duplicate_classification: same_protocol_different_output
+    keep_separate: true
+    canonical_template: null
+    relationship: Single-seed и multiseed CUDA smoke bases.
+    scientific_difference: Нет подтверждённого различия научного протокола.
+    operational_difference: Разные orchestration/output contracts.
+    future_consolidation_candidate: true
+    decision_reason: Консолидировать можно только после унификации calibration loader family.
+
+  - group_id: classification_personalization_full_base
+    configs:
+      - experiments/calibration/label_q5_finetuning_full_base.yaml
+      - experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml
+    duplicate_classification: same_protocol_different_output
+    keep_separate: true
+    canonical_template: null
+    relationship: Single-seed global base и multiseed base template.
+    scientific_difference: Одинаковый seed-42 global training protocol.
+    operational_difference: Разные consumers и output provenance.
+    future_consolidation_candidate: true
+    decision_reason: Пока обе ссылки нужны существующим experiment specs.
+
+  - group_id: eegnet_raw_multiseed
+    configs:
+      - configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml
+      - configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+      - configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml
+    duplicate_classification: same_protocol_different_seed
+    keep_separate: true
+    canonical_template: configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+    relationship: Один протокол, три model/split seeds.
+    scientific_difference: Только seed.
+    operational_difference: Benchmark CLI не принимает seed list для одного run config.
+    future_consolidation_candidate: true
+    decision_reason: Сохранить отдельные воспроизводимые seed-конфиги.
+
+  - group_id: shallowconvnet_raw_multiseed
+    configs:
+      - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+      - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+      - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
+    duplicate_classification: same_protocol_different_seed
+    keep_separate: true
+    canonical_template: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+    relationship: Один протокол, три model/split seeds.
+    scientific_difference: Только seed.
+    operational_difference: Benchmark CLI не принимает seed list для одного run config.
+    future_consolidation_candidate: true
+    decision_reason: Сохранить отдельные воспроизводимые seed-конфиги.
+
+seed_provenance:
+  - name: Transformer
+    registry_seeds: [7, 42, 123]
+    primary_config: configs/groupkfold_torch_transformer_label_q5.yaml
+    primary_config_seeds: [42]
+    sibling_seed_configs: []
+    external_orchestration: >
+      Seeds 7/123 запускались тем же benchmark config с runtime seed overrides;
+      отдельные tracked source YAML не создавались.
+    orchestration_provenance:
+      mode: repeated benchmark CLI runs with seed overrides
+      source: reports/transformer_benchmark_report.md
+      runs:
+        7:
+          run_id: 20260716_191618
+          resolved_config: benchmark_results/groupkfold_torch_transformer_label_q5_seed7/20260716_191618/config.yaml
+          run_manifest: benchmark_results/groupkfold_torch_transformer_label_q5_seed7/20260716_191618/run_manifest.json
+        42:
+          run_id: 20260716_191246
+          resolved_config: benchmark_results/groupkfold_torch_transformer_label_q5/20260716_191246/config.yaml
+          run_manifest: benchmark_results/groupkfold_torch_transformer_label_q5/20260716_191246/run_manifest.json
+        123:
+          run_id: 20260716_191837
+          resolved_config: benchmark_results/groupkfold_torch_transformer_label_q5_seed123/20260716_191837/config.yaml
+          run_manifest: benchmark_results/groupkfold_torch_transformer_label_q5_seed123/20260716_191837/run_manifest.json
+    report_evidence:
+      - reports/transformer_benchmark_report.md
+      - experiments/statistical_analysis.yaml
+    provenance_status: documented
+    recommended_metadata_fix: >
+      Registry теперь явно хранит runtime orchestration для всех трёх seeds;
+      source YAML не меняется.
+
+  - name: EEGNet
+    registry_seeds: [7, 42, 123]
+    primary_config: configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+    primary_config_seeds: [42]
+    sibling_seed_configs:
+      - configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml
+      - configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml
+    external_orchestration: Отдельные tracked sibling configs.
+    report_evidence:
+      - reports/raw_eeg_cnn_model_comparison.md
+      - experiments/statistical_analysis.yaml
+    provenance_status: documented
+    recommended_metadata_fix: >
+      В registry перечислить primary и sibling config paths как provenance.
+
+  - name: ShallowConvNet
+    registry_seeds: [7, 42, 123]
+    primary_config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+    primary_config_seeds: [42]
+    sibling_seed_configs:
+      - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+      - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
+    external_orchestration: Отдельные tracked sibling configs.
+    report_evidence:
+      - reports/raw_eeg_cnn_model_comparison.md
+      - experiments/statistical_analysis.yaml
+    provenance_status: documented
+    recommended_metadata_fix: >
+      В registry перечислить primary и sibling config paths как provenance.
+
+  - name: preprocessing_ablation
+    registry_seeds: [7, 42, 123]
+    primary_config: experiments/preprocessing_ablation_shallowconvnet.yaml
+    primary_config_seeds: [42]
+    sibling_seed_configs: []
+    external_orchestration: >
+      Seeds 7/123 передавались через CLI --experiment-matrix --seed поверх
+      fixed matrix; seed 42 взят из исходной matrix и legacy full runs.
+    orchestration_provenance:
+      mode: preprocessing matrix CLI seed override
+      source: cli.py --experiment-matrix experiments/preprocessing_ablation_shallowconvnet.yaml --seed
+      code: bench/experiments/preprocessing_ablation.py
+      runs:
+        7:
+          trials: [A, B, E]
+          representative_run_manifest: benchmark_results/preprocessing_ablation_shallowconvnet/runs/14c967f7ff382bc0e87e/20260716_152802/run_manifest.json
+        42:
+          trials: [A, B, C, D, E, F, G, H]
+          representative_runtime: benchmark_results/preprocessing_ablation_shallowconvnet/full/trial_A/seed_42/20260716_131347
+        123:
+          trials: [A, B, E]
+          representative_run_manifest: benchmark_results/preprocessing_ablation_shallowconvnet/runs/cb823a65948bcb046918/20260716_161035/run_manifest.json
+    report_evidence:
+      - reports/preprocessing_selected_trials_multiseed.md
+      - bench/experiments/preprocessing_ablation.py
+    provenance_status: documented
+    recommended_metadata_fix: >
+      Registry теперь хранит external seed orchestration; fixed split seed
+      исходной matrix не меняется.
+
+normalization_plan:
+  - name: Пакет 1. Метаданные
+    files:
+      - reports/summary/config_curation.yaml
+      - reports/summary/config_registry.yaml
+      - reports/summary/experiment_registry.yaml
+    risk: Низкий, если изменяется только отчётный metadata layer.
+    tests:
+      - tests/test_config_curation.py
+      - tests/test_config_audit.py
+    dry_load:
+      - src/16_audit_experiment_configs.py --strict
+    rollback: Удалить только metadata patch; source experiment YAML не затрагиваются.
+
+  - name: Пакет 2. Base/template consistency
+    files:
+      - experiments/calibration/
+    risk: Средний из-за config_path references и completed-run hashes.
+    tests:
+      - tests/test_user_finetuning.py
+      - tests/test_personalization_multiseed.py
+      - tests/test_pm_regression_personalization_multiseed.py
+    dry_load:
+      - --calibration-experiment ... --plan-only
+    rollback: Откатить один loader-family patch и восстановить прежние paths byte-for-byte.
+
+  - name: Пакет 3. Smoke naming and output isolation
+    files:
+      - configs/smoke_*.yaml
+      - experiments/calibration/*smoke*.yaml
+    risk: Средний; пути могут использоваться документацией и smoke automation.
+    tests:
+      - tests/test_bench_runner.py
+      - tests/test_config_audit.py
+    dry_load:
+      - cli.py --config <smoke-config> без execute
+    rollback: Вернуть имена и output_dir каждого smoke-конфига отдельно.
+
+  - name: Пакет 4. Registry/report links
+    files:
+      - reports/summary/experiment_registry.yaml
+      - reports/**/*.md
+    risk: Низкий для runtime, средний для provenance.
+    tests:
+      - tests/test_experiment_summary.py
+      - tests/test_config_curation.py
+    dry_load:
+      - src/15_build_experiment_summary.py --strict
+      - src/16_audit_experiment_configs.py --strict
+    rollback: Откатить только ссылки report/registry; experiment configs не менять.
+
+  - name: Пакет 5. Физическое перемещение
+    files: []
+    risk: Высокий; в текущем curation safe_to_move=true отсутствует.
+    tests:
+      - полный pytest
+      - поиск всех config_path references
+    dry_load:
+      - каждый фактический loader type
+    rollback: Не выполнять пакет без отдельной migration map и совместимых aliases.
