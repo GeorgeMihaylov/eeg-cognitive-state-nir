@@ -1,0 +1,1417 @@
+schema_version: 1
+
+project:
+  name: eeg-cognitive-state-nir
+  requirements_source_status: project_plan_only
+  primary_source:
+    path: README.md
+    type: project_plan
+  source_warnings:
+    - Официальный файл технического задания не найден в tracked-дереве или Git history.
+    - README фиксирует цели проекта, но не задаёт формальную обязательность и приоритет всех deliverables.
+    - AGENTS.md и PROJECT_CONTEXT.md используются только как внутренние планы, а не как официальный текст ТЗ.
+  missing_authoritative_source:
+    description: >
+      Для окончательной юридической и приёмочной трассировки требуется добавить
+      официальный документ ТЗ или утверждённый план работ с критериями приёмки.
+    expected_kind: technical_specification_or_approved_work_plan
+
+requirements:
+  - requirement_id: R-DATA
+    parent_id: null
+    title: Данные и унификация источников
+    domain: data
+    requirement_kind: parent_requirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Назначение проекта / Данные
+      quote: "поддержать несколько представлений данных"
+    normalized_requirement: >
+      Подготовить единый, проверяемый слой данных для собственных EEG-источников
+      и отдельно определённых внешних benchmark-треков.
+    requirement_type: data
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: partial
+      experimental_validation: complete
+      result_quality: complete
+      documentation: partial
+      integration: complete
+      demonstration: not_applicable
+    overall_status: partial
+    evidence:
+      - type: code
+        path: bench/datasets/emotiv_loader.py
+        supports: Унифицированную загрузку EEG/POW и целей.
+        level: primary
+      - type: report
+        path: reports/logical_recording_audit.md
+        supports: Аудит записей и межисточниковых дубликатов.
+        level: primary
+    gaps:
+      - Нет единого актуального data-card, включающего собственные и внешние треки.
+      - Внешние datasets не имеют сопоставимого полного experiment contract.
+    minimum_closure_action:
+      action_type: documentation
+      description: Подготовить единый data-card и явно зафиксировать scope внешних наборов.
+      estimated_scope: medium
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: [официальный scope данных]
+    completion_criterion: >
+      Для каждого включённого источника описаны происхождение, задача, splits,
+      идентификаторы, ограничения и каноническая точка загрузки.
+    notes:
+      - Приоритет important выведен из списка основных целей README.
+
+  - requirement_id: R-DATA-01
+    parent_id: R-DATA
+    title: Унификация gpn_data и Old_EEG
+    domain: data
+    requirement_kind: subrequirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Данные / Исходные источники
+      quote: "Проект использует два собственных источника"
+    normalized_requirement: >
+      Совместно загружать gpn_data и Old_EEG, сохраняя subject, record, source
+      и logical-record provenance.
+    requirement_type: data
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: complete
+    evidence:
+      - type: code
+        path: bench/datasets/emotiv_loader.py
+        supports: Текущий унифицированный dataset loader.
+        level: primary
+      - type: code
+        path: bench/datasets/logical_recordings.py
+        supports: Logical-record identity.
+        level: primary
+      - type: test
+        path: tests/test_cross_source_split.py
+        supports: Отсутствие logical-record leakage.
+        level: supporting
+      - type: report
+        path: reports/cross_source_data_audit.md
+        supports: Состав и ограничения двух источников.
+        level: primary
+    gaps: []
+    minimum_closure_action:
+      action_type: documentation
+      description: Поддерживать data provenance при следующих изменениях набора.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P3
+    blocking_dependencies: []
+    completion_criterion: Текущий data audit и leakage tests остаются воспроизводимыми.
+    notes:
+      - Источники не интерпретируются как разные устройства.
+
+  - requirement_id: R-DATA-02
+    parent_id: R-DATA
+    title: Внешний WESAD benchmark
+    domain: data
+    requirement_kind: subrequirement
+    source:
+      type: internal_project_plan
+      path: PROJECT_CONTEXT.md
+      section: Цель проекта / Возможные треки
+      quote: "отдельные задачи на WESAD и других открытых данных"
+    normalized_requirement: >
+      Поддержать WESAD как отдельный физиологический benchmark, не смешивая
+      его задачу с Emotiv Focus/PM.
+    requirement_type: integration
+    priority: requires_clarification
+    coverage:
+      implementation: complete
+      reproducible_config: missing
+      experimental_validation: partial
+      result_quality: unclear
+      documentation: partial
+      integration: partial
+      demonstration: missing
+    overall_status: partial
+    evidence:
+      - type: code
+        path: bench/datasets/wesad_loader.py
+        supports: WESAD dataset adapter.
+        level: primary
+      - type: code
+        path: bench/tasks/wesad_task.py
+        supports: Отдельную WESAD task.
+        level: primary
+      - type: report
+        path: reports/integration/wesad_metrics_review.md
+        supports: Проверку loader/task на integration branch.
+        level: supporting
+      - type: commit
+        commit: bf0aa97
+        supports: Исторические отдельные WESAD experiments вне текущего benchmark contract.
+        level: historical
+    gaps:
+      - Нет текущего канонического WESAD experiment config и записи experiment registry.
+      - Исторические WESAD scripts не являются текущим integrated pipeline.
+    minimum_closure_action:
+      action_type: research_decision
+      description: >
+        Уточнить, обязателен ли WESAD deliverable; при положительном решении
+        интегрировать один ограниченный baseline через текущий runner.
+      estimated_scope: medium
+    new_experiment_required: false
+    closure_priority: P2
+    blocking_dependencies: [официальный scope внешних данных]
+    completion_criterion: Scope-решение принято; при включении есть config, test и baseline.
+    notes:
+      - Исторический результат не переносится автоматически.
+
+  - requirement_id: R-DATA-03
+    parent_id: R-DATA
+    title: STEW и другие открытые EEG-наборы
+    domain: data
+    requirement_kind: subrequirement
+    source:
+      type: internal_project_plan
+      path: PROJECT_CONTEXT.md
+      section: Цель проекта / Возможные треки
+      quote: "workload classification на STEW"
+    normalized_requirement: >
+      Определить, входят ли STEW или другие открытые EEG-наборы в обязательный
+      scope платформы.
+    requirement_type: data
+    priority: requires_clarification
+    coverage:
+      implementation: missing
+      reproducible_config: missing
+      experimental_validation: missing
+      result_quality: unclear
+      documentation: partial
+      integration: missing
+      demonstration: missing
+    overall_status: needs_clarification
+    evidence: []
+    gaps:
+      - Нет loader, task, config или current result для STEW.
+      - Не найден официальный признак обязательности.
+    minimum_closure_action:
+      action_type: scope_clarification
+      description: Зафиксировать включение или исключение STEW в утверждённом scope.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: [официальное ТЗ или утверждённый план]
+    completion_criterion: Есть документированное решение scope.
+    notes: []
+
+  - requirement_id: R-PREP
+    parent_id: null
+    title: Предобработка и контроль качества EEG
+    domain: preprocessing
+    requirement_kind: parent_requirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Данные / Обработка источников
+      quote: "проверка качества сырых сигналов"
+    normalized_requirement: >
+      Обеспечить воспроизводимую предобработку, контроль качества и provenance
+      преобразований EEG.
+    requirement_type: functional
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: partial
+      result_quality: partial
+      documentation: complete
+      integration: partial
+      demonstration: not_applicable
+    overall_status: partial
+    evidence:
+      - type: code
+        path: bench/datasets/raw_preprocessing.py
+        supports: Registry и semantic hash raw preprocessing.
+        level: primary
+      - type: experiment
+        experiment_id: shallowconvnet_preprocessing_ablation
+        supports: Factorial diagnostic фильтрации.
+        level: diagnostic
+      - type: report
+        path: reports/preprocessing_selected_trials_multiseed.md
+        supports: Ограниченную multi-seed проверку выбранных вариантов.
+        level: primary
+    gaps:
+      - Не все упоминаемые artifact-removal методы интегрированы в canonical pipeline.
+    minimum_closure_action:
+      action_type: research_decision
+      description: >
+        Зафиксировать обязательный минимальный preprocessing scope и отдельно
+        решить необходимость artifact removal.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: [официальный preprocessing scope]
+    completion_criterion: Обязательные операции и deferred методы явно разделены.
+    notes: []
+
+  - requirement_id: R-PREP-01
+    parent_id: R-PREP
+    title: Band-pass, notch, CAR и deduplication
+    domain: preprocessing
+    requirement_kind: subrequirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Текущее состояние
+      quote: "факторное исследование предварительной обработки сырых ЭЭГ"
+    normalized_requirement: >
+      Реализовать и проверить конфигурируемые raw, band-pass, notch, CAR и
+      logical-record deduplication варианты.
+    requirement_type: scientific
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: partial
+      result_quality: partial
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: partial
+    evidence:
+      - type: config
+        path: experiments/preprocessing_ablation_shallowconvnet.yaml
+        supports: Factorial preprocessing matrix.
+        level: primary
+      - type: test
+        path: tests/test_raw_preprocessing_registry.py
+        supports: Registry и hash semantics.
+        level: supporting
+      - type: experiment
+        experiment_id: shallowconvnet_preprocessing_ablation
+        supports: Seed-42 A-H и выбранные multi-seed trials.
+        level: diagnostic
+      - type: report
+        path: reports/preprocessing_factorial_ablation.md
+        supports: Полный seed-42 factorial result.
+        level: primary
+    gaps:
+      - Полный A-H factorial выполнен только для seed 42.
+      - Diagnostic experiment не устанавливает универсально лучший preprocessing.
+    minimum_closure_action:
+      action_type: documentation
+      description: >
+        Зафиксировать raw как текущий reference и границы обобщения ablation;
+        не запускать полный повтор без отдельной гипотезы.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P2
+    blocking_dependencies: []
+    completion_criterion: README не представляет diagnostic ablation как финальный выбор.
+    notes: []
+
+  - requirement_id: R-PREP-02
+    parent_id: R-PREP
+    title: Artifact removal, ICA и FASTER
+    domain: preprocessing
+    requirement_kind: subrequirement
+    source:
+      type: internal_project_plan
+      path: AGENTS.md
+      section: Current priorities
+      quote: "close remaining preprocessing and feature gaps"
+    normalized_requirement: >
+      Определить обязательность и, при необходимости, интегрировать
+      leakage-safe artifact removal вместо наличия изолированного prototype.
+    requirement_type: quality
+    priority: requires_clarification
+    coverage:
+      implementation: partial
+      reproducible_config: missing
+      experimental_validation: missing
+      result_quality: unclear
+      documentation: missing
+      integration: missing
+      demonstration: not_applicable
+    overall_status: partial
+    evidence:
+      - type: code
+        path: bench/preprocessing/artifacts.py
+        supports: Изолированный FASTER-named threshold prototype.
+        level: historical
+      - type: code
+        path: bench/preprocessing/preprocessing_pipeline.py
+        supports: Неиспользуемую параллельную preprocessing abstraction.
+        level: historical
+    gaps:
+      - ICA отсутствует.
+      - FASTER prototype не является полноценной реализацией алгоритма и не подключён к runner.
+      - Нет leakage tests, config provenance или experiment result.
+    minimum_closure_action:
+      action_type: research_decision
+      description: >
+        Сначала решить, входит ли artifact removal в обязательный scope;
+        не интегрировать prototype без методической спецификации.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P2
+    blocking_dependencies: [artifact-removal acceptance definition]
+    completion_criterion: Принято документированное scope-решение и prototype не называется production FASTER.
+    notes: []
+
+  - requirement_id: R-FEAT
+    parent_id: null
+    title: Представления и признаки
+    domain: features
+    requirement_kind: parent_requirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Назначение проекта
+      quote: "агрегированные EEG-признаки; POW-признаки"
+    normalized_requirement: >
+      Поддержать проверяемые EEG, POW, raw и sequence representations без
+      утечки целевых колонок.
+    requirement_type: functional
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: partial
+      integration: complete
+      demonstration: not_applicable
+    overall_status: partial
+    evidence:
+      - type: report
+        path: reports/windowed_eeg_features_w10_report.md
+        supports: Состав агрегированного набора.
+        level: primary
+      - type: report
+        path: reports/feature_group_transformer_ablation.md
+        supports: Сравнение EEG, POW и EEG+POW.
+        level: primary
+    gaps:
+      - Нет единого feature dictionary с происхождением всех 448 колонок.
+    minimum_closure_action:
+      action_type: documentation
+      description: Создать feature dictionary с группой, формулой и provenance.
+      estimated_scope: medium
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: []
+    completion_criterion: Все 448 feature columns трассируются до исходного преобразования.
+    notes: []
+
+  - requirement_id: R-FEAT-01
+    parent_id: R-FEAT
+    title: EEG, POW, raw и sequence representations
+    domain: features
+    requirement_kind: subrequirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Назначение проекта
+      quote: "сырые 10-секундные ЭЭГ-окна"
+    normalized_requirement: >
+      Предоставить feature-based, raw-window и record-safe sequence inputs.
+    requirement_type: integration
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: complete
+    evidence:
+      - type: code
+        path: bench/datasets/base_eeg_data_loader.py
+        supports: Детерминированные EEG/POW feature groups.
+        level: primary
+      - type: code
+        path: model_zoo/DL/sequence_utils.py
+        supports: Record-safe sequences.
+        level: primary
+      - type: test
+        path: tests/test_sequence_utils.py
+        supports: Границы записей и target alignment.
+        level: supporting
+      - type: experiment
+        experiment_id: label_q5_transformer_multiseed
+        supports: Полную sequence evaluation.
+        level: primary
+      - type: experiment
+        experiment_id: label_q5_shallowconvnet_raw_dedup_multiseed
+        supports: Полную raw-window evaluation.
+        level: primary
+    gaps: []
+    minimum_closure_action:
+      action_type: documentation
+      description: Поддерживать representation contracts в архитектурной документации.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P3
+    blocking_dependencies: []
+    completion_criterion: Existing shape, leakage и factory tests остаются зелёными.
+    notes: []
+
+  - requirement_id: R-FEAT-02
+    parent_id: R-FEAT
+    title: Энтропия, связность и снижение размерности
+    domain: features
+    requirement_kind: subrequirement
+    source:
+      type: internal_project_plan
+      path: AGENTS.md
+      section: Current priorities
+      quote: "close remaining preprocessing and feature gaps"
+    normalized_requirement: >
+      Уточнить обязательность advanced features и интегрировать только
+      научно обоснованные leakage-safe transforms.
+    requirement_type: scientific
+    priority: requires_clarification
+    coverage:
+      implementation: partial
+      reproducible_config: missing
+      experimental_validation: missing
+      result_quality: unclear
+      documentation: missing
+      integration: missing
+      demonstration: not_applicable
+    overall_status: partial
+    evidence:
+      - type: code
+        path: bench/preprocessing/features.py
+        supports: Изолированные spectral/statistical/correlation prototypes.
+        level: historical
+    gaps:
+      - Энтропийные признаки отсутствуют.
+      - Connectivity prototype не встроен в canonical feature dataset.
+      - PCA и feature selection не имеют train-only integrated path.
+    minimum_closure_action:
+      action_type: scope_clarification
+      description: Уточнить обязательные advanced feature families до реализации.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P2
+    blocking_dependencies: [официальный feature scope]
+    completion_criterion: Есть утверждённый список обязательных feature families.
+    notes: []
+
+  - requirement_id: R-MODEL
+    parent_id: null
+    title: Интегрированный набор моделей
+    domain: models
+    requirement_kind: parent_requirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Реализованные модели
+      quote: "Классические модели"
+    normalized_requirement: >
+      Сравнивать классические и нейросетевые модели через общий factory и runner.
+    requirement_type: functional
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: partial
+    overall_status: partial
+    evidence:
+      - type: code
+        path: model_zoo/factory.py
+        supports: Общую модельную точку подключения.
+        level: primary
+      - type: report
+        path: reports/summary/experiment_summary.md
+        supports: Curated comparison completed results.
+        level: primary
+    gaps:
+      - Model selection недоступен в конечном demo-сценарии.
+    minimum_closure_action:
+      action_type: demo
+      description: Подключить выбор канонической модели в минимальном demo.
+      estimated_scope: medium
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: [R-DEMO]
+    completion_criterion: Пользователь выбирает зарегистрированную модель без изменения кода.
+    notes: []
+
+  - requirement_id: R-MODEL-01
+    parent_id: R-MODEL
+    title: Classical ML и Torch model zoo
+    domain: models
+    requirement_kind: subrequirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Реализованные модели
+      quote: "MLP; LSTM; BiLSTM; EEGNet; ShallowConvNet; Transformer"
+    normalized_requirement: >
+      Интегрировать RF и заявленные Torch architectures через единый adapter/factory.
+    requirement_type: integration
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: complete
+    evidence:
+      - type: code
+        path: model_zoo/factory.py
+        supports: sklearn и Torch factory.
+        level: primary
+      - type: test
+        path: tests/test_model_factory.py
+        supports: Factory compatibility.
+        level: supporting
+      - type: experiment
+        experiment_id: label_q5_random_forest_groupkfold
+        supports: Classical baseline.
+        level: primary
+      - type: experiment
+        experiment_id: label_q5_transformer_multiseed
+        supports: Sequence DL final result.
+        level: primary
+      - type: experiment
+        experiment_id: label_q5_shallowconvnet_raw_dedup_multiseed
+        supports: Raw CNN final result.
+        level: primary
+    gaps: []
+    minimum_closure_action:
+      action_type: documentation
+      description: Поддерживать model matrix в README и summary registry.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P3
+    blocking_dependencies: []
+    completion_criterion: Factory tests и canonical configs остаются согласованными.
+    notes: []
+
+  - requirement_id: R-MODEL-02
+    parent_id: R-MODEL
+    title: Классификация label_q5 и многовыходная PM-регрессия
+    domain: models
+    requirement_kind: subrequirement
+    source:
+      type: composite_project_requirement
+      path: README.md
+      section: Назначение проекта
+      quote: "Основная задача классификации"
+      sources:
+        - type: project_plan
+          path: README.md
+          section: Назначение проекта
+          quote: "Основная задача классификации"
+        - type: internal_project_plan
+          path: AGENTS.md
+          section: Canonical multi-output PM regression
+          quote: "Targets, in fixed order"
+    normalized_requirement: >
+      Поддержать 5-class classification и seven-target PM regression с
+      корректными shapes, metrics и GroupKFold.
+    requirement_type: scientific
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: complete
+    evidence:
+      - type: experiment
+        experiment_id: label_q5_random_forest_groupkfold
+        supports: Classification baseline.
+        level: primary
+      - type: experiment
+        experiment_id: pm_regression_random_forest_5fold
+        supports: Seven-target PM baseline.
+        level: primary
+      - type: config
+        path: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
+        supports: Reproducible PM target order and protocol.
+        level: primary
+      - type: test
+        path: tests/test_multioutput_regression_metrics.py
+        supports: Multi-output metric contract.
+        level: supporting
+    gaps: []
+    minimum_closure_action:
+      action_type: documentation
+      description: Обновить устаревшее ограничение README о regression track.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: []
+    completion_criterion: README отражает завершённый seven-target baseline.
+    notes: []
+
+  - requirement_id: R-MODEL-03
+    parent_id: R-MODEL
+    title: AutoML
+    domain: models
+    requirement_kind: subrequirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Основные экспериментальные направления
+      quote: "пилотного автоматического выбора конфигураций"
+    normalized_requirement: >
+      Иметь leakage-safe AutoML orchestration, не выдавая pilot за финальный
+      model-selection результат.
+    requirement_type: functional
+    priority: optional
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: partial
+      result_quality: unclear
+      documentation: complete
+      integration: complete
+      demonstration: missing
+    overall_status: partial
+    evidence:
+      - type: code
+        path: bench/automl/study_runner.py
+        supports: Integrated study orchestration.
+        level: primary
+      - type: config
+        path: experiments/automl_transformer_label_q5.yaml
+        supports: Reproducible pilot.
+        level: primary
+      - type: report
+        path: reports/automl_transformer_pilot.md
+        supports: Completed diagnostic pilot and limitations.
+        level: primary
+    gaps:
+      - Выполнен diagnostic pilot, а не полный nested AutoML experiment.
+      - До streaming/demo AutoML не закрывает ближайший обязательный deliverable.
+    minimum_closure_action:
+      action_type: research_decision
+      description: Отложить full AutoML до закрытия platform deliverables.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P3
+    blocking_dependencies: [R-STREAM, R-DEMO, официальный AutoML scope]
+    completion_criterion: Есть отдельное решение, нужен ли full AutoML.
+    notes: []
+
+  - requirement_id: R-EVAL
+    parent_id: null
+    title: Научно корректная оценка
+    domain: evaluation
+    requirement_kind: parent_requirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Протокол оценки
+      quote: "пятифолдовый GroupKFold по subject_id"
+    normalized_requirement: >
+      Обеспечить subject-disjoint outer evaluation, leakage-safe inner
+      validation, единые метрики и статистический анализ.
+    requirement_type: scientific
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: complete
+    evidence:
+      - type: code
+        path: bench/validation/cross_val.py
+        supports: Group-aware outer protocols.
+        level: primary
+      - type: code
+        path: model_zoo/DL/adapter.py
+        supports: Group-aware inner validation.
+        level: primary
+      - type: report
+        path: reports/statistical_model_comparison.md
+        supports: Subject-level paired statistics.
+        level: primary
+      - type: test
+        path: tests/test_group_kfold.py
+        supports: Split and leakage invariants.
+        level: supporting
+    gaps: []
+    minimum_closure_action:
+      action_type: documentation
+      description: Поддерживать единое описание evaluation policy.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P3
+    blocking_dependencies: []
+    completion_criterion: Leakage и alignment tests остаются обязательными.
+    notes: []
+
+  - requirement_id: R-EVAL-01
+    parent_id: R-EVAL
+    title: Outer/inner leakage protection
+    domain: evaluation
+    requirement_kind: subrequirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Воспроизводимость и защита от утечек
+      quote: "внешний тест отделяется по subject_id"
+    normalized_requirement: >
+      Не использовать outer test для обучения, preprocessing fit, early
+      stopping или выбора гиперпараметров.
+    requirement_type: quality
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: complete
+    evidence:
+      - type: test
+        path: tests/test_torch_group_validation.py
+        supports: Disjoint group inner validation.
+        level: primary
+      - type: test
+        path: tests/test_cross_source_leakage.py
+        supports: Cross-source leakage audit.
+        level: primary
+      - type: report
+        path: reports/integration/torch_group_validation.md
+        supports: Shared adapter contract.
+        level: supporting
+    gaps: []
+    minimum_closure_action:
+      action_type: documentation
+      description: Сохранять leakage checklist для новых experiment families.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P3
+    blocking_dependencies: []
+    completion_criterion: Любой новый full config проходит leakage tests.
+    notes: []
+
+  - requirement_id: R-EVAL-02
+    parent_id: R-EVAL
+    title: Метрики, артефакты и статистические сравнения
+    domain: evaluation
+    requirement_kind: subrequirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Архитектура экспериментального стенда
+      quote: "расчёт метрик"
+    normalized_requirement: >
+      Сохранять unified predictions/artifacts и сравнивать модели на уровне
+      независимых испытуемых с интервалами неопределённости.
+    requirement_type: reproducibility
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: complete
+    evidence:
+      - type: code
+        path: bench/validation/metrics.py
+        supports: Unified classification/regression metrics.
+        level: primary
+      - type: code
+        path: bench/analysis/paired_statistics.py
+        supports: Subject-level intervals and paired tests.
+        level: primary
+      - type: experiment
+        experiment_id: label_q5_transformer_multiseed
+        supports: Multi-seed aligned predictions.
+        level: primary
+      - type: report
+        path: reports/statistical_model_comparison.md
+        supports: Итоговое paired comparison.
+        level: primary
+    gaps: []
+    minimum_closure_action:
+      action_type: documentation
+      description: Поддерживать artifact schema в architecture docs.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P3
+    blocking_dependencies: []
+    completion_criterion: Summary и artifact provenance остаются валидными.
+    notes: []
+
+  - requirement_id: R-PERS
+    parent_id: null
+    title: Персонализация и перенос
+    domain: personalization
+    requirement_kind: parent_requirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Назначение проекта
+      quote: "исследовать категориальную, порядковую и персонализированную постановки"
+    normalized_requirement: >
+      Поддержать leakage-safe персонализацию новых пользователей и честно
+      отделить её от deferred transfer prototypes.
+    requirement_type: scientific
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: partial
+      documentation: complete
+      integration: complete
+      demonstration: missing
+    overall_status: partial
+    evidence:
+      - type: experiment
+        experiment_id: label_q5_personalization_multiseed_20pct
+        supports: Classification personalization.
+        level: primary
+      - type: experiment
+        experiment_id: pm_regression_personalization_multiseed_20pct
+        supports: Regression personalization.
+        level: primary
+      - type: report
+        path: reports/summary/mixin_status.md
+        supports: Honest prototype status.
+        level: primary
+    gaps:
+      - Accuracy 0.75 не достигнута.
+      - Селективное online назначение калибровки не реализовано.
+    minimum_closure_action:
+      action_type: integration
+      description: >
+        Перенести validated personalization в будущий demo/streaming сценарий
+        без новых budget sweeps.
+      estimated_scope: medium
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: [R-STREAM, R-DEMO]
+    completion_criterion: Demo использует zero-shot/head-only/full-model protocol без leakage.
+    notes: []
+
+  - requirement_id: R-PERS-01
+    parent_id: R-PERS
+    title: Leakage-safe classification и PM personalization
+    domain: personalization
+    requirement_kind: subrequirement
+    source:
+      type: composite_project_requirement
+      path: README.md
+      section: Следующий этап
+      quote: "без дообучения; только выходная голова"
+      sources:
+        - type: project_plan
+          path: README.md
+          section: Следующий этап
+          quote: "без дообучения; только выходная голова"
+        - type: internal_project_plan
+          path: AGENTS.md
+          section: Personalization and transfer / Current production path
+          quote: "zero_shot; head_only; full_model"
+    normalized_requirement: >
+      Реализовать zero-shot, head-only и full-model calibration с
+      chronological calibration/evaluation separation.
+    requirement_type: functional
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: complete
+    evidence:
+      - type: experiment
+        experiment_id: label_q5_personalization_multiseed_20pct
+        supports: Positive multiseed classification personalization effect.
+        level: primary
+      - type: experiment
+        experiment_id: pm_regression_personalization_multiseed_20pct
+        supports: Positive multiseed PM personalization effect.
+        level: primary
+      - type: test
+        path: tests/test_personalization_multiseed.py
+        supports: Split/checkpoint/method invariants.
+        level: supporting
+      - type: test
+        path: tests/test_pm_regression_personalization_multiseed.py
+        supports: PM multi-seed orchestration.
+        level: supporting
+    gaps: []
+    minimum_closure_action:
+      action_type: documentation
+      description: Поддерживать финальные personalization reports и configs.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P3
+    blocking_dependencies: []
+    completion_criterion: Reproducibility и checkpoint audits остаются зелёными.
+    notes: []
+
+  - requirement_id: R-PERS-Q01
+    parent_id: R-PERS
+    title: Accuracy персонализации не ниже 0.75
+    domain: personalization
+    requirement_kind: acceptance_criterion
+    source:
+      type: project_report
+      path: reports/integration/personalization_full_subjects.md
+      section: Резюме
+      quote: "Порог accuracy 0.75 не достигнут"
+    normalized_requirement: >
+      Достичь accuracy не ниже 0.75 для персонализированной label_q5 модели.
+    requirement_type: performance
+    priority: requires_clarification
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: missing
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: failed_acceptance_criterion
+    acceptance_criterion:
+      metric: subject_accuracy
+      operator: ">="
+      expected: 0.75
+      actual: 0.6349206349206349
+      actual_definition: maximum subject/method/seed accuracy in the completed multiseed run
+    evidence:
+      - type: report
+        path: reports/integration/personalization_multiseed_20pct.md
+        supports: Ни один из 53 субъектов не достиг порога ни в одном seed.
+        level: primary
+      - type: artifact
+        path: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240/multiseed_subject_metrics.csv
+        supports: Фактический максимум accuracy 0.6349206349.
+        level: primary
+        optional_runtime: true
+      - type: experiment
+        experiment_id: label_q5_personalization_multiseed_20pct
+        supports: Статистически положительный эффект при недостигнутом абсолютном пороге.
+        level: primary
+    gaps:
+      - Максимальная наблюдавшаяся accuracy 0.6349206349 ниже 0.75.
+      - Авторитетный первоисточник численного критерия не найден.
+    minimum_closure_action:
+      action_type: scope_clarification
+      description: >
+        Подтвердить происхождение и обязательность порога; не запускать
+        неограниченные fine-tuning sweeps автоматически.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P0
+    blocking_dependencies: [официальный acceptance criterion]
+    completion_criterion: Порог официально подтверждён, пересмотрен или снят с обоснованием.
+    notes:
+      - Implementation success отделён от failed quality criterion.
+
+  - requirement_id: R-PERS-02
+    parent_id: R-PERS
+    title: Transfer, domain adaptation, meta- и contrastive learning
+    domain: personalization
+    requirement_kind: subrequirement
+    source:
+      type: internal_project_plan
+      path: AGENTS.md
+      section: Mixin prototypes
+      quote: "historical prototypes, not production implementations"
+    normalized_requirement: >
+      Считать transfer выполненным через reimplemented fine-tuning, а DANN,
+      MAML и contrastive оставить deferred до появления корректного scope.
+    requirement_type: integration
+    priority: requires_clarification
+    coverage:
+      implementation: partial
+      reproducible_config: partial
+      experimental_validation: partial
+      result_quality: unclear
+      documentation: complete
+      integration: partial
+      demonstration: missing
+    overall_status: partial
+    evidence:
+      - type: experiment
+        experiment_id: mixin_transfer_learning_audit
+        supports: Transfer prototype audit.
+        level: diagnostic
+      - type: report
+        path: reports/summary/mixin_status.md
+        supports: Reimplemented transfer и deferred DANN/MAML/contrastive.
+        level: primary
+      - type: report
+        path: reports/integration/feature_benchmarking_mixins_audit.md
+        supports: Фактические ограничения prototypes.
+        level: primary
+    gaps:
+      - Нет обоснованной domain definition для DANN.
+      - Нет production episodic или shared encoder contracts.
+    minimum_closure_action:
+      action_type: research_decision
+      description: Не продолжать deferred mixins без новой научной постановки.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P3
+    blocking_dependencies: [domain definition, shared encoder API]
+    completion_criterion: Deferred status сохраняется либо появляется утверждённая постановка.
+    notes: []
+
+  - requirement_id: R-PLAT
+    parent_id: null
+    title: Воспроизводимая интегрированная платформа
+    domain: platform
+    requirement_kind: parent_requirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Назначение проекта
+      quote: "создать единый воспроизводимый стенд"
+    normalized_requirement: >
+      Объединить datasets, tasks, models, validation, artifacts, configs и
+      summaries в одной воспроизводимой платформе.
+    requirement_type: integration
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: complete
+    evidence:
+      - type: code
+        path: bench/bench_runner.py
+        supports: Единый benchmark execution path.
+        level: primary
+      - type: code
+        path: cli.py
+        supports: Unified CLI.
+        level: primary
+      - type: report
+        path: reports/summary/experiment_summary.md
+        supports: Curated completed experiment inventory.
+        level: primary
+      - type: report
+        path: reports/integration/benchmark_core_audit.md
+        supports: Integration audit of the benchmark contracts.
+        level: supporting
+    gaps: []
+    minimum_closure_action:
+      action_type: documentation
+      description: Поддерживать registries и architecture documentation.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P3
+    blocking_dependencies: []
+    completion_criterion: Strict registry/config audits и full tests проходят.
+    notes: []
+
+  - requirement_id: R-PLAT-01
+    parent_id: R-PLAT
+    title: Registries, CLI, manifests, resume и summaries
+    domain: platform
+    requirement_kind: subrequirement
+    source:
+      type: project_plan
+      path: README.md
+      section: Архитектура экспериментального стенда
+      quote: "реестр задач; фабрика моделей"
+    normalized_requirement: >
+      Предоставить зарегистрированные компоненты, проверяемые configs,
+      runtime provenance, resume и сводные отчёты.
+    requirement_type: reproducibility
+    priority: important
+    coverage:
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
+      result_quality: complete
+      documentation: complete
+      integration: complete
+      demonstration: not_applicable
+    overall_status: complete
+    evidence:
+      - type: code
+        path: bench/datasets/datasets_registry.py
+        supports: Dataset registry.
+        level: primary
+      - type: code
+        path: bench/tasks/tasks_registry.py
+        supports: Task registry.
+        level: primary
+      - type: code
+        path: model_zoo/factory.py
+        supports: Model factory.
+        level: primary
+      - type: report
+        path: reports/summary/experiment_summary.md
+        supports: Curated experiment provenance and result statuses.
+        level: supporting
+      - type: test
+        path: tests/test_experiment_summary.py
+        supports: Summary registry validation and determinism.
+        level: supporting
+    gaps: []
+    minimum_closure_action:
+      action_type: documentation
+      description: Синхронизировать README с текущими registries.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: []
+    completion_criterion: README не противоречит generated registries.
+    notes: []
+
+  - requirement_id: R-STREAM
+    parent_id: null
+    title: Потоковый replay и измерение latency
+    domain: streaming
+    requirement_kind: deliverable
+    source:
+      type: internal_project_plan
+      path: AGENTS.md
+      section: Current priorities
+      quote: "implement streaming replay and latency measurement"
+    normalized_requirement: >
+      Реализовать последовательный replay окон с измерением latency,
+      throughput, памяти и обработкой ошибок.
+    requirement_type: performance
+    priority: requires_clarification
+    coverage:
+      implementation: missing
+      reproducible_config: missing
+      experimental_validation: missing
+      result_quality: unclear
+      documentation: missing
+      integration: missing
+      demonstration: missing
+    overall_status: not_started
+    evidence:
+      - type: code
+        path: bench/bench_runner.py
+        supports: Только batch benchmark inference, не streaming.
+        level: supporting
+        capability: batch_inference
+    gaps:
+      - Нет replay API, latency/throughput/memory benchmark или error contract.
+    minimum_closure_action:
+      action_type: streaming
+      description: Реализовать минимальный offline replay поверх canonical model artifact.
+      estimated_scope: medium
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: [выбор canonical model artifact, input/output API]
+    completion_criterion: >
+      Replay обрабатывает запись по окнам и сохраняет latency, throughput,
+      memory и prediction timeline.
+    notes:
+      - Batch inference не считается streaming evidence.
+
+  - requirement_id: R-DEMO
+    parent_id: null
+    title: Минимальный демонстрационный интерфейс
+    domain: demo
+    requirement_kind: deliverable
+    source:
+      type: internal_project_plan
+      path: AGENTS.md
+      section: Current priorities
+      quote: "build a minimal demo"
+    normalized_requirement: >
+      Предоставить конечный сценарий загрузки записи, выбора модели,
+      отображения и экспорта прогнозов.
+    requirement_type: deliverable
+    priority: requires_clarification
+    coverage:
+      implementation: missing
+      reproducible_config: missing
+      experimental_validation: missing
+      result_quality: unclear
+      documentation: missing
+      integration: missing
+      demonstration: missing
+    overall_status: not_started
+    evidence:
+      - type: test
+        path: tests/test_bench_runner.py
+        supports: Unit/integration tests runner, но не пользовательский demo.
+        level: supporting
+        capability: unit_test
+    gaps:
+      - Нет UI или demo CLI, model selection, visualization и export flow.
+    minimum_closure_action:
+      action_type: demo
+      description: Построить минимальный demo поверх streaming replay и model registry.
+      estimated_scope: medium
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: [R-STREAM, canonical artifact selection]
+    completion_criterion: Документированный end-to-end demo запускается на одной записи.
+    notes:
+      - Unit test не является demonstration evidence.
+
+  - requirement_id: R-MULTI
+    parent_id: null
+    title: Мультимодальность
+    domain: multimodality
+    requirement_kind: parent_requirement
+    source:
+      type: project_plan_history
+      path: README.md
+      section: Git commit bf0aa97 / wearable hypothesis
+      quote: "wearable physiology can provide useful proxy signals"
+    normalized_requirement: >
+      Уточнить, требуется ли единая модель, совместно использующая EEG и
+      внешние физиологические модальности.
+    requirement_type: scientific
+    priority: requires_clarification
+    coverage:
+      implementation: missing
+      reproducible_config: missing
+      experimental_validation: partial
+      result_quality: unclear
+      documentation: partial
+      integration: missing
+      demonstration: missing
+    overall_status: needs_clarification
+    evidence:
+      - type: commit
+        commit: bf0aa97
+        supports: Историческую отдельную wearable proxy ветку.
+        level: historical
+        capability: separate_dataset_analysis
+      - type: experiment
+        experiment_id: pm_regression_random_forest_5fold
+        supports: Multi-output PM targets, но не multimodal inputs.
+        level: supporting
+        capability: multioutput_regression
+    gaps:
+      - Нет модели с совместными EEG и wearable inputs.
+      - WESAD относится к отдельной задаче и не синхронизирован с Emotiv.
+      - Официальный multimodal deliverable не найден.
+    minimum_closure_action:
+      action_type: scope_clarification
+      description: Определить, требуется ли истинная multimodal fusion или отдельные benchmarks достаточны.
+      estimated_scope: small
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: [официальный multimodality scope, совместимые данные]
+    completion_criterion: Зафиксировано проверяемое определение multimodality и scope.
+    notes:
+      - Seven-target regression не считается мультимодальностью.
+
+  - requirement_id: R-DOC
+    parent_id: null
+    title: Документация и итоговые материалы
+    domain: documentation
+    requirement_kind: deliverable
+    source:
+      type: internal_project_plan
+      path: AGENTS.md
+      section: Current priorities
+      quote: "update README, architecture documentation, and run instructions"
+    normalized_requirement: >
+      Подготовить актуальные README, архитектуру, инструкции, финальный отчёт,
+      презентацию и публикационные материалы в согласованном scope.
+    requirement_type: documentation
+    priority: requires_clarification
+    coverage:
+      implementation: not_applicable
+      reproducible_config: not_applicable
+      experimental_validation: not_applicable
+      result_quality: partial
+      documentation: partial
+      integration: partial
+      demonstration: missing
+    overall_status: partial
+    evidence:
+      - type: documentation
+        path: README.md
+        supports: Текущее описание benchmark, но с устаревшими разделами.
+        level: primary
+      - type: report
+        path: reports/article_results_summary.md
+        supports: Research summary для статьи.
+        level: supporting
+      - type: report
+        path: reports/summary/experiment_summary.md
+        supports: Curated таблицу результатов.
+        level: primary
+    gaps:
+      - README датирован 20 июля и не отражает последние PM/personalization/config этапы.
+      - Нет единого architecture document и актуального runbook.
+      - Презентация, preprint и финальный deliverable не найдены.
+    minimum_closure_action:
+      action_type: documentation
+      description: >
+        После streaming/demo обновить README, architecture/runbook и собрать
+        финальный комплект отчёта и презентации.
+      estimated_scope: large
+    new_experiment_required: false
+    closure_priority: P1
+    blocking_dependencies: [R-STREAM, R-DEMO, официальный deliverable scope]
+    completion_criterion: >
+      README, architecture, runbook, final report и presentation согласованы
+      с generated registries и фактическими артефактами.
+    notes: []
+
+deferred_now:
+  - title: Повторные personalization budget sweeps
+    reason: Validated 20% multi-seed результат уже отвечает на текущий вопрос; ближайшие пробелы — platform deliverables.
+  - title: DANN
+    reason: Нет обоснованной domain definition и source/target runner contract.
+  - title: MAML
+    reason: Нет обязательного episodic protocol и production integration.
+  - title: Contrastive pretraining
+    reason: Нет shared encoder API; 448 aggregated features нельзя выдавать за raw EEG.
+  - title: Массовое перемещение конфигов
+    reason: Config curation завершена без необходимости физической реорганизации.
+  - title: Унификация всех config loaders
+    reason: Специализированные loaders валидны; общий refactor не закрывает ближайший deliverable.
+  - title: Full AutoML
+    reason: Streaming, demo и итоговая документация имеют более прямую связь с завершением платформы.
+  - title: Дополнительные модели ради количества
+    reason: Model zoo уже покрывает классические, recurrent, Transformer и raw-CNN families.
