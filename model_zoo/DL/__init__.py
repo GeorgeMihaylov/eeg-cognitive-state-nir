@@ -1,5 +1,24 @@
 from .adapter import TorchClassificationAdapter
+from .dann import (
+    DANN_CHECKPOINT_SCHEMA_VERSION,
+    DANNFoldData,
+    DANNForwardResult,
+    DANNLossResult,
+    DANNModule,
+    DANNObjective,
+    DANNPartition,
+    DANNTrainingBatch,
+    DomainDiscriminator,
+    GradientReversal,
+    aggregate_dann_loss_results,
+)
 from .eegnet import TorchEEGNetClassifier, build_torch_eegnet
+from .encoder import (
+    ENCODER_API_VERSION,
+    EncoderModelProtocol,
+    SharedEncoderMixin,
+    require_encoder_model,
+)
 from .lstm import TorchLSTMClassifier, build_torch_lstm
 from .mlp import TorchMLP, build_torch_mlp
 from .ordinal import (
@@ -32,7 +51,22 @@ from .transformer import (
 
 __all__ = [
     "TorchClassificationAdapter",
+    "DANN_CHECKPOINT_SCHEMA_VERSION",
+    "DANNFoldData",
+    "DANNForwardResult",
+    "DANNLossResult",
+    "DANNModule",
+    "DANNObjective",
+    "DANNPartition",
+    "DANNTrainingBatch",
+    "DomainDiscriminator",
+    "GradientReversal",
+    "aggregate_dann_loss_results",
     "TorchEEGNetClassifier",
+    "ENCODER_API_VERSION",
+    "EncoderModelProtocol",
+    "SharedEncoderMixin",
+    "require_encoder_model",
     "TorchLSTMClassifier",
     "TorchMLP",
     "CategoricalCornObjectiveHandler",

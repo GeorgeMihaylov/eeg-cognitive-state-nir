@@ -8,9 +8,10 @@ import torch
 from torch import Tensor, nn
 
 from .adapter import TorchClassificationAdapter, seed_torch
+from .encoder import ENCODER_API_VERSION, SharedEncoderMixin
 
 
-class TorchEEGNetClassifier(nn.Module):
+class TorchEEGNetClassifier(nn.Module, SharedEncoderMixin):
     """EEGNet-inspired temporal/spatial/separable convolutional classifier."""
 
     def __init__(
@@ -89,9 +90,11 @@ class TorchEEGNetClassifier(nn.Module):
             raise ValueError(
                 "EEGNet pooling/kernel configuration produced an empty representation"
             )
+        self._latent_dim = flattened
         self.classifier = nn.Linear(flattened, self.num_classes)
 
-    def forward(self, X: Tensor) -> Tensor:
+    def encode(self, X: Tensor) -> Tensor:
+        """Return flattened EEGNet features with shape ``[batch, latent_dim]``."""
         expected = (1, self.n_channels, self.n_times)
         if X.ndim != 4:
             raise ValueError(
@@ -103,8 +106,16 @@ class TorchEEGNetClassifier(nn.Module):
                 f"TorchEEGNetClassifier expects input tail {expected}, "
                 f"got {tuple(X.shape[1:])}"
             )
-        features = self.features(X)
-        return self.classifier(features.flatten(start_dim=1))
+        features = self.features(X).flatten(start_dim=1)
+        if features.shape[1] != self.latent_dim:
+            raise RuntimeError(
+                "EEGNet encoder returned an unexpected representation width: "
+                f"{features.shape[1]} != {self.latent_dim}"
+            )
+        return features
+
+    def forward(self, X: Tensor) -> Tensor:
+        return self.forward_head(self.encode(X))
 
 
 def _seconds_to_samples(seconds: float, sampling_rate: float, name: str) -> int:
@@ -196,6 +207,8 @@ def build_torch_eegnet(
                 "pool1": pool1,
                 "pool2": pool2,
                 "dropout": dropout,
+                "latent_dim": model.latent_dim,
+                "encoder_api_version": ENCODER_API_VERSION,
             },
             **model_params,
         )

@@ -12,6 +12,7 @@ from torch import nn
 from torch.utils.data import DataLoader, Dataset, TensorDataset
 
 from ..base import BaseModelAdapter, PathLike
+from .encoder import EncoderModelProtocol, require_encoder_model
 from .feature_preprocessing import FeaturePreprocessor
 from .ordinal import ClassificationObjectiveHandler
 from .regression import RegressionObjectiveHandler
@@ -217,6 +218,112 @@ class TorchClassificationAdapter(BaseModelAdapter):
             raise ValueError("early_stopping_patience must be positive")
         if self.num_workers < 0:
             raise ValueError("num_workers cannot be negative")
+
+    def get_encoder(self) -> EncoderModelProtocol:
+        """Return the wrapped model after validating the encoder contract."""
+        return require_encoder_model(self.model)
+
+    def get_output_head(self) -> nn.Module:
+        """Return the explicit output head of an encoder-compatible model."""
+        return self.get_encoder().get_output_head()
+
+    def encode(self, X: Any) -> torch.Tensor:
+        """Extract explicit-input latent features without fitting or labels.
+
+        Feature validation and any already-fitted train-only preprocessing are
+        reused from inference.  Batches execute on the configured device and
+        the detached result is returned on CPU.
+        """
+        encoder = self.get_encoder()
+        features = self._transform_features(self._validate_features(X))
+        loader = self._make_loader(features)
+        was_training = self.model.training
+        encoded_batches: list[torch.Tensor] = []
+        self.model.eval()
+        try:
+            with torch.no_grad():
+                for (batch_features,) in loader:
+                    encoded = encoder.encode(
+                        batch_features.to(self.device_, non_blocking=True)
+                    )
+                    if (
+                        encoded.ndim != 2
+                        or encoded.shape[1] != encoder.latent_dim
+                        or not torch.isfinite(encoded).all()
+                    ):
+                        raise ValueError(
+                            "Encoder returned invalid features with shape "
+                            f"{tuple(encoded.shape)}"
+                        )
+                    encoded_batches.append(encoded.detach().cpu())
+        finally:
+            self.model.train(was_training)
+        return torch.cat(encoded_batches, dim=0)
+
+    def replace_output_head(
+        self,
+        num_outputs: int,
+        *,
+        task_type: str = "classification",
+        regression_loss: Optional[str] = None,
+    ) -> "TorchClassificationAdapter":
+        """Replace a compatible model head while retaining encoder weights.
+
+        This prepares a loaded proxy encoder for a downstream task.  It does
+        not train the new head and does not inspect any dataset or labels.
+        """
+        output_width = int(num_outputs)
+        normalized_task_type = {
+            "classifier": "classification",
+            "regressor": "regression",
+        }.get(str(task_type).strip().lower(), str(task_type).strip().lower())
+        if normalized_task_type not in {"classification", "regression"}:
+            raise ValueError(
+                "task_type must be 'classification' or 'regression'"
+            )
+        if normalized_task_type == "classification" and output_width < 2:
+            raise ValueError("Classification heads require at least two outputs")
+        if normalized_task_type == "regression" and output_width <= 0:
+            raise ValueError("Regression heads require at least one output")
+
+        encoder = self.get_encoder()
+        encoder.replace_output_head(output_width)
+        self.num_classes = output_width
+        self.num_outputs = output_width
+        self.task_type = normalized_task_type
+        if normalized_task_type == "classification":
+            self.objective_handler = ClassificationObjectiveHandler(
+                "categorical", output_width
+            )
+        else:
+            self.regression_loss = str(
+                regression_loss or self.regression_loss
+            ).strip().lower()
+            self.objective_handler = RegressionObjectiveHandler(
+                output_width, self.regression_loss
+            )
+        self.head_type = self.objective_handler.head_type
+        self.model_metadata.update({
+            "task_type": self.task_type,
+            "num_outputs": output_width,
+            "latent_dim": encoder.latent_dim,
+            "head_replaced": True,
+        })
+        self._initial_state = {
+            key: value.detach().cpu().clone()
+            for key, value in self.model.state_dict().items()
+        }
+        return self
+
+    def freeze_encoder(self) -> "TorchClassificationAdapter":
+        """Freeze encoder parameters while leaving the current head trainable."""
+        self.get_encoder().freeze_encoder()
+        return self
+
+    def unfreeze_encoder(self) -> "TorchClassificationAdapter":
+        """Restore trainability for encoder and output-head parameters."""
+        self.get_encoder().unfreeze_encoder()
+        return self
 
     @staticmethod
     def _resolve_device(device: str) -> torch.device:

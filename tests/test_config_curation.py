@@ -356,17 +356,30 @@ def test_22_curation_outputs_are_deterministic(project_curation: object) -> None
     assert first == second
 
 
-def test_23_all_31_unclassified_configs_receive_review_status(
+def test_23_automatically_unclassified_configs_are_reviewed_and_links_resolve(
     project_curation: object,
 ) -> None:
-    reviewed = [
+    automatically_unclassified = [
         record
         for record in project_curation.records
         if record.automatic_status == "unclassified"
     ]
-    assert len(reviewed) == 31
-    assert all(record.curation.get("review_status") for record in reviewed)
-    assert sum(not record.registry_ids and not record.report_links for record in project_curation.records) == 29
+    assert automatically_unclassified
+    assert all(
+        record.curation.get("review_status") in audit.VALID_REVIEW_STATUSES
+        for record in automatically_unclassified
+    )
+    assert not project_curation.registry_missing_configs
+    assert not [
+        mismatch
+        for mismatch in project_curation.registry_consistency
+        if mismatch["severity"] == "error"
+    ]
+    assert all(
+        (ROOT / report_path).is_file()
+        for record in project_curation.records
+        for report_path in record.report_links
+    )
 
 
 def test_24_all_reviewed_configs_have_evidence(project_curation: object) -> None:

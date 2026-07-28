@@ -8,6 +8,7 @@ import torch
 from torch import Tensor, nn
 
 from .adapter import TorchClassificationAdapter, seed_torch
+from .encoder import ENCODER_API_VERSION, SharedEncoderMixin
 
 
 class SquareActivation(nn.Module):
@@ -30,7 +31,7 @@ class SafeLog(nn.Module):
         return torch.log(torch.clamp(inputs, min=self.minimum))
 
 
-class TorchShallowConvNetClassifier(nn.Module):
+class TorchShallowConvNetClassifier(nn.Module, SharedEncoderMixin):
     """Shallow temporal/spatial ConvNet for ``[B, 1, channels, time]``."""
 
     def __init__(
@@ -100,7 +101,8 @@ class TorchShallowConvNetClassifier(nn.Module):
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(),
         )
-        self.classifier = nn.Linear(self.n_filters, self.num_classes)
+        self._latent_dim = self.n_filters
+        self.classifier = nn.Linear(self.latent_dim, self.num_classes)
 
         with torch.no_grad():
             dummy = torch.zeros(1, 1, self.n_channels, self.n_times)
@@ -117,7 +119,8 @@ class TorchShallowConvNetClassifier(nn.Module):
                     f"{tuple(representation.shape)}"
                 )
 
-    def forward(self, inputs: Tensor) -> Tensor:
+    def encode(self, inputs: Tensor) -> Tensor:
+        """Return shallow ConvNet features with shape ``[batch, latent_dim]``."""
         expected = (1, self.n_channels, self.n_times)
         if inputs.ndim != 4 or tuple(inputs.shape[1:]) != expected:
             raise ValueError(
@@ -129,7 +132,16 @@ class TorchShallowConvNetClassifier(nn.Module):
             raise RuntimeError(
                 "Spatial convolution did not collapse the EEG channel dimension"
             )
-        return self.classifier(self.features(spatial))
+        features = self.features(spatial)
+        if features.ndim != 2 or features.shape[1] != self.latent_dim:
+            raise RuntimeError(
+                "ShallowConvNet encoder returned an unexpected representation "
+                f"shape {tuple(features.shape)}"
+            )
+        return features
+
+    def forward(self, inputs: Tensor) -> Tensor:
+        return self.forward_head(self.encode(inputs))
 
 
 def build_torch_shallow_convnet(
@@ -190,6 +202,8 @@ def build_torch_shallow_convnet(
                 "pool_stride": pool_stride,
                 "dropout": dropout,
                 "log_minimum": log_minimum,
+                "latent_dim": module.latent_dim,
+                "encoder_api_version": ENCODER_API_VERSION,
             },
             **model_params,
         )
