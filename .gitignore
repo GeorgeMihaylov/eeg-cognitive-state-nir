@@ -15,7 +15,7 @@ env/
 .vscode/
 
 # Data
-data/
+/data/
 *.parquet
 *.csv
 *.bz2
@@ -49,6 +49,7 @@ data/external/
 *.rar
 
 .pytest_cache/
+/.pytest_tmp/
 
 AGENTS.md
 PROJECT_CONTEXT.md

@@ -3,6 +3,8 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import sys
+from types import SimpleNamespace
 import zipfile
 from pathlib import Path
 
@@ -174,6 +176,7 @@ def test_pair_inventory_and_unpaired_files(tmp_path: Path, monkeypatch: pytest.M
         lambda path: (
             {
                 "channel_count": 2,
+                "n_channels": 2,
                 "channel_names": "C3|C4",
                 "sampling_rate_hz": 256.0,
                 "n_samples": 256,
@@ -182,9 +185,13 @@ def test_pair_inventory_and_unpaired_files(tmp_path: Path, monkeypatch: pytest.M
                 "event_count": 0,
                 "event_types": "",
                 "annotations_count": 0,
+                "annotation_count": 0,
                 "reference": "",
                 "bad_channels": "",
                 "metadata_reader": "mock",
+                "reader_used": "mock",
+                "read_status": "ok",
+                "error": "",
             },
             [],
         ),
@@ -196,6 +203,8 @@ def test_pair_inventory_and_unpaired_files(tmp_path: Path, monkeypatch: pytest.M
     assert any("no matching .fdt" in row["error"] for row in errors)
     assert any("no matching .set" in row["error"] for row in errors)
     assert channels[0]["channel_names"] == "C3|C4"
+    pairs = inventory.build_file_pair_inventory(records, channels)
+    assert {row["status"] for row in pairs} == {"invalid", "missing"}
 
 
 def test_unknown_and_service_files_are_reported(tmp_path: Path) -> None:
@@ -270,6 +279,12 @@ def test_all_artifacts_are_written_with_relative_paths(tmp_path: Path) -> None:
         "record_inventory.csv",
         "channel_inventory.csv",
         "event_inventory.csv",
+        "behavioural_inventory.csv",
+        "file_pair_inventory.csv",
+        "task_inventory.csv",
+        "session_inventory.csv",
+        "subject_inventory.csv",
+        "extraction_progress.json",
         "inventory_summary.json",
         "inventory_report.md",
         "errors.csv",
@@ -414,3 +429,202 @@ def test_subject_subset_does_not_read_other_large_archives(tmp_path: Path) -> No
         include_unselected_archives=False,
     )
     assert [row["filename"] for row in rows] == ["sub-01.zip"]
+
+
+def test_none_annotations_and_missing_channel_locations_are_explicit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "record.set"
+    path.write_bytes(b"stub")
+
+    class Raw:
+        annotations = None
+        ch_names = ["C3", "C4"]
+        n_times = 256
+        _orig_units = None
+        info = {
+            "nchan": 2,
+            "sfreq": 256.0,
+            "custom_ref_applied": "",
+            "bads": [],
+            "chs": [{"loc": None}, {"loc": [0.0, 0.0, 0.0]}],
+        }
+
+        def close(self) -> None:
+            pass
+
+    fake_mne = SimpleNamespace(
+        io=SimpleNamespace(read_raw_eeglab=lambda *args, **kwargs: Raw())
+    )
+    monkeypatch.setattr(inventory.importlib.util, "find_spec", lambda name: object())
+    monkeypatch.setitem(sys.modules, "mne", fake_mne)
+    metadata, events = inventory._read_eeglab_metadata(path)
+    assert events == []
+    assert metadata["annotation_count"] == 0
+    assert metadata["read_status"] == "ok_with_warnings"
+    assert "missing_channel_locations=2" in metadata["error"]
+
+
+def test_json_events_none_is_an_empty_collection(tmp_path: Path) -> None:
+    path = tmp_path / "events.json"
+    path.write_text('{"events": null}', encoding="utf-8")
+    assert inventory._json_events(path) == []
+
+
+def test_mat_none_dims_uses_bounded_opaque_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import numpy as np
+    import scipy.io
+
+    path = tmp_path / "0-Back.mat"
+    path.write_bytes(b"small")
+
+    class MatlabOpaque:
+        shape = (1,)
+
+    monkeypatch.setattr(
+        scipy.io,
+        "whosmat",
+        lambda value: (_ for _ in ()).throw(TypeError("'NoneType' object is not iterable")),
+    )
+    monkeypatch.setattr(
+        scipy.io,
+        "loadmat",
+        lambda *args, **kwargs: {"__header__": b"x", "None": MatlabOpaque()},
+    )
+    rows = inventory._mat_variables(path)
+    assert rows == [
+        {
+            "event_source": "mat_opaque_fallback",
+            "event_label": "None:MatlabOpaque:(1,)",
+            "trigger_code": "",
+            "rating_name": "",
+            "behavioural_outcome": "",
+        }
+    ]
+    assert np is not None
+
+
+def test_mat_without_variables_and_empty_pair_collection_are_valid(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import scipy.io
+
+    path = tmp_path / "empty.mat"
+    path.write_bytes(b"small")
+    monkeypatch.setattr(scipy.io, "whosmat", lambda value: None)
+    assert inventory._mat_variables(path) == []
+    assert inventory.build_file_pair_inventory([], []) == []
+
+
+def test_multiple_sessions_are_counted_separately() -> None:
+    records = [
+        {
+            "subject_id": "sub-01",
+            "session_id": session,
+            "task": "PVT",
+            "file_type": "set",
+        }
+        for session in ("ses-S1", "ses-S2", "ses-S3")
+    ]
+    _, sessions, subjects = inventory.build_structural_inventories(records)
+    assert len(sessions) == 3
+    assert subjects[0]["session_count"] == 3
+
+
+def test_resume_twice_is_idempotent(tmp_path: Path) -> None:
+    archives, extracted, _ = standard_paths(tmp_path)
+    archive = make_zip(archives / "sub-01.zip", {"task.set": b"original"})
+    first = inventory.safe_extract_archive(archive, extracted, resume=True)
+    second = inventory.safe_extract_archive(archive, extracted, resume=True)
+    assert first[0]["status"] == "extracted"
+    assert second[0]["status"] == "already_correct"
+
+
+def test_debug_reraises_and_normal_cli_is_short(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def fail(**kwargs: object) -> inventory.ToolResult:
+        raise TypeError("synthetic fatal")
+
+    monkeypatch.setattr(inventory, "run_tool", fail)
+    base = [
+        "--archives-dir",
+        str(tmp_path),
+        "--extract-dir",
+        str(tmp_path),
+        "--output-dir",
+        str(tmp_path / "output"),
+    ]
+    assert inventory.main(base) == 2
+    captured = capsys.readouterr()
+    assert "synthetic fatal" in captured.err
+    assert "Traceback" not in captured.err
+    with pytest.raises(TypeError, match="synthetic fatal"):
+        inventory.main([*base, "--debug"])
+
+
+def test_missing_mne_uses_explicit_fallback_contract(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "record.set"
+    path.write_bytes(b"stub")
+    monkeypatch.setattr(inventory.importlib.util, "find_spec", lambda name: None)
+    with pytest.raises(ModuleNotFoundError, match="mne"):
+        inventory._read_eeglab_metadata(path)
+
+
+def test_one_archive_conflict_does_not_prevent_later_archive(
+    tmp_path: Path,
+) -> None:
+    archives, extracted, _ = standard_paths(tmp_path)
+    first = make_zip(archives / "sub-01.zip", {"task.set": b"archive"})
+    second = make_zip(archives / "sub-02.zip", {"task.set": b"second"})
+    conflict = extracted / "sub-01" / "task.set"
+    conflict.parent.mkdir(parents=True)
+    conflict.write_bytes(b"changed")
+    rows = [
+        {
+            "filename": first.name,
+            "subject_id": "sub-01",
+            "status": "valid",
+            "zip_test_passed": "true",
+        },
+        {
+            "filename": second.name,
+            "subject_id": "sub-02",
+            "status": "valid",
+            "zip_test_passed": "true",
+        },
+    ]
+    extracted_rows, errors, fatal = inventory.extract_verified_archives(
+        archives, extracted, rows, resume=True
+    )
+    terminal = {
+        row["subject_id"]: row["status"]
+        for row in extracted_rows
+        if row["member"] == "__archive__"
+    }
+    assert fatal
+    assert terminal == {"sub-01": "conflict", "sub-02": "extracted"}
+    assert len(errors) == 1
+    assert (extracted / "sub-02" / "task.set").read_bytes() == b"second"
+
+
+def test_text_behavioural_inventory_counts_missing_combinations(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "KSS.txt"
+    path.write_text(
+        "sbj,sess,score,condition,Condition\n"
+        "1,1,3,0,beginning\n"
+        "1,1,4,1,end\n"
+        "1,2,5,0,beginning\n",
+        encoding="utf-8",
+    )
+    rows = inventory._text_behavioural_rows(path, "metadata/KSS.txt")
+    by_metric = {row["metric_name"]: row for row in rows}
+    assert by_metric["score"]["value_count"] == 3
+    assert by_metric["score"]["missing_count"] == 1
+    assert "beginning" in by_metric["Condition"]["data_type"]
