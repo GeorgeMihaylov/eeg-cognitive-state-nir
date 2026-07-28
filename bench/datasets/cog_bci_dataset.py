@@ -13,6 +13,12 @@ from pathlib import Path, PureWindowsPath
 from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 from ..core.abstract_dataset import BaseRecordDataset
+from .channel_contracts import (
+    ChannelSelectionPolicy,
+    ChannelSelectionResult,
+    apply_channel_policy,
+    build_cog_bci_channel_policy,
+)
 
 
 INDEX_SCHEMA_VERSION = 1
@@ -664,6 +670,11 @@ class COGBCIDataset(BaseRecordDataset):
     def iter_records(self, **filters: Any) -> Iterator[COGBCIRecord]:
         return iter(self.query(**filters))
 
+    def get_channel_policy(self, name: str) -> ChannelSelectionPolicy:
+        """Return a validated policy built from the complete record index."""
+
+        return build_cog_bci_channel_policy(name, records=self.records)
+
     def open_raw(
         self,
         record_id: str,
@@ -682,13 +693,41 @@ class COGBCIDataset(BaseRecordDataset):
         try:
             raw = mne.io.read_raw_eeglab(str(set_path), preload=preload)
             if not include_auxiliary:
-                raw.pick(list(record.eeg_channel_names), ordered=True)
+                raw.pick(list(record.eeg_channel_names))
             return raw
         except Exception as error:
             raise RuntimeError(
                 f"Failed to open COG-BCI record {record.record_id} at "
                 f"{record.set_relative_path}: {type(error).__name__}: {error}"
             ) from error
+
+    def select_raw_channels(
+        self,
+        record_id: str,
+        channel_policy: str | ChannelSelectionPolicy,
+        *,
+        preload: bool = False,
+        copy: bool = True,
+    ) -> ChannelSelectionResult:
+        """Open one record and apply an explicit channel-only policy."""
+
+        record = self.get_record(record_id)
+        policy = (
+            self.get_channel_policy(channel_policy)
+            if isinstance(channel_policy, str)
+            else channel_policy
+        )
+        raw = self.open_raw(
+            record_id,
+            preload=preload,
+            include_auxiliary_channels=True,
+        )
+        return apply_channel_policy(
+            raw,
+            policy,
+            record_metadata=record,
+            copy=copy,
+        )
 
     def get_description(self) -> dict[str, Any]:
         records = self.records

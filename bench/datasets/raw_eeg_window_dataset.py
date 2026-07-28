@@ -27,6 +27,7 @@ from .logical_recordings import (
     ensure_record_group_ids,
     infer_record_group_id,
 )
+from .channel_contracts import PROJECT_EMOTIV_CHANNEL_ORDER
 from .raw_preprocessing import (
     apply_raw_preprocessing,
     normalize_raw_preprocessing,
@@ -36,22 +37,9 @@ from .raw_preprocessing import (
 )
 
 
-CANONICAL_EEG_CHANNELS = (
-    "EEG.AF3",
-    "EEG.F7",
-    "EEG.F3",
-    "EEG.FC5",
-    "EEG.T7",
-    "EEG.P7",
-    "EEG.O1",
-    "EEG.O2",
-    "EEG.P8",
-    "EEG.T8",
-    "EEG.FC6",
-    "EEG.F4",
-    "EEG.F8",
-    "EEG.AF4",
-)
+# Backward-compatible public name; the canonical value lives in one shared
+# production contract used by both raw-window and cross-dataset selection.
+CANONICAL_EEG_CHANNELS = PROJECT_EMOTIV_CHANNEL_ORDER
 RAW_LOADER_VERSION = "raw-eeg-window-v3"
 
 

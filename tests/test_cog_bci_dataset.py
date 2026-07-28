@@ -244,7 +244,7 @@ def test_open_raw_defaults_to_preload_false_and_eeg_only(
         def __init__(self) -> None:
             self.picked: list[str] | None = None
 
-        def pick(self, names: list[str], ordered: bool) -> None:
+        def pick(self, names: list[str]) -> None:
             self.picked = names
 
     raw = Raw()
@@ -275,7 +275,7 @@ def test_open_raw_can_preserve_auxiliary_channels(
     make_pair(tmp_path)
 
     class Raw:
-        def pick(self, names: list[str], ordered: bool) -> None:
+        def pick(self, names: list[str]) -> None:
             raise AssertionError("pick must not run when auxiliary channels are requested")
 
     monkeypatch.setattr(
