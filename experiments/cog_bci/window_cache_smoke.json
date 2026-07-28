@@ -1,0 +1,32 @@
+{
+  "channel_policy": "emotiv_common",
+  "dataset_root": "data/raw/cog_bci/extracted",
+  "index_cache": "benchmark_results/cog_bci_loader/record_index.json",
+  "output_dir": "benchmark_results/cog_bci_windows/smoke_emotiv_common",
+  "overwrite": false,
+  "resume": true,
+  "selection": {
+    "one_per_subject_family": true,
+    "subjects": [
+      "sub-01",
+      "sub-10"
+    ],
+    "task_families": [
+      "n_back",
+      "matb",
+      "pvt",
+      "flanker",
+      "resting_state"
+    ]
+  },
+  "verify_only": false,
+  "window": {
+    "allow_filtering_when_source_status_unknown": false,
+    "drop_incomplete_window": true,
+    "minimum_valid_fraction": 1.0,
+    "preprocessing": "none",
+    "segmentation_mode": "record_full",
+    "window_duration_seconds": 5.12,
+    "window_stride_seconds": 5.12
+  }
+}
