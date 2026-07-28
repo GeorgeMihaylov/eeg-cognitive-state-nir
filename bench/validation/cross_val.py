@@ -6,6 +6,40 @@ from ..core.abstract_task import BaseTask, TaskSplit
 from .metrics import MetricsCalculator
 
 
+def deterministic_group_kfold_indices(
+    groups: np.ndarray,
+    *,
+    n_splits: int,
+) -> List[Tuple[np.ndarray, np.ndarray]]:
+    """Return deterministic indices for a one-dimensional group array."""
+    group_values = np.asarray(groups)
+    if group_values.ndim != 1:
+        raise ValueError(
+            f"GroupKFold groups must be one-dimensional, got {group_values.shape}"
+        )
+    if len(group_values) == 0:
+        raise ValueError("GroupKFold groups cannot be empty")
+    if n_splits < 2:
+        raise ValueError(f"n_splits must be at least 2, got {n_splits}")
+    unique_groups = np.unique(group_values)
+    if len(unique_groups) < n_splits:
+        raise ValueError(
+            f"GroupKFold needs at least {n_splits} unique groups, "
+            f"got {len(unique_groups)}"
+        )
+    splitter = GroupKFold(n_splits=n_splits)
+    placeholder = np.zeros(len(group_values), dtype=np.uint8)
+    return [
+        (
+            np.asarray(train_idx, dtype=np.int64),
+            np.asarray(test_idx, dtype=np.int64),
+        )
+        for train_idx, test_idx in splitter.split(
+            placeholder, groups=group_values
+        )
+    ]
+
+
 class CrossValidator:
     def __init__(self, task: BaseTask):
         self.task = task
@@ -65,9 +99,9 @@ class CrossValidator:
                 for fold_index in range(1, n_splits + 1)
             ]
         else:
-            splitter = GroupKFold(n_splits=n_splits)
-            split_iterator = list(
-                splitter.split(data.data, data.labels, groups)
+            split_iterator = deterministic_group_kfold_indices(
+                groups,
+                n_splits=n_splits,
             )
         splits: Dict[str, TaskSplit] = {}
         test_counts = np.zeros(data.n_samples, dtype=np.int64)
