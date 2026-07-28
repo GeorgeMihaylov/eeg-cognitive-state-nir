@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from .core.abstract_dataset import BaseDataset, EEGData
+from .core.abstract_dataset import BaseDataset, BaseRecordDataset, EEGData
 from .core.abstract_task import BaseTask, TaskSplit
 from .datasets.datasets_registry import get_dataset
 from .datasets.base_eeg_data_loader import feature_list_sha256
@@ -457,6 +457,12 @@ class BenchmarkRunner:
             dataset_config['data_path'] = Path(dataset_config['data_path'])
 
             dataset = get_dataset(dataset_name, dataset_config)
+            if isinstance(dataset, BaseRecordDataset):
+                raise TypeError(
+                    f"Dataset '{dataset_name}' provides lazy record-level access "
+                    "only. Window materialization and a scientific task must be "
+                    "implemented before it can run through BenchmarkRunner."
+                )
             data = dataset.load()
 
             target_description = (

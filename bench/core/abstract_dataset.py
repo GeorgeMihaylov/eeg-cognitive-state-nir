@@ -96,3 +96,19 @@ class BaseDataset(ABC):
         if self._data is None:
             self._data = self.load()
         return self._data
+
+
+class BaseRecordDataset(ABC):
+    """Dataset accessed as independent lazy records rather than materialized rows.
+
+    Record-level datasets intentionally do not implement ``load() -> EEGData``.
+    A benchmark runner may consume them only after an explicit window or feature
+    materialization stage has been implemented.
+    """
+
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+
+    @abstractmethod
+    def get_description(self) -> Dict[str, Any]:
+        pass

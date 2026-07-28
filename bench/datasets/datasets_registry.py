@@ -1,12 +1,18 @@
-from typing import Dict, Type, Any
-from ..core.abstract_dataset import BaseDataset
+from typing import Dict, Type, Any, Union
+from ..core.abstract_dataset import BaseDataset, BaseRecordDataset
+from .cog_bci_dataset import COGBCIDataset
 from .emotiv_loader import EmotivDataset
 from .raw_eeg_window_dataset import RawEEGWindowDataset
 from .wesad_loader import WESADDataset
 
 # Используем этот файл для централизованной регистрации датасетов
 
-DATASET_REGISTRY: Dict[str, Type[BaseDataset]] = {
+DatasetType = Union[Type[BaseDataset], Type[BaseRecordDataset]]
+DatasetInstance = Union[BaseDataset, BaseRecordDataset]
+
+
+DATASET_REGISTRY: Dict[str, DatasetType] = {
+    'cog_bci': COGBCIDataset,
     'emotiv_cognitive': EmotivDataset,
     'emotiv_pm_regression': EmotivDataset,
     'emotiv_raw_eeg': RawEEGWindowDataset,
@@ -14,7 +20,7 @@ DATASET_REGISTRY: Dict[str, Type[BaseDataset]] = {
 }
 
 
-def get_dataset(name: str, config: Dict[str, Any]) -> BaseDataset:
+def get_dataset(name: str, config: Dict[str, Any]) -> DatasetInstance:
     if name not in DATASET_REGISTRY:
         raise ValueError(
             f"Dataset '{name}' not found. Available: {list(DATASET_REGISTRY.keys())}"
