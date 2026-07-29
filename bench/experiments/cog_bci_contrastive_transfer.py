@@ -226,20 +226,36 @@ def validate_unlabelled_pretraining_columns(frame: pd.DataFrame) -> None:
         )
 
 
-def load_unlabelled_cog_windows(cache_dir: Path) -> UnlabelledCOGWindows:
+def load_unlabelled_cog_windows(
+    cache_dir: Path,
+    *,
+    expected_sampling_rate_hz: float = 500.0,
+    expected_windows: int = EXPECTED_COG_WINDOWS,
+    expected_preprocessing_names: Sequence[str] = ("none",),
+) -> UnlabelledCOGWindows:
     """Load cache provenance and accepted windows without any target table."""
     manifest_path = cache_dir / "dataset_manifest.json"
     index_path = cache_dir / "window_index.parquet"
     if not manifest_path.is_file() or not index_path.is_file():
         raise FileNotFoundError("COG-BCI cache manifest or window index is missing")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("preprocessing_name") != "none":
-        raise ValueError("Contrastive screening requires the existing raw cache")
+    if manifest.get("preprocessing_name") not in set(
+        expected_preprocessing_names
+    ):
+        raise ValueError(
+            "Contrastive screening cache preprocessing is incompatible: "
+            f"{manifest.get('preprocessing_name')!r}"
+        )
     if (
         int(manifest.get("channel_count", 0)) != EXPECTED_INPUT_SHAPE[1]
         or int(manifest.get("samples_per_window", 0))
         != EXPECTED_INPUT_SHAPE[2]
-        or float(manifest.get("sampling_rate_hz", 0.0)) != 500.0
+        or not math.isclose(
+            float(manifest.get("sampling_rate_hz", 0.0)),
+            float(expected_sampling_rate_hz),
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
         or manifest.get("dtype") != "float32"
     ):
         raise ValueError("COG-BCI cache shape, rate, or dtype is incompatible")
@@ -248,7 +264,7 @@ def load_unlabelled_cog_windows(cache_dir: Path) -> UnlabelledCOGWindows:
     validate_unlabelled_pretraining_columns(frame)
     frame = frame.loc[frame["status"].eq("accepted")].copy()
     if (
-        len(frame) != EXPECTED_COG_WINDOWS
+        len(frame) != int(expected_windows)
         or frame["record_id"].nunique() != EXPECTED_COG_RECORDS
         or frame["subject_id"].nunique() != EXPECTED_COG_SUBJECTS
         or frame["session_id"].nunique() != EXPECTED_COG_SESSIONS

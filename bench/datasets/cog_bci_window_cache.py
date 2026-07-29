@@ -13,6 +13,8 @@ from typing import Any, Iterable, Mapping, Protocol, Sequence
 
 import numpy as np
 import pandas as pd
+import scipy
+from scipy.signal import firwin, resample_poly
 
 from .channel_contracts import channel_contract_json
 from .cog_bci_dataset import COGBCIDataset, COGBCIRecord, DATASET_VERSION
@@ -120,6 +122,14 @@ RECORD_COLUMNS = [
     "dtype",
     "channel_order",
     "sampling_rate_hz",
+    "source_sampling_rate_hz",
+    "source_n_times",
+    "source_duration_seconds",
+    "target_sampling_rate_hz",
+    "resampled_n_times",
+    "resampled_duration_seconds",
+    "duration_error_seconds",
+    "resampling_spec_hash",
     "window_samples",
     "source_record_fingerprint",
     "source_filter_status",
@@ -151,6 +161,155 @@ class WholeRecordPreprocessor(Protocol):
     def apply(
         self, signals: np.ndarray, *, sampling_rate: float
     ) -> np.ndarray: ...
+
+
+@dataclass(frozen=True)
+class PolyphaseResamplingPreprocessor:
+    """Explicit whole-record 500->256 Hz anti-aliased resampling contract."""
+
+    source_sampling_rate_hz: float = 500.0
+    target_sampling_rate_hz: float = 256.0
+    up: int = 64
+    down: int = 125
+    window_name: str = "kaiser"
+    window_beta: float = 5.0
+    filter_half_len_factor: int = 10
+    padtype: str = "constant"
+    cval: float = 0.0
+    profile_id: str = "emotiv_common_256hz_w10"
+    name: str = "resample_poly_500_to_256"
+    is_identity: bool = False
+    requires_source_filter_opt_in: bool = False
+
+    def __post_init__(self) -> None:
+        if not math.isclose(
+            self.target_sampling_rate_hz / self.source_sampling_rate_hz,
+            self.up / self.down,
+            rel_tol=0.0,
+            abs_tol=1e-15,
+        ):
+            raise ValueError(
+                "Polyphase ratio must exactly represent target/source rate"
+            )
+        if math.gcd(int(self.up), int(self.down)) != 1:
+            raise ValueError("Polyphase up/down factors must be coprime")
+        if self.up <= 0 or self.down <= 0:
+            raise ValueError("Polyphase up/down factors must be positive")
+        if self.window_name != "kaiser" or self.window_beta <= 0:
+            raise ValueError("Only an explicit positive-beta Kaiser window is supported")
+        if self.filter_half_len_factor <= 0:
+            raise ValueError("filter_half_len_factor must be positive")
+        if self.padtype != "constant" or not math.isfinite(self.cval):
+            raise ValueError("Resampling padtype must be finite constant padding")
+
+    @property
+    def filter_half_length(self) -> int:
+        return int(self.filter_half_len_factor * max(self.up, self.down))
+
+    @property
+    def filter_num_taps(self) -> int:
+        return 2 * self.filter_half_length + 1
+
+    @property
+    def normalized_cutoff(self) -> float:
+        return 1.0 / max(self.up, self.down)
+
+    @property
+    def duration_tolerance_seconds(self) -> float:
+        return 1.0 / self.target_sampling_rate_hz
+
+    def output_sampling_rate(self, source_sampling_rate: float) -> float:
+        if not math.isclose(
+            float(source_sampling_rate),
+            self.source_sampling_rate_hz,
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        ):
+            raise COGBCIWindowCacheError(
+                "Polyphase source sampling rate mismatch: "
+                f"{source_sampling_rate} != {self.source_sampling_rate_hz}"
+            )
+        return float(self.target_sampling_rate_hz)
+
+    def _filter_taps(self) -> np.ndarray:
+        return firwin(
+            self.filter_num_taps,
+            self.normalized_cutoff,
+            window=(self.window_name, self.window_beta),
+            pass_zero="lowpass",
+            scale=True,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": "cog-bci-polyphase-resampling-v1",
+            "profile_id": self.profile_id,
+            "name": self.name,
+            "method": "scipy.signal.resample_poly",
+            "source_sampling_rate_hz": self.source_sampling_rate_hz,
+            "target_sampling_rate_hz": self.target_sampling_rate_hz,
+            "up": self.up,
+            "down": self.down,
+            "anti_alias_filter": {
+                "design": "scipy.signal.firwin",
+                "num_taps": self.filter_num_taps,
+                "normalized_cutoff": self.normalized_cutoff,
+                "pass_zero": "lowpass",
+                "scale": True,
+                "window": [self.window_name, self.window_beta],
+            },
+            "padtype": self.padtype,
+            "cval": self.cval,
+            "scipy_version": scipy.__version__,
+            "duration_tolerance_seconds": self.duration_tolerance_seconds,
+            "additional_signal_processing": {
+                "demean": False,
+                "bandpass": False,
+                "notch": False,
+                "car": False,
+                "rereference": False,
+                "cz_interpolation": False,
+            },
+        }
+
+    def stable_hash(
+        self,
+        *,
+        channels: Sequence[str],
+        loader_schema_version: str,
+    ) -> str:
+        return _stable_hash(
+            {
+                "preprocessor": self.to_dict(),
+                "channels": list(channels),
+                "loader_schema_version": str(loader_schema_version),
+            }
+        )
+
+    def apply(
+        self, signals: np.ndarray, *, sampling_rate: float
+    ) -> np.ndarray:
+        self.output_sampling_rate(sampling_rate)
+        array = np.asarray(signals)
+        if array.ndim != 2:
+            raise ValueError(
+                f"Polyphase resampling expects [channels, time], got {array.shape}"
+            )
+        if not np.isfinite(array).all():
+            raise ValueError("Polyphase resampling input contains NaN or Inf")
+        result = resample_poly(
+            array,
+            up=self.up,
+            down=self.down,
+            axis=1,
+            window=self._filter_taps(),
+            padtype=self.padtype,
+            cval=self.cval,
+        )
+        result = np.ascontiguousarray(result, dtype=np.float32)
+        if not np.isfinite(result).all():
+            raise ValueError("Polyphase resampling output contains NaN or Inf")
+        return result
 
 
 def _canonical_json(value: Any) -> str:
@@ -415,7 +574,12 @@ def stable_sample_id(
     return "cog-window-" + _stable_hash(payload)[:24]
 
 
-def _continuous_segments(raw: Any, sampling_rate_hz: float) -> list[tuple[int, int]]:
+def _continuous_segments(
+    raw: Any,
+    sampling_rate_hz: float,
+    *,
+    n_times: int | None = None,
+) -> list[tuple[int, int]]:
     boundaries = sorted(
         {
             int(round(float(onset) * sampling_rate_hz))
@@ -423,10 +587,16 @@ def _continuous_segments(raw: Any, sampling_rate_hz: float) -> list[tuple[int, i
                 raw.annotations.onset, raw.annotations.description
             )
             if str(description).strip().casefold() == "boundary"
-            and 0 < int(round(float(onset) * sampling_rate_hz)) < raw.n_times
+            and 0
+            < int(round(float(onset) * sampling_rate_hz))
+            < (int(raw.n_times) if n_times is None else int(n_times))
         }
     )
-    edges = [0, *boundaries, int(raw.n_times)]
+    edges = [
+        0,
+        *boundaries,
+        int(raw.n_times) if n_times is None else int(n_times),
+    ]
     return [
         (left, right)
         for left, right in zip(edges[:-1], edges[1:])
@@ -723,7 +893,15 @@ class COGBCIWindowBuilder:
             raise COGBCIWindowCacheError(
                 f"A fixed-shape cache requires one sampling rate, got {sorted(rates)}"
             )
-        self.sampling_rate_hz = next(iter(rates))
+        self.source_sampling_rate_hz = next(iter(rates))
+        output_rate = getattr(
+            whole_record_preprocessor, "output_sampling_rate", None
+        )
+        self.sampling_rate_hz = (
+            float(output_rate(self.source_sampling_rate_hz))
+            if callable(output_rate)
+            else self.source_sampling_rate_hz
+        )
         self.preprocessing_spec = build_preprocessing_spec(
             spec, sampling_rate_hz=self.sampling_rate_hz
         )
@@ -844,8 +1022,26 @@ class COGBCIWindowBuilder:
             "window_stride_seconds": self.spec.window_stride_seconds,
             "segmentation_mode": self.spec.segmentation_mode,
             "sampling_rate_hz": self.sampling_rate_hz,
+            "source_sampling_rate_hz": self.source_sampling_rate_hz,
+            "target_sampling_rate_hz": self.sampling_rate_hz,
             "samples_per_window": self.spec.samples_per_window(
                 self.sampling_rate_hz
+            ),
+            "profile_id": getattr(
+                self.whole_record_preprocessor,
+                "profile_id",
+                self.channel_policy_name,
+            ),
+            "resampling_spec_hash": (
+                self.preprocessing_hash
+                if callable(
+                    getattr(
+                        self.whole_record_preprocessor,
+                        "output_sampling_rate",
+                        None,
+                    )
+                )
+                else None
             ),
             "dtype": "float32",
             "created_at": created_at,
@@ -901,16 +1097,25 @@ class COGBCIWindowBuilder:
                     f"Channel order mismatch for {record.record_id}"
                 )
             if not math.isclose(
-                float(raw.info["sfreq"]), self.sampling_rate_hz, abs_tol=1e-9
+                float(raw.info["sfreq"]),
+                self.source_sampling_rate_hz,
+                abs_tol=1e-9,
             ):
                 raise COGBCIWindowCacheError(
                     f"Sampling rate mismatch for {record.record_id}"
                 )
             filter_metadata = _reader_filter_metadata(raw)
-            filtering_requested = (
+            transformation_requested = (
                 not self.whole_record_preprocessor.is_identity
                 if self.whole_record_preprocessor is not None
                 else self.spec.preprocessing != "none"
+            )
+            filtering_requested = transformation_requested and bool(
+                getattr(
+                    self.whole_record_preprocessor,
+                    "requires_source_filter_opt_in",
+                    True,
+                )
             )
             if (
                 filtering_requested
@@ -923,6 +1128,7 @@ class COGBCIWindowBuilder:
                     "allow_filtering_when_source_status_unknown=true to apply "
                     "an additional filter explicitly"
                 )
+            source_n_times = int(raw.n_times)
             signal = np.asarray(raw.get_data(), dtype=np.float32)
             if signal.shape != (len(self.channel_order), raw.n_times):
                 raise COGBCIWindowCacheError(
@@ -930,7 +1136,7 @@ class COGBCIWindowBuilder:
                 )
             if self.whole_record_preprocessor is not None:
                 signal = self.whole_record_preprocessor.apply(
-                    signal, sampling_rate=self.sampling_rate_hz
+                    signal, sampling_rate=self.source_sampling_rate_hz
                 )
             elif filtering_requested:
                 signal = apply_preprocessing_spec(
@@ -940,8 +1146,38 @@ class COGBCIWindowBuilder:
                 )
             else:
                 signal = np.ascontiguousarray(signal, dtype=np.float32)
+            if signal.ndim != 2 or signal.shape[0] != len(self.channel_order):
+                raise COGBCIWindowCacheError(
+                    f"Whole-record transform returned invalid shape for "
+                    f"{record.record_id}: {signal.shape}"
+                )
+            source_duration_seconds = (
+                source_n_times / self.source_sampling_rate_hz
+            )
+            resampled_duration_seconds = (
+                signal.shape[1] / self.sampling_rate_hz
+            )
+            duration_error_seconds = (
+                resampled_duration_seconds - source_duration_seconds
+            )
+            tolerance = float(
+                getattr(
+                    self.whole_record_preprocessor,
+                    "duration_tolerance_seconds",
+                    1.0 / self.sampling_rate_hz,
+                )
+            )
+            if abs(duration_error_seconds) > tolerance + 1e-12:
+                raise COGBCIWindowCacheError(
+                    f"Whole-record duration error for {record.record_id} is "
+                    f"{duration_error_seconds:.9f} s, tolerance={tolerance:.9f}"
+                )
             events = _event_rows(raw, record)
-            segments = _continuous_segments(raw, self.sampling_rate_hz)
+            segments = _continuous_segments(
+                raw,
+                self.sampling_rate_hz,
+                n_times=signal.shape[1],
+            )
         finally:
             close = getattr(raw, "close", None)
             if callable(close):
@@ -1070,6 +1306,24 @@ class COGBCIWindowBuilder:
             "dtype": "float32",
             "channel_order": list(self.channel_order),
             "sampling_rate_hz": self.sampling_rate_hz,
+            "source_sampling_rate_hz": self.source_sampling_rate_hz,
+            "source_n_times": source_n_times,
+            "source_duration_seconds": source_duration_seconds,
+            "target_sampling_rate_hz": self.sampling_rate_hz,
+            "resampled_n_times": int(signal.shape[1]),
+            "resampled_duration_seconds": resampled_duration_seconds,
+            "duration_error_seconds": duration_error_seconds,
+            "resampling_spec_hash": (
+                self.preprocessing_hash
+                if callable(
+                    getattr(
+                        self.whole_record_preprocessor,
+                        "output_sampling_rate",
+                        None,
+                    )
+                )
+                else None
+            ),
             "window_samples": samples_per_window,
             "checksum": checksum,
             "source_record_fingerprint": source_fingerprint,
@@ -1154,6 +1408,16 @@ class COGBCIWindowBuilder:
                             self.sampling_rate_hz
                         ),
                     }
+                    if callable(
+                        getattr(
+                            self.whole_record_preprocessor,
+                            "output_sampling_rate",
+                            None,
+                        )
+                    ):
+                        array_contract["source_sampling_rate_hz"] = (
+                            self.source_sampling_rate_hz
+                        )
                     if any(
                         document.get(name) != value
                         for name, value in array_contract.items()
@@ -1252,6 +1516,30 @@ class COGBCIWindowBuilder:
         _atomic_parquet(
             self.output_dir / "record_manifest.parquet", record_frame
         )
+        if (
+            not record_frame.empty
+            and "resampling_spec_hash" in record_frame
+            and record_frame["resampling_spec_hash"].notna().any()
+        ):
+            _atomic_csv(
+                self.output_dir / "resampling_qc.csv",
+                record_frame[
+                    [
+                        "record_id",
+                        "subject_id",
+                        "session_id",
+                        "task_family",
+                        "source_n_times",
+                        "source_sampling_rate_hz",
+                        "source_duration_seconds",
+                        "resampled_n_times",
+                        "target_sampling_rate_hz",
+                        "resampled_duration_seconds",
+                        "duration_error_seconds",
+                        "resampling_spec_hash",
+                    ]
+                ],
+            )
         _atomic_parquet(
             self.output_dir / "window_index.parquet",
             existing_windows[WINDOW_COLUMNS],
