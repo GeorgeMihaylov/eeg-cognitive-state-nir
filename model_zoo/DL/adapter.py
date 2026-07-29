@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import numpy as np
+import pandas as pd
 import torch
+from sklearn.metrics import f1_score
 from sklearn.model_selection import GroupShuffleSplit, train_test_split
 from torch import nn
 from torch.utils.data import DataLoader, Dataset, TensorDataset
@@ -84,12 +86,14 @@ class TorchClassificationAdapter(BaseModelAdapter):
         weight_decay: float = 1e-4,
         validation_size: float = 0.15,
         early_stopping_patience: int = 5,
+        early_stopping_monitor: str = "validation_loss",
         device: str = "auto",
         random_state: int = 42,
         standardize: bool = True,
         feature_scaling: Optional[Mapping[str, Any]] = None,
         feature_names: Optional[Sequence[str]] = None,
         num_workers: int = 0,
+        max_train_batches_per_epoch: Optional[int] = None,
         model_metadata: Optional[Mapping[str, Any]] = None,
         objective_handler: Optional[Any] = None,
     ) -> None:
@@ -112,6 +116,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.weight_decay = float(weight_decay)
         self.validation_size = float(validation_size)
         self.early_stopping_patience = int(early_stopping_patience)
+        self.requested_early_stopping_monitor = str(
+            early_stopping_monitor
+        ).strip().lower()
         self.requested_device = str(device)
         self.random_state = int(random_state)
         self.standardize = bool(standardize)
@@ -125,6 +132,11 @@ class TorchClassificationAdapter(BaseModelAdapter):
             else tuple(str(name) for name in feature_names)
         )
         self.num_workers = int(num_workers)
+        self.max_train_batches_per_epoch = (
+            None
+            if max_train_batches_per_epoch is None
+            else int(max_train_batches_per_epoch)
+        )
         self.model_metadata = dict(model_metadata or {})
         self.objective_handler = (
             (
@@ -160,6 +172,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.feature_preprocessing_diagnostics_: Dict[str, Any] = {}
         self.best_epoch_: Optional[int] = None
         self.best_validation_loss_: Optional[float] = None
+        self.best_monitor_value_: Optional[float] = None
         self.best_validation_components_: Dict[str, float] = {}
         self.early_stopping_monitor_: str = "validation_loss"
         self.n_epochs_trained_: int = 0
@@ -184,6 +197,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self._outer_test_group_ids: Optional[np.ndarray] = None
         self._validation_warning: Optional[str] = None
         self.validation_fallback_reason_: Optional[str] = None
+        self._explicit_train_indices: Optional[np.ndarray] = None
+        self._explicit_validation_indices: Optional[np.ndarray] = None
+        self.optimizer_state_: Optional[Dict[str, Any]] = None
 
     def _validate_config(self) -> None:
         if not self.input_shape or any(dim <= 0 for dim in self.input_shape):
@@ -216,8 +232,31 @@ class TorchClassificationAdapter(BaseModelAdapter):
             raise ValueError("validation_size must be between 0 and 1")
         if self.early_stopping_patience <= 0:
             raise ValueError("early_stopping_patience must be positive")
+        allowed_monitors = {
+            "validation_loss",
+            "validation_window_macro_f1",
+            "validation_record_macro_f1",
+        }
+        if self.requested_early_stopping_monitor not in allowed_monitors:
+            raise ValueError(
+                "early_stopping_monitor must be one of "
+                f"{sorted(allowed_monitors)}, got "
+                f"{self.requested_early_stopping_monitor!r}"
+            )
+        if (
+            self.task_type != "classification"
+            and self.requested_early_stopping_monitor != "validation_loss"
+        ):
+            raise ValueError(
+                "F1 early stopping is available for classification only"
+            )
         if self.num_workers < 0:
             raise ValueError("num_workers cannot be negative")
+        if (
+            self.max_train_batches_per_epoch is not None
+            and self.max_train_batches_per_epoch <= 0
+        ):
+            raise ValueError("max_train_batches_per_epoch must be positive")
 
     def get_encoder(self) -> EncoderModelProtocol:
         """Return the wrapped model after validating the encoder contract."""
@@ -571,6 +610,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self._validation_groups = group_values.astype(str)
         self._validation_subject_ids = subject_values.astype(str)
         self._validation_record_ids = record_values.astype(str)
+        self._explicit_train_indices = None
+        self._explicit_validation_indices = None
         self._outer_test_record_ids = (
             None
             if outer_test_record_ids is None
@@ -591,6 +632,77 @@ class TorchClassificationAdapter(BaseModelAdapter):
                     "Outer training validation groups overlap outer test groups: "
                     f"{overlap.astype(str).tolist()}"
                 )
+        self.validation_fallback_reason_ = None
+        self.validation_split_ = None
+        return self
+
+    def set_validation_indices(
+        self,
+        train_indices: Any,
+        validation_indices: Any,
+        *,
+        subject_ids: Any,
+        record_ids: Any,
+        group_ids: Optional[Any] = None,
+        outer_test_record_ids: Optional[Any] = None,
+        outer_test_group_ids: Optional[Any] = None,
+        group_column: str = "subject_id",
+    ) -> "TorchClassificationAdapter":
+        """Use a precomputed outer-train-only validation partition."""
+        train = np.asarray(train_indices, dtype=np.int64)
+        validation = np.asarray(validation_indices, dtype=np.int64)
+        subjects = np.asarray(subject_ids).astype(str)
+        records = np.asarray(record_ids).astype(str)
+        groups = (
+            subjects
+            if group_ids is None
+            else np.asarray(group_ids).astype(str)
+        )
+        arrays = {
+            "train_indices": train,
+            "validation_indices": validation,
+            "subject_ids": subjects,
+            "record_ids": records,
+            "group_ids": groups,
+        }
+        invalid = {
+            name: values.shape
+            for name, values in arrays.items()
+            if values.ndim != 1
+        }
+        if invalid:
+            raise ValueError(
+                f"Precomputed validation arrays must be one-dimensional: {invalid}"
+            )
+        if not len(train) or not len(validation):
+            raise ValueError(
+                "Precomputed train and validation partitions must be non-empty"
+            )
+        if np.intersect1d(train, validation).size:
+            raise ValueError(
+                "Precomputed train and validation indices must be disjoint"
+            )
+        if len(subjects) != len(records) or len(subjects) != len(groups):
+            raise ValueError(
+                "Precomputed validation metadata must have equal lengths"
+            )
+        self._explicit_train_indices = train
+        self._explicit_validation_indices = validation
+        self._validation_subject_ids = subjects
+        self._validation_record_ids = records
+        self._validation_groups = groups
+        self._outer_test_record_ids = (
+            None
+            if outer_test_record_ids is None
+            else np.asarray(outer_test_record_ids).astype(str)
+        )
+        self._outer_test_group_ids = (
+            None
+            if outer_test_group_ids is None
+            else np.asarray(outer_test_group_ids).astype(str)
+        )
+        self.validation_strategy_ = "precomputed_group_holdout"
+        self.validation_group_column_ = str(group_column)
         self.validation_fallback_reason_ = None
         self.validation_split_ = None
         return self
@@ -645,6 +757,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
         if len(lengths) > 1:
             raise ValueError("Random validation metadata lengths must match")
         self._validation_groups = None
+        self._explicit_train_indices = None
+        self._explicit_validation_indices = None
         self._outer_test_record_ids = None
         self._outer_test_group_ids = (
             None
@@ -790,6 +904,36 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self,
         labels: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
+        if self.validation_strategy_ == "precomputed_group_holdout":
+            if (
+                self._explicit_train_indices is None
+                or self._explicit_validation_indices is None
+            ):
+                raise ValueError("Precomputed validation indices are unavailable")
+            train_idx = self._explicit_train_indices
+            validation_idx = self._explicit_validation_indices
+            combined = np.concatenate([train_idx, validation_idx])
+            expected = np.arange(len(labels), dtype=np.int64)
+            if (
+                len(combined) != len(labels)
+                or not np.array_equal(np.sort(combined), expected)
+            ):
+                raise ValueError(
+                    "Precomputed validation indices must partition every "
+                    "outer-training row exactly once"
+                )
+            if (
+                self._validation_subject_ids is None
+                or len(self._validation_subject_ids) != len(labels)
+                or self._validation_record_ids is None
+                or len(self._validation_record_ids) != len(labels)
+                or self._validation_groups is None
+                or len(self._validation_groups) != len(labels)
+            ):
+                raise ValueError(
+                    "Precomputed validation metadata must match training rows"
+                )
+            return train_idx.copy(), validation_idx.copy()
         if self.validation_strategy_ in {"group_record", "group_holdout"}:
             return self._group_validation_indices(labels)
         indices = np.arange(len(labels), dtype=np.int64)
@@ -1064,6 +1208,18 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.validation_split_ = self._validation_summary(
             labels, self.inner_train_indices_, self.inner_validation_indices_
         )
+        if (
+            self.validation_strategy_ == "precomputed_group_holdout"
+            and (
+                self.validation_split_["inner_record_overlap"]
+                or self.validation_split_["inner_group_overlap"]
+                or self.validation_split_["outer_test_group_overlap"]
+                or self.validation_split_["outer_test_record_overlap"]
+            )
+        ):
+            raise ValueError(
+                "Precomputed validation manifest is not leakage-safe"
+            )
         X_train = features[self.inner_train_indices_]
         X_validation = features[self.inner_validation_indices_]
         y_train = labels[self.inner_train_indices_]
@@ -1096,20 +1252,31 @@ class TorchClassificationAdapter(BaseModelAdapter):
             weight_decay=self.weight_decay,
         )
         best_state: Optional[Dict[str, torch.Tensor]] = None
-        best_monitor = float("inf")
+        best_optimizer_state: Optional[Dict[str, Any]] = None
+        maximize_monitor = self.requested_early_stopping_monitor in {
+            "validation_window_macro_f1",
+            "validation_record_macro_f1",
+        }
+        best_monitor = float("-inf") if maximize_monitor else float("inf")
+        best_validation_loss_at_monitor: Optional[float] = None
         best_validation_components: Dict[str, float] = {}
         epochs_without_improvement = 0
         self.training_log_ = []
         self.best_epoch_ = None
         self.best_validation_loss_ = None
+        self.best_monitor_value_ = None
         self.best_validation_components_ = {}
         monitor_component = str(
             getattr(self.objective_handler, "early_stopping_component", "objective")
         )
         self.early_stopping_monitor_ = (
-            "validation_categorical_loss"
-            if monitor_component == "categorical"
-            else "validation_loss"
+            self.requested_early_stopping_monitor
+            if self.requested_early_stopping_monitor != "validation_loss"
+            else (
+                "validation_categorical_loss"
+                if monitor_component == "categorical"
+                else "validation_loss"
+            )
         )
         self.stopping_reason_ = None
 
@@ -1118,7 +1285,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
             self.model.train()
             train_numerators: Dict[str, float] = {}
             train_denominators: Dict[str, float] = {}
-            for batch_features, batch_labels in train_loader:
+            for batch_index, (batch_features, batch_labels) in enumerate(
+                train_loader, start=1
+            ):
                 batch_features = batch_features.to(self.device_, non_blocking=True)
                 batch_labels = batch_labels.to(self.device_, non_blocking=True)
                 optimizer.zero_grad(set_to_none=True)
@@ -1144,11 +1313,20 @@ class TorchClassificationAdapter(BaseModelAdapter):
                         parts.denominator.detach().item()
                     )
 
+                if (
+                    self.max_train_batches_per_epoch is not None
+                    and batch_index >= self.max_train_batches_per_epoch
+                ):
+                    break
+
             self.model.eval()
             validation_numerators: Dict[str, float] = {}
             validation_denominators: Dict[str, float] = {}
             validation_correct = 0
             validation_count = 0
+            validation_truth: list[np.ndarray] = []
+            validation_prediction: list[np.ndarray] = []
+            validation_probability: list[np.ndarray] = []
             with torch.no_grad():
                 for batch_features, batch_labels in validation_loader:
                     batch_features = batch_features.to(self.device_, non_blocking=True)
@@ -1172,6 +1350,15 @@ class TorchClassificationAdapter(BaseModelAdapter):
                             (decoded.y_pred == batch_labels).sum().item()
                         )
                         validation_count += len(batch_labels)
+                        validation_truth.append(
+                            batch_labels.detach().cpu().numpy()
+                        )
+                        validation_prediction.append(
+                            decoded.y_pred.detach().cpu().numpy()
+                        )
+                        validation_probability.append(
+                            decoded.class_probabilities.detach().cpu().numpy()
+                        )
 
             train_components = _aggregate_loss_component_values(
                 train_numerators, train_denominators
@@ -1191,15 +1378,89 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 raise RuntimeError(
                     f"Early-stopping component {monitor_component!r} is unavailable"
                 )
-            monitor_value = float(validation_components[monitor_component])
-            improved = monitor_value < best_monitor
+            validation_window_macro_f1: Optional[float] = None
+            validation_record_macro_f1: Optional[float] = None
+            if self.task_type == "classification":
+                truth = np.concatenate(validation_truth)
+                prediction = np.concatenate(validation_prediction)
+                probabilities = np.concatenate(validation_probability)
+                validation_window_macro_f1 = float(
+                    f1_score(
+                        truth,
+                        prediction,
+                        average="macro",
+                        zero_division=0,
+                    )
+                )
+                if (
+                    self.requested_early_stopping_monitor
+                    == "validation_record_macro_f1"
+                    and self._validation_record_ids is not None
+                ):
+                    record_ids = self._validation_record_ids[
+                        self.inner_validation_indices_
+                    ]
+                    record_frame = pd.DataFrame({
+                        "record_id": record_ids.astype(str),
+                        "target": truth.astype(np.int64),
+                    })
+                    probability_columns = []
+                    for class_index in range(self.num_classes):
+                        column = f"proba_{class_index}"
+                        probability_columns.append(column)
+                        record_frame[column] = probabilities[:, class_index]
+                    if (
+                        record_frame.groupby("record_id")["target"]
+                        .nunique()
+                        .gt(1)
+                        .any()
+                    ):
+                        raise ValueError(
+                            "Validation record contains multiple target classes"
+                        )
+                    record_probability = record_frame.groupby(
+                        "record_id", sort=True
+                    )[probability_columns].mean()
+                    record_truth = record_frame.groupby(
+                        "record_id", sort=True
+                    )["target"].first()
+                    validation_record_macro_f1 = float(
+                        f1_score(
+                            record_truth.to_numpy(),
+                            record_probability.to_numpy().argmax(axis=1),
+                            average="macro",
+                            zero_division=0,
+                        )
+                    )
+            if self.requested_early_stopping_monitor == "validation_loss":
+                monitor_value = float(validation_components[monitor_component])
+            elif (
+                self.requested_early_stopping_monitor
+                == "validation_window_macro_f1"
+            ):
+                if validation_window_macro_f1 is None:
+                    raise RuntimeError("Validation window macro F1 is unavailable")
+                monitor_value = validation_window_macro_f1
+            else:
+                if validation_record_macro_f1 is None:
+                    raise RuntimeError(
+                        "Validation record macro F1 requires record metadata"
+                    )
+                monitor_value = validation_record_macro_f1
+            improved = (
+                monitor_value > best_monitor
+                if maximize_monitor
+                else monitor_value < best_monitor
+            )
             if improved:
                 best_monitor = monitor_value
+                best_validation_loss_at_monitor = validation_loss
                 best_validation_components = dict(validation_components)
                 best_state = {
                     key: value.detach().cpu().clone()
                     for key, value in self.model.state_dict().items()
                 }
+                best_optimizer_state = deepcopy(optimizer.state_dict())
                 self.best_epoch_ = epoch
                 epochs_without_improvement = 0
             else:
@@ -1220,6 +1481,8 @@ class TorchClassificationAdapter(BaseModelAdapter):
                     if validation_count
                     else None
                 ),
+                "validation_window_macro_f1": validation_window_macro_f1,
+                "validation_record_macro_f1": validation_record_macro_f1,
                 "learning_rate": float(optimizer.param_groups[0]["lr"]),
                 "is_best": improved,
                 "epoch_time_seconds": time.perf_counter() - epoch_started,
@@ -1245,7 +1508,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
         self.model.load_state_dict(best_state)
         self.model.to(self.device_)
         self.model.eval()
-        self.best_validation_loss_ = best_monitor
+        self.best_validation_loss_ = best_validation_loss_at_monitor
+        self.best_monitor_value_ = best_monitor
+        self.optimizer_state_ = best_optimizer_state
         self.best_validation_components_ = best_validation_components
         self.n_epochs_trained_ = len(self.training_log_)
         if self.stopping_reason_ is None:
@@ -1705,9 +1970,12 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "epochs_trained": self.n_epochs_trained_,
             "best_epoch": self.best_epoch_,
             "best_validation_loss": self.best_validation_loss_,
-            "best_monitor_value": self.best_validation_loss_,
+            "best_monitor_value": self.best_monitor_value_,
             "best_validation_components": dict(self.best_validation_components_),
             "early_stopping_monitor": self.early_stopping_monitor_,
+            "requested_early_stopping_monitor": (
+                self.requested_early_stopping_monitor
+            ),
             "stopping_reason": self.stopping_reason_,
             "trainable_parameter_count": sum(
                 parameter.numel()
@@ -1726,6 +1994,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
             "validation_strategy": self.validation_strategy_,
             "validation_split": self.validation_split_,
             "validation_fallback_reason": self.validation_fallback_reason_,
+            "max_train_batches_per_epoch": self.max_train_batches_per_epoch,
             "objective_training_diagnostics": dict(
                 self.objective_training_diagnostics_
             ),
@@ -1758,6 +2027,12 @@ class TorchClassificationAdapter(BaseModelAdapter):
                 "weight_decay": self.weight_decay,
                 "validation_size": self.validation_size,
                 "early_stopping_patience": self.early_stopping_patience,
+                "early_stopping_monitor": (
+                    self.requested_early_stopping_monitor
+                ),
+                "max_train_batches_per_epoch": (
+                    self.max_train_batches_per_epoch
+                ),
                 "random_state": self.random_state,
                 "standardize": self.standardize,
                 "feature_scaling": dict(self.feature_scaling_config_),
@@ -1774,6 +2049,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
             },
             "training_summary": self.get_training_summary(),
             "training_log": self.training_log_,
+            "optimizer_state_dict": self.optimizer_state_,
             "validation_split": self.validation_split_,
             "inner_train_indices": (
                 None
@@ -1907,6 +2183,7 @@ class TorchClassificationAdapter(BaseModelAdapter):
             self.feature_names_ = self.feature_preprocessor_.feature_names
         self.model_metadata = dict(payload.get("model_metadata", self.model_metadata))
         self.training_log_ = list(payload.get("training_log", []))
+        self.optimizer_state_ = payload.get("optimizer_state_dict")
         self.validation_split_ = payload.get("validation_split")
         stored_train_indices = payload.get("inner_train_indices")
         stored_validation_indices = payload.get("inner_validation_indices")
@@ -1936,6 +2213,9 @@ class TorchClassificationAdapter(BaseModelAdapter):
         )
         self.best_epoch_ = summary.get("best_epoch")
         self.best_validation_loss_ = summary.get("best_validation_loss")
+        self.best_monitor_value_ = summary.get(
+            "best_monitor_value", self.best_validation_loss_
+        )
         self.best_validation_components_ = dict(
             summary.get("best_validation_components", {})
         )
