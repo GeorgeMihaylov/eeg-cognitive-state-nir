@@ -438,10 +438,19 @@ class EEGAugmentationPipeline(nn.Module):
         generator: Optional[torch.Generator] = None,
     ) -> Tensor:
         result = _validate_raw_eeg(inputs).clone()
-        if generator is not None and torch.device(generator.device) != result.device:
-            raise ValueError(
-                "Augmentation generator device must match input tensor device"
-            )
+        if generator is not None:
+            generator_device = torch.device(generator.device)
+            result_device = result.device
+            if (
+                generator_device.type != result_device.type
+                or (
+                    generator_device.index is not None
+                    and generator_device.index != result_device.index
+                )
+            ):
+                raise ValueError(
+                    "Augmentation generator device must match input tensor device"
+                )
         for transform in self.transforms:
             result = transform(result, generator=generator)
         if result.shape != inputs.shape or not torch.isfinite(result).all():
@@ -965,11 +974,15 @@ def _validated_indices(
     allow_empty: bool,
 ) -> tuple[int, ...]:
     array = np.asarray(values)
-    if array.ndim != 1 or not np.issubdtype(array.dtype, np.integer):
+    if array.ndim != 1:
+        raise ValueError(f"{name} must be a one-dimensional integer sequence")
+    if array.size == 0:
+        if allow_empty:
+            return ()
+        raise ValueError(f"{name} cannot be empty")
+    if not np.issubdtype(array.dtype, np.integer):
         raise ValueError(f"{name} must be a one-dimensional integer sequence")
     indices = tuple(int(value) for value in array.tolist())
-    if not indices and not allow_empty:
-        raise ValueError(f"{name} cannot be empty")
     if len(set(indices)) != len(indices):
         raise ValueError(f"{name} contains duplicate indices")
     if indices and (min(indices) < 0 or max(indices) >= size):
@@ -1015,8 +1028,11 @@ class _AuthorizedContrastiveDataset(Dataset[dict[str, Any]]):
 
     def __getitem__(self, local_index: int) -> dict[str, Any]:
         source_index = self.indices[local_index]
-        window = np.ascontiguousarray(
-            self.features[source_index], dtype=np.float32
+        window = np.array(
+            self.features[source_index],
+            dtype=np.float32,
+            copy=True,
+            order="C",
         )
         if window.ndim != 3 or window.shape[0] != 1:
             raise ValueError(
