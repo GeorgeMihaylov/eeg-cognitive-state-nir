@@ -356,6 +356,11 @@ class COGBCINBackBaselineRunner:
             )
         for field in ("window_cache", "task_protocol", "output_dir"):
             _relative_path(self.config[field], label=field)
+        if self.config.get("sample_id_mapping_path") is not None:
+            _relative_path(
+                self.config["sample_id_mapping_path"],
+                label="sample_id_mapping_path",
+            )
         if int(self.config["seed"]) != 42:
             raise ValueError("The first diagnostic baseline uses seed 42 only")
         if not 1 <= int(self.config["epochs"]) <= 50:
@@ -363,25 +368,34 @@ class COGBCINBackBaselineRunner:
 
     def _dataset(self) -> Any:
         hashes = self.config["hashes"]
+        dataset_config = {
+            "data_path": self.repository_root
+            / _relative_path(
+                self.config["window_cache"], label="window_cache"
+            ),
+            "task_protocol_path": self.repository_root
+            / _relative_path(
+                self.config["task_protocol"], label="task_protocol"
+            ),
+            "window_cache_config_hash": hashes[
+                "window_cache_config_hash"
+            ],
+            "task_protocol_hash": hashes["task_protocol_hash"],
+            "window_transform": self.config.get(
+                "window_transform", "none"
+            ),
+        }
+        if self.config.get("sample_id_mapping_path") is not None:
+            dataset_config["sample_id_mapping_path"] = (
+                self.repository_root
+                / _relative_path(
+                    self.config["sample_id_mapping_path"],
+                    label="sample_id_mapping_path",
+                )
+            )
         dataset = get_dataset(
             self.config["dataset"],
-            {
-                "data_path": self.repository_root
-                / _relative_path(
-                    self.config["window_cache"], label="window_cache"
-                ),
-                "task_protocol_path": self.repository_root
-                / _relative_path(
-                    self.config["task_protocol"], label="task_protocol"
-                ),
-                "window_cache_config_hash": hashes[
-                    "window_cache_config_hash"
-                ],
-                "task_protocol_hash": hashes["task_protocol_hash"],
-                "window_transform": self.config.get(
-                    "window_transform", "none"
-                ),
-            },
+            dataset_config,
         )
         return dataset.load()
 

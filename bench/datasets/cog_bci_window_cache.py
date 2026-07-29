@@ -9,7 +9,7 @@ import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path, PureWindowsPath
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Protocol, Sequence
 
 import numpy as np
 import pandas as pd
@@ -131,6 +131,26 @@ RECORD_COLUMNS = [
 
 class COGBCIWindowCacheError(ValueError):
     """Raised when materialization or cache verification violates a contract."""
+
+
+class WholeRecordPreprocessor(Protocol):
+    """Serializable stateless transform applied before window enumeration."""
+
+    name: str
+    is_identity: bool
+
+    def to_dict(self) -> dict[str, Any]: ...
+
+    def stable_hash(
+        self,
+        *,
+        channels: Sequence[str],
+        loader_schema_version: str,
+    ) -> str: ...
+
+    def apply(
+        self, signals: np.ndarray, *, sampling_rate: float
+    ) -> np.ndarray: ...
 
 
 def _canonical_json(value: Any) -> str:
@@ -681,6 +701,7 @@ class COGBCIWindowBuilder:
         output_dir: Path | str,
         channel_policy_name: str,
         spec: RawWindowSpec,
+        whole_record_preprocessor: WholeRecordPreprocessor | None = None,
     ) -> None:
         if channel_policy_name not in ALLOWED_CHANNEL_POLICIES:
             raise ValueError(
@@ -696,6 +717,7 @@ class COGBCIWindowBuilder:
             json.loads(channel_contract_json(self.channel_policy))
         )
         self.spec = spec
+        self.whole_record_preprocessor = whole_record_preprocessor
         rates = {float(record.sampling_rate_hz) for record in dataset.records}
         if len(rates) != 1:
             raise COGBCIWindowCacheError(
@@ -705,19 +727,26 @@ class COGBCIWindowBuilder:
         self.preprocessing_spec = build_preprocessing_spec(
             spec, sampling_rate_hz=self.sampling_rate_hz
         )
-        self.preprocessing_hash = self.preprocessing_spec.stable_hash(
-            channels=self.channel_order,
-            loader_schema_version=BUILDER_VERSION,
-        )
-        self.config_hash = _stable_hash(
-            {
+        if whole_record_preprocessor is None:
+            preprocessing_document = self.preprocessing_spec.to_dict()
+            self.preprocessing_hash = self.preprocessing_spec.stable_hash(
+                channels=self.channel_order,
+                loader_schema_version=BUILDER_VERSION,
+            )
+        else:
+            preprocessing_document = whole_record_preprocessor.to_dict()
+            self.preprocessing_hash = whole_record_preprocessor.stable_hash(
+                channels=self.channel_order,
+                loader_schema_version=BUILDER_VERSION,
+            )
+        config_payload = {
                 "builder_version": BUILDER_VERSION,
                 "dataset_version": DATASET_VERSION,
                 "channel_policy": json.loads(
                     channel_contract_json(self.channel_policy)
                 ),
                 "window_spec": spec.to_dict(),
-                "preprocessing": self.preprocessing_spec.to_dict(),
+                "preprocessing": preprocessing_document,
                 "event_contract": {
                     "task_start": {
                         name: sorted(values)
@@ -729,7 +758,23 @@ class COGBCIWindowBuilder:
                     },
                 },
             }
-        )
+        if whole_record_preprocessor is not None:
+            config_payload["whole_record_preprocessor"] = (
+                whole_record_preprocessor.to_dict()
+            )
+        self.config_hash = _stable_hash(config_payload)
+
+    @property
+    def preprocessing_name(self) -> str:
+        if self.whole_record_preprocessor is not None:
+            return self.whole_record_preprocessor.name
+        return self.spec.preprocessing
+
+    @property
+    def preprocessing_document(self) -> dict[str, Any]:
+        if self.whole_record_preprocessor is not None:
+            return self.whole_record_preprocessor.to_dict()
+        return self.preprocessing_spec.to_dict()
 
     def select_records(
         self,
@@ -782,8 +827,8 @@ class COGBCIWindowBuilder:
             ),
             "uses_cz": "Cz" in self.channel_order,
             "auxiliary_channels_excluded": True,
-            "preprocessing": self.preprocessing_spec.to_dict(),
-            "preprocessing_name": self.spec.preprocessing,
+            "preprocessing": self.preprocessing_document,
+            "preprocessing_name": self.preprocessing_name,
             "source_filter_status": "unknown_eeglab_processing_history",
             "event_contract": {
                 "task_start": {
@@ -862,7 +907,11 @@ class COGBCIWindowBuilder:
                     f"Sampling rate mismatch for {record.record_id}"
                 )
             filter_metadata = _reader_filter_metadata(raw)
-            filtering_requested = self.spec.preprocessing != "none"
+            filtering_requested = (
+                not self.whole_record_preprocessor.is_identity
+                if self.whole_record_preprocessor is not None
+                else self.spec.preprocessing != "none"
+            )
             if (
                 filtering_requested
                 and filter_metadata["source_filter_status"]
@@ -879,7 +928,11 @@ class COGBCIWindowBuilder:
                 raise COGBCIWindowCacheError(
                     f"Unexpected raw shape for {record.record_id}: {signal.shape}"
                 )
-            if filtering_requested:
+            if self.whole_record_preprocessor is not None:
+                signal = self.whole_record_preprocessor.apply(
+                    signal, sampling_rate=self.sampling_rate_hz
+                )
+            elif filtering_requested:
                 signal = apply_preprocessing_spec(
                     signal,
                     sampling_rate=self.sampling_rate_hz,
@@ -964,7 +1017,7 @@ class COGBCIWindowBuilder:
                 "channel_order": json.dumps(
                     list(self.channel_order), separators=(",", ":")
                 ),
-                "preprocessing_name": self.spec.preprocessing,
+                "preprocessing_name": self.preprocessing_name,
                 **event_metadata,
                 "status": qc["status"],
                 "rejection_reason": qc["rejection_reason"],
@@ -1250,7 +1303,7 @@ class COGBCIWindowBuilder:
             "Status: `diagnostic`\n\n"
             f"- channel policy: `{self.channel_policy_name}` "
             f"({len(self.channel_order)} channels)\n"
-            f"- preprocessing: `{self.spec.preprocessing}`\n"
+            f"- preprocessing: `{self.preprocessing_name}`\n"
             f"- source filter history: `unknown_eeglab_processing_history`\n"
             f"- segmentation: `{self.spec.segmentation_mode}`\n"
             f"- window/stride: {self.spec.window_duration_seconds}/"

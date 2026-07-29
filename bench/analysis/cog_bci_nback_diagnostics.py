@@ -582,6 +582,12 @@ def evaluate_subject_disjoint(
                         "balanced_accuracy"
                     ],
                     "validation_macro_f1": validation_metrics["macro_f1"],
+                    "validation_ordinal_mae": validation_metrics[
+                        "ordinal_mae"
+                    ],
+                    "validation_qwk": validation_metrics[
+                        "quadratic_weighted_kappa"
+                    ],
                     "test_accuracy": test_metrics["accuracy"],
                     "test_balanced_accuracy": test_metrics["balanced_accuracy"],
                     "test_macro_f1": test_metrics["macro_f1"],

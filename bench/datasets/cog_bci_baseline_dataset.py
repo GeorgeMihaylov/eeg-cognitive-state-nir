@@ -113,6 +113,47 @@ class COGBCINBackWindowDataset(BaseDataset):
             raise ValueError("N-Back target must contain classes 0, 1, 2")
         if target["sample_id"].duplicated().any():
             raise ValueError("N-Back target contains duplicate sample_id")
+        sample_mapping_path = self.config.get("sample_id_mapping_path")
+        sample_mapping: pd.DataFrame | None = None
+        if sample_mapping_path is not None:
+            sample_mapping = pd.read_parquet(Path(sample_mapping_path))
+            required_mapping = {
+                "raw_sample_id",
+                "variant_sample_id",
+                "record_id",
+                "window_index",
+            }
+            if not required_mapping.issubset(sample_mapping):
+                raise ValueError(
+                    "COG-BCI sample mapping is missing columns "
+                    f"{sorted(required_mapping - set(sample_mapping))}"
+                )
+            if (
+                sample_mapping["raw_sample_id"].duplicated().any()
+                or sample_mapping["variant_sample_id"].duplicated().any()
+            ):
+                raise ValueError("COG-BCI sample mapping must be one-to-one")
+            target = target.rename(columns={"sample_id": "protocol_sample_id"})
+            target = target.merge(
+                sample_mapping[
+                    [
+                        "raw_sample_id",
+                        "variant_sample_id",
+                        "record_id",
+                        "window_index",
+                    ]
+                ].rename(
+                    columns={
+                        "raw_sample_id": "protocol_sample_id",
+                        "variant_sample_id": "sample_id",
+                    }
+                ),
+                on=["protocol_sample_id", "record_id", "window_index"],
+                how="left",
+                validate="one_to_one",
+            )
+            if target["sample_id"].isna().any():
+                raise ValueError("Sample mapping does not cover every target row")
 
         cache_rows = pd.read_parquet(
             window_index_path,
@@ -129,11 +170,14 @@ class COGBCINBackWindowDataset(BaseDataset):
         )
         if frame["cache_offset"].isna().any() or frame["cache_offset"].lt(0).any():
             raise ValueError("Accepted target rows are absent from cache shards")
-        outer = pd.read_parquet(outer_assignments_path)[
-            ["sample_id", "fold"]
-        ].rename(columns={"fold": "outer_fold"})
+        outer = pd.read_parquet(outer_assignments_path)[["sample_id", "fold"]]
+        outer_key = "sample_id"
+        if sample_mapping is not None:
+            outer = outer.rename(columns={"sample_id": "protocol_sample_id"})
+            outer_key = "protocol_sample_id"
+        outer = outer.rename(columns={"fold": "outer_fold"})
         frame = frame.merge(
-            outer, on="sample_id", how="left", validate="one_to_one"
+            outer, on=outer_key, how="left", validate="one_to_one"
         )
         if frame["outer_fold"].isna().any():
             raise ValueError("Every N-Back sample requires an outer fold")
@@ -202,6 +246,22 @@ class COGBCINBackWindowDataset(BaseDataset):
             )
         labels = frame["target"].to_numpy(dtype=np.int64)
         inner_assignments = pd.read_parquet(inner_assignments_path)
+        if sample_mapping is not None:
+            inner_assignments = inner_assignments.rename(
+                columns={"sample_id": "protocol_sample_id"}
+            ).merge(
+                sample_mapping[["raw_sample_id", "variant_sample_id"]].rename(
+                    columns={
+                        "raw_sample_id": "protocol_sample_id",
+                        "variant_sample_id": "sample_id",
+                    }
+                ),
+                on="protocol_sample_id",
+                how="left",
+                validate="many_to_one",
+            )
+            if inner_assignments["sample_id"].isna().any():
+                raise ValueError("Sample mapping does not cover inner assignments")
         if len(inner_assignments) != len(frame) * 5:
             raise ValueError(
                 "Inner assignments must contain one partition per sample/fold"
@@ -248,6 +308,7 @@ class COGBCINBackWindowDataset(BaseDataset):
                 "input_unit": "volt_after_mne_reader",
                 "source_physical_unit_status": "not_exposed_by_reader",
                 "window_transform": window_transform,
+                "sample_id_mapping": sample_mapping_path,
                 "inner_assignments": inner_assignments,
                 "frame": frame,
             },
