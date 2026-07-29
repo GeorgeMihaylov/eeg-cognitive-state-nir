@@ -1,0 +1,44 @@
+{
+  "dataset": "cog_bci_nback_raw",
+  "window_cache": "benchmark_results/cog_bci_windows/emotiv_common_full",
+  "task_protocol": "benchmark_results/cog_bci_protocols/nback_3class",
+  "baseline_results": "benchmark_results/cog_bci_baselines/nback_3class",
+  "source_root": "data/raw/cog_bci/extracted",
+  "output_dir": "benchmark_results/cog_bci_diagnostics/nback_signal_audit",
+  "seed": 42,
+  "unit_audit": {
+    "subjects": ["sub-01", "sub-10"],
+    "sessions": ["ses-01", "ses-02"],
+    "task_variants": ["zero_back", "one_back", "two_back"]
+  },
+  "spectral_features": {
+    "sampling_rate_hz": 500.0,
+    "welch_nperseg": 512,
+    "welch_noverlap": 256,
+    "detrend": "constant",
+    "bands_hz": {
+      "delta": [1.0, 4.0],
+      "theta": [4.0, 8.0],
+      "alpha": [8.0, 13.0],
+      "beta": [13.0, 30.0],
+      "low_gamma": [30.0, 45.0]
+    }
+  },
+  "baselines": {
+    "models": [
+      "multinomial_logistic_regression",
+      "hist_gradient_boosting"
+    ],
+    "class_weight": null,
+    "sampling": "none"
+  },
+  "deep_checks": {
+    "enabled_after_audit": true,
+    "model": "torch_eegnet",
+    "fold": 1,
+    "seed": 42,
+    "max_epochs": 15,
+    "transform": "per_window_mean_removal",
+    "result_dir": "benchmark_results/cog_bci_diagnostics/nback_signal_audit/deep_check_eegnet_demean_fold1"
+  }
+}

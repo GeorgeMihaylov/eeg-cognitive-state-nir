@@ -22,6 +22,32 @@ def _shard_stem(record_id: str) -> str:
     return hashlib.sha256(record_id.encode("utf-8")).hexdigest()[:24]
 
 
+class PerWindowCenteredRawEEGWindowArrayView(RawEEGWindowArrayView):
+    """Lazy view that removes each channel's temporal mean per window."""
+
+    def _read_scalar(self, index: int) -> np.ndarray:
+        window = super()._read_scalar(index)
+        centered = window - window.mean(axis=-1, keepdims=True)
+        return np.ascontiguousarray(centered, dtype=np.float32)
+
+    def __getitem__(self, index: Any) -> Any:
+        if np.isscalar(index):
+            return super().__getitem__(index)
+        indices = np.arange(len(self))[index]
+        return PerWindowCenteredRawEEGWindowArrayView(
+            self.manifest.iloc[np.asarray(indices, dtype=np.int64)],
+            channel_mean=self.channel_mean,
+            channel_scale=self.channel_scale,
+        )
+
+    def with_channel_normalization(
+        self, mean: np.ndarray, scale: np.ndarray
+    ) -> "PerWindowCenteredRawEEGWindowArrayView":
+        return PerWindowCenteredRawEEGWindowArrayView(
+            self.manifest, channel_mean=mean, channel_scale=scale
+        )
+
+
 class COGBCINBackWindowDataset(BaseDataset):
     """Load accepted N-Back windows and immutable split assignments."""
 
@@ -163,7 +189,17 @@ class COGBCINBackWindowDataset(BaseDataset):
         view_manifest = frame.rename(
             columns={"status": "target_status", "status_for_view": "status"}
         )
-        view = RawEEGWindowArrayView(view_manifest)
+        window_transform = str(
+            self.config.get("window_transform", "none")
+        )
+        if window_transform == "none":
+            view = RawEEGWindowArrayView(view_manifest)
+        elif window_transform == "per_window_mean_removal":
+            view = PerWindowCenteredRawEEGWindowArrayView(view_manifest)
+        else:
+            raise ValueError(
+                f"Unknown COG-BCI window_transform {window_transform!r}"
+            )
         labels = frame["target"].to_numpy(dtype=np.int64)
         inner_assignments = pd.read_parquet(inner_assignments_path)
         if len(inner_assignments) != len(frame) * 5:
@@ -211,6 +247,7 @@ class COGBCINBackWindowDataset(BaseDataset):
                 ],
                 "input_unit": "volt_after_mne_reader",
                 "source_physical_unit_status": "not_exposed_by_reader",
+                "window_transform": window_transform,
                 "inner_assignments": inner_assignments,
                 "frame": frame,
             },

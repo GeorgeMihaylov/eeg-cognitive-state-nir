@@ -378,6 +378,9 @@ class COGBCINBackBaselineRunner:
                     "window_cache_config_hash"
                 ],
                 "task_protocol_hash": hashes["task_protocol_hash"],
+                "window_transform": self.config.get(
+                    "window_transform", "none"
+                ),
             },
         )
         return dataset.load()
@@ -565,7 +568,13 @@ class COGBCINBackBaselineRunner:
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
         resolved_config = deepcopy(self.config)
         resolved_config["run_mode"] = (
-            "smoke" if self.options.smoke else "full_diagnostic"
+            "smoke"
+            if self.options.smoke
+            else (
+                "single_fold_diagnostic"
+                if self.options.fold is not None
+                else "full_diagnostic"
+            )
         )
         _write_json(output_dir / "resolved_config.json", resolved_config)
         folds = (
@@ -784,7 +793,7 @@ class COGBCINBackBaselineRunner:
             raise RuntimeError("Unified predictions duplicate sample_id")
         if records_all["record_id"].duplicated().any():
             raise RuntimeError("Unified predictions duplicate record_id")
-        if not self.options.smoke:
+        if not self.options.smoke and self.options.fold is None:
             if len(windows_all) != 16927 or len(records_all) != 261:
                 raise RuntimeError(
                     "Full baseline did not predict every accepted N-Back row"
@@ -929,4 +938,3 @@ class COGBCINBackBaselineRunner:
             report, encoding="utf-8"
         )
         return summary
-
