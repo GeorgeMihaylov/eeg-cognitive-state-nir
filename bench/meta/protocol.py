@@ -91,11 +91,11 @@ def clone_model_for_episode(
 class MetaLearnerProtocol(Protocol):
     """Algorithm-neutral interface reserved for a later approved experiment."""
 
-    def meta_train_step(self, episodes: Iterable[Any]) -> dict[str, float]:
+    def meta_train_step(self, episodes: Iterable[Any]) -> Any:
         ...
 
-    def adapt(self, model: nn.Module, support_batch: Any) -> nn.Module:
+    def adapt(self, model: nn.Module, support_batch: Any) -> Any:
         ...
 
-    def evaluate(self, adapted_model: nn.Module, query_batch: Any) -> dict[str, float]:
+    def evaluate(self, adapted_model: Any, query_batch: Any) -> Any:
         ...

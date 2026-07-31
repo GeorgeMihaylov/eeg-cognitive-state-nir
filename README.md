@@ -140,6 +140,15 @@ python scripts/build_meta_learning_episodes.py --config experiments/meta_learnin
 Эпизодическая инфраструктура реализована, но алгоритм метаобучения не
 реализован и meta-learning experiment не выполнялся.
 
+Синтетический CPU-контракт FOMAML реализован и проверяется отдельно:
+
+```powershell
+python scripts/run_fomaml_synthetic_smoke.py --config experiments/meta_learning/fomaml_synthetic_smoke.json --verbose
+```
+
+Это не EEG-эксперимент. Адаптация production-моделей с BatchNorm остаётся
+заблокированной до утверждения безопасной политики stateful buffers.
+
 Тесты:
 
 ```powershell

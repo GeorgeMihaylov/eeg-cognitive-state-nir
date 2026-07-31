@@ -1,0 +1,30 @@
+{
+  "result_status": "diagnostic",
+  "output_dir": "benchmark_results/meta_learning_fomaml_synthetic",
+  "seed": 42,
+  "device": "cpu",
+  "classes": 3,
+  "support_per_class": 5,
+  "query_per_class": 10,
+  "meta_train_episodes": 12,
+  "meta_validation_episodes": 6,
+  "protected_manifests": [
+    "benchmark_results/groupkfold_rf_label_q5/20260713_182031/emotiv_cognitive/cognitive_load_5class/random_forest/group_kfold_subject/predictions.parquet",
+    "benchmark_results/cog_bci_protocols/nback_3class/outer_folds.json"
+  ],
+  "fomaml": {
+    "algorithm_id": "fomaml",
+    "task_type": "classification",
+    "inner_steps": 2,
+    "inner_learning_rate": 0.1,
+    "meta_learning_rate": 0.01,
+    "episodes_per_meta_batch": 4,
+    "maximum_meta_steps": 20,
+    "loss_name": "cross_entropy",
+    "gradient_clip_norm": 5.0,
+    "buffer_policy": "frozen",
+    "device": "cpu",
+    "seed": 42,
+    "finite_check": true
+  }
+}
