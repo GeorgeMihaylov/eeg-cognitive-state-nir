@@ -146,8 +146,9 @@ python scripts/build_meta_learning_episodes.py --config experiments/meta_learnin
 python scripts/run_fomaml_synthetic_smoke.py --config experiments/meta_learning/fomaml_synthetic_smoke.json --verbose
 ```
 
-Это не EEG-эксперимент. Адаптация production-моделей с BatchNorm остаётся
-заблокированной до утверждения безопасной политики stateful buffers.
+Это не EEG-эксперимент. Для production FOMAML проверены явные политики
+BatchNorm `frozen_global` и `support_local`; реальный EEG meta-learning
+experiment не выполнялся и остаётся отключённым отдельным конфигом.
 
 Тесты:
 

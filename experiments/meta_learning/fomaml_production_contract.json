@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "result_status": "diagnostic",
+  "execution_enabled": false,
+  "output_dir": "benchmark_results/meta_learning_fomaml_production_contract",
+  "seed": 42,
+  "device": "cpu",
+  "task": "label_q5",
+  "future_diagnostic_model": "torch_eegnet",
+  "production_models": {
+    "torch_eegnet": {
+      "config": "configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml",
+      "checkpoint": "benchmark_results/groupkfold_torch_eegnet_raw_dedup_label_q5/20260715_082819/emotiv_raw_eeg/cognitive_load_5class/torch_eegnet/group_kfold_subject/fold_01/model.pt"
+    },
+    "torch_shallow_convnet": {
+      "config": "configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml",
+      "checkpoint": "benchmark_results/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed42/20260715_091552/emotiv_raw_eeg/cognitive_load_5class/torch_shallow_convnet/group_kfold_subject/fold_01/model.pt"
+    }
+  },
+  "buffer_policies": [
+    "frozen_global",
+    "support_local"
+  ],
+  "meta_validation_protocol": {
+    "fold_assignments": "benchmark_results/groupkfold_rf_label_q5/20260713_182031/emotiv_cognitive/cognitive_load_5class/random_forest/group_kfold_subject/predictions.parquet",
+    "outer_fold": 1,
+    "meta_validation_fraction": 0.2,
+    "support_budget": 32,
+    "query_budget": 64,
+    "seed": 42
+  },
+  "future_experiment": {
+    "episode_type": "subject_personalization",
+    "query_policy": "session_then_record_then_chronology",
+    "inner_steps": 1,
+    "inner_learning_rate": 0.01,
+    "meta_learning_rate": 0.001,
+    "checkpoint_criterion": "meta_validation_macro_f1",
+    "metrics": [
+      "accuracy",
+      "balanced_accuracy",
+      "macro_f1",
+      "quadratic_weighted_kappa"
+    ],
+    "decision_rule": "compare preregistered policies on meta-validation only; outer-test is final evaluation only"
+  }
+}

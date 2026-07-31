@@ -10,6 +10,12 @@ from typing import Any, Iterable, Mapping, Sequence
 import torch
 from torch import Tensor, nn
 
+from .buffers import (
+    BufferAuditResult,
+    FunctionalModelState,
+    create_functional_state,
+    functional_forward,
+)
 from .protocol import MetaLearnerProtocol
 
 
@@ -42,8 +48,10 @@ class FOMAMLConfig:
             raise ValueError("Synthetic FOMAML supports cross_entropy only")
         if self.device != "cpu":
             raise ValueError("Task 8U is CPU-only")
-        if self.buffer_policy != "frozen":
-            raise ValueError("Only buffer_policy='frozen' is defined")
+        if self.buffer_policy not in {"frozen", "frozen_global", "support_local"}:
+            raise ValueError(
+                "buffer_policy must be frozen, frozen_global, or support_local"
+            )
         if min(self.inner_steps, self.episodes_per_meta_batch, self.maximum_meta_steps) <= 0:
             raise ValueError("Step and episode counts must be positive")
         if min(self.inner_learning_rate, self.meta_learning_rate) <= 0:
@@ -59,6 +67,9 @@ class FOMAMLConfig:
 @dataclass(frozen=True)
 class FOMAMLAdaptationResult:
     fast_weights: Mapping[str, Tensor] = field(repr=False)
+    buffers: Mapping[str, Tensor] = field(repr=False)
+    buffer_policy: str
+    buffer_audits: tuple[BufferAuditResult, ...]
     support_losses: tuple[float, ...]
     support_accuracy_before: float
     support_accuracy_after: float
@@ -175,24 +186,17 @@ class FirstOrderMAML(MetaLearnerProtocol):
             raise FOMAMLError("Fast weights share storage with base parameters")
         return fast
 
-    def _buffers(self, model: nn.Module) -> OrderedDict[str, Tensor]:
-        return OrderedDict(
-            (name, value.detach().clone()) for name, value in model.named_buffers()
-        )
-
     def _forward(
         self,
         model: nn.Module,
-        parameters: Mapping[str, Tensor],
-        buffers: Mapping[str, Tensor],
+        state: FunctionalModelState,
         features: Tensor,
-    ) -> Tensor:
-        validate_parameter_mapping(model, parameters)
-        return torch.func.functional_call(
-            model,
-            (dict(parameters), dict(buffers)),
-            (features.to(self.device),),
-            strict=True,
+        *,
+        phase: str,
+    ) -> tuple[Tensor, BufferAuditResult]:
+        validate_parameter_mapping(model, state.parameters)
+        return functional_forward(
+            model, state, features.to(self.device), phase=phase
         )
 
     @staticmethod
@@ -206,10 +210,6 @@ class FirstOrderMAML(MetaLearnerProtocol):
     ) -> FOMAMLAdaptationResult:
         if model is not self.model:
             raise FOMAMLError("FirstOrderMAML can adapt only its bound base model")
-        if _has_stateful_buffers(model):
-            raise FOMAMLError(
-                "Frozen buffer policy blocks adaptation of BatchNorm/stateful modules"
-            )
         features, targets = support_batch
         features = features.to(self.device)
         targets = targets.to(self.device, dtype=torch.long)
@@ -217,10 +217,15 @@ class FirstOrderMAML(MetaLearnerProtocol):
             raise FOMAMLError("Support features contain NaN or Inf")
         base_hash = model_state_hash(model)
         fast = self.create_fast_weights(model)
-        buffers = self._buffers(model)
+        state = create_functional_state(model, self.config.buffer_policy)
+        state = state.with_parameters(fast)
         losses: list[float] = []
         gradient_norms: list[float] = []
-        logits = self._forward(model, fast, buffers, features)
+        buffer_audits: list[BufferAuditResult] = []
+        logits, buffer_audit = self._forward(
+            model, state, features, phase="support"
+        )
+        buffer_audits.append(buffer_audit)
         loss = torch.nn.functional.cross_entropy(logits, targets)
         losses.append(float(loss.item()))
         accuracy_before = self._accuracy(logits, targets)
@@ -244,7 +249,11 @@ class FirstOrderMAML(MetaLearnerProtocol):
                 for (name, parameter), gradient in zip(fast.items(), gradients)
             )
             validate_parameter_mapping(model, fast)
-            logits = self._forward(model, fast, buffers, features)
+            state = state.with_parameters(fast)
+            logits, buffer_audit = self._forward(
+                model, state, features, phase="support"
+            )
+            buffer_audits.append(buffer_audit)
             loss = torch.nn.functional.cross_entropy(logits, targets)
             losses.append(float(loss.item()))
         if self.config.finite_check and not all(torch.isfinite(torch.tensor(losses))):
@@ -258,6 +267,12 @@ class FirstOrderMAML(MetaLearnerProtocol):
         )
         return FOMAMLAdaptationResult(
             fast_weights=fast,
+            buffers=OrderedDict(
+                (name, value.detach().clone())
+                for name, value in state.buffers.items()
+            ),
+            buffer_policy=state.buffer_policy.value,
+            buffer_audits=tuple(buffer_audits),
             support_losses=tuple(losses),
             support_accuracy_before=accuracy_before,
             support_accuracy_after=self._accuracy(logits, targets),
@@ -277,10 +292,30 @@ class FirstOrderMAML(MetaLearnerProtocol):
         targets = targets.to(self.device, dtype=torch.long)
         if not bool(torch.isfinite(features).all()):
             raise FOMAMLError("Query features contain NaN or Inf")
-        buffers = self._buffers(self.model)
-        logits = self._forward(
-            self.model, adapted_model.fast_weights, buffers, features
+        state = create_functional_state(
+            self.model, adapted_model.buffer_policy
+        ).with_parameters(adapted_model.fast_weights)
+        state = FunctionalModelState(
+            parameters=state.parameters,
+            buffers=OrderedDict(
+                (name, value.detach().clone())
+                for name, value in adapted_model.buffers.items()
+            ),
+            training_mode=state.training_mode,
+            architecture_signature=state.architecture_signature,
+            buffer_policy=state.buffer_policy,
         )
+        buffers_before = {
+            name: value.detach().clone() for name, value in state.buffers.items()
+        }
+        logits, _ = self._forward(
+            self.model, state, features, phase="query"
+        )
+        if any(
+            not torch.equal(buffers_before[name], value)
+            for name, value in state.buffers.items()
+        ):
+            raise FOMAMLError("Query changed episode-local buffers")
         loss = torch.nn.functional.cross_entropy(logits, targets)
         gradients = torch.autograd.grad(
             loss, tuple(adapted_model.fast_weights.values()), create_graph=False
@@ -421,8 +456,7 @@ def audit_production_model_compatibility(
         "output_head_width": int(model.get_output_head().out_features),
         "state_dict_unchanged": unchanged,
         "stateful_buffers_present": stateful,
-        "adaptation_supported": not stateful,
-        "status": (
-            "compatible" if not stateful else "blocked_by_frozen_stateful_buffers"
-        ),
+        "supported_buffer_policies": ["frozen_global", "support_local"],
+        "adaptation_supported": True,
+        "status": "compatible_with_explicit_buffer_policy",
     }

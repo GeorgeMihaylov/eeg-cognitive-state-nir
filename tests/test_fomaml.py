@@ -226,7 +226,7 @@ def _production_models():
     ]
 
 
-def test_production_models_are_read_only_audited_and_adaptation_is_blocked() -> None:
+def test_production_models_are_read_only_audited_and_require_explicit_policy() -> None:
     example = torch.zeros(2, 1, 4, 128)
     for model in _production_models():
         before = model_state_hash(model)
@@ -234,12 +234,16 @@ def test_production_models_are_read_only_audited_and_adaptation_is_blocked() -> 
         assert audit["functional_eval_forward"]
         assert audit["state_dict_unchanged"]
         assert audit["stateful_buffers_present"]
-        assert not audit["adaptation_supported"]
+        assert audit["adaptation_supported"]
+        assert audit["supported_buffer_policies"] == [
+            "frozen_global", "support_local"
+        ]
         assert audit["output_shape"] == [2, 3]
         assert model_state_hash(model) == before
-        learner = FirstOrderMAML(model, _config())
-        with pytest.raises(FOMAMLError, match="buffer policy"):
-            learner.adapt(
-                model,
-                (example, torch.tensor([0, 1])),
-            )
+        learner = FirstOrderMAML(model, _config(buffer_policy="frozen_global"))
+        adaptation = learner.adapt(
+            model,
+            (example, torch.tensor([0, 1])),
+        )
+        assert adaptation.base_unchanged
+        assert model_state_hash(model) == before
