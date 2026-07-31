@@ -54,6 +54,17 @@ from .ordinal_transformer_full import (
     full_prediction_alignment,
     load_ordinal_transformer_full_spec,
 )
+from .fomaml_label_q5_diagnostic import (
+    FOMAMLLabelQ5Diagnostic,
+    audit_raw_episode_alignment,
+    apply_decision_rule,
+    paired_subject_comparison,
+    prepare_preregistration,
+    run_fomaml_label_q5_diagnostic,
+    select_buffer_policy,
+    validate_diagnostic_config,
+    validate_episode_protocol,
+)
 
 __all__ = [
     "ExperimentTrial",
@@ -94,4 +105,13 @@ __all__ = [
     "build_ordinal_transformer_experiment",
     "full_prediction_alignment",
     "load_ordinal_transformer_full_spec",
+    "FOMAMLLabelQ5Diagnostic",
+    "audit_raw_episode_alignment",
+    "apply_decision_rule",
+    "paired_subject_comparison",
+    "prepare_preregistration",
+    "run_fomaml_label_q5_diagnostic",
+    "select_buffer_policy",
+    "validate_diagnostic_config",
+    "validate_episode_protocol",
 ]

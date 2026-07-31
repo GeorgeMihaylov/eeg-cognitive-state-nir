@@ -150,6 +150,14 @@ python scripts/run_fomaml_synthetic_smoke.py --config experiments/meta_learning/
 BatchNorm `frozen_global` и `support_local`; реальный EEG meta-learning
 experiment не выполнялся и остаётся отключённым отдельным конфигом.
 
+Ограниченный real-data diagnostic для EEGNet/`label_q5` запускается только
+из preregistered one-fold/one-seed конфигурации; его результаты не являются
+полным многосидовым или пятифолдовым выводом.
+
+Pre-training audit этого diagnostic выявил несовпадение task-8Ф episode IDs с
+raw-deduplicated cache и остановил эксперимент до первого gradient step. Для
+продолжения нужен новый явно утверждённый raw-deduplicated protocol hash.
+
 Тесты:
 
 ```powershell

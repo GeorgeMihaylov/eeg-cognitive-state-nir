@@ -46,8 +46,14 @@ class FOMAMLConfig:
             raise ValueError("Synthetic FOMAML supports classification only")
         if self.loss_name != "cross_entropy":
             raise ValueError("Synthetic FOMAML supports cross_entropy only")
-        if self.device != "cpu":
-            raise ValueError("Task 8U is CPU-only")
+        try:
+            device = torch.device(self.device)
+        except (RuntimeError, ValueError) as exc:
+            raise ValueError(f"Invalid FOMAML device {self.device!r}") from exc
+        if device.type not in {"cpu", "cuda"}:
+            raise ValueError("FOMAML supports CPU or CUDA devices only")
+        if device.type == "cuda" and not torch.cuda.is_available():
+            raise ValueError("CUDA was requested but is not available")
         if self.buffer_policy not in {"frozen", "frozen_global", "support_local"}:
             raise ValueError(
                 "buffer_policy must be frozen, frozen_global, or support_local"
@@ -330,6 +336,43 @@ class FirstOrderMAML(MetaLearnerProtocol):
         )
         validate_parameter_mapping(self.model, mapped)
         return float(loss.item()), self._accuracy(logits, targets), mapped
+
+    def predict_adapted(
+        self,
+        adapted_model: FOMAMLAdaptationResult,
+        features: Tensor,
+    ) -> tuple[Tensor, BufferAuditResult]:
+        """Predict from frozen episode state without labels or buffer updates."""
+        if not bool(torch.isfinite(features).all()):
+            raise FOMAMLError("Prediction features contain NaN or Inf")
+        state = create_functional_state(
+            self.model, adapted_model.buffer_policy
+        ).with_parameters(adapted_model.fast_weights)
+        state = FunctionalModelState(
+            parameters=state.parameters,
+            buffers=OrderedDict(
+                (name, value.detach().clone())
+                for name, value in adapted_model.buffers.items()
+            ),
+            training_mode=state.training_mode,
+            architecture_signature=state.architecture_signature,
+            buffer_policy=state.buffer_policy,
+        )
+        buffers_before = {
+            name: value.detach().clone() for name, value in state.buffers.items()
+        }
+        with torch.no_grad():
+            logits, audit = self._forward(
+                self.model, state, features, phase="query"
+            )
+        if any(
+            not torch.equal(buffers_before[name], value)
+            for name, value in state.buffers.items()
+        ):
+            raise FOMAMLError("Prediction query changed episode-local buffers")
+        if not bool(torch.isfinite(logits).all()):
+            raise FOMAMLError("Prediction logits contain NaN or Inf")
+        return logits.detach().cpu(), audit
 
     def episode_result(self, episode: Any) -> FOMAMLEpisodeResult:
         adaptation = self.adapt(

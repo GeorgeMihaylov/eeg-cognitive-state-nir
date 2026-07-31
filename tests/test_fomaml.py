@@ -174,8 +174,13 @@ def test_invalid_parameter_mappings_are_rejected() -> None:
 def test_unsupported_tasks_device_and_failed_episode_are_explicit() -> None:
     with pytest.raises(ValueError, match="classification only"):
         _config(task_type="regression")
-    with pytest.raises(ValueError, match="CPU-only"):
-        _config(device="cuda")
+    with pytest.raises(ValueError, match="CPU or CUDA"):
+        _config(device="mps")
+    if torch.cuda.is_available():
+        assert _config(device="cuda").device == "cuda"
+    else:
+        with pytest.raises(ValueError, match="not available"):
+            _config(device="cuda")
     learner, episodes = _learner()
     bad = replace(
         episodes[0],
