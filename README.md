@@ -131,6 +131,15 @@ python scripts/cog_bci_nback_baseline.py --config experiments/cog_bci/nback_eegn
 python src/19_build_project_final_package.py --repo-root .
 ```
 
+Диагностическая материализация leakage-safe meta-episodes без обучения:
+
+```powershell
+python scripts/build_meta_learning_episodes.py --config experiments/meta_learning/episode_infrastructure_smoke.json --verbose
+```
+
+Эпизодическая инфраструктура реализована, но алгоритм метаобучения не
+реализован и meta-learning experiment не выполнялся.
+
 Тесты:
 
 ```powershell
