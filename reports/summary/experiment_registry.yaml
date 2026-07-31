@@ -984,6 +984,471 @@ experiments:
       - Псевдо-raw reshaping агрегированных признаков методологически неприемлем.
     tags: [mixin, contrastive, deferred]
 
+  - experiment_id: label_q5_feature_group_rf_ablation
+    title: Абляция EEG, POW и EEG+POW для Random Forest
+    category: preprocessing
+    status: diagnostic
+    consolidation_status: completed
+    task: cognitive_load_5class
+    target: label_q5
+    model: random_forest
+    feature_set: eeg_only|pow_only|pow_plus_eeg
+    preprocessing: none
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    inner_protocol: not_applicable
+    seeds: [42]
+    n_subjects: 54
+    primary_metric:
+      name: macro_f1
+      direction: higher_is_better
+      value_source:
+        type: report_only
+    report_path: reports/feature_group_rf_ablation.md
+    runtime_path: benchmark_results/feature_group_rf_ablation
+    config_path: experiments/feature_group_rf_ablation.yaml
+    commit: 9115f2b
+    result_summary: EEG+POW сравнивается с отдельными группами признаков в одном subject-disjoint протоколе.
+    scientific_decision: Использовать EEG+POW как основное агрегированное представление.
+    limitations:
+      - Один seed; абляция служит анализом признаков, а не новым финальным baseline.
+    tags: [classification, feature_ablation, groupkfold]
+
+  - experiment_id: label_q5_feature_group_transformer_ablation
+    title: Абляция EEG и EEG+POW для Transformer
+    category: preprocessing
+    status: diagnostic
+    consolidation_status: completed
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_transformer
+    feature_set: eeg_only|pow_plus_eeg
+    preprocessing: standard
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    inner_protocol: group_holdout by record_group_id
+    seeds: [42]
+    n_subjects: 53
+    primary_metric:
+      name: macro_f1
+      direction: higher_is_better
+      value_source:
+        type: report_only
+    report_path: reports/feature_group_transformer_ablation.md
+    runtime_path: benchmark_results/feature_group_transformer_ablation
+    config_path: experiments/feature_group_transformer_ablation.yaml
+    commit: d234f71
+    result_summary: EEG+POW обеспечивает более сильную категориальную reference-модель.
+    scientific_decision: Сохранить EEG+POW как основную feature-группу Transformer.
+    limitations:
+      - Один seed в исходной feature-group абляции.
+    tags: [classification, transformer, feature_ablation]
+
+  - experiment_id: label_q5_ordinal_transformer_multiseed
+    title: Многосидовое сравнение categorical, CORAL и CORN Transformer
+    category: model
+    status: final
+    consolidation_status: completed
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_transformer_ordinal
+    feature_set: eeg_only|pow_plus_eeg_sequences
+    preprocessing: standard
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    inner_protocol: group_holdout by record_group_id
+    seeds: [7, 42, 123]
+    n_subjects: 53
+    primary_metric:
+      name: ordinal_mae
+      direction: lower_is_better
+      value_source:
+        type: report_only
+    report_path: reports/ordinal_transformer_multiseed_statistics.md
+    runtime_path: benchmark_results/ordinal_transformer_multiseed
+    config_path: null
+    source_config_path: experiments/ordinal_transformer_multiseed.yaml
+    commit: d8428d9
+    result_summary: CORN уменьшает порядковые ошибки, но не даёт устойчивого выигрыша balanced accuracy.
+    scientific_decision: Порядковую голову оставить как дополнительный анализ, не заменяя категориальный baseline.
+    limitations:
+      - Три seeds и один внутренний набор данных.
+    tags: [classification, ordinal, transformer, multiseed]
+
+  - experiment_id: label_q5_auxiliary_corn_policy
+    title: Вложенная auxiliary-CORN policy
+    category: model
+    status: diagnostic
+    consolidation_status: closed_negative
+    task: cognitive_load_5class
+    target: label_q5
+    model: torch_transformer_auxiliary_corn
+    feature_set: eeg_only|pow_plus_eeg_sequences
+    preprocessing: standard
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    inner_protocol: nested group-aware lambda selection
+    seeds: [7, 42, 123]
+    n_subjects: 53
+    primary_metric:
+      name: balanced_accuracy
+      direction: higher_is_better
+      value_source:
+        type: report_only
+    report_path: reports/auxiliary_corn_policy_subject_analysis.md
+    runtime_path: benchmark_results/auxiliary_corn_nested_lambda_finalized
+    config_path: null
+    source_config_path: experiments/auxiliary_corn_policy_statistics.yaml
+    commit: 790a0c5
+    result_summary: Вложенная policy не поддержала гипотезу преимущества над категориальным Transformer.
+    scientific_decision: Закрыть auxiliary-CORN как отрицательный результат для текущей статьи.
+    limitations:
+      - Вывод относится к текущей архитектуре, трём seeds и двум feature-группам.
+    tags: [classification, ordinal, transformer, closed_negative]
+
+  - experiment_id: cross_source_generalization_diagnostic
+    title: Межисточниковая проверка gpn_data и Old_EEG
+    category: model
+    status: diagnostic
+    consolidation_status: diagnostic
+    task: cognitive_load_5class
+    target: label_q5
+    model: random_forest
+    feature_set: pow_plus_eeg
+    preprocessing: none
+    evaluation_protocol: train-one-source test-other-source with logical-record safeguards
+    inner_protocol: not_applicable
+    seeds: [42]
+    n_subjects: 54
+    primary_metric:
+      name: balanced_accuracy
+      direction: higher_is_better
+      value_source:
+        type: report_only
+    report_path: reports/cross_source_generalization_report.md
+    runtime_path: benchmark_results/cross_source_generalization
+    config_path: experiments/cross_source_generalization.yaml
+    commit: 13339cb
+    result_summary: Проверка различий организационных источников без утверждения о cross-device transfer.
+    scientific_decision: Использовать как диагностический subset-analysis, не как доказательство domain adaptation.
+    limitations:
+      - Источники не являются независимыми устройствами и содержат связанные логические записи.
+    tags: [classification, cross_source, diagnostic]
+
+  - experiment_id: label_target_provenance_audit
+    title: Аудит происхождения и структуры label_q5
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    task: target_audit
+    target: label_q5|target_focus
+    model: not_applicable
+    feature_set: not_applicable
+    preprocessing: not_applicable
+    evaluation_protocol: deterministic full-dataset audit
+    inner_protocol: not_applicable
+    seeds: []
+    n_subjects: 54
+    primary_metric:
+      name: audit_result
+      direction: null
+      value_source:
+        type: report_only
+    report_path: reports/label_target_audit.md
+    runtime_path: benchmark_results/label_feature_audit
+    config_path: null
+    source_config_path: experiments/label_target_audit.yaml
+    commit: 83b289a
+    result_summary: Происхождение target_focus, глобальные квантильные границы и риск label leakage документированы.
+    scientific_decision: Сохранить label_q5 для сопоставимости и leakage-safe разметку как sensitivity analysis.
+    limitations:
+      - Глобальная разметка остаётся заранее определённой benchmark-задачей, а не cross-fitted target.
+    tags: [target, provenance, infrastructure]
+
+  - experiment_id: shared_encoder_interface
+    title: Единый интерфейс энкодеров
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    task: encoder_contract
+    target: null
+    model: shared_torch_encoder
+    feature_set: raw_eeg
+    preprocessing: configurable
+    evaluation_protocol: contract and synthetic integration tests
+    inner_protocol: not_applicable
+    seeds: [42]
+    n_subjects: null
+    primary_metric:
+      name: contract_audit
+      direction: null
+      value_source:
+        type: report_only
+    report_path: reports/integration/shared_encoder_interface.md
+    runtime_path: null
+    config_path: null
+    commit: 65290df
+    result_summary: Общий encode/embedding contract интегрирован для downstream-инфраструктуры.
+    scientific_decision: Считать инфраструктуру готовой, но не приписывать ей научный результат.
+    limitations:
+      - Сам интерфейс не доказывает качество transfer learning.
+    tags: [encoder, infrastructure]
+
+  - experiment_id: dann_infrastructure
+    title: DANN-инфраструктура
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    task: domain_adaptation_contract
+    target: null
+    model: dann
+    feature_set: encoder_embedding
+    preprocessing: configurable
+    evaluation_protocol: synthetic contract tests only
+    inner_protocol: not_applicable
+    seeds: [42]
+    n_subjects: null
+    primary_metric:
+      name: infrastructure_audit
+      direction: null
+      value_source:
+        type: report_only
+    report_path: reports/integration/dann_infrastructure.md
+    runtime_path: null
+    config_path: null
+    commit: 65290df
+    result_summary: DANN-компоненты технически доступны, научно обоснованный domain experiment не выполнялся.
+    scientific_decision: Не запускать DANN без новой утверждённой domain-гипотезы.
+    limitations:
+      - Нет валидированной source/target domain-задачи.
+    tags: [dann, infrastructure, deferred]
+
+  - experiment_id: contrastive_pretraining_infrastructure
+    title: Контрастивная инфраструктура raw EEG
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    task: contrastive_pretraining_contract
+    target: null
+    model: contrastive_eeg_encoder
+    feature_set: raw_eeg
+    preprocessing: configurable
+    evaluation_protocol: synthetic and resume/checkpoint tests
+    inner_protocol: subject-disjoint pretraining validation
+    seeds: [42]
+    n_subjects: null
+    primary_metric:
+      name: infrastructure_audit
+      direction: null
+      value_source:
+        type: report_only
+    report_path: reports/integration/contrastive_pretraining_infrastructure.md
+    runtime_path: null
+    config_path: null
+    commit: 332fc04
+    result_summary: Контрастивный trainer, checkpoint и encoder export интегрированы.
+    scientific_decision: Инфраструктура готова; качество оценивается только downstream screening.
+    limitations:
+      - Инфраструктурный smoke не является доказательством transfer gain.
+    tags: [contrastive, infrastructure]
+
+  - experiment_id: cog_bci_inventory_and_window_caches
+    title: COG-BCI inventory и record-safe window caches
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    task: external_dataset_materialization
+    target: nback_load|matb_protocol
+    model: not_applicable
+    feature_set: 14|62|63 raw_eeg_channels
+    preprocessing: native_500hz_5p12s|polyphase_256hz_10s
+    evaluation_protocol: deterministic record-safe materialization audit
+    inner_protocol: not_applicable
+    seeds: []
+    n_subjects: 29
+    primary_metric:
+      name: accepted_windows
+      direction: null
+      value_source:
+        type: report_only
+    report_path: reports/integration/cog_bci_window_materialization.md
+    runtime_path: benchmark_results/cog_bci_windows
+    config_path: null
+    source_config_path: experiments/cog_bci/window_cache_smoke.json
+    commit: 5c2d407
+    result_summary: 1 044 записи и 29 участников материализованы с record-safe границами и канальными контрактами.
+    scientific_decision: Использовать 14-канальный кэш как основной внешний технический контур.
+    limitations:
+      - Полный 62-канальный raw cache намеренно не материализован.
+    tags: [cog_bci, data, cache, infrastructure]
+
+  - experiment_id: cog_bci_nback_cnn_baseline
+    title: COG-BCI N-Back CNN baseline
+    category: model
+    status: diagnostic
+    consolidation_status: closed_negative
+    task: nback_3class
+    target: nback_load
+    model: EEGNet|ShallowConvNet
+    feature_set: emotiv_common_14ch_raw
+    preprocessing: native_500hz
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    inner_protocol: group_holdout by subject_id
+    seeds: [42]
+    n_subjects: 29
+    primary_metric:
+      name: record_balanced_accuracy
+      direction: higher_is_better
+      value_source:
+        type: json
+        path: benchmark_results/cog_bci_baselines/nback_3class/eegnet_seed42/aggregate_metrics.json
+        key: fold_metrics_mean_std.record.balanced_accuracy.mean
+        optional_runtime: true
+    report_path: reports/integration/cog_bci_nback_baseline.md
+    runtime_path: benchmark_results/cog_bci_baselines/nback_3class
+    config_path: null
+    source_config_path: experiments/cog_bci/nback_eegnet_baseline.json
+    commit: bb81e16
+    result_summary: CNN лишь немного превышают случайный уровень 0.333 по N-Back.
+    scientific_decision: Закрыть CNN-only N-Back track как слабый отрицательный результат.
+    limitations:
+      - Один seed; качество близко к случайному уровню.
+    tags: [cog_bci, cnn, nback, closed_negative]
+
+  - experiment_id: cog_bci_preprocessing_ablation
+    title: COG-BCI N-Back preprocessing ablation
+    category: preprocessing
+    status: diagnostic
+    consolidation_status: closed_negative
+    task: nback_3class
+    target: nback_load
+    model: EEGNet
+    feature_set: emotiv_common_14ch_raw
+    preprocessing: native|demean|bandpass|notch
+    evaluation_protocol: one-fold diagnostic with fixed subject split
+    inner_protocol: group_holdout by subject_id
+    seeds: [42]
+    n_subjects: 29
+    primary_metric:
+      name: validation_loss
+      direction: lower_is_better
+      value_source:
+        type: report_only
+    report_path: reports/integration/cog_bci_nback_preprocessing_ablation.md
+    runtime_path: benchmark_results/cog_bci_preprocessing_ablation
+    config_path: null
+    source_config_path: experiments/cog_bci/nback_preprocessing_ablation.json
+    commit: 5966a61
+    result_summary: Фильтрация подавляет загрязнение, но не улучшает внутренний validation criterion.
+    scientific_decision: Не продолжать preprocessing search без новой гипотезы.
+    limitations:
+      - Однофолдовая диагностическая абляция.
+    tags: [cog_bci, preprocessing, closed_negative]
+
+  - experiment_id: cog_bci_spectral_14_vs_62
+    title: COG-BCI spectral benchmark 14 против 62 каналов
+    category: model
+    status: diagnostic
+    consolidation_status: closed_negative
+    task: nback_3class
+    target: nback_load
+    model: multinomial_logistic_regression|hist_gradient_boosting
+    feature_set: spectral_14ch|spectral_62ch
+    preprocessing: native_500hz
+    evaluation_protocol: 5-fold GroupKFold by subject_id
+    inner_protocol: train-only feature selection
+    seeds: [42]
+    n_subjects: 29
+    primary_metric:
+      name: balanced_accuracy_delta_62_minus_14
+      direction: higher_is_better
+      value_source:
+        type: json
+        path: benchmark_results/cog_bci_spectral_benchmark/nback_3class/benchmark_summary.json
+        key: decision.primary_comparison.balanced_accuracy_delta_62_minus_14
+        optional_runtime: true
+    report_path: reports/integration/cog_bci_nback_spectral_benchmark.md
+    runtime_path: benchmark_results/cog_bci_spectral_benchmark/nback_3class
+    config_path: null
+    source_config_path: experiments/cog_bci/nback_spectral_benchmark.json
+    commit: 2244025
+    result_summary: Прирост 62 каналов +0.0077 balanced accuracy не достиг порога решения.
+    scientific_decision: retain_14_channel_cache
+    limitations:
+      - Диагностический single-seed benchmark; bootstrap не трактуется как significance test.
+    tags: [cog_bci, spectral, channels, closed_negative]
+
+  - experiment_id: cog_bci_shape_only_contrastive_transfer
+    title: Shape-only contrastive transfer COG-BCI → label_q5
+    category: model
+    status: diagnostic
+    consolidation_status: closed_negative
+    task: contrastive_transfer_screening
+    target: label_q5
+    model: EEGNet_encoder
+    feature_set: emotiv_common_14ch_raw
+    preprocessing: shape_compatible_500hz_5p12s
+    evaluation_protocol: one protected downstream fold
+    inner_protocol: subject-disjoint pretraining validation
+    seeds: [42]
+    n_subjects: 29
+    primary_metric:
+      name: downstream_macro_f1
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: benchmark_results/cog_bci_contrastive_transfer/downstream_fold_metrics.csv
+        filters:
+          mode: full_model
+          level: window
+        column: macro_f1
+        aggregation: first
+        optional_runtime: true
+    report_path: reports/integration/cog_bci_contrastive_transfer_screening.md
+    runtime_path: benchmark_results/cog_bci_contrastive_transfer
+    config_path: null
+    source_config_path: experiments/cog_bci/contrastive_eegnet_transfer_screening.json
+    commit: 57ac7d3
+    result_summary: Shape-only pretraining не превзошёл random initialization downstream.
+    scientific_decision: Не расширять shape-only transfer на новые folds или seeds.
+    limitations:
+      - Screening использует один заранее защищённый downstream fold.
+    tags: [cog_bci, contrastive, transfer, closed_negative]
+
+  - experiment_id: cog_bci_time_aligned_contrastive_transfer
+    title: Time-aligned contrastive transfer COG-BCI → label_q5
+    category: model
+    status: diagnostic
+    consolidation_status: closed_negative
+    task: contrastive_transfer_screening
+    target: label_q5
+    model: EEGNet_encoder
+    feature_set: emotiv_common_14ch_raw
+    preprocessing: polyphase_256hz_10s
+    evaluation_protocol: one protected downstream fold
+    inner_protocol: subject-disjoint pretraining validation
+    seeds: [42]
+    n_subjects: 29
+    primary_metric:
+      name: downstream_macro_f1
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: benchmark_results/cog_bci_time_aligned_transfer/downstream_fold_metrics.csv
+        filters:
+          mode: time_aligned
+          fold: 2
+          seed: 42
+        column: macro_f1
+        aggregation: first
+        optional_runtime: true
+    report_path: reports/integration/cog_bci_time_aligned_transfer_screening.md
+    runtime_path: benchmark_results/cog_bci_time_aligned_transfer
+    config_path: null
+    source_config_path: experiments/cog_bci/time_aligned_eegnet_transfer_screening.json
+    commit: 35312f1
+    result_summary: Временное согласование улучшило contrastive representations, но не downstream относительно random initialization.
+    scientific_decision: close_transfer_track
+    limitations:
+      - Screening использует один заранее защищённый downstream fold.
+    tags: [cog_bci, contrastive, transfer, closed_negative]
+
 unresolved_entries:
   - experiment_id: label_q5_lightgbm_baseline
     missing_field: structured final result and primary metric

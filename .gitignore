@@ -54,3 +54,9 @@ data/external/
 AGENTS.md
 PROJECT_CONTEXT.md
 TODO.md
+
+
+# Deterministic final report artifacts
+!reports/summary/final_experiment_inventory.csv
+!reports/summary/final_result_tables/
+!reports/summary/final_result_tables/*.csv

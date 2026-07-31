@@ -1,0 +1,9 @@
+﻿area,limitation,mitigation
+data access,Raw proprietary Emotiv recordings are not stored in Git.,"Tracked loaders, hashes, manifests and dataset statistics."
+runtime artifacts,"Predictions, checkpoints and caches are intentionally ignored by Git.",Relative artifact paths and checksums are recorded in reports/manifests.
+hardware,Torch runtimes were produced on an NVIDIA RTX 5060 Ti; exact timing is hardware-dependent.,Device and training time are saved; CPU unit tests cover contracts.
+software environment,Exact CUDA/kernel determinism can vary across library and driver versions.,"Seeds, library requirements, configs and checkpoints are retained."
+label definition,Canonical label_q5 uses global quantile thresholds computed before subject splitting.,Cross-fitted label sensitivity analysis shows 2.6816% changed windows.
+external transfer,Transfer screening uses one protected downstream fold.,Result is explicitly diagnostic and the track is closed rather than generalized.
+COG-BCI preprocessing history,Upstream EEGLAB processing history is incompletely known.,Metadata records unknown history and requires explicit opt-in for additional filters.
+formal specification,No authoritative tracked legal/acceptance specification was found.,Requirement map distinguishes project-plan evidence from formal acceptance.

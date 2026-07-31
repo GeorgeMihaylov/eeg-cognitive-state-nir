@@ -1,0 +1,11 @@
+﻿model,input_representation,analysis_unit,supported_task
+Random Forest,aggregated EEG/POW,window,classification/regression
+sklearn MLP,aggregated EEG/POW,window,classification
+Torch MLP,aggregated EEG/POW,window,classification/regression
+LSTM,aggregated EEG/POW,sequence,classification
+BiLSTM,aggregated EEG/POW,sequence,classification
+Transformer,aggregated EEG/POW,sequence,categorical/ordinal
+EEGNet,raw EEG,window,classification/encoder
+ShallowConvNet,raw EEG,window,classification
+Mean regressor,target-only train mean,window,regression reference
+Spectral logistic/HGB,bandpower features,record,COG-BCI diagnostic

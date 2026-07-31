@@ -1,0 +1,11 @@
+﻿comparison,method,channel_policy,analysis_unit,protocol,seed,accuracy,balanced_accuracy,macro_f1,reference
+CNN N-Back,EEGNet,14 channels,record,5-fold GroupKFold by subject_id,42,0.35777777777777775,0.3577777777777778,0.34113342321215223,chance=0.333
+CNN N-Back,ShallowConvNet,14 channels,record,5-fold GroupKFold by subject_id,42,0.3540740740740741,0.3540740740740741,0.3497282163878577,chance=0.333
+spectral channels,multinomial logistic regression,14 channels,record,5-fold GroupKFold by subject_id,42,,0.4367816091954022,,chance=0.333
+spectral channels,multinomial logistic regression,62 channels,record,5-fold GroupKFold by subject_id,42,,0.4444444444444445,,chance=0.333
+shape-only transfer,random_init,14 channels,window,one protected downstream fold,42,0.2975039676814312,0.2997468674399178,0.2702358042347172,label_q5 chance=0.20
+shape-only transfer,head_only,14 channels,window,one protected downstream fold,42,0.2562400807964218,0.2504676125785158,0.2435458230155477,label_q5 chance=0.20
+shape-only transfer,full_model,14 channels,window,one protected downstream fold,42,0.27600634829029,0.2760155941762682,0.2692024967220024,label_q5 chance=0.20
+time-aligned transfer,random_init,14 channels,window,one protected downstream fold,42,0.276970284237726,0.2756981728497062,0.270451535742436,label_q5 chance=0.20
+time-aligned transfer,shape_only,14 channels,window,one protected downstream fold,42,0.2532299741602067,0.2529559724674651,0.2504102016900592,label_q5 chance=0.20
+time-aligned transfer,time_aligned,14 channels,window,one protected downstream fold,42,0.2698643410852713,0.26767141465173,0.2685077031072879,label_q5 chance=0.20
