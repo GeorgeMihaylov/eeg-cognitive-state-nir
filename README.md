@@ -181,6 +181,10 @@ A confirmatory five-fold, three-seed DANN protocol is now prepared. Its
 preregistration remains disabled, and confirmatory training has not been
 performed; see `reports/integration/dann_label_q5_confirmatory_protocol.md`.
 
+The refined confirmatory DANN analysis separates new seeds 123 and 2026 from
+the previously observed fold-1/seed-42 diagnostic cell. Seed 42 is retained
+only as secondary sensitivity evidence, and training has not started.
+
 Тесты:
 
 ```powershell

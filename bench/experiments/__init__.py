@@ -120,6 +120,17 @@ from .dann_label_q5_confirmatory_protocol import (
     run_confirmatory_protocol,
     validate_confirmatory_config,
 )
+from .dann_label_q5_confirmatory_v2_protocol import (
+    DANNConfirmatoryV2ProtocolResult,
+    aggregate_participant_deltas,
+    apply_primary_decision_rule,
+    build_dann_label_q5_confirmatory_v2_protocol,
+    build_run_matrix as build_dann_confirmatory_v2_run_matrix,
+    compute_confirmatory_v2_protocol_hash,
+    refuse_observed_diagnostic_rerun,
+    run_confirmatory_v2_protocol,
+    validate_confirmatory_v2_config,
+)
 
 __all__ = [
     "ExperimentTrial",
@@ -214,4 +225,13 @@ __all__ = [
     "domain_head_signature",
     "run_confirmatory_protocol",
     "validate_confirmatory_config",
+    "DANNConfirmatoryV2ProtocolResult",
+    "aggregate_participant_deltas",
+    "apply_primary_decision_rule",
+    "build_dann_label_q5_confirmatory_v2_protocol",
+    "build_dann_confirmatory_v2_run_matrix",
+    "compute_confirmatory_v2_protocol_hash",
+    "refuse_observed_diagnostic_rerun",
+    "run_confirmatory_v2_protocol",
+    "validate_confirmatory_v2_config",
 ]
