@@ -170,7 +170,12 @@ not improve participant-level macro F1 over supervised full-model adaptation
 `do_not_proceed`. This remains a one-fold diagnostic, not a final benchmark;
 see `reports/integration/fomaml_label_q5_raw_diagnostic.md`.
 
-DANN raw-domain protocol prepared; no domain-adaptation training performed.
+The authorized one-fold, seed-42 raw DANN diagnostic has now compared
+Old_EEG-to-gpn_data adaptation with a matched source-only EEGNet. DANN reached
+the preregistered diagnostic status `proceed` (mean participant macro-F1 delta
++0.0134; balanced-accuracy delta +0.0191; 6/8 wins), but the participant
+bootstrap interval includes zero. This is not a final domain-adaptation result;
+see `reports/integration/dann_label_q5_raw_diagnostic.md`.
 
 Тесты:
 

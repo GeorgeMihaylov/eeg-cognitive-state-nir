@@ -100,6 +100,18 @@ from .dann_label_q5_raw_protocol import (
     select_primary_direction,
     validate_dann_raw_protocol_config,
 )
+from .dann_label_q5_raw_diagnostic import (
+    DANNLabelQ5RawDiagnostic,
+    TargetTestLock,
+    apply_dann_decision_rule,
+    batch_plan_hash,
+    deterministic_batch_plan,
+    enforce_target_batch_firewall,
+    logistic_grl_alpha,
+    paired_dann_comparison,
+    run_dann_label_q5_raw_diagnostic,
+    validate_dann_diagnostic_config,
+)
 
 __all__ = [
     "ExperimentTrial",
@@ -178,4 +190,14 @@ __all__ = [
     "run_cpu_forward_audit",
     "select_primary_direction",
     "validate_dann_raw_protocol_config",
+    "DANNLabelQ5RawDiagnostic",
+    "TargetTestLock",
+    "apply_dann_decision_rule",
+    "batch_plan_hash",
+    "deterministic_batch_plan",
+    "enforce_target_batch_firewall",
+    "logistic_grl_alpha",
+    "paired_dann_comparison",
+    "run_dann_label_q5_raw_diagnostic",
+    "validate_dann_diagnostic_config",
 ]
