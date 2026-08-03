@@ -177,6 +177,10 @@ the preregistered diagnostic status `proceed` (mean participant macro-F1 delta
 bootstrap interval includes zero. This is not a final domain-adaptation result;
 see `reports/integration/dann_label_q5_raw_diagnostic.md`.
 
+A confirmatory five-fold, three-seed DANN protocol is now prepared. Its
+preregistration remains disabled, and confirmatory training has not been
+performed; see `reports/integration/dann_label_q5_confirmatory_protocol.md`.
+
 Тесты:
 
 ```powershell

@@ -112,6 +112,14 @@ from .dann_label_q5_raw_diagnostic import (
     run_dann_label_q5_raw_diagnostic,
     validate_dann_diagnostic_config,
 )
+from .dann_label_q5_confirmatory_protocol import (
+    DANNConfirmatoryProtocolResult,
+    build_dann_label_q5_confirmatory_protocol,
+    compute_confirmatory_protocol_hash,
+    domain_head_signature,
+    run_confirmatory_protocol,
+    validate_confirmatory_config,
+)
 
 __all__ = [
     "ExperimentTrial",
@@ -200,4 +208,10 @@ __all__ = [
     "paired_dann_comparison",
     "run_dann_label_q5_raw_diagnostic",
     "validate_dann_diagnostic_config",
+    "DANNConfirmatoryProtocolResult",
+    "build_dann_label_q5_confirmatory_protocol",
+    "compute_confirmatory_protocol_hash",
+    "domain_head_signature",
+    "run_confirmatory_protocol",
+    "validate_confirmatory_config",
 ]
