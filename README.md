@@ -170,6 +170,8 @@ not improve participant-level macro F1 over supervised full-model adaptation
 `do_not_proceed`. This remains a one-fold diagnostic, not a final benchmark;
 see `reports/integration/fomaml_label_q5_raw_diagnostic.md`.
 
+DANN raw-domain protocol prepared; no domain-adaptation training performed.
+
 Тесты:
 
 ```powershell

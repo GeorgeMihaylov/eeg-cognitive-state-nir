@@ -89,6 +89,17 @@ from .fomaml_label_q5_raw_diagnostic import (
     validate_raw_diagnostic_config,
     validate_raw_episode_protocol,
 )
+from .dann_label_q5_raw_protocol import (
+    PROTOCOL_ID as DANN_RAW_PROTOCOL_ID,
+    DANNRawProtocolBuildResult,
+    build_dann_label_q5_raw_protocol,
+    build_direction_candidate,
+    build_domain_inventory,
+    build_logical_deduplication_audit,
+    run_cpu_forward_audit,
+    select_primary_direction,
+    validate_dann_raw_protocol_config,
+)
 
 __all__ = [
     "ExperimentTrial",
@@ -158,4 +169,13 @@ __all__ = [
     "run_fomaml_label_q5_raw_diagnostic",
     "validate_raw_diagnostic_config",
     "validate_raw_episode_protocol",
+    "DANN_RAW_PROTOCOL_ID",
+    "DANNRawProtocolBuildResult",
+    "build_dann_label_q5_raw_protocol",
+    "build_direction_candidate",
+    "build_domain_inventory",
+    "build_logical_deduplication_audit",
+    "run_cpu_forward_audit",
+    "select_primary_direction",
+    "validate_dann_raw_protocol_config",
 ]

@@ -1,0 +1,138 @@
+{
+  "schema_version": "1.0",
+  "experiment_id": "dann_label_q5_raw_protocol_preparation_v1",
+  "protocol_id": "dann_label_q5_raw_deduplicated_source_transfer_v1",
+  "execution_enabled": false,
+  "result_status": "diagnostic",
+  "output_dir": "benchmark_results/domain_adaptation_dann_raw_protocol",
+  "seed": 42,
+  "outer_fold": 1,
+  "dataset": {
+    "dataset_id": "emotiv_raw_eeg_raw_deduplicated_w10_raw_v3",
+    "cache_id": "raw-2251ca950a467267",
+    "manifest": "data/interim/raw_eeg_window_index_w10_raw_v3.parquet",
+    "logical_recording_map": "data/interim/logical_recording_map.parquet",
+    "expected_samples": 30958,
+    "channels": 14,
+    "samples_per_window": 2560,
+    "sampling_rate": 256,
+    "window_duration_seconds": 10.0,
+    "finite_windows_per_shard": 1,
+    "canonical_raw_universe_reference": "benchmark_results/meta_learning_fomaml_label_q5_raw_protocol/raw_universe_manifest.json",
+    "expected_raw_universe_hash": "308fdd96523565417d0fc2f3b3bfdea74639224ce1ee44f5e87af6cc0b7e94cf"
+  },
+  "outer_fold_assignments": "benchmark_results/groupkfold_rf_label_q5/20260713_182031/emotiv_cognitive/cognitive_load_5class/random_forest/group_kfold_subject/predictions.parquet",
+  "expected_outer_fold_artifact_sha256": "41ec5a244e11b5dd4ff25faa7361f2bca302dd719612fea8cbc54a55b6ff3341",
+  "old_protocol_manifest": "benchmark_results/meta_learning_fomaml_production_contract/meta_validation_protocol.json",
+  "old_protocol_hash": "a3e6ff5ee2dbfa1638ffee9180ddff582dbab8aa6186e164320dd92f082871e8",
+  "domains": {
+    "gpn_data": 0,
+    "Old_EEG": 1
+  },
+  "directions": [
+    {
+      "direction_id": "gpn_data_to_Old_EEG",
+      "source_domain": "gpn_data",
+      "target_domain": "Old_EEG"
+    },
+    {
+      "direction_id": "Old_EEG_to_gpn_data",
+      "source_domain": "Old_EEG",
+      "target_domain": "gpn_data"
+    }
+  ],
+  "subject_policies": [
+    "allow_cross_domain_train_subjects",
+    "strict_cross_domain_subject_disjoint"
+  ],
+  "strict_shared_subject_rule": "retain_in_source_loader_exclude_from_target_loader",
+  "feasibility_thresholds": {
+    "source_outer_train_subjects": 10,
+    "target_outer_train_subjects": 5,
+    "target_outer_test_subjects": 5
+  },
+  "source_validation": {
+    "fraction": 0.2,
+    "minimum_subjects": 3,
+    "group_column": "subject_id",
+    "selection": "stable_hash_seed_order",
+    "seed": 42
+  },
+  "primary_selection_rule": [
+    "require_target_outer_test_subjects_at_least_5",
+    "maximize_target_outer_test_subjects",
+    "maximize_target_outer_train_subjects",
+    "maximize_source_outer_train_subjects",
+    "lexical_source_domain"
+  ],
+  "batching": {
+    "source_batch_size": 32,
+    "target_batch_size": 32,
+    "epoch_steps": "max(ceil(source_samples/source_batch_size),ceil(target_samples/target_batch_size))",
+    "smaller_loader_policy": "deterministic_cycle",
+    "drop_last": false,
+    "class_weighting": "none",
+    "domain_weighting": "constant_lambda_1.0"
+  },
+  "schedule": {
+    "gradient_reversal": {
+      "name": "logistic",
+      "formula": "alpha(p)=2/(1+exp(-10*p))-1",
+      "progress": "global_step/max(total_steps-1,1)"
+    },
+    "domain_loss": {
+      "name": "constant",
+      "lambda_domain": 1.0
+    }
+  },
+  "architecture": {
+    "model": "torch_eegnet",
+    "model_config": "configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml",
+    "expected_architecture_signature": "248d244e050af2b9e5bd1de0b706665efd3cb13a642044a965fc85602bbe23a7",
+    "input_shape": [1, 14, 2560],
+    "num_outputs": 5,
+    "domain_hidden_dims": [128, 64],
+    "domain_dropout": 0.2,
+    "n_domains": 2,
+    "device": "cpu"
+  },
+  "future_training": {
+    "modes": [
+      "source_only",
+      "dann",
+      "target_supervised_upper_bound"
+    ],
+    "checkpoint_criterion": "source_validation_macro_f1",
+    "early_stopping_partition": "source_validation",
+    "checkpoint_monitoring": [
+      "source_validation_balanced_accuracy",
+      "domain_discriminator_accuracy",
+      "domain_loss",
+      "task_loss"
+    ],
+    "target_train_task_labels_accessible": false,
+    "outer_test_selection_accessible": false,
+    "metrics": [
+      "participant_level_macro_f1",
+      "participant_level_balanced_accuracy",
+      "accuracy",
+      "balanced_accuracy",
+      "macro_f1",
+      "weighted_f1",
+      "kappa",
+      "auc",
+      "ordinal_mae",
+      "adjacent_accuracy",
+      "severe_error_rate"
+    ],
+    "decision_rule": {
+      "comparison": "dann_minus_source_only_on_target_test_subjects",
+      "proceed_mean_macro_f1_gain": 0.01,
+      "proceed_mean_balanced_accuracy_gain": 0.0,
+      "proceed_min_subject_win_fraction": 0.6,
+      "do_not_proceed_if_both_primary_metrics_worsen": true,
+      "do_not_proceed_max_subject_win_fraction": 0.3,
+      "small_target_sample_interpretation": "diagnostic"
+    }
+  }
+}
