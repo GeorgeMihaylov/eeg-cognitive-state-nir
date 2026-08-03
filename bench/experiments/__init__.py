@@ -65,6 +65,22 @@ from .fomaml_label_q5_diagnostic import (
     validate_diagnostic_config,
     validate_episode_protocol,
 )
+from .fomaml_label_q5_raw_protocol import (
+    PROTOCOL_ID as FOMAML_RAW_PROTOCOL_ID,
+    RawProtocolBuildResult,
+    audit_episode_index,
+    audit_outer_fold,
+    audit_participant_eligibility,
+    audit_support_budget,
+    build_class_policy_audit,
+    build_episode_index,
+    build_fomaml_label_q5_raw_protocol,
+    choose_meta_validation_subjects,
+    compute_protocol_hash,
+    episode_identifier,
+    load_raw_deduplicated_universe,
+    validate_raw_protocol_config,
+)
 
 __all__ = [
     "ExperimentTrial",
@@ -114,4 +130,18 @@ __all__ = [
     "select_buffer_policy",
     "validate_diagnostic_config",
     "validate_episode_protocol",
+    "FOMAML_RAW_PROTOCOL_ID",
+    "RawProtocolBuildResult",
+    "audit_episode_index",
+    "audit_outer_fold",
+    "audit_participant_eligibility",
+    "audit_support_budget",
+    "build_class_policy_audit",
+    "build_episode_index",
+    "build_fomaml_label_q5_raw_protocol",
+    "choose_meta_validation_subjects",
+    "compute_protocol_hash",
+    "episode_identifier",
+    "load_raw_deduplicated_universe",
+    "validate_raw_protocol_config",
 ]

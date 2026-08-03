@@ -158,6 +158,11 @@ Pre-training audit этого diagnostic выявил несовпадение t
 raw-deduplicated cache и остановил эксперимент до первого gradient step. Для
 продолжения нужен новый явно утверждённый raw-deduplicated protocol hash.
 
+The first real-data FOMAML diagnostic remains blocked by the feature/raw
+sample-universe mismatch. A separate raw-deduplicated episode protocol and
+disabled preregistration now exist; no training has been run under the new
+protocol.
+
 Тесты:
 
 ```powershell
