@@ -163,6 +163,13 @@ sample-universe mismatch. A separate raw-deduplicated episode protocol and
 disabled preregistration now exist; no training has been run under the new
 protocol.
 
+The separately authorized raw-deduplicated diagnostic has now run once with
+production EEGNet on outer fold 1 and seed 42. The selected FOMAML policy did
+not improve participant-level macro F1 over supervised full-model adaptation
+(mean delta -0.0463; 1/5 wins), so the preregistered decision is
+`do_not_proceed`. This remains a one-fold diagnostic, not a final benchmark;
+see `reports/integration/fomaml_label_q5_raw_diagnostic.md`.
+
 Тесты:
 
 ```powershell

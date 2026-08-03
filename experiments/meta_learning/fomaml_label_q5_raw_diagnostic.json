@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "experiment_id": "fomaml_label_q5_raw_deduplicated_diagnostic_v1",
+  "result_status": "diagnostic",
+  "execution_enabled": true,
+  "output_dir": "benchmark_results/meta_learning_fomaml_label_q5_raw_diagnostic",
+  "dataset": {
+    "name": "emotiv_raw_eeg",
+    "config": "configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml",
+    "target": "label_q5",
+    "classes": 5,
+    "input_shape": [1, 14, 2560],
+    "sampling_rate": 256,
+    "window_duration_seconds": 10.0,
+    "expected_samples": 30958,
+    "expected_cache_id": "raw-2251ca950a467267"
+  },
+  "protocol": {
+    "id": "fomaml_label_q5_raw_deduplicated_v2",
+    "outer_fold": 1,
+    "manifest": "benchmark_results/meta_learning_fomaml_label_q5_raw_protocol/protocol_manifest.json",
+    "episode_index": "benchmark_results/meta_learning_fomaml_label_q5_raw_protocol/episode_index.parquet",
+    "errors": "benchmark_results/meta_learning_fomaml_label_q5_raw_protocol/errors.csv",
+    "raw_universe_manifest": "benchmark_results/meta_learning_fomaml_label_q5_raw_protocol/raw_universe_manifest.json",
+    "disabled_preregistration": "benchmark_results/meta_learning_fomaml_label_q5_raw_protocol/preregistration/experiment_preregistration.json",
+    "expected_hash": "e73703a443aea3b34f62606efa76bd592ff70099a30cdca80d292f1d76a1fd60",
+    "raw_universe_hash": "308fdd96523565417d0fc2f3b3bfdea74639224ce1ee44f5e87af6cc0b7e94cf",
+    "outer_fold_artifact_sha256": "41ec5a244e11b5dd4ff25faa7361f2bca302dd719612fea8cbc54a55b6ff3341",
+    "outer_split_hash": "b8591f6a0ff5a8abc2f99a9358629117583e1c219662ddc444a99cba473a6041",
+    "meta_split_hash": "255844005f38e46e561222e5eb9add6c4b6b003934896f3f323c1075dc186cc1",
+    "episode_spec_hash": "ab1caa365614b9c369195b507395e76df8b7f9106bbe99a91379f069e2620b0b",
+    "protocol_file_sha256": "bf6d2eb7156483f636a45a38c7f3fde36242511e2e55d9fc54766d0b513d36ce",
+    "episode_file_sha256": "707e8300430054fa88ab4fa16d8cfc19646bf432fd5ab032321880aad08816fb",
+    "errors_file_sha256": "0a341681eb54766448c9dd9dad14b4eb2c3e6b8b6019593f1a191b012937fd92",
+    "raw_universe_file_sha256": "126178a50233f447d8afce18576c0f443b8911236f878e9da1259d365bb6c970",
+    "disabled_preregistration_sha256": "dc998ca72142678394e6f85e10d4b89b1fd0205a6a87be5cae2ba26c37c98692",
+    "episode_counts": {
+      "meta_train": 11,
+      "meta_validation": 5,
+      "outer_test": 5
+    },
+    "support_budget": "one_complete_early_record",
+    "query_budget": "all_remaining_complete_records",
+    "minimum_support_windows": 32,
+    "minimum_query_windows": 64,
+    "training_sample_contract": "union_of_raw_meta_train_support_and_query_ids",
+    "supervised_validation_contract": "raw_meta_validation_query_ids_only"
+  },
+  "model": {
+    "name": "torch_eegnet",
+    "architecture_signature": "248d244e050af2b9e5bd1de0b706665efd3cb13a642044a965fc85602bbe23a7",
+    "latent_dim": 1280,
+    "parameter_count": 8501,
+    "outputs": 5
+  },
+  "seed": 42,
+  "device": "auto",
+  "supervised": {
+    "batch_size": 64,
+    "maximum_epochs": 12,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "early_stopping_patience": 3,
+    "checkpoint_criterion": "meta_validation_query_macro_f1"
+  },
+  "fomaml": {
+    "inner_steps": 1,
+    "inner_learning_rate": 0.01,
+    "meta_learning_rate": 0.001,
+    "meta_batch_size": 4,
+    "maximum_meta_epochs": 8,
+    "early_stopping_patience": 3,
+    "gradient_clip_norm": 5.0,
+    "meta_optimizer": "Adam",
+    "checkpoint_criterion": "mean_meta_validation_subject_macro_f1",
+    "buffer_policies": [
+      "frozen_global",
+      "support_local"
+    ]
+  },
+  "baselines": [
+    "zero_shot_supervised",
+    "supervised_full_model"
+  ],
+  "primary_metric": "mean_subject_macro_f1",
+  "secondary_metrics": [
+    "mean_subject_balanced_accuracy",
+    "accuracy",
+    "weighted_f1",
+    "macro_precision",
+    "macro_recall",
+    "ordinal_mae",
+    "quadratic_weighted_kappa",
+    "per_class_recall",
+    "prediction_entropy"
+  ],
+  "policy_selection": {
+    "primary": "mean_meta_validation_subject_macro_f1",
+    "secondary": "mean_meta_validation_subject_balanced_accuracy",
+    "frozen_global_tie_threshold": 0.005
+  },
+  "decision_rule": {
+    "proceed_macro_f1_gain": 0.01,
+    "proceed_balanced_accuracy_min_gain": -0.005,
+    "proceed_min_wins": 3,
+    "strong_macro_f1_gain": 0.02,
+    "strong_balanced_accuracy_gain": 0.01,
+    "strong_min_wins": 4,
+    "do_not_proceed_max_wins": 1
+  },
+  "bootstrap_resamples": 10000
+}

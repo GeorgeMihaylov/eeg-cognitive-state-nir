@@ -81,6 +81,14 @@ from .fomaml_label_q5_raw_protocol import (
     load_raw_deduplicated_universe,
     validate_raw_protocol_config,
 )
+from .fomaml_label_q5_raw_diagnostic import (
+    FOMAMLLabelQ5RawDiagnostic,
+    build_support_budget_analysis,
+    paired_subject_bootstrap,
+    run_fomaml_label_q5_raw_diagnostic,
+    validate_raw_diagnostic_config,
+    validate_raw_episode_protocol,
+)
 
 __all__ = [
     "ExperimentTrial",
@@ -144,4 +152,10 @@ __all__ = [
     "episode_identifier",
     "load_raw_deduplicated_universe",
     "validate_raw_protocol_config",
+    "FOMAMLLabelQ5RawDiagnostic",
+    "build_support_budget_analysis",
+    "paired_subject_bootstrap",
+    "run_fomaml_label_q5_raw_diagnostic",
+    "validate_raw_diagnostic_config",
+    "validate_raw_episode_protocol",
 ]
