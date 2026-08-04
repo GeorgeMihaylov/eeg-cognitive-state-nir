@@ -137,8 +137,9 @@ python src/19_build_project_final_package.py --repo-root .
 python scripts/build_meta_learning_episodes.py --config experiments/meta_learning/episode_infrastructure_smoke.json --verbose
 ```
 
-Эпизодическая инфраструктура реализована, но алгоритм метаобучения не
-реализован и meta-learning experiment не выполнялся.
+Эпизодическая инфраструктура, synthetic FOMAML contract и production
+BatchNorm policies реализованы. Они являются инженерными контрактами, а не
+доказательством качества метаобучения.
 
 Синтетический CPU-контракт FOMAML реализован и проверяется отдельно:
 
@@ -146,47 +147,20 @@ python scripts/build_meta_learning_episodes.py --config experiments/meta_learnin
 python scripts/run_fomaml_synthetic_smoke.py --config experiments/meta_learning/fomaml_synthetic_smoke.json --verbose
 ```
 
-Это не EEG-эксперимент. Для production FOMAML проверены явные политики
-BatchNorm `frozen_global` и `support_local`; реальный EEG meta-learning
-experiment не выполнялся и остаётся отключённым отдельным конфигом.
+Raw-deduplicated FOMAML проверен как ограниченный EEGNet diagnostic (один
+fold, seed 42, пять участников). Participant-level macro F1 ухудшился на
+−0.046338 относительно supervised full-model adaptation; preregistered
+решение — `do_not_proceed`.
 
-Ограниченный real-data diagnostic для EEGNet/`label_q5` запускается только
-из preregistered one-fold/one-seed конфигурации; его результаты не являются
-полным многосидовым или пятифолдовым выводом.
-
-Pre-training audit этого diagnostic выявил несовпадение task-8Ф episode IDs с
-raw-deduplicated cache и остановил эксперимент до первого gradient step. Для
-продолжения нужен новый явно утверждённый raw-deduplicated protocol hash.
-
-The first real-data FOMAML diagnostic remains blocked by the feature/raw
-sample-universe mismatch. A separate raw-deduplicated episode protocol and
-disabled preregistration now exist; no training has been run under the new
-protocol.
-
-The separately authorized raw-deduplicated diagnostic has now run once with
-production EEGNet on outer fold 1 and seed 42. The selected FOMAML policy did
-not improve participant-level macro F1 over supervised full-model adaptation
-(mean delta -0.0463; 1/5 wins), so the preregistered decision is
-`do_not_proceed`. This remains a one-fold diagnostic, not a final benchmark;
-see `reports/integration/fomaml_label_q5_raw_diagnostic.md`.
-
-The authorized one-fold, seed-42 raw DANN diagnostic has now compared
-Old_EEG-to-gpn_data adaptation with a matched source-only EEGNet. DANN reached
-the preregistered diagnostic status `proceed` (mean participant macro-F1 delta
-+0.0134; balanced-accuracy delta +0.0191; 6/8 wins), but the participant
-bootstrap interval includes zero. This is not a final domain-adaptation result;
-see `reports/integration/dann_label_q5_raw_diagnostic.md`.
-
-The preregistered five-fold DANN confirmation is complete. The primary
-analysis uses only new seeds 123 and 2026 and is `partially_confirmed`: mean
-participant macro-F1 delta +0.00805, median +0.00195, balanced-accuracy delta
-+0.00833, and 54.8% participant wins. The participant bootstrap interval
-crosses zero, so no standalone significance claim is made.
-
-Seed 42 remains a separate sensitivity analysis; its existing fold-1
-diagnostic cell was hash-verified and was not retrained. The combined
-three-seed sensitivity is positive but does not alter the immutable primary
-decision. See `reports/integration/dann_label_q5_confirmatory_v2.md`.
+DANN в направлении `Old_EEG → gpn_data` прошёл подтверждающий анализ на
+пяти folds и двух primary seeds (123, 2026). Статус —
+`partially_confirmed`: primary Δmacro F1 **+0.008048**, Δbalanced accuracy
+**+0.008332**, Δordinal MAE **−0.034008**. Seed 42 остаётся отдельным
+sensitivity seed; diagnostic fold 1 / seed 42 не включён в primary decision.
+Всего подтверждающий этап потребовал 28 новых trainings. Bootstrap interval
+включает ноль, поэтому статистическая значимость и полная доменная
+инвариантность не заявляются. Итог: [сводный отчёт](reports/summary/final_project_results.md)
+и [таблицы](reports/summary/final_result_tables/).
 
 Тесты:
 

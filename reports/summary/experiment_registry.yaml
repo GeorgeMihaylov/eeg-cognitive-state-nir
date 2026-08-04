@@ -1449,6 +1449,372 @@ experiments:
       - Screening использует один заранее защищённый downstream fold.
     tags: [cog_bci, contrastive, transfer, closed_negative]
 
+  - task_id: 8T
+    experiment_id: meta_learning_episode_infrastructure_v1
+    title: Leakage-safe episodic meta-learning infrastructure
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    stage_status: infrastructure complete
+    task: meta_learning_infrastructure
+    target: label_q5|nback_load
+    model: episodic_contract
+    dataset: gpn_data + Old_EEG | COG-BCI
+    feature_set: identity_manifests_only
+    preprocessing: not_applicable
+    evaluation_protocol: protected outer-partition episode materialization
+    analysis_level: infrastructure
+    folds: [1]
+    seeds: [42]
+    training_performed: false
+    target_test_performed: false
+    protocol_hash: 3ff1645dd413fab8c5a1d5d7cab8b1ba75e6c1ea1358997a0dd24fe36e9aa88d
+    preregistration_hash: not_applicable
+    primary_metric: {name: leakage_audit, direction: null, value_source: {type: report_only}}
+    primary_result: 15 leakage-safe episodes; zero forbidden overlap
+    result_summary: Leakage-safe episode infrastructure complete; no training performed.
+    report_path: reports/integration/meta_learning_infrastructure.md
+    runtime_path: benchmark_results/meta_learning_infrastructure
+    config_path: null
+    source_config_path: experiments/meta_learning/episode_infrastructure_smoke.json
+    commit: b384f7c
+    scientific_decision: Infrastructure complete; no meta-learning quality claim.
+    limitations: [No meta-learning algorithm or model training was performed.]
+    tags: [meta_learning, infrastructure]
+
+  - task_id: 8U
+    experiment_id: fomaml_synthetic_contract_v1
+    title: Synthetic First-Order MAML contract
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    stage_status: infrastructure only
+    task: fomaml_contract
+    target: synthetic_3class
+    model: synthetic_fomaml
+    dataset: synthetic contract / not applicable
+    feature_set: synthetic_2d
+    preprocessing: not_applicable
+    evaluation_protocol: deterministic CPU contract smoke
+    analysis_level: infrastructure
+    folds: []
+    seeds: [42]
+    training_performed: true
+    target_test_performed: false
+    protocol_hash: d6e29b39e45362a60bce6c6fec799ad6363d3525cf6bf1a3e7fd2388dd80faf0
+    preregistration_hash: 02ddaf37fb7b357886154f05f0e69609ab302535702205ea914f5cca44821a9b
+    primary_metric: {name: deterministic_contract, direction: null, value_source: {type: report_only}}
+    primary_result: Deterministic first-order synthetic smoke; not EEG evidence.
+    result_summary: Deterministic synthetic FOMAML contract; infrastructure only.
+    report_path: reports/integration/fomaml_synthetic_contract.md
+    runtime_path: benchmark_results/meta_learning_fomaml_synthetic
+    config_path: null
+    source_config_path: experiments/meta_learning/fomaml_synthetic_smoke.json
+    commit: 851faf5
+    scientific_decision: Infrastructure only; do not interpret as EEG model quality.
+    limitations: [Synthetic CPU task only; no real EEG training.]
+    tags: [fomaml, synthetic, infrastructure]
+
+  - task_id: 8F
+    experiment_id: fomaml_production_buffer_contract_v1
+    title: Production FOMAML BatchNorm and validation contract
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    stage_status: production contract ready
+    task: fomaml_contract
+    target: label_q5
+    model: EEGNet|ShallowConvNet
+    dataset: gpn_data + Old_EEG
+    feature_set: raw_eeg_contract
+    preprocessing: raw_deduplicated
+    evaluation_protocol: read-only checkpoint and synthetic compatibility audit
+    analysis_level: infrastructure
+    folds: []
+    seeds: [42]
+    training_performed: false
+    target_test_performed: false
+    protocol_hash: a3e6ff5ee2dbfa1638ffee9180ddff582dbab8aa6186e164320dd92f082871e8
+    preregistration_hash: not_applicable
+    primary_metric: {name: buffer_policy_audit, direction: null, value_source: {type: report_only}}
+    primary_result: frozen_global and support_local policies validated.
+    result_summary: Production buffer and meta-validation contract is ready without EEG training.
+    report_path: reports/integration/fomaml_production_contract.md
+    runtime_path: benchmark_results/meta_learning_fomaml_production_contract
+    config_path: null
+    source_config_path: experiments/meta_learning/fomaml_production_contract.json
+    commit: 2b5d071
+    scientific_decision: Production contract ready; policy cannot be selected from outer test.
+    limitations: [No real EEG model was trained in this stage.]
+    tags: [fomaml, batchnorm, infrastructure]
+
+  - task_id: 8X
+    experiment_id: fomaml_label_q5_feature_protocol_blocked_v1
+    title: First feature-level FOMAML protocol audit
+    category: infrastructure
+    status: invalidated
+    consolidation_status: superseded
+    stage_status: blocked
+    task: fomaml_label_q5
+    target: label_q5
+    model: EEGNet
+    dataset: gpn_data + Old_EEG
+    feature_set: feature_episode_ids_vs_raw_eeg
+    preprocessing: raw_deduplicated
+    evaluation_protocol: one-fold one-seed pre-training audit
+    analysis_level: protocol
+    folds: [1]
+    seeds: [42]
+    training_performed: false
+    target_test_performed: false
+    protocol_hash: a3e6ff5ee2dbfa1638ffee9180ddff582dbab8aa6186e164320dd92f082871e8
+    preregistration_hash: 54f21e907ff1a414d45c1594e422c4caede0a449ca9acf02374bb50502122754
+    primary_metric: {name: protocol_compatibility, direction: null, value_source: {type: report_only}}
+    primary_result: blocked_protocol_raw_sample_mismatch
+    result_summary: Feature-level episode IDs were incompatible with raw EEG and blocked before training.
+    invalidation_reason: Feature-derived episode IDs do not map to the raw-deduplicated sample universe.
+    superseded_by: fomaml_label_q5_raw_protocol_v2
+    report_path: reports/integration/fomaml_label_q5_diagnostic.md
+    runtime_path: benchmark_results/meta_learning_fomaml_label_q5_diagnostic
+    config_path: null
+    source_config_path: experiments/meta_learning/fomaml_label_q5_diagnostic.json
+    commit: 5340dc3
+    scientific_decision: Blocked before training; replace with raw-deduplicated episode protocol.
+    limitations: [Feature-level episode IDs cannot address the raw sample universe.]
+    tags: [fomaml, blocked, protocol]
+
+  - task_id: 8Ц
+    experiment_id: fomaml_label_q5_raw_protocol_v2
+    title: Raw-deduplicated FOMAML protocol
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    stage_status: raw protocol ready
+    task: fomaml_label_q5
+    target: label_q5
+    model: EEGNet
+    dataset: gpn_data + Old_EEG
+    feature_set: raw_eeg_deduplicated
+    preprocessing: raw
+    evaluation_protocol: protected one-fold diagnostic protocol
+    analysis_level: protocol
+    folds: [1]
+    seeds: [42]
+    training_performed: false
+    target_test_performed: false
+    protocol_hash: e73703a443aea3b34f62606efa76bd592ff70099a30cdca80d292f1d76a1fd60
+    preregistration_hash: dc998ca72142678394e6f85e10d4b89b1fd0205a6a87be5cae2ba26c37c98692
+    primary_metric: {name: readiness_audit, direction: null, value_source: {type: report_only}}
+    primary_result: raw_protocol_ready
+    result_summary: Raw-deduplicated FOMAML protocol passed its readiness audit.
+    report_path: reports/integration/fomaml_label_q5_raw_protocol.md
+    runtime_path: benchmark_results/meta_learning_fomaml_label_q5_raw_protocol
+    config_path: null
+    source_config_path: experiments/meta_learning/fomaml_label_q5_raw_protocol.json
+    commit: dda4254
+    scientific_decision: Protocol ready for the separately authorized diagnostic only.
+    limitations: [One outer fold and one model seed were preregistered.]
+    tags: [fomaml, raw_eeg, protocol]
+
+  - task_id: 8Ч
+    experiment_id: fomaml_label_q5_raw_deduplicated_diagnostic_v1
+    title: Raw-deduplicated FOMAML diagnostic
+    category: model
+    status: diagnostic
+    consolidation_status: closed_negative
+    stage_status: do not proceed
+    task: fomaml_label_q5
+    target: label_q5
+    model: EEGNet_FOMAML
+    dataset: gpn_data + Old_EEG
+    feature_set: raw_eeg_deduplicated
+    preprocessing: raw
+    evaluation_protocol: one outer fold; participant-level comparison
+    analysis_level: diagnostic
+    folds: [1]
+    seeds: [42]
+    training_performed: true
+    target_test_performed: true
+    protocol_hash: e73703a443aea3b34f62606efa76bd592ff70099a30cdca80d292f1d76a1fd60
+    preregistration_hash: 07c57c2f957125e603fa2afaad2078dc0a206f3697f7f01926dcae55133a18e3
+    primary_metric: {name: participant_macro_f1_delta_vs_supervised_full_model, direction: higher_is_better, value_source: {type: report_only}}
+    primary_result: -0.04633751912262721
+    result_summary: Selected FOMAML reduced participant macro F1; decision do_not_proceed.
+    report_path: reports/integration/fomaml_label_q5_raw_diagnostic.md
+    runtime_path: benchmark_results/meta_learning_fomaml_label_q5_raw_diagnostic
+    config_path: null
+    source_config_path: experiments/meta_learning/fomaml_label_q5_raw_diagnostic.json
+    commit: 34072c7
+    scientific_decision: do_not_proceed
+    limitations: [One fold, one seed, five participants, EEGNet only.]
+    tags: [fomaml, raw_eeg, closed_negative]
+
+  - task_id: 8Ш
+    experiment_id: dann_label_q5_raw_protocol_v1
+    title: Leakage-safe raw DANN protocol
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    stage_status: protocol ready
+    task: domain_adaptation_label_q5
+    target: label_q5
+    model: EEGNet_DANN
+    dataset: gpn_data + Old_EEG
+    feature_set: raw_eeg_deduplicated
+    preprocessing: raw
+    evaluation_protocol: Old_EEG to gpn_data; fold-1 disabled protocol
+    analysis_level: protocol
+    folds: [1]
+    seeds: [42]
+    training_performed: false
+    target_test_performed: false
+    protocol_hash: 7f5642109e1ed26dd6de96aa88fe0711bfa08e8f3a58422b17364301d693f7c5
+    preregistration_hash: bd7b25e2b3057d2174001fcc105d19705e1b6a22c1cae057cde3feb399a472ca
+    primary_metric: {name: readiness_audit, direction: null, value_source: {type: report_only}}
+    primary_result: dann_protocol_ready
+    result_summary: Leakage-safe raw DANN diagnostic protocol is ready.
+    report_path: reports/integration/dann_label_q5_raw_protocol.md
+    runtime_path: benchmark_results/domain_adaptation_dann_raw_protocol
+    config_path: null
+    source_config_path: experiments/domain_adaptation/dann_label_q5_raw_protocol.json
+    commit: 6e54ff9
+    scientific_decision: Protocol ready for diagnostic execution only.
+    limitations: [Source and target are provenance domains, not established device domains.]
+    tags: [dann, raw_eeg, protocol]
+
+  - task_id: 8Щ
+    experiment_id: dann_label_q5_old_eeg_to_gpn_diagnostic_v1
+    title: One-block diagnostic DANN Old_EEG to gpn_data
+    category: model
+    status: diagnostic
+    consolidation_status: diagnostic
+    stage_status: diagnostic proceed
+    task: domain_adaptation_label_q5
+    target: label_q5
+    model: EEGNet_DANN
+    dataset: gpn_data + Old_EEG
+    feature_set: raw_eeg_deduplicated
+    preprocessing: raw
+    evaluation_protocol: Old_EEG to gpn_data; one fold and one seed
+    analysis_level: diagnostic
+    folds: [1]
+    seeds: [42]
+    training_performed: true
+    target_test_performed: true
+    protocol_hash: 7f5642109e1ed26dd6de96aa88fe0711bfa08e8f3a58422b17364301d693f7c5
+    preregistration_hash: f5e7cd962cc361b36e74b073c8532e2af5f4a94a36831f21531d6db36b54a817
+    primary_metric: {name: participant_macro_f1_delta, direction: higher_is_better, value_source: {type: report_only}}
+    primary_result: 0.013364455418166173
+    result_summary: One-fold DANN diagnostic was positive and advanced to confirmation.
+    report_path: reports/integration/dann_label_q5_raw_diagnostic.md
+    runtime_path: benchmark_results/domain_adaptation_dann_raw_diagnostic
+    config_path: null
+    source_config_path: experiments/domain_adaptation/dann_label_q5_raw_diagnostic.json
+    commit: f8c6e58
+    scientific_decision: proceed to preregistered confirmation; no significance claim.
+    limitations: [One fold, one seed, eight target participants.]
+    tags: [dann, raw_eeg, diagnostic]
+
+  - task_id: 8Э
+    experiment_id: dann_label_q5_confirmatory_v1_protocol
+    title: Five-fold DANN confirmation protocol v1
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    stage_status: protocol ready
+    task: domain_adaptation_label_q5
+    target: label_q5
+    model: EEGNet_DANN
+    dataset: gpn_data + Old_EEG
+    feature_set: raw_eeg_deduplicated
+    preprocessing: raw
+    evaluation_protocol: five-fold confirmatory protocol; disabled
+    analysis_level: protocol
+    folds: [1, 2, 3, 4, 5]
+    seeds: [42, 123, 2026]
+    training_performed: false
+    target_test_performed: false
+    protocol_hash: a261d6081b4924af82752021fa24bbd50a75ed83ac3672db1e691709ad2cad71
+    preregistration_hash: f4862dbf09d6eccd04438eebd5bbd99899dc4f1530ba3554c87a45a13dba59c4
+    primary_metric: {name: readiness_audit, direction: null, value_source: {type: report_only}}
+    primary_result: confirmatory_protocol_ready
+    result_summary: Confirmatory v1 protocol ready and later superseded by the v2 analysis split.
+    report_path: reports/integration/dann_label_q5_confirmatory_protocol.md
+    runtime_path: benchmark_results/domain_adaptation_dann_confirmatory_protocol
+    config_path: null
+    source_config_path: experiments/domain_adaptation/dann_label_q5_confirmatory_protocol.json
+    commit: e0dc3ff
+    scientific_decision: Superseded analytically by v2 separation of discovery and confirmation.
+    limitations: [Seed 42 discovery evidence required explicit separation.]
+    tags: [dann, protocol, confirmatory]
+
+  - task_id: 8Ю
+    experiment_id: dann_label_q5_confirmatory_v2_protocol
+    title: DANN confirmatory v2 analysis protocol
+    category: infrastructure
+    status: diagnostic
+    consolidation_status: infrastructure_only
+    stage_status: protocol ready
+    task: domain_adaptation_label_q5
+    target: label_q5
+    model: EEGNet_DANN
+    dataset: gpn_data + Old_EEG
+    feature_set: raw_eeg_deduplicated
+    preprocessing: raw
+    evaluation_protocol: five folds; primary seeds 123/2026; seed 42 sensitivity
+    analysis_level: protocol
+    folds: [1, 2, 3, 4, 5]
+    seeds: [42, 123, 2026]
+    training_performed: false
+    target_test_performed: false
+    protocol_hash: 1ce582a3d73a7ae4393e77cc2f3b2cb7749ddbb30c1cb8fcad0056c6d326c368
+    preregistration_hash: 6fba1eb76133884f0d5984ec1ceedc49234f252846040122310ac45a99ad3d7e
+    primary_metric: {name: readiness_audit, direction: null, value_source: {type: report_only}}
+    primary_result: confirmatory_v2_protocol_ready
+    result_summary: V2 protocol separates primary confirmation from seed-42 sensitivity.
+    report_path: reports/integration/dann_label_q5_confirmatory_v2_protocol.md
+    runtime_path: benchmark_results/domain_adaptation_dann_confirmatory_v2_protocol
+    config_path: null
+    source_config_path: experiments/domain_adaptation/dann_label_q5_confirmatory_v2_protocol.json
+    commit: 402499b
+    scientific_decision: Primary and sensitivity evidence are immutable and separate.
+    limitations: [Disabled protocol; no result in this stage.]
+    tags: [dann, protocol, confirmatory]
+
+  - task_id: 8Я
+    experiment_id: dann_label_q5_old_eeg_to_gpn_confirmatory_v2_execution
+    title: Confirmatory multi-block DANN execution
+    category: model
+    status: final
+    consolidation_status: completed
+    stage_status: partially confirmed
+    task: domain_adaptation_label_q5
+    target: label_q5
+    model: EEGNet_DANN
+    dataset: gpn_data + Old_EEG
+    feature_set: raw_eeg_deduplicated
+    preprocessing: raw
+    evaluation_protocol: five folds; primary seeds 123/2026; seed 42 sensitivity
+    analysis_level: confirmatory
+    folds: [1, 2, 3, 4, 5]
+    seeds: [123, 2026]
+    sensitivity_seeds: [42]
+    training_performed: true
+    target_test_performed: true
+    protocol_hash: 1ce582a3d73a7ae4393e77cc2f3b2cb7749ddbb30c1cb8fcad0056c6d326c368
+    preregistration_hash: 033ecd4da3d6b68966489dae3db9a90be1b2717653c8e654e9a235dae4c3df11
+    primary_metric: {name: participant_macro_f1_delta, direction: higher_is_better, value_source: {type: report_only}}
+    primary_result: 0.0080484191514286
+    result_summary: Confirmatory DANN effect is small and partially_confirmed.
+    report_path: reports/integration/dann_label_q5_confirmatory_v2.md
+    runtime_path: benchmark_results/domain_adaptation_dann_confirmatory_v2
+    config_path: null
+    source_config_path: experiments/domain_adaptation/dann_label_q5_confirmatory_v2_execution.json
+    commit: f4c101b
+    scientific_decision: partially_confirmed
+    limitations: [Small absolute effect; participant bootstrap includes zero; reverse direction and target-supervised upper bound untested.]
+    tags: [dann, confirmatory, multiseed, multifold]
+
 unresolved_entries:
   - experiment_id: label_q5_lightgbm_baseline
     missing_field: structured final result and primary metric

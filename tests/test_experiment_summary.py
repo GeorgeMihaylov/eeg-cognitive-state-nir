@@ -429,5 +429,5 @@ def test_project_registry_passes_strict_validation():
     warnings = SUMMARY.validate_registry(payload, ROOT, strict=True)
     assert all("runtime path missing" in warning for warning in warnings)
     summary = SUMMARY.build_summaries(payload, ROOT, strict=True)
-    assert len(summary["experiment_rows"]) == 33
+    assert len(summary["experiment_rows"]) == len(payload["experiments"])
     assert len(summary["unresolved"]) == 4

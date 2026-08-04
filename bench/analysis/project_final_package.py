@@ -24,7 +24,7 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa: E402
 
 
-PACKAGE_DATE = "2026-07-29"
+PACKAGE_DATE = "2026-08-04"
 FINAL_STATUSES = {
     "completed",
     "diagnostic",
@@ -76,6 +76,24 @@ PROVENANCE_COLUMNS = [
     "complete",
     "missing",
     "evidence_role",
+]
+STATUS_COLUMNS = [
+    "experiment_id",
+    "task_id",
+    "method",
+    "dataset",
+    "data_mode",
+    "folds",
+    "seeds",
+    "analysis_level",
+    "status",
+    "primary_metric",
+    "primary_result",
+    "decision",
+    "limitations",
+    "protocol_hash",
+    "preregistration_hash",
+    "result_artifact",
 ]
 
 
@@ -748,8 +766,196 @@ def build_external_results(repo_root: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def build_meta_learning_results(repo_root: Path) -> list[dict[str, Any]]:
+    """Load participant-level FOMAML diagnostic results from runtime artifacts."""
+    runtime = repo_root / "benchmark_results/meta_learning_fomaml_label_q5_raw_diagnostic"
+    summary = _load_json(runtime / "diagnostic_summary.json")
+    decision = _load_json(runtime / "decision.json")
+    paired = _load_json(runtime / "paired_comparison.json")["primary"]
+    aggregate = pd.read_csv(runtime / "outer_test_aggregate_metrics.csv")
+    aggregate = aggregate[aggregate["aggregation"] == "subject_mean"]
+    rows: list[dict[str, Any]] = []
+    for _, item in aggregate.iterrows():
+        rows.append(
+            {
+                "experiment_id": summary["experiment_id"],
+                "method": item["mode"],
+                "analysis_level": "participant",
+                "folds": "1",
+                "seeds": "42",
+                "participants": int(summary["subjects"]["evaluated_outer_test"]),
+                "macro_f1": item["macro_f1"],
+                "balanced_accuracy": item["balanced_accuracy"],
+                "ordinal_mae": item["ordinal_mae"],
+                "delta_macro_f1_vs_supervised_full_model": (
+                    paired["mean_delta_macro_f1"]
+                    if item["mode"] == "selected_fomaml" else ""
+                ),
+                "delta_balanced_accuracy_vs_supervised_full_model": (
+                    paired["mean_delta_balanced_accuracy"]
+                    if item["mode"] == "selected_fomaml" else ""
+                ),
+                "delta_ordinal_mae_vs_supervised_full_model": (
+                    paired["mean_delta_ordinal_mae"]
+                    if item["mode"] == "selected_fomaml" else ""
+                ),
+                "macro_f1_wins": paired["macro_f1_wins"] if item["mode"] == "selected_fomaml" else "",
+                "macro_f1_losses": paired["macro_f1_losses"] if item["mode"] == "selected_fomaml" else "",
+                "macro_f1_ties": paired["macro_f1_ties"] if item["mode"] == "selected_fomaml" else "",
+                "status": decision["status"],
+                "protocol_hash": summary["protocol_hash"],
+                "preregistration_hash": summary["preregistration_hash"],
+                "result_artifact": _relative(runtime.relative_to(repo_root)),
+            }
+        )
+    return rows
+
+
+def build_domain_adaptation_results(repo_root: Path) -> list[dict[str, Any]]:
+    """Load diagnostic and confirmatory participant-level DANN summaries."""
+    diagnostic_root = repo_root / "benchmark_results/domain_adaptation_dann_raw_diagnostic"
+    confirmatory_root = repo_root / "benchmark_results/domain_adaptation_dann_confirmatory_v2"
+    diagnostic_summary = _load_json(diagnostic_root / "diagnostic_summary.json")
+    diagnostic_decision = _load_json(diagnostic_root / "decision.json")
+    diagnostic_paired = _load_json(diagnostic_root / "paired_comparison.json")
+    diagnostic = pd.read_csv(diagnostic_root / "target_test_aggregate_metrics.csv")
+    confirmatory_summary = _load_json(confirmatory_root / "confirmatory_summary.json")
+    confirmatory_decision = _load_json(confirmatory_root / "primary_decision.json")
+    confirmatory_paired = _load_json(confirmatory_root / "primary_paired_comparison.json")
+    bootstrap = _load_json(confirmatory_root / "primary_bootstrap.json")
+    participant = pd.read_csv(confirmatory_root / "primary_participant_metrics.csv")
+    rows: list[dict[str, Any]] = []
+    for _, item in diagnostic.iterrows():
+        rows.append(
+            {
+                "experiment_id": diagnostic_summary["experiment_id"],
+                "analysis_group": "diagnostic",
+                "method": item["mode"],
+                "analysis_level": "participant",
+                "folds": "1",
+                "seeds": "42",
+                "participants": int(item["subjects"]),
+                "accuracy": item["participant_mean_accuracy"],
+                "balanced_accuracy": item["participant_mean_balanced_accuracy"],
+                "macro_f1": item["participant_mean_macro_f1"],
+                "weighted_f1": item["participant_mean_weighted_f1"],
+                "kappa": item["participant_mean_kappa"],
+                "ordinal_mae": item["participant_mean_ordinal_mae"],
+                "quadratic_weighted_kappa": "",
+                "delta_balanced_accuracy": diagnostic_paired["mean_delta_balanced_accuracy"] if item["mode"] == "dann" else "",
+                "delta_macro_f1": diagnostic_paired["mean_delta_macro_f1"] if item["mode"] == "dann" else "",
+                "delta_ordinal_mae": diagnostic_paired["mean_delta_ordinal_mae"] if item["mode"] == "dann" else "",
+                "median_delta_macro_f1": diagnostic_paired["median_delta_macro_f1"] if item["mode"] == "dann" else "",
+                "participant_win_fraction": diagnostic_paired["macro_f1_wins"] / diagnostic_paired["n_subjects"] if item["mode"] == "dann" else "",
+                "bootstrap_95_ci_low": diagnostic_paired["bootstrap_macro_f1_mean_95_ci"][0] if item["mode"] == "dann" else "",
+                "bootstrap_95_ci_high": diagnostic_paired["bootstrap_macro_f1_mean_95_ci"][1] if item["mode"] == "dann" else "",
+                "status": f"diagnostic_{diagnostic_decision['status']}",
+                "protocol_hash": diagnostic_summary["protocol_hash"],
+                "preregistration_hash": diagnostic_summary["preregistration_hash"],
+                "result_artifact": _relative(diagnostic_root.relative_to(repo_root)),
+            }
+        )
+    absolute_columns = {
+        "accuracy": "accuracy",
+        "balanced_accuracy": "balanced_accuracy",
+        "macro_f1": "macro_f1",
+        "weighted_f1": "weighted_f1",
+        "kappa": "kappa",
+        "ordinal_mae": "ordinal_mae",
+        "quadratic_weighted_kappa": "quadratic_weighted_kappa",
+    }
+    for mode, suffix in (("source_only_matched", "source_only_matched"), ("dann", "dann")):
+        row = {
+            "experiment_id": confirmatory_summary["experiment_id"],
+            "analysis_group": "primary_confirmatory",
+            "method": mode,
+            "analysis_level": "participant",
+            "folds": "1|2|3|4|5",
+            "seeds": "123|2026",
+            "participants": len(participant),
+        }
+        for output, stem in absolute_columns.items():
+            row[output] = participant[f"{stem}_{suffix}"].mean()
+        row.update(
+            {
+                "delta_balanced_accuracy": confirmatory_paired["mean_delta_balanced_accuracy"] if mode == "dann" else "",
+                "delta_macro_f1": confirmatory_paired["mean_delta_macro_f1"] if mode == "dann" else "",
+                "delta_ordinal_mae": confirmatory_paired["mean_delta_ordinal_mae"] if mode == "dann" else "",
+                "median_delta_macro_f1": confirmatory_paired["median_delta_macro_f1"] if mode == "dann" else "",
+                "participant_win_fraction": confirmatory_decision["participant_win_fraction"] if mode == "dann" else "",
+                "bootstrap_95_ci_low": bootstrap["mean_95_ci"][0] if mode == "dann" else "",
+                "bootstrap_95_ci_high": bootstrap["mean_95_ci"][1] if mode == "dann" else "",
+                "status": confirmatory_decision["status"],
+                "protocol_hash": confirmatory_summary["protocol_hash"],
+                "preregistration_hash": confirmatory_summary["execution_preregistration_hash"],
+                "result_artifact": _relative(confirmatory_root.relative_to(repo_root)),
+            }
+        )
+        rows.append(row)
+    return rows
+
+
+def build_domain_adaptation_fold_results(repo_root: Path) -> list[dict[str, Any]]:
+    path = repo_root / "benchmark_results/domain_adaptation_dann_confirmatory_v2/primary_fold_metrics.csv"
+    rows = pd.read_csv(path).to_dict("records")
+    for row in rows:
+        row.update({"analysis_group": "primary_confirmatory", "seeds": "123|2026"})
+    return rows
+
+
+def build_domain_adaptation_seed_results(repo_root: Path) -> list[dict[str, Any]]:
+    root = repo_root / "benchmark_results/domain_adaptation_dann_confirmatory_v2"
+    primary = pd.read_csv(root / "primary_seed_metrics.csv")
+    sensitivity = pd.read_csv(root / "secondary_seed_metrics.csv")
+    rows: list[dict[str, Any]] = []
+    sensitivity_only = sensitivity[sensitivity["seed"] == 42]
+    for group, frame in (("primary_confirmatory", primary), ("sensitivity", sensitivity_only)):
+        for row in frame.to_dict("records"):
+            row["analysis_group"] = group
+            row["included_in_primary_decision"] = group == "primary_confirmatory"
+            row["diagnostic_fold_1_reused"] = group == "sensitivity"
+            rows.append(row)
+    return rows
+
+
+def build_experiment_statuses(repo_root: Path) -> list[dict[str, Any]]:
+    registry = _load_yaml(repo_root / "reports/summary/experiment_registry.yaml")
+    rows: list[dict[str, Any]] = []
+    for item in registry["experiments"]:
+        if not str(item.get("task_id", "")).startswith("8"):
+            continue
+        rows.append(
+            {
+                "experiment_id": item["experiment_id"],
+                "task_id": item["task_id"],
+                "method": item["model"],
+                "dataset": item.get("dataset", _infer_dataset(item)),
+                "data_mode": item["feature_set"],
+                "folds": "|".join(str(value) for value in item.get("folds", [])),
+                "seeds": "|".join(str(value) for value in item.get("seeds", [])),
+                "analysis_level": item["analysis_level"],
+                "status": item["stage_status"],
+                "primary_metric": item["primary_metric"]["name"],
+                "primary_result": item.get("primary_result", ""),
+                "decision": item["scientific_decision"],
+                "limitations": "|".join(item.get("limitations", [])),
+                "protocol_hash": item.get("protocol_hash", ""),
+                "preregistration_hash": item.get("preregistration_hash", ""),
+                "result_artifact": _relative(item.get("runtime_path")),
+            }
+        )
+    return sorted(rows, key=lambda row: (row["task_id"], row["experiment_id"]))
+
+
 def build_negative_results() -> list[dict[str, Any]]:
     return [
+        {
+            "direction": "raw-deduplicated FOMAML",
+            "result": "Selected FOMAML reduced participant macro F1 by 0.046338 and increased ordinal MAE by 0.449093 versus supervised full-model adaptation.",
+            "decision": "do_not_proceed",
+            "status": "closed_negative",
+            "report_path": "reports/integration/fomaml_label_q5_raw_diagnostic.md",
+        },
         {
             "direction": "ShallowConvNet CAR",
             "result": "CAR reduced mean balanced accuracy in the factorial raw-EEG ablation.",
@@ -822,7 +1028,7 @@ def build_requirement_rows(repo_root: Path) -> list[dict[str, Any]]:
             "failed_acceptance_criterion": "partially_closed",
         }[old]
         if item["requirement_id"] in {"R-PERS-02"}:
-            status = "infrastructure_ready"
+            status = "partially_closed"
         if item["requirement_id"] in {"R-DATA-02", "R-DATA-03", "R-MULTI"}:
             status = "not_required_for_article"
         if status not in REQUIREMENT_STATUSES:
@@ -858,7 +1064,13 @@ def build_requirement_rows(repo_root: Path) -> list[dict[str, Any]]:
                     for value in evidence
                     if value.get("type") == "report"
                 ),
-                "remaining_gap": "|".join(item.get("gaps", [])),
+                "remaining_gap": (
+                    "DANN is partially confirmed only in Old_EEG to gpn_data; "
+                    "FOMAML diagnostic is do_not_proceed; reverse DANN and a "
+                    "target-supervised upper bound remain untested."
+                    if item["requirement_id"] == "R-PERS-02"
+                    else "|".join(item.get("gaps", []))
+                ),
                 "recommended_closure_form": item["minimum_closure_action"][
                     "description"
                 ],
@@ -912,8 +1124,16 @@ def _save_bar(
     if chance is not None:
         ax.legend(frameon=False)
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, format="svg")
+    fig.savefig(path, format="svg", metadata={"Date": None})
     plt.close(fig)
+    _normalize_svg(path)
+
+
+def _normalize_svg(path: Path) -> None:
+    """Normalize generated SVG to LF and remove trailing whitespace."""
+    text = path.read_text(encoding="utf-8")
+    normalized = "\n".join(line.rstrip() for line in text.splitlines()) + "\n"
+    path.write_text(normalized, encoding="utf-8", newline="")
 
 
 def _save_flow(path: Path, *, split: bool = False) -> None:
@@ -958,8 +1178,9 @@ def _save_flow(path: Path, *, split: bool = False) -> None:
         fontsize=14,
     )
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, format="svg")
+    fig.savefig(path, format="svg", metadata={"Date": None})
     plt.close(fig)
+    _normalize_svg(path)
 
 
 def build_figures(
@@ -969,6 +1190,11 @@ def build_figures(
     personalization: Sequence[Mapping[str, Any]],
     preprocessing: Sequence[Mapping[str, Any]],
     external: Sequence[Mapping[str, Any]],
+    meta_learning: Sequence[Mapping[str, Any]],
+    domain_adaptation: Sequence[Mapping[str, Any]],
+    dann_folds: Sequence[Mapping[str, Any]],
+    dann_seeds: Sequence[Mapping[str, Any]],
+    experiment_statuses: Sequence[Mapping[str, Any]],
     repo_root: Path,
 ) -> None:
     figures = output_dir / "figures"
@@ -1022,8 +1248,10 @@ def build_figures(
     ax.set(xlabel="Head-only macro F1 gain", ylabel="Full-model macro F1 gain",
            title="Personalization effect by subject (mean across seeds)")
     ax.grid(alpha=0.2)
-    fig.savefig(figures / "05_personalization_by_subject.svg", format="svg")
+    figure_path = figures / "05_personalization_by_subject.svg"
+    fig.savefig(figure_path, format="svg", metadata={"Date": None})
     plt.close(fig)
+    _normalize_svg(figure_path)
     raw_pre = [row for row in preprocessing if row["experiment_id"] == "shallowconvnet_preprocessing_ablation"]
     _save_bar(
         figures / "06_preprocessing_ablation.svg",
@@ -1065,6 +1293,96 @@ def build_figures(
         chance=0.20,
     )
 
+    fold_frame = pd.DataFrame(dann_folds).sort_values("fold")
+    fig, ax = plt.subplots(figsize=(8.2, 4.8), constrained_layout=True)
+    colors = ["#b45309" if value < 0 else "#35618f" for value in fold_frame["mean_delta_macro_f1"]]
+    ax.bar(fold_frame["fold"].astype(str), fold_frame["mean_delta_macro_f1"], color=colors)
+    ax.axhline(0, color="#374151", lw=1)
+    ax.set(xlabel="Outer fold", ylabel="Participant-level Δ macro F1",
+           title="Confirmatory DANN effect by fold (primary seeds 123/2026)")
+    ax.grid(axis="y", alpha=0.25)
+    figure_path = figures / "10_dann_fold_level_effect.svg"
+    fig.savefig(figure_path, format="svg", metadata={"Date": None})
+    plt.close(fig)
+    _normalize_svg(figure_path)
+
+    seed_frame = pd.DataFrame(dann_seeds).sort_values("seed")
+    fig, ax = plt.subplots(figsize=(8.2, 4.8), constrained_layout=True)
+    colors = ["#d17b49" if group == "sensitivity" else "#35618f" for group in seed_frame["analysis_group"]]
+    bars = ax.bar(seed_frame["seed"].astype(str), seed_frame["mean_delta_macro_f1"], color=colors)
+    ax.axhline(0, color="#374151", lw=1)
+    ax.set(xlabel="Model seed", ylabel="Participant-level Δ macro F1",
+           title="DANN seed sensitivity")
+    ax.legend([bars[0], bars[-1]], ["Sensitivity only", "Primary confirmatory"], frameon=False)
+    ax.grid(axis="y", alpha=0.25)
+    figure_path = figures / "11_dann_seed_level_effect.svg"
+    fig.savefig(figure_path, format="svg", metadata={"Date": None})
+    plt.close(fig)
+    _normalize_svg(figure_path)
+
+    primary = pd.DataFrame(domain_adaptation)
+    primary = primary[primary["analysis_group"] == "primary_confirmatory"].set_index("method")
+    fig, axes = plt.subplots(1, 3, figsize=(11.5, 4.2), constrained_layout=True)
+    for ax, metric, label, direction in zip(
+        axes,
+        ("macro_f1", "balanced_accuracy", "ordinal_mae"),
+        ("Macro F1", "Balanced accuracy", "Ordinal MAE"),
+        ("higher is better", "higher is better", "lower is better"),
+    ):
+        values = [primary.loc["source_only_matched", metric], primary.loc["dann", metric]]
+        ax.bar(["Source-only", "DANN"], values, color=["#6e9fbd", "#35618f"])
+        ax.set_title(f"{label}\n({direction})")
+        ax.grid(axis="y", alpha=0.2)
+    fig.suptitle("Confirmatory DANN participant-level metrics")
+    figure_path = figures / "12_dann_aggregate_metrics.svg"
+    fig.savefig(figure_path, format="svg", metadata={"Date": None})
+    plt.close(fig)
+    _normalize_svg(figure_path)
+
+    meta = pd.DataFrame(meta_learning).set_index("method")
+    meta_labels = ["Zero-shot", "Supervised full", "Selected FOMAML"]
+    meta_modes = ["zero_shot_supervised", "supervised_full_model", "selected_fomaml"]
+    fig, axes = plt.subplots(1, 3, figsize=(11.5, 4.2), constrained_layout=True)
+    for ax, metric, label, direction in zip(
+        axes,
+        ("macro_f1", "balanced_accuracy", "ordinal_mae"),
+        ("Macro F1", "Balanced accuracy", "Ordinal MAE"),
+        ("higher is better", "higher is better", "lower is better"),
+    ):
+        ax.bar(meta_labels, [meta.loc[mode, metric] for mode in meta_modes], color=["#6e9fbd", "#6b8f71", "#d17b49"])
+        ax.set_title(f"{label}\n({direction})")
+        ax.tick_params(axis="x", rotation=20)
+        ax.grid(axis="y", alpha=0.2)
+    fig.suptitle("FOMAML diagnostic outer-test metrics (participant level)")
+    figure_path = figures / "13_fomaml_outer_test_comparison.svg"
+    fig.savefig(figure_path, format="svg", metadata={"Date": None})
+    plt.close(fig)
+    _normalize_svg(figure_path)
+
+    status_frame = pd.DataFrame(experiment_statuses)
+    selected = status_frame[status_frame["task_id"].isin(["8T", "8U", "8F", "8X", "8Ц", "8Ч", "8Ш", "8Щ", "8Ю", "8Я"])]
+    phase_order = ["infrastructure", "protocol", "diagnostic", "confirmatory"]
+    fig, ax = plt.subplots(figsize=(11.5, 5.8), constrained_layout=True)
+    ax.axis("off")
+    grouped = {
+        phase: selected[selected["analysis_level"] == phase]
+        for phase in phase_order
+    }
+    x_positions = np.linspace(0.1, 0.9, len(phase_order))
+    for x, phase in zip(x_positions, phase_order):
+        ax.text(x, 0.96, phase.title(), ha="center", va="top", fontsize=12, fontweight="bold")
+        for index, row in enumerate(grouped[phase].itertuples(index=False)):
+            ax.text(
+                x, 0.82 - index * 0.16,
+                f"{row.task_id}: {row.status}", ha="center", va="center", fontsize=9,
+                bbox={"boxstyle": "round,pad=0.4", "fc": "#e8f1f8", "ec": "#35618f"},
+            )
+    ax.set_title("Evidence-stage status map (stage labels, not quality scores)", fontsize=14)
+    figure_path = figures / "14_evidence_status_map.svg"
+    fig.savefig(figure_path, format="svg", metadata={"Date": None})
+    plt.close(fig)
+    _normalize_svg(figure_path)
+
 
 def _markdown_table(rows: Sequence[Mapping[str, Any]], columns: Sequence[str]) -> str:
     if not rows:
@@ -1086,6 +1404,9 @@ def _render_reports(
     provenance: Sequence[Mapping[str, Any]],
     requirements: Sequence[Mapping[str, Any]],
     negative: Sequence[Mapping[str, Any]],
+    meta_learning: Sequence[Mapping[str, Any]],
+    domain_adaptation: Sequence[Mapping[str, Any]],
+    experiment_statuses: Sequence[Mapping[str, Any]],
 ) -> dict[Path, str]:
     counts = Counter(str(row["status"]) for row in inventory)
     complete = sum(row["complete"] == "true" for row in provenance)
@@ -1121,6 +1442,15 @@ def _render_reports(
    evidence.
 5. Решения `retain_14_channel_cache` и `close_transfer_track` закрывают
    расширение 62-channel cache и contrastive transfer без новой гипотезы.
+6. Raw-deduplicated FOMAML diagnostic получил `do_not_proceed`: Δmacro F1
+   −0.046338 против supervised full-model при одном fold, одном seed и пяти
+   участниках.
+7. Confirmatory DANN дал небольшой положительный participant-level эффект
+   (Δmacro F1 +0.008048; Δbalanced accuracy +0.008332; Δordinal MAE −0.034008),
+   но имеет статус `partially_confirmed`, не `confirmed`.
+
+Экспериментальная работа **не объявляется полностью завершённой или
+замороженной**: пакет фиксирует только текущее состояние evidence.
 
 ## Неполный provenance
 
@@ -1173,6 +1503,19 @@ time-aligned transfer не превосходят random initialization. Физ�
 downstream. **Решение.** `retain_14_channel_cache`, `close_transfer_track`.
 **Ограничение.** Transfer — screening на одном downstream fold. **Статус:**
 диагностический отрицательный результат и приложение статьи.
+
+## FOMAML и DANN
+
+Эпизодическая инфраструктура и безопасные BatchNorm-контракты подтверждены
+инженерно. В raw-deduplicated FOMAML diagnostic выбранная policy ухудшила
+participant macro F1 и ordinal MAE относительно обычной supervised
+full-model адаптации; решение — `do_not_proceed`. DANN в направлении
+`Old_EEG → gpn_data` дал малый положительный средний эффект: четыре из пяти
+folds и оба primary seeds положительны по macro F1. Статус
+`partially_confirmed`: средний эффект ниже +0.01, win fraction ниже 60%, а
+participant bootstrap interval включает ноль. Статистическая значимость не
+установлена; source/target являются provenance-доменами, а не доказанно
+разными устройствами.
 """
     negative_report = f"""# Закрытые отрицательные результаты
 
@@ -1236,9 +1579,144 @@ reproducibility section, финальный отчёт, таблицы/рису�
 статистически корректные сравнения, related work, вклад, ограничения и
 приложение отрицательных результатов.
 
-**Исключить без новой гипотезы:** DANN, новый contrastive search, полный
-62-канальный cache, дополнительные COG-BCI CNN seeds, AutoML и новые внешние
-наборы.
+**Исключить без новой гипотезы:** дальнейший DANN search, FOMAML sweep,
+новый contrastive search, полный 62-канальный cache, дополнительные COG-BCI
+CNN seeds, AutoML и новые внешние наборы. Уже выполненный confirmatory DANN
+сохраняется как `partially_confirmed` evidence.
+"""
+    meta_rows = {str(row["method"]): row for row in meta_learning}
+    dann_rows = {
+        (str(row["analysis_group"]), str(row["method"])): row
+        for row in domain_adaptation
+    }
+    final_report = f"""# Итоговый пакет результатов EEG-бенчмарка
+
+Дата консолидации: {PACKAGE_DATE}. Этот документ агрегирует только уже
+существующие runtime-артефакты. Обучение, перестроение кэшей и изменение
+научных decision rules не выполнялись. Работа не объявляется полностью
+завершённой.
+
+## 1. Цель проекта
+
+Единая воспроизводимая платформа для EEG/POW задач, subject-disjoint оценки,
+персонализации, transfer/meta-learning и унифицированных артефактов.
+
+## 2. Наборы данных
+
+Основной benchmark объединяет `gpn_data` и `Old_EEG`; COG-BCI используется
+как отдельный внешний диагностический трек. Источники Emotiv считаются
+provenance-доменами, а не автоматически разными устройствами.
+
+## 3. Каноническая выборка
+
+Классификационная supervised-выборка содержит 45 384 окна, 54 участника и
+пять классов `label_q5`. Raw-deduplicated DANN universe содержит 30 958 окон,
+54 участника и 86 logical records с формой `[1, 14, 2560]`.
+
+## 4. Схема валидации
+
+Основной outer protocol — subject-disjoint GroupKFold. Inner validation,
+персонализация, meta-episodes и DANN source validation используют отдельные
+group-aware partitions; target-test не участвует в выборе модели.
+
+## 5. Базовые модели
+
+Random Forest и MLP остаются воспроизводимыми feature-window baselines.
+
+## 6. Глубокие модели
+
+LSTM, BiLSTM и Transformer используют временной контекст; EEGNet и
+ShallowConvNet работают с raw окнами через общий adapter/encoder contract.
+
+## 7. Preprocessing ablation
+
+Factorial raw-EEG ablation не поддержала CAR как default для
+ShallowConvNet; исходные численные решения не пересматривались.
+
+## 8. Персонализация
+
+Leakage-safe calibration отделяет calibration от final evaluation. Эффект
+зависит от участника; full-model tuning не объявляется универсально лучшим.
+
+## 9. Контрастивное обучение
+
+Shape-only и time-aligned screening не улучшили downstream macro F1;
+решение `close_transfer_track` сохраняется.
+
+## 10. COG-BCI
+
+14-channel cache сохранён; 62-channel expansion отклонён по заранее заданному
+правилу. CNN и spectral результаты остаются diagnostic/negative evidence.
+
+## 11. FOMAML
+
+Participant-level outer-test: zero-shot macro F1
+{float(meta_rows['zero_shot_supervised']['macro_f1']):.6f}, supervised
+full-model {float(meta_rows['supervised_full_model']['macro_f1']):.6f}, selected
+FOMAML {float(meta_rows['selected_fomaml']['macro_f1']):.6f}. FOMAML против
+supervised full-model: Δmacro F1
+{float(meta_rows['selected_fomaml']['delta_macro_f1_vs_supervised_full_model']):+.6f},
+Δbalanced accuracy
+{float(meta_rows['selected_fomaml']['delta_balanced_accuracy_vs_supervised_full_model']):+.6f},
+Δordinal MAE
+{float(meta_rows['selected_fomaml']['delta_ordinal_mae_vs_supervised_full_model']):+.6f};
+W/L/T 1/4/0. Решение `do_not_proceed`. Это один fold, seed 42, пять
+участников и EEGNet; инфраструктурная готовность не означает успех метода.
+
+## 12. DANN
+
+Диагностический fold 1 / seed 42: Δmacro F1 +0.013364, Δbalanced accuracy
++0.019079, Δordinal MAE −0.069330, W/L/T 6/2/0. Его bootstrap interval
+включает ноль, поэтому статус — diagnostic `proceed`, не подтверждение.
+
+## 13. Подтверждающий анализ
+
+Primary analysis использует folds 1–5 и seeds 123/2026. DANN против
+source-only: Δmacro F1
+{float(dann_rows[('primary_confirmatory', 'dann')]['delta_macro_f1']):+.6f},
+Δbalanced accuracy
+{float(dann_rows[('primary_confirmatory', 'dann')]['delta_balanced_accuracy']):+.6f},
+Δordinal MAE
+{float(dann_rows[('primary_confirmatory', 'dann')]['delta_ordinal_mae']):+.6f}.
+Четыре из пяти folds и оба primary seeds положительны; 54.76% участников
+улучшились, bootstrap 95% CI включает ноль. Решение `partially_confirmed`.
+Seed 42 — sensitivity-only; fold 1 / seed 42 не переобучался и не входил в
+primary decision. Всего выполнено 28 новых trainings.
+
+## 14. Отрицательные результаты
+
+Канонический список находится в `final_result_tables/negative_result_summary.csv`.
+FOMAML `do_not_proceed` отделён от успешной episodic infrastructure.
+
+## 15. Ограничения
+
+Абсолютный macro F1 низок; source-validation содержит мало участников;
+domain head значительно больше EEGNet; проверено только направление
+`Old_EEG → gpn_data`; reverse direction и target-supervised upper bound не
+выполнялись; эффекты неоднородны между участниками и seeds.
+
+## 16. Требования проекта
+
+Покрытие находится в `final_result_tables/requirement_coverage.csv` и
+различает implementation, scientific evidence и незакрытые deliverables.
+
+## 17. Воспроизводимость
+
+Protocol/preregistration hashes, immutable unlock manifests, subject-level
+splits и target-label firewall сохранены в runtime. Checkpoints,
+predictions и кэши намеренно не отслеживаются Git.
+
+## 18. Научные выводы
+
+Проверенный FOMAML не поддержан. DANN показывает небольшой, но неоднородный
+положительный эффект со статусом `partially_confirmed`; статистическая
+значимость и полная доменная инвариантность не установлены.
+
+## 19. Открытые направления
+
+Нужны финальная публикационная интерпретация, presentation/demo scope и,
+только при новой утверждённой гипотезе, reverse DANN или target-supervised
+upper bound. Автоматические DANN/FOMAML sweeps не планируются.
 """
     return {
         repo_root / "reports/integration/project_final_state.md": final_state,
@@ -1250,6 +1728,7 @@ reproducibility section, финальный отчёт, таблицы/рису�
         / "reports/integration/project_reproducibility_audit.md": repro,
         repo_root
         / "reports/requirements/final_requirement_coverage.md": req_report,
+        repo_root / "reports/summary/final_project_results.md": final_report,
     }
 
 
@@ -1287,6 +1766,11 @@ def generate(repo_root: Path) -> dict[str, Any]:
         summary / "preprocessing_metrics_unified.csv"
     ).to_dict("records")
     external = build_external_results(root)
+    meta_learning = build_meta_learning_results(root)
+    domain_adaptation = build_domain_adaptation_results(root)
+    dann_folds = build_domain_adaptation_fold_results(root)
+    dann_seeds = build_domain_adaptation_seed_results(root)
+    experiment_statuses = build_experiment_statuses(root)
     negative = build_negative_results()
     requirements = build_requirement_rows(root)
     limitations = build_reproducibility_limitations()
@@ -1304,6 +1788,11 @@ def generate(repo_root: Path) -> dict[str, Any]:
         ("ordinal_results.csv", ordinal, list(ordinal[0])),
         ("preprocessing_ablation.csv", preprocessing, list(preprocessing[0])),
         ("external_dataset_results.csv", external, list(external[0])),
+        ("final_meta_learning_results.csv", meta_learning, list(meta_learning[0])),
+        ("final_domain_adaptation_results.csv", domain_adaptation, list(domain_adaptation[0])),
+        ("final_domain_adaptation_fold_results.csv", dann_folds, list(dann_folds[0])),
+        ("final_domain_adaptation_seed_results.csv", dann_seeds, list(dann_seeds[0])),
+        ("final_experiment_statuses.csv", experiment_statuses, STATUS_COLUMNS),
         ("negative_result_summary.csv", negative, list(negative[0])),
         ("provenance_audit.csv", provenance, PROVENANCE_COLUMNS),
         ("requirement_coverage.csv", requirements, list(requirements[0])),
@@ -1320,15 +1809,42 @@ def generate(repo_root: Path) -> dict[str, Any]:
         personalization,
         preprocessing,
         external,
+        meta_learning,
+        domain_adaptation,
+        dann_folds,
+        dann_seeds,
+        experiment_statuses,
         root,
     )
     outputs.extend(sorted((tables / "figures").glob("*.svg")))
     for path, text in _render_reports(
-        root, inventory, provenance, requirements, negative
+        root, inventory, provenance, requirements, negative,
+        meta_learning, domain_adaptation, experiment_statuses,
     ).items():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text.strip() + "\n", encoding="utf-8", newline="")
         outputs.append(path)
+    result_inventory_path = tables / "final_result_inventory.csv"
+    inventory_outputs = sorted({*outputs, result_inventory_path})
+    result_inventory = [
+        {
+            "artifact_path": path.relative_to(root).as_posix(),
+            "artifact_type": (
+                "svg_figure" if path.suffix == ".svg"
+                else "csv_table" if path.suffix == ".csv"
+                else "markdown_report"
+            ),
+            "generated_by": "bench.analysis.project_final_package.generate",
+            "tracked_intent": "yes",
+        }
+        for path in inventory_outputs
+    ]
+    _write_csv(
+        result_inventory_path,
+        result_inventory,
+        ["artifact_path", "artifact_type", "generated_by", "tracked_intent"],
+    )
+    outputs.append(result_inventory_path)
     validate_no_absolute_paths(outputs)
     counts = Counter(str(row["status"]) for row in inventory)
     return {
@@ -1336,7 +1852,7 @@ def generate(repo_root: Path) -> dict[str, Any]:
         "status_counts": dict(sorted(counts.items())),
         "provenance_complete": sum(row["complete"] == "true" for row in provenance),
         "provenance_incomplete": sum(row["complete"] != "true" for row in provenance),
-        "tables": len(table_specs) + 1,
-        "figures": 9,
+        "tables": len(table_specs) + 2,
+        "figures": 14,
         "outputs": [path.relative_to(root).as_posix() for path in sorted(outputs)],
     }

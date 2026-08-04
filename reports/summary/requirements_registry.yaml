@@ -1058,17 +1058,18 @@ requirements:
       section: Mixin prototypes
       quote: "historical prototypes, not production implementations"
     normalized_requirement: >
-      Считать transfer выполненным через reimplemented fine-tuning, а DANN,
-      MAML и contrastive оставить deferred до появления корректного scope.
+      Считать transfer выполненным через reimplemented fine-tuning; отдельно
+      учитывать production meta-learning infrastructure, диагностический
+      FOMAML и source-aware DANN с подтверждающим multi-fold/multi-seed анализом.
     requirement_type: integration
     priority: requires_clarification
     coverage:
-      implementation: partial
-      reproducible_config: partial
-      experimental_validation: partial
+      implementation: complete
+      reproducible_config: complete
+      experimental_validation: complete
       result_quality: unclear
       documentation: complete
-      integration: partial
+      integration: complete
       demonstration: missing
     overall_status: partial
     evidence:
@@ -1084,17 +1085,30 @@ requirements:
         path: reports/integration/feature_benchmarking_mixins_audit.md
         supports: Фактические ограничения prototypes.
         level: primary
+      - type: experiment
+        experiment_id: fomaml_label_q5_raw_deduplicated_diagnostic_v1
+        supports: Leakage-safe raw FOMAML diagnostic с решением do_not_proceed.
+        level: primary
+      - type: experiment
+        experiment_id: dann_label_q5_old_eeg_to_gpn_confirmatory_v2_execution
+        supports: Source-aware five-fold two-primary-seed DANN confirmation.
+        level: primary
+      - type: report
+        path: reports/integration/dann_label_q5_confirmatory_v2.md
+        supports: Participant-level primary и sensitivity analysis.
+        level: primary
     gaps:
-      - Нет обоснованной domain definition для DANN.
-      - Нет production episodic или shared encoder contracts.
+      - DANN проверен только в направлении Old_EEG → gpn_data и не доказывает полную доменную инвариантность.
+      - FOMAML diagnostic получил do_not_proceed и не является успешным методом.
+      - Не выполнены reverse DANN и target-supervised upper bound.
     minimum_closure_action:
       action_type: research_decision
-      description: Не продолжать deferred mixins без новой научной постановки.
+      description: Сохранить частично подтверждённый DANN и отрицательный FOMAML; новые sweeps запускать только по новой научной постановке.
       estimated_scope: small
     new_experiment_required: false
     closure_priority: P3
-    blocking_dependencies: [domain definition, shared encoder API]
-    completion_criterion: Deferred status сохраняется либо появляется утверждённая постановка.
+    blocking_dependencies: [новая гипотеза для reverse direction или upper bound]
+    completion_criterion: Текущее evidence отражено без заявления полной domain invariance или успеха FOMAML.
     notes: []
 
   - requirement_id: R-PLAT
@@ -1402,9 +1416,9 @@ deferred_now:
   - title: Повторные personalization budget sweeps
     reason: Validated 20% multi-seed результат уже отвечает на текущий вопрос; ближайшие пробелы — platform deliverables.
   - title: DANN
-    reason: Нет обоснованной domain definition и source/target runner contract.
+    reason: Confirmatory Old_EEG → gpn_data результат уже partially_confirmed; дальнейший search требует новой гипотезы.
   - title: MAML
-    reason: Нет обязательного episodic protocol и production integration.
+    reason: Production infrastructure готова, но raw FOMAML diagnostic получил do_not_proceed.
   - title: Contrastive pretraining
     reason: Нет shared encoder API; 448 aggregated features нельзя выдавать за raw EEG.
   - title: Массовое перемещение конфигов
