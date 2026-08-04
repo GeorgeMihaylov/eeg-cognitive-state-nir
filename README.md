@@ -177,13 +177,16 @@ the preregistered diagnostic status `proceed` (mean participant macro-F1 delta
 bootstrap interval includes zero. This is not a final domain-adaptation result;
 see `reports/integration/dann_label_q5_raw_diagnostic.md`.
 
-A confirmatory five-fold, three-seed DANN protocol is now prepared. Its
-preregistration remains disabled, and confirmatory training has not been
-performed; see `reports/integration/dann_label_q5_confirmatory_protocol.md`.
+The preregistered five-fold DANN confirmation is complete. The primary
+analysis uses only new seeds 123 and 2026 and is `partially_confirmed`: mean
+participant macro-F1 delta +0.00805, median +0.00195, balanced-accuracy delta
++0.00833, and 54.8% participant wins. The participant bootstrap interval
+crosses zero, so no standalone significance claim is made.
 
-The refined confirmatory DANN analysis separates new seeds 123 and 2026 from
-the previously observed fold-1/seed-42 diagnostic cell. Seed 42 is retained
-only as secondary sensitivity evidence, and training has not started.
+Seed 42 remains a separate sensitivity analysis; its existing fold-1
+diagnostic cell was hash-verified and was not retrained. The combined
+three-seed sensitivity is positive but does not alter the immutable primary
+decision. See `reports/integration/dann_label_q5_confirmatory_v2.md`.
 
 Тесты:
 

@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "experiment_id": "dann_label_q5_old_eeg_to_gpn_confirmatory_v2_execution",
+  "execution_enabled": true,
+  "output_dir": "benchmark_results/domain_adaptation_dann_confirmatory_v2",
+  "device": "cuda",
+  "protocol": {
+    "protocol_id": "dann_label_q5_old_eeg_to_gpn_confirmatory_v2",
+    "protocol_hash": "1ce582a3d73a7ae4393e77cc2f3b2cb7749ddbb30c1cb8fcad0056c6d326c368",
+    "disabled_preregistration_hash": "6fba1eb76133884f0d5984ec1ceedc49234f252846040122310ac45a99ad3d7e",
+    "directory": "benchmark_results/domain_adaptation_dann_confirmatory_v2_protocol",
+    "protocol_manifest": "benchmark_results/domain_adaptation_dann_confirmatory_v2_protocol/protocol_manifest.json",
+    "protocol_manifest_sha256": "9caf31f01f664af149de95f4a1f685aa6001b17a0c09a94826e4456aac8b5558",
+    "disabled_preregistration": "benchmark_results/domain_adaptation_dann_confirmatory_v2_protocol/preregistration/experiment_preregistration.json",
+    "run_matrix": "benchmark_results/domain_adaptation_dann_confirmatory_v2_protocol/run_matrix.csv",
+    "run_matrix_sha256": "c49487f78cd6d2da42f5ff4e2d99231234a152282e5f9f541cc5f4a56e45299c",
+    "primary_run_matrix": "benchmark_results/domain_adaptation_dann_confirmatory_v2_protocol/primary_run_matrix.csv",
+    "primary_run_matrix_sha256": "40cf89d0e2c98ba10762d8ef13de9af8429e5a5025cfa7d736d7389333af2d04",
+    "secondary_run_matrix": "benchmark_results/domain_adaptation_dann_confirmatory_v2_protocol/secondary_run_matrix.csv",
+    "secondary_run_matrix_sha256": "23e177c74dab11161c3cf1cd07cb158ee6ee0bcd0c23864696d2f062dbd41d23",
+    "completed_run_matrix": "benchmark_results/domain_adaptation_dann_confirmatory_v2_protocol/completed_run_matrix.csv",
+    "completed_run_matrix_sha256": "e545b310d2c51065a5a7663cabbada809599f32eead057bbc8c2e1f86e252259",
+    "fold_partitions": "benchmark_results/domain_adaptation_dann_confirmatory_v2_protocol/fold_partitions.parquet",
+    "fold_partitions_sha256": "94f7c06fecb9122ba296e8a94ac3405fc743c90f470c90da10b7f6743b96feb6"
+  },
+  "dataset": {
+    "config": "configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml",
+    "raw_universe_hash": "308fdd96523565417d0fc2f3b3bfdea74639224ce1ee44f5e87af6cc0b7e94cf",
+    "expected_samples": 30958,
+    "input_shape": [1, 14, 2560],
+    "sampling_rate": 256,
+    "window_duration_seconds": 10.0
+  },
+  "model": {
+    "name": "torch_eegnet",
+    "architecture_signature": "248d244e050af2b9e5bd1de0b706665efd3cb13a642044a965fc85602bbe23a7",
+    "domain_head_signature": "76af7a0e9a0d75d6637380a25903d296d1a50d12bdb07c2913ab694619e158e0",
+    "latent_dim": 1280,
+    "task_parameter_count": 8501,
+    "domain_parameter_count": 172354,
+    "total_dann_parameter_count": 180855,
+    "num_outputs": 5,
+    "domain_hidden_dims": [128, 64],
+    "domain_dropout": 0.2,
+    "n_domains": 2
+  },
+  "training": {
+    "source_batch_size": 32,
+    "target_batch_size": 32,
+    "maximum_epochs": 12,
+    "early_stopping_patience": 3,
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "learning_rate_schedule": "constant",
+    "gradient_clip_norm": 5.0,
+    "checkpoint_primary": "source_validation_macro_f1",
+    "checkpoint_secondary": "source_validation_balanced_accuracy",
+    "matched_early_stop": "stop_after_both_modes_reach_patience",
+    "source_validation_split_seed": 42,
+    "num_workers": 0,
+    "pin_memory": true
+  },
+  "schedule": {
+    "gradient_reversal_formula": "alpha(p)=2/(1+exp(-10*p))-1",
+    "progress_formula": "global_step/max(total_steps-1,1)",
+    "domain_loss_lambda": 1.0
+  },
+  "primary": {
+    "folds": [1, 2, 3, 4, 5],
+    "seeds": [123, 2026]
+  },
+  "secondary": {
+    "folds": [2, 3, 4, 5],
+    "seeds": [42]
+  },
+  "diagnostic_reference": {
+    "fold": 1,
+    "seed": 42,
+    "source": "benchmark_results/domain_adaptation_dann_raw_diagnostic",
+    "protocol_hash": "7f5642109e1ed26dd6de96aa88fe0711bfa08e8f3a58422b17364301d693f7c5",
+    "preregistration_hash": "f5e7cd962cc361b36e74b073c8532e2af5f4a94a36831f21531d6db36b54a817",
+    "source_only_checkpoint_sha256": "5b371b8da06088f0f386aa82c6848cd9d473e7845b2f1655339587acc72e11f3",
+    "dann_checkpoint_sha256": "0fa4900e166c2ce2a6f51bbd3c79871409ba47d20df4e649146684d925e1ada2",
+    "predictions_sha256": "00c7abbb4037973b7482d611a162f32ff9ba4c1914e6bfefa817bd275191e218",
+    "participant_metrics_sha256": "dabb732aa01703500aac51450b9221b14d98cd9d4ee9306ff2c8f78a53203104",
+    "summary_sha256": "fc52fe7f72f2c2d8b9d8ed6ec8ec2218d2dcbe47be18278fab9b13ea0143bd3d"
+  },
+  "target_test_lock": {
+    "required_before_unlock": ["source_only_checkpoint_hash", "dann_checkpoint_hash", "source_only_best_epoch", "dann_best_epoch", "source_validation_metrics", "source_batch_hashes", "architecture_signatures", "protocol_hash", "execution_preregistration_hash"],
+    "diagnostic_unlock_reusable": false
+  },
+  "resume_policy": {
+    "complete": "skip",
+    "checkpoint_fixed": "continue_unlock_and_evaluation",
+    "target_unlocked": "continue_evaluation",
+    "training_without_resume_checkpoint": "restart_same_run_same_seed",
+    "failed_technical": "retry_same_specification",
+    "record_attempts": true
+  },
+  "bootstrap": {
+    "resamples": 10000,
+    "seed": 42,
+    "unit": "unique_participant_after_primary_seed_average"
+  }
+}

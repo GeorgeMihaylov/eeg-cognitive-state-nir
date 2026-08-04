@@ -131,6 +131,17 @@ from .dann_label_q5_confirmatory_v2_protocol import (
     run_confirmatory_v2_protocol,
     validate_confirmatory_v2_config,
 )
+from .dann_label_q5_confirmatory_v2 import (
+    DANNConfirmatoryV2Execution,
+    average_participants_across_seeds,
+    bootstrap_unique_participants,
+    build_execution_registry,
+    fold_level_metrics as dann_confirmatory_fold_level_metrics,
+    pair_subject_metrics as pair_dann_confirmatory_subject_metrics,
+    run_dann_label_q5_confirmatory_v2,
+    seed_level_metrics as dann_confirmatory_seed_level_metrics,
+    validate_confirmatory_v2_execution_config,
+)
 
 __all__ = [
     "ExperimentTrial",
@@ -234,4 +245,13 @@ __all__ = [
     "refuse_observed_diagnostic_rerun",
     "run_confirmatory_v2_protocol",
     "validate_confirmatory_v2_config",
+    "DANNConfirmatoryV2Execution",
+    "average_participants_across_seeds",
+    "bootstrap_unique_participants",
+    "build_execution_registry",
+    "dann_confirmatory_fold_level_metrics",
+    "pair_dann_confirmatory_subject_metrics",
+    "run_dann_label_q5_confirmatory_v2",
+    "dann_confirmatory_seed_level_metrics",
+    "validate_confirmatory_v2_execution_config",
 ]

@@ -22,7 +22,12 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
-from sklearn.metrics import confusion_matrix, precision_score, recall_score
+from sklearn.metrics import (
+    cohen_kappa_score,
+    confusion_matrix,
+    precision_score,
+    recall_score,
+)
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset
 
@@ -246,6 +251,7 @@ class _ModeState:
     best_balanced_accuracy: float = -math.inf
     stale_epochs: int = 0
     best_state: dict[str, Tensor] | None = None
+    best_optimizer_state: dict[str, Any] | None = None
     updates: int = 0
 
 
@@ -268,6 +274,7 @@ class DANNLabelQ5RawDiagnostic:
         self.root = repository_root
         self.output = output_dir or self.root / str(config["output_dir"])
         self.seed = int(config["seed"])
+        self.outer_fold = int(config.get("protocol", {}).get("outer_fold", 1))
         self.device = resolve_device(str(config["device"]))
         if not self.device.startswith("cuda"):
             raise RuntimeError("Task 8Shch requires CUDA")
@@ -518,7 +525,7 @@ class DANNLabelQ5RawDiagnostic:
                     row = {
                         "mode": mode, "partition": partition, "sample_id": str(batch["sample_id"][index]),
                         "subject_id": str(batch["subject_id"][index]), "record_group_id": str(batch["record_group_id"][index]),
-                        "outer_fold": 1, "source": "gpn_data" if partition == "target_test" else "Old_EEG",
+                        "outer_fold": self.outer_fold, "source": "gpn_data" if partition == "target_test" else "Old_EEG",
                         "y_true": int(labels[index]), "y_pred": int(predictions[index]),
                     }
                     row.update({f"proba_{class_id}": float(probabilities[index, class_id]) for class_id in range(5)})
@@ -606,6 +613,7 @@ class DANNLabelQ5RawDiagnostic:
                         logits = state.model(source_x)
                         loss = nn.functional.cross_entropy(logits, source_y)
                         task_loss = loss
+                        task_outputs = logits
                     else:
                         assert target_batches is not None
                         target_batch = next(target_batches)
@@ -620,6 +628,7 @@ class DANNLabelQ5RawDiagnostic:
                         result = DANNObjective(task_type="classification", lambda_domain=float(self.config["schedule"]["domain_loss_lambda"]))(outputs, source_y, domain_ids)
                         loss = result.total_loss
                         task_loss = result.task_loss
+                        task_outputs = outputs.source_task_outputs
                         domain_loss = result.domain_loss
                         source_count = len(source_y)
                         domain_pred = outputs.domain_outputs.argmax(dim=1)
@@ -636,7 +645,9 @@ class DANNLabelQ5RawDiagnostic:
                     encoder_norm = _global_norm(encoder.encoder_parameters())  # type: ignore[attr-defined]
                     task_head_norm = _global_norm(encoder.get_output_head().parameters())
                     domain_head_norm = 0.0 if mode == "source_only_matched" else _global_norm(dann.domain_discriminator.parameters())
-                    unclipped = float(torch.nn.utils.clip_grad_norm_(state.model.parameters(), float(training["gradient_clip_norm"])).item())
+                    clip_norm = float(training["gradient_clip_norm"])
+                    unclipped = float(torch.nn.utils.clip_grad_norm_(state.model.parameters(), clip_norm).item())
+                    clipped = min(unclipped, clip_norm)
                     if not np.isfinite([encoder_norm, task_head_norm, domain_head_norm, unclipped]).all():
                         raise RuntimeError("Non-finite training gradient")
                     state.optimizer.step()
@@ -646,7 +657,7 @@ class DANNLabelQ5RawDiagnostic:
                     task_denominator += len(source_y)
                     if mode == "dann":
                         schedule_rows.append({"epoch": epoch, "step": local_step + 1, "global_step": global_step, "progress": progress, "grl_alpha": alpha, "domain_lambda": float(self.config["schedule"]["domain_loss_lambda"]), "learning_rate": float(training["learning_rate"])})
-                        domain_rows.append({"epoch": epoch, "step": local_step + 1, "task_loss": float(task_loss.detach().item()), "domain_loss": float(domain_loss.detach().item()), "weighted_domain_loss": float(domain_loss.detach().item()) * float(self.config["schedule"]["domain_loss_lambda"]), "encoder_total_gradient_norm": encoder_norm, "task_head_gradient_norm": task_head_norm, "domain_head_gradient_norm": domain_head_norm, "gradient_norm_before_clip": unclipped, "grl_alpha": alpha, "domain_lambda": float(self.config["schedule"]["domain_loss_lambda"]), "domain_accuracy_source": float((domain_pred[:source_count] == domain_ids[:source_count]).float().mean().item()), "domain_accuracy_target": float((domain_pred[source_count:] == domain_ids[source_count:]).float().mean().item()), "domain_accuracy_combined": float((domain_pred == domain_ids).float().mean().item())})
+                        domain_rows.append({"epoch": epoch, "step": local_step + 1, "task_loss": float(task_loss.detach().item()), "domain_loss": float(domain_loss.detach().item()), "weighted_domain_loss": float(domain_loss.detach().item()) * float(self.config["schedule"]["domain_loss_lambda"]), "source_task_accuracy": float((task_outputs.argmax(dim=1) == source_y).float().mean().item()), "encoder_total_gradient_norm": encoder_norm, "task_head_gradient_norm": task_head_norm, "domain_head_gradient_norm": domain_head_norm, "gradient_norm_before_clip": unclipped, "clipped_total_gradient_norm": clipped, "grl_alpha": alpha, "domain_lambda": float(self.config["schedule"]["domain_loss_lambda"]), "domain_accuracy_source": float((domain_pred[:source_count] == domain_ids[:source_count]).float().mean().item()), "domain_accuracy_target": float((domain_pred[source_count:] == domain_ids[source_count:]).float().mean().item()), "domain_accuracy_combined": float((domain_pred == domain_ids).float().mean().item())})
                 task_model = source_model if mode == "source_only_matched" else dann.task_model
                 validation_predictions, validation_metrics = self._predict(task_model, validation_dataset, mode=mode, partition="source_validation")
                 macro = float(validation_metrics["macro_f1"])
@@ -657,6 +668,7 @@ class DANNLabelQ5RawDiagnostic:
                     state.best_macro_f1 = macro
                     state.best_balanced_accuracy = balanced
                     state.best_state = {name: value.detach().cpu().clone() for name, value in state.model.state_dict().items()}
+                    state.best_optimizer_state = deepcopy(state.optimizer.state_dict())
                     state.stale_epochs = 0
                 else:
                     state.stale_epochs += 1
@@ -672,7 +684,7 @@ class DANNLabelQ5RawDiagnostic:
             if all(state.stale_epochs >= int(training["early_stopping_patience"]) for state in states.values()):
                 break
         for mode, state in states.items():
-            if state.best_state is None:
+            if state.best_state is None or state.best_optimizer_state is None:
                 raise RuntimeError(f"No checkpoint selected for {mode}")
             state.model.load_state_dict(state.best_state, strict=True)
             state.model.eval()
@@ -683,7 +695,9 @@ class DANNLabelQ5RawDiagnostic:
                 if mode == "source_only_matched"
                 else dann.checkpoint_payload(metadata={"mode": mode, "best_epoch": state.best_epoch})
             )
+            payload["optimizer_state_dict"] = state.best_optimizer_state
             _atomic_torch_save(directory / "checkpoint.pt", payload)
+            _atomic_torch_save(directory / "optimizer_state.pt", state.best_optimizer_state)
         if states["source_only_matched"].updates != states["dann"].updates:
             raise RuntimeError("Matched source optimizer update budget diverged")
         pd.DataFrame(domain_rows).to_csv(self.output / "dann/domain_metrics.csv", index=False)
@@ -706,6 +720,11 @@ class DANNLabelQ5RawDiagnostic:
                 base.loc[index, "macro_precision"] = precision_score(truth, pred, labels=np.arange(5), average="macro", zero_division=0)
                 base.loc[index, "macro_recall"] = recall_score(truth, pred, labels=np.arange(5), average="macro", zero_division=0)
                 base.loc[index, "prediction_entropy"] = float((-proba * np.log(np.clip(proba, 1e-12, 1))).sum(axis=1).mean())
+                base.loc[index, "quadratic_weighted_kappa"] = float(
+                    cohen_kappa_score(
+                        truth, pred, labels=np.arange(5), weights="quadratic"
+                    )
+                )
                 base.loc[index, "per_class_recall"] = json.dumps(recall_score(truth, pred, labels=np.arange(5), average=None, zero_division=0).tolist())
             frames.append(base)
         return pd.concat(frames, ignore_index=True)
