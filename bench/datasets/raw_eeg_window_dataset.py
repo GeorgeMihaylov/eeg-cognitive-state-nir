@@ -18,6 +18,7 @@ from scipy.signal import resample_poly
 from sklearn.model_selection import GroupKFold
 
 from ..core.abstract_dataset import BaseDataset, EEGData
+from ..tasks.target_registry import resolve_target_spec
 from .logical_recordings import (
     DEFAULT_SOURCE_PRIORITY,
     RAW_ALL_SOURCE_RECORDS,
@@ -35,6 +36,7 @@ from .raw_preprocessing import (
     raw_preprocessing_hash,
     raw_window_artifact_metrics,
 )
+from .target_view import attach_targets_by_sample_id, build_target_view
 
 
 # Backward-compatible public name; the canonical value lives in one shared
@@ -901,11 +903,12 @@ class RawEEGWindowDataset(BaseDataset):
     def load(self) -> EEGData:
         manifest_path = Path(self.config["data_path"])
         manifest = ensure_record_group_ids(pd.read_parquet(manifest_path))
-        target_column = str(self.config.get("target_col", "label_q5"))
-        if target_column != "label_q5":
+        target_spec = resolve_target_spec(
+            self.config, default_target_id="label_focus_q5_legacy"
+        )
+        if not target_spec.raw_input_supported:
             raise ValueError(
-                "RawEEGWindowDataset currently supports classification target "
-                f"'label_q5' only, got {target_column!r}"
+                f"Target {target_spec.target_id!r} is not approved for raw EEG input"
             )
         mode = str(
             self.config.get("dataset_mode", RAW_ALL_SOURCE_RECORDS)
@@ -977,6 +980,40 @@ class RawEEGWindowDataset(BaseDataset):
         else:
             selected_record_ids = set(accepted["record_id"].astype(str))
         accepted_for_mode = accepted.copy()
+        n_before_target_filter = len(accepted)
+        missing_target_columns = [
+            column
+            for column in target_spec.processed_columns
+            if column not in accepted.columns
+        ]
+        target_data_path: Optional[Path] = None
+        if missing_target_columns:
+            target_data_value = self.config.get("target_data_path")
+            if target_data_value is None:
+                raise ValueError(
+                    f"Raw manifest lacks target columns {missing_target_columns}; "
+                    "configure target_data_path with the canonical processed table"
+                )
+            target_data_path = Path(str(target_data_value))
+            if not target_data_path.is_file():
+                raise FileNotFoundError(
+                    f"Canonical target table not found: {target_data_path}"
+                )
+            target_columns = [
+                "subject_id",
+                "record_id",
+                *target_spec.processed_columns,
+            ]
+            target_frame = pd.read_parquet(target_data_path, columns=target_columns)
+            if "sample_id" not in target_frame.columns:
+                target_frame = target_frame.copy()
+                target_frame.insert(0, "sample_id", target_frame.index.to_numpy())
+            accepted = attach_targets_by_sample_id(
+                accepted, target_frame, target_spec, validate_identifiers=True
+            )
+        target_view = build_target_view(accepted, target_spec)
+        accepted = accepted.iloc[target_view.cohort.selected_positions].copy()
+        n_after_target_filter = len(accepted)
         max_windows = self.config.get("max_windows")
         if max_windows is not None:
             limit = int(max_windows)
@@ -989,13 +1026,15 @@ class RawEEGWindowDataset(BaseDataset):
                     f"need at least {len(mandatory)}, got {limit}"
                 )
             remaining = accepted.loc[~accepted.index.isin(mandatory.index)]
+            balance_columns = ["outer_fold"]
+            if target_spec.is_classification:
+                balance_columns.extend(target_spec.processed_columns)
             group_count = max(
-                1,
-                remaining.groupby(["outer_fold", "label_q5"], observed=True).ngroups,
+                1, remaining.groupby(balance_columns, observed=True).ngroups
             )
             per_group = int(math.ceil((limit - len(mandatory)) / group_count))
             balanced = remaining.groupby(
-                ["outer_fold", "label_q5"], sort=False, observed=True
+                balance_columns, sort=False, observed=True
             ).head(per_group)
             extra = balanced.head(limit - len(mandatory))
             accepted = pd.concat([mandatory, extra]).drop_duplicates(
@@ -1039,7 +1078,10 @@ class RawEEGWindowDataset(BaseDataset):
                 f"Configured channel_names has {len(channel_names)} entries for "
                 f"{view.shape[2]} channels"
             )
-        labels = accepted[target_column].to_numpy(dtype=np.int64)
+        selected_target_view = build_target_view(accepted, target_spec)
+        if selected_target_view.cohort.n_available_rows != len(accepted):
+            raise RuntimeError("Target availability changed after raw-window selection")
+        labels = selected_target_view.targets
         row_metadata = {
             column: accepted[column].to_numpy()
             for column in (
@@ -1062,6 +1104,30 @@ class RawEEGWindowDataset(BaseDataset):
             metadata={
                 "observation_unit": "raw_eeg_window",
                 "manifest_path": str(manifest_path),
+                "target_id": target_spec.target_id,
+                "target_type": target_spec.target_type,
+                "target_registry_status": target_spec.registry_status,
+                "target_col": (
+                    target_spec.processed_columns[0]
+                    if target_spec.output_dim == 1
+                    else None
+                ),
+                "target_cols": (
+                    list(target_spec.processed_columns)
+                    if target_spec.output_dim > 1
+                    else None
+                ),
+                "target_output_names": list(target_spec.output_names),
+                "n_outputs": target_spec.output_dim,
+                "task_type": target_spec.task_type,
+                "target_data_path": (
+                    None if target_data_path is None else str(target_data_path)
+                ),
+                "n_samples_before_target_filter": int(n_before_target_filter),
+                "n_samples_after_target_filter": int(n_after_target_filter),
+                "dropped_target_rows": int(
+                    n_before_target_filter - n_after_target_filter
+                ),
                 "input_shape": list(view.shape[1:]),
                 "n_rejected_windows": int((manifest["status"] != "ok").sum()),
                 "precomputed_outer_folds": True,

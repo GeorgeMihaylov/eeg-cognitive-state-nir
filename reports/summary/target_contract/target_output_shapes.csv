@@ -1,0 +1,37 @@
+target_id,input_view,input_shape,target_shape,target_dtype,n_samples
+pm_attention_regression,feature_eeg,[168],[43175],float32,43175
+pm_attention_regression,feature_pow,[280],[43175],float32,43175
+pm_attention_regression,feature_eeg_pow,[448],[43175],float32,43175
+pm_engagement_regression,feature_eeg,[168],[48254],float32,48254
+pm_engagement_regression,feature_pow,[280],[48254],float32,48254
+pm_engagement_regression,feature_eeg_pow,[448],[48254],float32,48254
+pm_excitement_regression,feature_eeg,[168],[50983],float32,50983
+pm_excitement_regression,feature_pow,[280],[50983],float32,50983
+pm_excitement_regression,feature_eeg_pow,[448],[50983],float32,50983
+pm_stress_regression,feature_eeg,[168],[45384],float32,45384
+pm_stress_regression,feature_pow,[280],[45384],float32,45384
+pm_stress_regression,feature_eeg_pow,[448],[45384],float32,45384
+pm_relaxation_regression,feature_eeg,[168],[45394],float32,45394
+pm_relaxation_regression,feature_pow,[280],[45394],float32,45394
+pm_relaxation_regression,feature_eeg_pow,[448],[45394],float32,45394
+pm_interest_regression,feature_eeg,[168],[45440],float32,45440
+pm_interest_regression,feature_pow,[280],[45440],float32,45440
+pm_interest_regression,feature_eeg_pow,[448],[45440],float32,45440
+pm_focus_regression,feature_eeg,[168],[45384],float32,45384
+pm_focus_regression,feature_pow,[280],[45384],float32,45384
+pm_focus_regression,feature_eeg_pow,[448],[45384],float32,45384
+pm_multioutput_regression_7,feature_eeg,[168],"[43174, 7]",float32,43174
+pm_multioutput_regression_7,feature_pow,[280],"[43174, 7]",float32,43174
+pm_multioutput_regression_7,feature_eeg_pow,[448],"[43174, 7]",float32,43174
+label_focus_q5_legacy,feature_eeg,[168],[45384],int64,45384
+label_focus_q5_legacy,feature_pow,[280],[45384],int64,45384
+label_focus_q5_legacy,feature_eeg_pow,[448],[45384],int64,45384
+pm_attention_regression,raw_eeg,"[1, 14, 2560]",[29569],float32,29569
+pm_engagement_regression,raw_eeg,"[1, 14, 2560]",[30958],float32,30958
+pm_excitement_regression,raw_eeg,"[1, 14, 2560]",[30958],float32,30958
+pm_stress_regression,raw_eeg,"[1, 14, 2560]",[30958],float32,30958
+pm_relaxation_regression,raw_eeg,"[1, 14, 2560]",[30958],float32,30958
+pm_interest_regression,raw_eeg,"[1, 14, 2560]",[30958],float32,30958
+pm_focus_regression,raw_eeg,"[1, 14, 2560]",[30958],float32,30958
+pm_multioutput_regression_7,raw_eeg,"[1, 14, 2560]","[29569, 7]",float32,29569
+label_focus_q5_legacy,raw_eeg,"[1, 14, 2560]",[30958],int64,30958

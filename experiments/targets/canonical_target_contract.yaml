@@ -1,0 +1,35 @@
+schema_version: 1
+experiment_id: canonical_target_contract
+result_status: diagnostic
+execution_mode: analysis_only
+
+registry_path: reports/summary/target_registry.yaml
+feature_dataset_path: data/processed/windowed_eeg_pm_dataset_w10.parquet
+raw_manifest_path: data/interim/raw_eeg_window_index_w10_raw_v3.parquet
+logical_recording_map_path: data/interim/logical_recording_map.parquet
+output_dir: reports/summary/target_contract
+report_path: reports/integration/canonical_target_contract.md
+
+raw_dataset_mode: raw_deduplicated_logical_records
+raw_preprocessing:
+  resample_hz: 256
+  bandpass: {enabled: false, low_hz: 1.0, high_hz: 45.0}
+  notch: {enabled: false, frequency_hz: 50.0, quality_factor: 30.0}
+  rereference: {mode: none}
+  artifact_rejection:
+    enabled: false
+    max_abs_amplitude: null
+    max_flat_fraction: null
+
+fixed_outer_fold_column: outer_fold
+fixed_outer_group_column: subject_id
+expected_outer_folds: 5
+
+decision_rule:
+  ready: canonical_target_contract_ready
+  partial: partially_ready
+  require_all_pm_feature_views: true
+  require_all_pm_raw_views: true
+  require_fold_local_transform_contract: true
+  require_backward_compatibility_tests: true
+  require_full_pytest: true

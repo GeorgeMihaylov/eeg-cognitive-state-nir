@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional
 
 from bench.bench_runner import BenchmarkRunner
 from bench.tasks.tasks_registry import TASK_REGISTRY
+from bench.tasks.target_registry import get_target_spec
 from model_zoo.DL.feature_preprocessing import (
     SUPPORTED_FEATURE_SCALING_STRATEGIES,
 )
@@ -268,11 +269,18 @@ def validate_config(config: Dict[str, Any]) -> bool:
             )
         has_target_col = 'target_col' in dataset_config
         has_target_cols = 'target_cols' in dataset_config
-        if has_target_col and has_target_cols:
+        has_target_id = 'target_id' in dataset_config
+        if sum((has_target_id, has_target_col, has_target_cols)) > 1:
             errors.append(
-                f"Dataset '{dataset_name}' must not define both target_col "
-                'and target_cols'
+                f"Dataset '{dataset_name}' must define only one of target_id, "
+                'target_col, or target_cols'
             )
+        target_spec = None
+        if has_target_id:
+            try:
+                target_spec = get_target_spec(str(dataset_config['target_id']))
+            except ValueError as exc:
+                errors.append(f"Dataset '{dataset_name}': {exc}")
         target_cols = dataset_config.get('target_cols')
         if has_target_cols and (
             not isinstance(target_cols, list)
@@ -290,17 +298,25 @@ def validate_config(config: Dict[str, Any]) -> bool:
             errors.append(
                 f"Dataset '{dataset_name}' target_cols must be unique"
             )
-        if expected_task_type == 'classification' and has_target_cols:
+        if expected_task_type == 'classification' and (
+            has_target_cols
+            or (target_spec is not None and not target_spec.is_classification)
+        ):
             errors.append(
-                f"Classification dataset '{dataset_name}' cannot use target_cols"
+                f"Classification dataset '{dataset_name}' has a non-classification target"
             )
         if 'performance_metrics_regression' in valid_task_names:
-            if not has_target_cols:
+            canonical_multioutput = (
+                target_spec is not None
+                and target_spec.target_id == 'pm_multioutput_regression_7'
+            )
+            if not has_target_cols and not canonical_multioutput:
                 errors.append(
-                    f"Dataset '{dataset_name}' must define target_cols for "
+                    f"Dataset '{dataset_name}' must define target_cols or "
+                    "target_id: pm_multioutput_regression_7 for "
                     'performance_metrics_regression'
                 )
-            if dataset_config.get('discretize', True) is not False:
+            if not canonical_multioutput and dataset_config.get('discretize', True) is not False:
                 errors.append(
                     f"Dataset '{dataset_name}' must set discretize: false for "
                     'performance_metrics_regression'

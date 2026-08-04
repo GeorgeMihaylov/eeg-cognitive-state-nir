@@ -5,16 +5,22 @@ from typing import Dict, Any, List, Optional
 from .base_eeg_data_loader import BaseEEGDataset
 from .base_eeg_data_loader import feature_list_sha256
 from ..core.abstract_dataset import EEGData
+from ..tasks.target_registry import resolve_target_spec
 
 
 class EmotivDataset(BaseEEGDataset):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
-        if 'target_col' in config and 'target_cols' in config:
-            raise ValueError(
-                "Dataset config must define either 'target_col' or 'target_cols', "
-                'not both'
-            )
+        target_config = config
+        if not any(
+            name in config for name in ('target_id', 'target_col', 'target_cols')
+        ):
+            target_config = {
+                **config,
+                'target_col': 'target_main',
+                '_legacy_implicit_target_main_classification': True,
+            }
+        self.target_spec = resolve_target_spec(target_config)
         configured_targets = config.get('target_cols')
         if configured_targets is not None:
             if (
@@ -29,12 +35,12 @@ class EmotivDataset(BaseEEGDataset):
             if len(set(configured_targets)) != len(configured_targets):
                 raise ValueError('target_cols must contain unique column names')
         self.target_cols: Optional[List[str]] = (
-            None
-            if configured_targets is None
-            else list(configured_targets)
+            list(self.target_spec.processed_columns)
+            if self.target_spec.output_dim > 1
+            else None
         )
-        self.target_col = config.get('target_col', 'target_main')
-        self.target_col_explicit = 'target_col' in config
+        self.target_col = self.target_spec.processed_columns[0]
+        self.target_col_explicit = True
         self.subject_col = config.get('subject_col', 'subject_id')
 
     def load(self) -> EEGData:
@@ -181,18 +187,10 @@ class EmotivDataset(BaseEEGDataset):
                     f'{missing_targets}'
                 )
         elif self.target_col not in df.columns:
-            if self.target_col_explicit:
-                raise ValueError(
-                    f"Configured target column {self.target_col!r} "
-                    "is absent from the dataset"
-                )
-            target_candidates = ['target_main', 'label_q5'] + [c for c in df.columns if c.startswith('target_')]
-            for candidate in target_candidates:
-                if candidate in df.columns:
-                    self.target_col = candidate
-                    break
-            else:
-                raise ValueError(f"No target column found. Available: {df.columns.tolist()[:20]}")
+            raise ValueError(
+                f"Configured target column {self.target_col!r} "
+                "is absent from the dataset"
+            )
         n_samples_before_target_filter = len(df)
         X = (
             df[feature_cols]
@@ -201,7 +199,17 @@ class EmotivDataset(BaseEEGDataset):
         )
         if self.target_cols is None:
             y = pd.to_numeric(df[self.target_col], errors='coerce').to_numpy()
-            y = self._discretize_target(y)
+            if self.target_spec.is_classification:
+                if self.target_spec.registry_status == 'deprecated_ad_hoc_legacy':
+                    y = self._discretize_target(y)
+                finite = np.isfinite(y)
+                if not np.allclose(y[finite], np.round(y[finite])):
+                    raise ValueError(
+                        f"Classification target {self.target_col!r} contains "
+                        "non-integer values"
+                    )
+            else:
+                y = np.asarray(y, dtype=np.float32)
             target_valid_mask = np.isfinite(y)
         else:
             y = (
@@ -221,6 +229,10 @@ class EmotivDataset(BaseEEGDataset):
         dropped_feature_rows = int((target_valid_mask & ~feature_valid_mask).sum())
         X = X[valid_mask]
         y = y[valid_mask]
+        if self.target_spec.is_classification:
+            y = np.asarray(np.round(y), dtype=np.int64)
+        else:
+            y = np.asarray(y, dtype=np.float32)
         subject_ids = subject_ids[valid_mask]
         sample_ids = sample_ids[valid_mask]
         record_ids = record_ids[valid_mask]
@@ -287,7 +299,7 @@ class EmotivDataset(BaseEEGDataset):
                 }
         unique_classes = (
             np.unique(y)
-            if self.target_cols is None
+            if self.target_spec.is_classification
             else np.asarray([], dtype=float)
         )
 
@@ -307,6 +319,10 @@ class EmotivDataset(BaseEEGDataset):
                 'target_col': (
                     self.target_col if self.target_cols is None else None
                 ),
+                'target_id': self.target_spec.target_id,
+                'target_type': self.target_spec.target_type,
+                'target_registry_status': self.target_spec.registry_status,
+                'target_output_names': list(self.target_spec.output_names),
                 'target_cols': (
                     None if self.target_cols is None else list(self.target_cols)
                 ),
@@ -314,9 +330,7 @@ class EmotivDataset(BaseEEGDataset):
                     1 if self.target_cols is None else len(self.target_cols)
                 ),
                 'task_type': (
-                    'regression'
-                    if self.target_cols is not None
-                    else self.config.get('task_type', 'classification')
+                    self.target_spec.task_type
                 ),
                 'n_samples_before_target_filter': n_samples_before_target_filter,
                 'n_samples_after_target_filter': n_samples_after_target_filter,

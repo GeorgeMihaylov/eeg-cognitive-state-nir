@@ -1,0 +1,10 @@
+legacy_name,canonical_target_id,warning_required,implicit_fallback_allowed
+label_q5,label_focus_q5_legacy,True,False
+target_attention,pm_attention_regression,True,False
+target_engagement,pm_engagement_regression,True,False
+target_excitement,pm_excitement_regression,True,False
+target_focus,pm_focus_regression,True,False
+target_interest,pm_interest_regression,True,False
+target_main,pm_focus_regression,True,False
+target_relaxation,pm_relaxation_regression,True,False
+target_stress,pm_stress_regression,True,False

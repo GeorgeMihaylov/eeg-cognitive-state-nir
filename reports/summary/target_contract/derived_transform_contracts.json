@@ -1,0 +1,1224 @@
+{
+  "fit_scope": "outer_train_only",
+  "materializes_dataset_columns": false,
+  "transforms": {
+    "pm_attention_q3_fold_local": [
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.0436,
+          0.405343,
+          0.505163,
+          0.925407
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 43175,
+        "fit_sample_count": 34584,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.028539,
+          0.41046066666666664,
+          0.5101376666666667,
+          0.916286
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 43175,
+        "fit_sample_count": 35034,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.028539,
+          0.405535,
+          0.502891,
+          0.925407
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 43175,
+        "fit_sample_count": 34334,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.028539,
+          0.40968,
+          0.5068913333333332,
+          0.925407
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 43175,
+        "fit_sample_count": 34362,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.028539,
+          0.406594,
+          0.506193,
+          0.925407
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 43175,
+        "fit_sample_count": 34386,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_attention_q5_fold_local": [
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.0436,
+          0.358315,
+          0.4246256,
+          0.482512,
+          0.5642566000000001,
+          0.925407
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 43175,
+        "fit_sample_count": 34584,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.028539,
+          0.364113,
+          0.42907639999999997,
+          0.48699760000000003,
+          0.5683852,
+          0.916286
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 43175,
+        "fit_sample_count": 35034,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.028539,
+          0.36003080000000004,
+          0.42417400000000005,
+          0.4810894,
+          0.5594174000000001,
+          0.925407
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 43175,
+        "fit_sample_count": 34334,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.028539,
+          0.3650002,
+          0.4283946,
+          0.4841836000000001,
+          0.5643238000000002,
+          0.925407
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 43175,
+        "fit_sample_count": 34362,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.028539,
+          0.359637,
+          0.425883,
+          0.482659,
+          0.564934,
+          0.925407
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 43175,
+        "fit_sample_count": 34386,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_engagement_q3_fold_local": [
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.053498,
+          0.576551,
+          0.681626,
+          0.946502
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 48254,
+        "fit_sample_count": 38293,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.053498,
+          0.572404,
+          0.6814076666666666,
+          0.946502
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 48254,
+        "fit_sample_count": 37530,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.053498,
+          0.584484,
+          0.6870373333333334,
+          0.946502
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 48254,
+        "fit_sample_count": 39126,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.055436,
+          0.5790743333333334,
+          0.686805,
+          0.946502
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 48254,
+        "fit_sample_count": 39198,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.053498,
+          0.57663,
+          0.679634,
+          0.946502
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 48254,
+        "fit_sample_count": 38869,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_engagement_q5_fold_local": [
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.053498,
+          0.513401,
+          0.6010268,
+          0.6621636,
+          0.7229492,
+          0.946502
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 48254,
+        "fit_sample_count": 38293,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.053498,
+          0.5098868,
+          0.597651,
+          0.6609956000000001,
+          0.725178,
+          0.946502
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 48254,
+        "fit_sample_count": 37530,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.053498,
+          0.522985,
+          0.607615,
+          0.667786,
+          0.728407,
+          0.946502
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 48254,
+        "fit_sample_count": 39126,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.055436,
+          0.5167538,
+          0.6044415999999999,
+          0.6668708000000002,
+          0.7289448,
+          0.946502
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 48254,
+        "fit_sample_count": 39198,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.053498,
+          0.5164542,
+          0.6000132,
+          0.6601488,
+          0.7210451999999999,
+          0.946502
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 48254,
+        "fit_sample_count": 38869,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_excitement_q3_fold_local": [
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          2.4e-05,
+          0.19843,
+          0.372059,
+          1.0
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 50983,
+        "fit_sample_count": 40828,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          2.4e-05,
+          0.194713,
+          0.36141899999999993,
+          1.0
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 50983,
+        "fit_sample_count": 38942,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.000116,
+          0.19400366666666669,
+          0.36515699999999995,
+          1.0
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 50983,
+        "fit_sample_count": 41607,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          2.4e-05,
+          0.199655,
+          0.373484,
+          1.0
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 50983,
+        "fit_sample_count": 41295,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          2.4e-05,
+          0.194963,
+          0.368322,
+          1.0
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 50983,
+        "fit_sample_count": 41260,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_excitement_q5_fold_local": [
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          2.4e-05,
+          0.1473728,
+          0.22408820000000002,
+          0.322466,
+          0.5187714000000001,
+          1.0
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 50983,
+        "fit_sample_count": 40828,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          2.4e-05,
+          0.14490540000000002,
+          0.219654,
+          0.3143228,
+          0.5008176000000001,
+          1.0
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 50983,
+        "fit_sample_count": 38942,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.000116,
+          0.143687,
+          0.21918680000000004,
+          0.3155030000000001,
+          0.5128678,
+          1.0
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 50983,
+        "fit_sample_count": 41607,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          2.4e-05,
+          0.1478952,
+          0.22536720000000002,
+          0.324384,
+          0.5244016000000001,
+          1.0
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 50983,
+        "fit_sample_count": 41295,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          2.4e-05,
+          0.143822,
+          0.220783,
+          0.31968240000000014,
+          0.515547,
+          1.0
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 50983,
+        "fit_sample_count": 41260,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_focus_q3_fold_local": [
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.004077,
+          0.373853,
+          0.471696,
+          0.991193
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36261,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.004077,
+          0.36847766666666665,
+          0.464236,
+          0.991193
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36392,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.004077,
+          0.368809,
+          0.464714,
+          0.979169
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36277,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.004077,
+          0.368494,
+          0.468928,
+          0.991193
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36328,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.033242,
+          0.37052666666666667,
+          0.471989,
+          0.991193
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36278,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_focus_q5_fold_local": [
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.004077,
+          0.334275,
+          0.39107,
+          0.44776900000000003,
+          0.528306,
+          0.991193
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36261,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.004077,
+          0.329336,
+          0.38586760000000003,
+          0.4417284,
+          0.5218646000000001,
+          0.991193
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36392,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.004077,
+          0.330486,
+          0.386307,
+          0.4415964,
+          0.5220132,
+          0.979169
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36277,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.004077,
+          0.32739680000000004,
+          0.38674200000000003,
+          0.4444634000000001,
+          0.5300206000000001,
+          0.991193
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36328,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.033242,
+          0.3293054,
+          0.388832,
+          0.44768560000000013,
+          0.531514,
+          0.991193
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36278,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_interest_q3_fold_local": [
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.134833,
+          0.47909233333333334,
+          0.5300466666666667,
+          0.996604
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45440,
+        "fit_sample_count": 36293,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.134833,
+          0.47693966666666665,
+          0.528934,
+          0.996604
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45440,
+        "fit_sample_count": 36444,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.134833,
+          0.48098366666666664,
+          0.5293053333333333,
+          0.996604
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45440,
+        "fit_sample_count": 36329,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.188104,
+          0.479621,
+          0.5291859999999999,
+          0.996604
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45440,
+        "fit_sample_count": 36374,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.134833,
+          0.477179,
+          0.52917,
+          0.996604
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45440,
+        "fit_sample_count": 36320,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_interest_q5_fold_local": [
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.134833,
+          0.452948,
+          0.4892606,
+          0.518179,
+          0.5718654000000001,
+          0.996604
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45440,
+        "fit_sample_count": 36293,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.134833,
+          0.447963,
+          0.487326,
+          0.5171806,
+          0.5743014000000001,
+          0.996604
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45440,
+        "fit_sample_count": 36444,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.134833,
+          0.456109,
+          0.490481,
+          0.5180698,
+          0.5696892,
+          0.996604
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45440,
+        "fit_sample_count": 36329,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.188104,
+          0.45371480000000003,
+          0.4897232,
+          0.5179490000000001,
+          0.570874,
+          0.996604
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45440,
+        "fit_sample_count": 36374,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.134833,
+          0.449724,
+          0.4874018,
+          0.5170744,
+          0.5706552,
+          0.996604
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45440,
+        "fit_sample_count": 36320,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_relaxation_q3_fold_local": [
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.075858,
+          0.25278133333333336,
+          0.388062,
+          0.697059
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45394,
+        "fit_sample_count": 36270,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.075858,
+          0.2528303333333333,
+          0.397077,
+          0.697059
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45394,
+        "fit_sample_count": 36402,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.075858,
+          0.25258766666666665,
+          0.3926943333333333,
+          0.697059
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45394,
+        "fit_sample_count": 36279,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.075858,
+          0.258833,
+          0.401586,
+          0.697059
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45394,
+        "fit_sample_count": 36337,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.075858,
+          0.25274833333333335,
+          0.38777,
+          0.697059
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45394,
+        "fit_sample_count": 36288,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_relaxation_q5_fold_local": [
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.075858,
+          0.2043838,
+          0.2759216,
+          0.354927,
+          0.49019880000000005,
+          0.697059
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45394,
+        "fit_sample_count": 36270,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.075858,
+          0.20414480000000004,
+          0.275599,
+          0.359018,
+          0.508331,
+          0.697059
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45394,
+        "fit_sample_count": 36402,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.075858,
+          0.2048334,
+          0.274508,
+          0.35591100000000003,
+          0.5029764000000001,
+          0.697059
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45394,
+        "fit_sample_count": 36279,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.075858,
+          0.209919,
+          0.282018,
+          0.364404,
+          0.5110938,
+          0.697059
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45394,
+        "fit_sample_count": 36337,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.075858,
+          0.20270020000000002,
+          0.2759604,
+          0.3548546000000001,
+          0.4831302,
+          0.697059
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45394,
+        "fit_sample_count": 36288,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_stress_q3_fold_local": [
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.054506,
+          0.406268,
+          0.46426433333333333,
+          0.999447
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36261,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.054506,
+          0.3994253333333333,
+          0.464209,
+          0.999447
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36392,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.054506,
+          0.40768,
+          0.462963,
+          0.999447
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36277,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.054506,
+          0.399913,
+          0.466358,
+          0.999447
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36328,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 3,
+        "boundaries": [
+          0.071471,
+          0.40434233333333336,
+          0.4633683333333333,
+          0.999447
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36278,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 3,
+        "transform": "fold_local_quantile"
+      }
+    ],
+    "pm_stress_q5_fold_local": [
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.054506,
+          0.373651,
+          0.419241,
+          0.452199,
+          0.518123,
+          0.999447
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36261,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 1,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.054506,
+          0.3653168,
+          0.41316980000000003,
+          0.45111300000000004,
+          0.5286306,
+          0.999447
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36392,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 2,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.054506,
+          0.378388,
+          0.4196104,
+          0.4517,
+          0.5122038000000001,
+          0.999447
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36277,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 3,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.054506,
+          0.3612898,
+          0.4146888,
+          0.45258640000000006,
+          0.534941,
+          0.999447
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36328,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 4,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      },
+      {
+        "actual_class_count": 5,
+        "boundaries": [
+          0.071471,
+          0.3726422,
+          0.4164372,
+          0.449543,
+          0.525566,
+          0.999447
+        ],
+        "duplicates": "drop",
+        "finite_transformed_count": 45384,
+        "fit_sample_count": 36278,
+        "fit_scope": "outer_train_only",
+        "outer_fold": 5,
+        "requested_quantiles": 5,
+        "transform": "fold_local_quantile"
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+target_id,declared_raw_input_supported,execution_status,compatible,reason,n_samples,n_subjects,input_shape,target_shape,target_dtype
+pm_attention_regression,True,executable,True,validated_without_reading_window_tensors,29569.0,53.0,"[1, 14, 2560]",[29569],float32
+pm_engagement_regression,True,executable,True,validated_without_reading_window_tensors,30958.0,54.0,"[1, 14, 2560]",[30958],float32
+pm_excitement_regression,True,executable,True,validated_without_reading_window_tensors,30958.0,54.0,"[1, 14, 2560]",[30958],float32
+pm_stress_regression,True,executable,True,validated_without_reading_window_tensors,30958.0,54.0,"[1, 14, 2560]",[30958],float32
+pm_relaxation_regression,True,executable,True,validated_without_reading_window_tensors,30958.0,54.0,"[1, 14, 2560]",[30958],float32
+pm_interest_regression,True,executable,True,validated_without_reading_window_tensors,30958.0,54.0,"[1, 14, 2560]",[30958],float32
+pm_focus_regression,True,executable,True,validated_without_reading_window_tensors,30958.0,54.0,"[1, 14, 2560]",[30958],float32
+pm_multioutput_regression_7,True,executable,True,validated_without_reading_window_tensors,29569.0,53.0,"[1, 14, 2560]","[29569, 7]",float32
+label_focus_q5_legacy,True,executable,True,validated_without_reading_window_tensors,30958.0,54.0,"[1, 14, 2560]",[30958],int64
+pm_attention_active_proxy,False,disabled,False,registered_but_disabled,,,,,
+pm_attention_q3_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_attention_q5_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_engagement_active_proxy,False,disabled,False,registered_but_disabled,,,,,
+pm_engagement_q3_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_engagement_q5_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_excitement_active_proxy,False,disabled,False,registered_but_disabled,,,,,
+pm_excitement_q3_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_excitement_q5_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_stress_active_proxy,False,disabled,False,registered_but_disabled,,,,,
+pm_stress_q3_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_stress_q5_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_relaxation_active_proxy,False,disabled,False,registered_but_disabled,,,,,
+pm_relaxation_q3_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_relaxation_q5_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_interest_active_proxy,False,disabled,False,registered_but_disabled,,,,,
+pm_interest_q3_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_interest_q5_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_focus_active_proxy,False,disabled,False,registered_but_disabled,,,,,
+pm_focus_q3_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_focus_q5_fold_local,True,disabled,False,registered_but_disabled,,,,,
+pm_activity_multilabel_7,False,disabled,False,registered_but_disabled,,,,,
+pm_long_term_excitement_regression,False,disabled,False,registered_but_disabled,,,,,
