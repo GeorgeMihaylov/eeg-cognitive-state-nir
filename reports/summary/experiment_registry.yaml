@@ -1815,6 +1815,77 @@ experiments:
     limitations: [Small absolute effect; participant bootstrap includes zero; reverse direction and target-supervised upper bound untested.]
     tags: [dann, confirmatory, multiseed, multifold]
 
+  - experiment_id: pm_all_targets_feature_baseline_v1
+    title: Canonical seven-PM engineered-feature baseline
+    category: regression
+    status: baseline
+    task: canonical_continuous_pm_regression
+    target: seven scalar PM targets and fixed-order seven-output regression
+    target_order:
+      - target_attention
+      - target_engagement
+      - target_excitement
+      - target_stress
+      - target_relaxation
+      - target_interest
+      - target_focus
+    model: dummy_mean | ridge | random_forest | hist_gradient_boosting
+    feature_set: eeg | pow | eeg_pow
+    preprocessing: train-only median imputation and model-specific scaling
+    evaluation_protocol: fixed five-fold subject-disjoint outer folds
+    seeds: [42, 123, 2026]
+    n_subjects: 54
+    primary_metric:
+      name: participant_macro_normalized_mae_across_targets
+      direction: lower_is_better
+      value_source:
+        type: csv_filter
+        path: benchmark_results/pm_all_targets_feature_baseline_v1/single_target_results.csv
+        filters:
+          model: random_forest
+          feature_set: eeg_pow
+        column: normalized_mae_mean
+        aggregation: mean
+        optional_runtime: true
+    secondary_metrics:
+      - name: participant_macro_pearson_across_targets
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_all_targets_feature_baseline_v1/single_target_results.csv
+          filters:
+            model: hist_gradient_boosting
+            feature_set: eeg_pow
+          column: pearson_mean
+          aggregation: mean
+          optional_runtime: true
+      - name: multioutput_participant_macro_normalized_mae_across_targets
+        direction: lower_is_better
+        value_source:
+          type: csv_filter
+          path: benchmark_results/pm_all_targets_feature_baseline_v1/multioutput_results.csv
+          filters:
+            model: random_forest
+            feature_set: eeg_pow
+          column: normalized_mae_mean
+          aggregation: mean
+          optional_runtime: true
+    report_path: reports/integration/pm_all_targets_feature_baseline.md
+    runtime_path: benchmark_results/pm_all_targets_feature_baseline_v1
+    config_path: null
+    source_config_path: experiments/pm_regression/pm_all_targets_feature_baseline.yaml
+    commit: d3a56542f75ae326a83b5d1bc38411df791d0d52
+    result_summary: >
+      All 1125 preregistered cells completed. On EEG+POW features, the
+      single-target random forest improved mean participant-macro normalized
+      MAE from 0.7633 for the mean dummy to 0.6844; the result remains a
+      baseline rather than evidence that any PM target is solved.
+    limitations:
+      - Participant-level R2 is unstable for nearly constant within-participant targets.
+      - Ridge produced ill-conditioning warnings and weak but finite predictions.
+      - Source-specific slices are descriptive and not independent confirmatory tests.
+    tags: [regression, baseline, engineered_features, participant_macro, multiseed]
+
 unresolved_entries:
   - experiment_id: label_q5_lightgbm_baseline
     missing_field: structured final result and primary metric

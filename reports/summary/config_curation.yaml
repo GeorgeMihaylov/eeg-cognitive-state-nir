@@ -178,6 +178,7 @@ families:
     diagnostic_configs:
       - experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
     protected_configs:
+      - experiments/pm_regression/pm_all_targets_feature_baseline.yaml
       - experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
       - experiments/pm_regression/pm_regression_smoke.yaml
       - experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
@@ -679,6 +680,27 @@ configs:
       - reports/ordinal_transformer_statistical_analysis.md
       - commit:577536e
     notes: []
+    <<: *protected
+
+  - config_path: experiments/pm_regression/pm_all_targets_feature_baseline.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: >
+      Canonical seven-PM engineered-feature baseline with fixed subject folds,
+      target-specific cohorts, and paired complete-case single-versus-multioutput analysis.
+    canonical_config: experiments/pm_regression/pm_all_targets_feature_baseline.yaml
+    result_status: baseline
+    canonical_status: completed
+    provenance_status: documented
+    config_role: full
+    linked_experiments:
+      - pm_all_targets_feature_baseline_v1
+    evidence:
+      - reports/integration/canonical_target_contract.md
+      - reports/summary/target_registry.yaml
+    linked_runtime: benchmark_results/pm_all_targets_feature_baseline_v1
+    notes:
+      - All 1125 preregistered runs completed with a clean leakage audit.
     <<: *protected
 
   - config_path: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml

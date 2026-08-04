@@ -51,6 +51,19 @@ Focus. Полный канонический реестр находится в
 `reports/summary/target_registry.yaml`; остальные proxy-кандидаты проходят
 аудит и пока не считаются проверенными benchmark-задачами.
 
+## Canonical seven-PM feature baseline
+
+The canonical engineered-feature PM baseline evaluates all seven scalar
+targets and the fixed-order seven-output target across EEG, POW and EEG+POW
+views. It uses the existing five subject folds, target-specific cohorts and a
+participant-macro analysis; single-versus-multioutput comparisons are limited
+to the identical 43,174-window complete-case cohort.
+
+For EEG+POW single-output regression, Random Forest achieved mean normalized
+MAE 0.6844 across the seven targets versus 0.7633 for dummy mean; HGB had
+similar normalized MAE 0.6861 and higher mean Pearson correlation 0.4681.
+These are baseline results and do not establish that any PM target is solved.
+
 ## COG-BCI
 
 Внешний корпус COG-BCI полностью распакован и проинвентаризирован:
@@ -126,6 +139,12 @@ PM-регрессия:
 
 ```powershell
 python cli.py --config experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml --verbose
+```
+
+Canonical seven-PM engineered-feature baseline:
+
+```powershell
+python scripts/run_pm_all_targets_feature_baseline.py --config experiments/pm_regression/pm_all_targets_feature_baseline.yaml --resume
 ```
 
 COG-BCI N-Back protocol и baseline:
