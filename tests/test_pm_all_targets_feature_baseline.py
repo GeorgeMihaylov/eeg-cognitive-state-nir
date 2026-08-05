@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 import yaml
 
+import bench.experiments.pm_all_targets_feature_baseline as baseline
 from bench.datasets.base_eeg_data_loader import feature_list_sha256
 from bench.experiments.pm_all_targets_feature_baseline import (
     FEATURE_SET_ORDER,
@@ -318,6 +319,48 @@ def test_resume_does_not_retrain_complete_run(tmp_path: Path) -> None:
     run_baseline(config_path, resume=True, max_runs=1)
     after = json.loads(registry_path.read_text(encoding="utf-8"))
     assert len(after["runs"][complete_id]["attempts"]) == 1
+
+
+def test_resume_after_commit_drift_preserves_preregistration(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _synthetic_config(tmp_path)
+    monkeypatch.setattr(baseline, "_git_head", lambda: "a" * 40)
+    run_baseline(config_path, max_runs=1)
+    prereg_path = (
+        tmp_path / "runtime" / "preregistration" / "preregistration_manifest.json"
+    )
+    registry_path = tmp_path / "runtime" / "run_registry" / "run_registry.json"
+    report_path = tmp_path / "runtime" / "reports" / "benchmark_report.md"
+    prereg_before = prereg_path.read_bytes()
+    report_before = report_path.read_bytes()
+    registry_before = json.loads(registry_path.read_text(encoding="utf-8"))
+
+    monkeypatch.setattr(baseline, "_git_head", lambda: "b" * 40)
+    run_baseline(config_path, resume=True, max_runs=1)
+
+    registry_after = json.loads(registry_path.read_text(encoding="utf-8"))
+    assert prereg_path.read_bytes() == prereg_before
+    assert report_path.read_bytes() == report_before
+    assert registry_after == registry_before
+
+
+def test_incompatible_resume_does_not_overwrite_preregistration(
+    tmp_path: Path,
+) -> None:
+    config_path = _synthetic_config(tmp_path)
+    run_baseline(config_path, max_runs=1)
+    prereg_path = (
+        tmp_path / "runtime" / "preregistration" / "preregistration_manifest.json"
+    )
+    prereg_before = prereg_path.read_bytes()
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["metrics"]["normalized_mae_denominator"] = "incompatible_change"
+    config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="semantic inputs differ"):
+        run_baseline(config_path, resume=True, max_runs=1)
+    assert prereg_path.read_bytes() == prereg_before
 
 
 def test_tracked_config_contains_no_absolute_paths() -> None:

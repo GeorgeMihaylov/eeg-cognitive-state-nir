@@ -491,6 +491,33 @@ def write_preregistration(context: ProtocolContext) -> None:
     )
 
 
+def _semantic_preregistration(document: Mapping[str, Any]) -> dict[str, Any]:
+    """Return protocol inputs without run-environment provenance fields."""
+    return {
+        str(key): value
+        for key, value in document.items()
+        if key not in {"git_commit", "protocol_hash"}
+    }
+
+
+def _ensure_preregistration(context: ProtocolContext) -> None:
+    """Create preregistration once or reuse a semantically identical manifest."""
+    path = context.output_dir / "preregistration" / "preregistration_manifest.json"
+    if not path.exists():
+        write_preregistration(context)
+        return
+    existing = json.loads(path.read_text(encoding="utf-8"))
+    if stable_hash(_semantic_preregistration(existing)) != stable_hash(
+        _semantic_preregistration(context.preregistration)
+    ):
+        raise ValueError(
+            "Existing preregistration semantic inputs differ from current protocol"
+        )
+    # A commit made after a successful run changes provenance, not the scientific
+    # protocol. Preserve the immutable original manifest and its protocol hash.
+    context.preregistration = existing
+
+
 def _initial_registry(context: ProtocolContext) -> dict[str, Any]:
     return {
         "schema_version": 1,
@@ -1262,7 +1289,7 @@ def _render_report(
 
 ## Status
 
-`{summary['status']}` on branch `integration/benchmark-unification`, commit `{_git_head()}`.
+`{summary['status']}` on branch `integration/benchmark-unification`, commit `{context.preregistration['git_commit']}`.
 
 ## Protocol and preregistration
 
@@ -1368,7 +1395,7 @@ def _render_full_report(
 
 ## Status
 
-`{summary['status']}` on branch `integration/benchmark-unification`, commit `{_git_head()}`.
+`{summary['status']}` on branch `integration/benchmark-unification`, commit `{context.preregistration['git_commit']}`.
 
 ## Protocol and preregistration
 
@@ -1447,8 +1474,8 @@ def run_baseline(
     max_runs: int | None = None,
 ) -> dict[str, Any]:
     context = prepare_protocol(config_path)
-    write_preregistration(context)
-    registry = _load_registry(context, resume=resume)
+    _ensure_preregistration(context)
+    registry = _load_registry(context, resume=resume or plan_only)
     if plan_only:
         return {
             "status": "protocol_audit_complete",
