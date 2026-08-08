@@ -7,6 +7,8 @@ import numpy as np
 from scipy.signal import welch
 from scipy.stats import kurtosis, zscore
 from sklearn.decomposition import FastICA
+from sklearn.exceptions import ConvergenceWarning
+import warnings
 
 
 @dataclass
@@ -74,7 +76,7 @@ def detect_bad_channels(signal: np.ndarray, config: FasterConfig) -> List[int]:
     features = compute_channel_stats(signal, config)
     z = _safe_zscore(features)
     bad_mask = np.any(np.abs(z) > config.z_threshold, axis=1)
-    return list(np.where(bad_mask)[0])
+    return np.where(bad_mask)[0].astype(int).tolist()
 
 
 def interpolate_channels(signal: np.ndarray, bad_channels: List[int]) -> np.ndarray:
@@ -116,7 +118,7 @@ def detect_bad_epochs(epochs: np.ndarray, config: FasterConfig) -> List[int]:
     features = compute_epoch_stats(epochs)
     z = _safe_zscore(features)
     bad_mask = np.any(np.abs(z) > config.z_threshold, axis=1)
-    return list(np.where(bad_mask)[0])
+    return np.where(bad_mask)[0].astype(int).tolist()
 
 
 def compute_component_stats(
@@ -158,7 +160,7 @@ def detect_bad_components(
     features = compute_component_stats(sources, mixing_matrix, sample_rate, config, eog_signal)
     z = _safe_zscore(features)
     bad_mask = np.any(np.abs(z) > config.z_threshold, axis=1)
-    return list(np.where(bad_mask)[0])
+    return np.where(bad_mask)[0].astype(int).tolist()
 
 
 def compute_channel_epoch_stats(epochs: np.ndarray) -> np.ndarray:
@@ -219,6 +221,18 @@ def run_faster(
     config: Optional[FasterConfig] = None,
 ) -> Tuple[np.ndarray, FasterReport]:
     config = config or FasterConfig()
+
+    epochs = np.asarray(epochs, dtype=float)
+    if epochs.ndim != 3:
+        raise ValueError(
+            "run_faster expects [n_epochs, n_samples, n_channels]"
+        )
+    if epochs.shape[0] == 0:
+        raise ValueError("run_faster received zero epochs")
+    if epochs.shape[1] == 0 or epochs.shape[2] == 0:
+        raise ValueError("run_faster received an empty dimension")
+    if not np.isfinite(epochs).all():
+        raise ValueError("run_faster input contains NaN or Inf")
     report = FasterReport()
 
     continuous = epochs.reshape(-1, epochs.shape[2])
@@ -229,14 +243,28 @@ def run_faster(
         ])
 
     report.bad_epochs = detect_bad_epochs(epochs, config)
+
+    original_epoch_indices = np.arange(epochs.shape[0])
     good_epoch_mask = np.ones(epochs.shape[0], dtype=bool)
     good_epoch_mask[report.bad_epochs] = False
+
     clean_epochs = epochs[good_epoch_mask]
+    clean_to_original = original_epoch_indices[good_epoch_mask]
 
     if clean_epochs.shape[0] > 0:
-        report.bad_channel_epoch_pairs = detect_bad_channel_epoch_pairs(clean_epochs, config)
-        if report.bad_channel_epoch_pairs and config.interpolate_bad_channel_epoch:
-            clean_epochs = interpolate_channel_epoch_pairs(clean_epochs, report.bad_channel_epoch_pairs)
+        clean_bad_pairs = detect_bad_channel_epoch_pairs(
+            clean_epochs, config
+        )
+
+        report.bad_channel_epoch_pairs = [
+            (int(clean_to_original[epoch_idx]), int(channel_idx))
+            for epoch_idx, channel_idx in clean_bad_pairs
+        ]
+
+        if clean_bad_pairs and config.interpolate_bad_channel_epoch:
+            clean_epochs = interpolate_channel_epoch_pairs(
+                clean_epochs, clean_bad_pairs
+            )
 
     return clean_epochs, report
 
@@ -257,7 +285,7 @@ def apply_faster(signal: np.ndarray, config: Optional[FasterConfig] = None) -> n
 
 @dataclass
 class IcaConfig:
-    n_components: Optional[int] = None      # по умолчанию = n_channels
+    n_components: Optional[int] = None
     max_iter: int = 500
     random_state: int = 42
     faster_config: FasterConfig = field(default_factory=FasterConfig)
@@ -265,10 +293,8 @@ class IcaConfig:
 
 class ArtifactICA:
     """
-    Для потокового режима ICA обучается вычисляется одним пакетным проходом по уже накопленному массиву калибровочной
-    записи пользователя и затем применяется как фиксированное
-    линейное преобразование — полное переобучение ICA на каждое
-    окно слишком дорого для реального времени.
+    ICA is fitted once on allowed training/calibration data and then
+    applied as a fixed transform during inference.
     """
 
     def __init__(self, config: Optional[IcaConfig] = None):
@@ -276,35 +302,174 @@ class ArtifactICA:
         self._ica: Optional[FastICA] = None
         self._artifact_components: List[int] = []
 
+        self._input_rank: Optional[int] = None
+        self._input_n_channels: Optional[int] = None
+        self._n_components: Optional[int] = None
+        self._n_iter: Optional[int] = None
+        self._converged: Optional[bool] = None
+
     def fit(
         self,
         calibration_signal: np.ndarray,
         sample_rate: float,
         eog_signal: Optional[np.ndarray] = None,
     ) -> "ArtifactICA":
-        n_components = self.config.n_components or calibration_signal.shape[1]
-        self._ica = FastICA(
-            n_components=n_components,
-            max_iter=self.config.max_iter,
-            random_state=self.config.random_state,
-        )
-        sources = self._ica.fit_transform(calibration_signal)
-        mixing_matrix = self._ica.mixing_  # [n_channels, n_components]
+        signal = np.asarray(calibration_signal, dtype=float)
 
-        self._artifact_components = detect_bad_components(
-            sources, mixing_matrix, sample_rate, self.config.faster_config, eog_signal
+        if signal.ndim != 2:
+            raise ValueError(
+                "ArtifactICA.fit expects [n_samples, n_channels]"
+            )
+        if signal.shape[0] < 2:
+            raise ValueError("ArtifactICA.fit requires at least two samples")
+        if signal.shape[1] < 2:
+            raise ValueError("ArtifactICA.fit requires at least two channels")
+        if not np.isfinite(signal).all():
+            raise ValueError("ArtifactICA.fit input contains NaN or Inf")
+        if not np.isfinite(sample_rate) or sample_rate <= 0:
+            raise ValueError("sample_rate must be positive and finite")
+
+        if eog_signal is not None:
+            eog_signal = np.asarray(eog_signal, dtype=float)
+            if eog_signal.ndim != 1:
+                raise ValueError("eog_signal must be one-dimensional")
+            if eog_signal.shape[0] != signal.shape[0]:
+                raise ValueError(
+                    "eog_signal length must match calibration_signal"
+                )
+            if not np.isfinite(eog_signal).all():
+                raise ValueError("eog_signal contains NaN or Inf")
+
+        n_channels = int(signal.shape[1])
+        rank = int(np.linalg.matrix_rank(signal))
+
+        if rank < 2:
+            raise ValueError(
+                f"Calibration signal rank is too low for ICA: {rank}"
+            )
+
+        requested_components = (
+            int(self.config.n_components)
+            if self.config.n_components is not None
+            else n_channels
         )
+
+        if requested_components < 2:
+            raise ValueError("ICA n_components must be at least 2")
+        if requested_components > n_channels:
+            raise ValueError(
+                "ICA n_components cannot exceed the number of channels"
+            )
+
+        effective_components = min(requested_components, rank)
+
+        if effective_components < requested_components:
+            warnings.warn(
+                f"ICA n_components reduced from {requested_components} "
+                f"to signal rank {effective_components}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+
+        self._input_rank = rank
+        self._input_n_channels = n_channels
+        self._n_components = effective_components
+
+        self._ica = FastICA(
+            n_components=effective_components,
+            max_iter=int(self.config.max_iter),
+            random_state=int(self.config.random_state),
+        )
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always", ConvergenceWarning)
+            sources = self._ica.fit_transform(signal)
+
+        convergence_warnings = [
+            item for item in caught
+            if issubclass(item.category, ConvergenceWarning)
+        ]
+
+        self._n_iter = int(self._ica.n_iter_)
+        self._converged = len(convergence_warnings) == 0
+
+        if not self._converged:
+            warnings.warn(
+                "FastICA did not converge; result should not be treated "
+                "as validated preprocessing.",
+                ConvergenceWarning,
+                stacklevel=2,
+            )
+
+        mixing_matrix = self._ica.mixing_
+        self._artifact_components = detect_bad_components(
+            sources,
+            mixing_matrix,
+            sample_rate,
+            self.config.faster_config,
+            eog_signal,
+        )
+
         return self
 
     def transform(self, signal: np.ndarray) -> np.ndarray:
         if self._ica is None:
-            raise RuntimeError("ArtifactICA не обучен — вызовите fit() на калибровочных данных")
+            raise RuntimeError(
+                "ArtifactICA is not fitted; call fit() on calibration data"
+            )
+
+        signal = np.asarray(signal, dtype=float)
+
+        if signal.ndim != 2:
+            raise ValueError(
+                "ArtifactICA.transform expects [n_samples, n_channels]"
+            )
+        if not np.isfinite(signal).all():
+            raise ValueError("ArtifactICA.transform input contains NaN or Inf")
+
+        if (
+            self._input_n_channels is not None
+            and signal.shape[1] != self._input_n_channels
+        ):
+            raise ValueError(
+                f"ArtifactICA was fitted on {self._input_n_channels} channels, "
+                f"got {signal.shape[1]}"
+            )
 
         sources = self._ica.transform(signal)
-        sources[:, self._artifact_components] = 0.0
-        return self._ica.inverse_transform(sources)
+
+        if self._artifact_components:
+            sources[:, self._artifact_components] = 0.0
+
+        cleaned = self._ica.inverse_transform(sources)
+
+        if not np.isfinite(cleaned).all():
+            raise RuntimeError(
+                "ArtifactICA produced NaN or Inf during transform"
+            )
+
+        return cleaned
 
     @property
     def n_artifact_components(self) -> int:
         return len(self._artifact_components)
 
+    @property
+    def artifact_components(self) -> Tuple[int, ...]:
+        return tuple(int(i) for i in self._artifact_components)
+
+    @property
+    def input_rank(self) -> Optional[int]:
+        return self._input_rank
+
+    @property
+    def n_components(self) -> Optional[int]:
+        return self._n_components
+
+    @property
+    def n_iter(self) -> Optional[int]:
+        return self._n_iter
+
+    @property
+    def converged(self) -> Optional[bool]:
+        return self._converged
