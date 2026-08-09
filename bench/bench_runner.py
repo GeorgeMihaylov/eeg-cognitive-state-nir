@@ -136,6 +136,11 @@ class BenchmarkRunner:
         self.config_hash = benchmark_config_hash(config)
         self.results = {}
         self.models = {}
+        # Runtime-only hooks for experiment-level deployment audits. They are
+        # deliberately excluded from result serialization and never affect the
+        # scientific fit/predict path.
+        self.last_fitted_model: ModelLike | None = None
+        self.last_evaluated_split: TaskSplit | None = None
 
         self._setup_models()
 
@@ -741,6 +746,9 @@ class BenchmarkRunner:
                 y_proba = model.predict_proba(split.X_test)
             except Exception:
                 pass
+
+        self.last_fitted_model = model
+        self.last_evaluated_split = split
 
         training_time = time.time() - start_time
         metrics = MetricsCalculator.calculate_all_metrics(
