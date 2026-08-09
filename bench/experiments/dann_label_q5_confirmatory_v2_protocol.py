@@ -18,7 +18,6 @@ import pandas as pd
 
 from bench.meta.episodes import stable_hash
 
-from .dann_label_q5_confirmatory_protocol import EXPECTED_FOLDS
 from .dann_label_q5_raw_diagnostic import prepare_preregistration
 from .dann_label_q5_raw_protocol import (
     _contains_absolute_path,
@@ -27,6 +26,7 @@ from .dann_label_q5_raw_protocol import (
 )
 
 
+EXPECTED_FOLDS = (1, 2, 3, 4, 5)
 SCHEMA_VERSION = "dann-label-q5-confirmatory-v2-protocol-v1"
 PROTOCOL_ID = "dann_label_q5_old_eeg_to_gpn_confirmatory_v2"
 PRIMARY_SEEDS = (123, 2026)
