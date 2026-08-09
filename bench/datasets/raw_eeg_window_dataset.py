@@ -808,6 +808,7 @@ class RawEEGWindowArrayView:
         *,
         channel_mean: Optional[np.ndarray] = None,
         channel_scale: Optional[np.ndarray] = None,
+        cache_path_root: Optional[Path | str] = None,
     ) -> None:
         self.manifest = manifest.reset_index(drop=True).copy()
         if len(self.manifest) == 0:
@@ -827,6 +828,9 @@ class RawEEGWindowArrayView:
         self.dtype = np.dtype(np.float32)
         self.channel_mean = None if channel_mean is None else np.asarray(channel_mean, dtype=np.float32)
         self.channel_scale = None if channel_scale is None else np.asarray(channel_scale, dtype=np.float32)
+        self.cache_path_root = (
+            None if cache_path_root is None else Path(cache_path_root)
+        )
         if (self.channel_mean is None) != (self.channel_scale is None):
             raise ValueError("channel_mean and channel_scale must be set together")
         if self.channel_mean is not None:
@@ -840,10 +844,13 @@ class RawEEGWindowArrayView:
 
     def _read_scalar(self, index: int) -> np.ndarray:
         row = self.manifest.iloc[index]
-        path = str(row["cache_file"])
+        configured_path = Path(str(row["cache_file"]))
+        if not configured_path.is_absolute() and self.cache_path_root is not None:
+            configured_path = self.cache_path_root / configured_path
+        path = str(configured_path)
         if path not in self._mapped_arrays:
             self._mapped_arrays[path] = np.load(
-                path, mmap_mode="r", allow_pickle=False
+                configured_path, mmap_mode="r", allow_pickle=False
             )
         mapped_array = self._mapped_arrays[path]
         window = np.asarray(
@@ -872,13 +879,17 @@ class RawEEGWindowArrayView:
             self.manifest.iloc[np.asarray(indices, dtype=np.int64)],
             channel_mean=self.channel_mean,
             channel_scale=self.channel_scale,
+            cache_path_root=self.cache_path_root,
         )
 
     def with_channel_normalization(
         self, mean: np.ndarray, scale: np.ndarray
     ) -> "RawEEGWindowArrayView":
         return RawEEGWindowArrayView(
-            self.manifest, channel_mean=mean, channel_scale=scale
+            self.manifest,
+            channel_mean=mean,
+            channel_scale=scale,
+            cache_path_root=self.cache_path_root,
         )
 
     def compute_channel_statistics(self) -> tuple[np.ndarray, np.ndarray]:
@@ -1027,7 +1038,10 @@ class RawEEGWindowDataset(BaseDataset):
                 )
             remaining = accepted.loc[~accepted.index.isin(mandatory.index)]
             balance_columns = ["outer_fold"]
-            if target_spec.is_classification:
+            if (
+                target_spec.is_classification
+                and not target_spec.requires_fold_local_transform
+            ):
                 balance_columns.extend(target_spec.processed_columns)
             group_count = max(
                 1, remaining.groupby(balance_columns, observed=True).ngroups
@@ -1065,7 +1079,10 @@ class RawEEGWindowDataset(BaseDataset):
                     "Raw manifest cache preprocessing hash does not match dataset "
                     f"configuration: manifest={manifest_hashes}, expected={expected_hash}"
                 )
-        view = RawEEGWindowArrayView(accepted)
+        view = RawEEGWindowArrayView(
+            accepted,
+            cache_path_root=self.config.get("cache_path_root"),
+        )
         configured_channels = self.config.get("channel_names")
         if configured_channels is not None:
             channel_names = [str(channel) for channel in configured_channels]

@@ -2,6 +2,7 @@ from typing import Dict, Type, Any
 from .cognitive_load import (
     CognitiveLoad5ClassTask,
     CognitiveLoadTask,
+    FoldLocalQ3Task,
     FocusRegressionTask,
     PerformanceMetricsRegressionTask,
 )
@@ -24,6 +25,13 @@ TASK_REGISTRY: Dict[str, Type[BaseTask]] = {
     'pm_focus_regression': FocusRegressionTask,
     'pm_multioutput_regression_7': PerformanceMetricsRegressionTask,
     'label_focus_q5_legacy': CognitiveLoad5ClassTask,
+    **{
+        f'pm_{metric}_q3_fold_local': FoldLocalQ3Task
+        for metric in (
+            'attention', 'engagement', 'excitement', 'stress',
+            'relaxation', 'interest', 'focus',
+        )
+    },
 }
 
 TASK_TARGET_IDS = {
@@ -34,6 +42,13 @@ TASK_TARGET_IDS = {
     'pm_multioutput_regression_7': 'pm_multioutput_regression_7',
     **{
         f'pm_{metric}_regression': f'pm_{metric}_regression'
+        for metric in (
+            'attention', 'engagement', 'excitement', 'stress',
+            'relaxation', 'interest', 'focus',
+        )
+    },
+    **{
+        f'pm_{metric}_q3_fold_local': f'pm_{metric}_q3_fold_local'
         for metric in (
             'attention', 'engagement', 'excitement', 'stress',
             'relaxation', 'interest', 'focus',

@@ -3,9 +3,16 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import hashlib
+import json
 from typing import Any
 
 import numpy as np
+
+from .target_spec import TargetSpec
+
+
+TARGET_TRANSFORM_MANIFEST_SCHEMA_VERSION = "fold-local-target-transform-v1"
 
 
 class TargetTransform(ABC):
@@ -109,6 +116,110 @@ class FoldLocalQuantileTargetTransform(TargetTransform):
             "boundaries": self._boundaries.tolist(),
             "fit_sample_count": self._fit_n,
         }
+
+
+def build_fold_local_target_transform(
+    spec: TargetSpec,
+) -> FoldLocalQuantileTargetTransform:
+    """Build the registered outer-train target transform for one target spec."""
+    if not spec.requires_fold_local_transform:
+        raise ValueError(
+            f"Target {spec.target_id!r} does not require a fold-local transform"
+        )
+    prefix = "fold_local_quantile_q"
+    try:
+        q = int(spec.transform_policy.removeprefix(prefix))
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid quantile transform policy {spec.transform_policy!r}"
+        ) from exc
+    return FoldLocalQuantileTargetTransform(q=q, duplicates="drop")
+
+
+def stable_target_transform_hash(payload: dict[str, Any]) -> str:
+    """Hash a transform manifest while excluding its self-referential hash."""
+    canonical = {
+        str(key): value
+        for key, value in payload.items()
+        if key != "transform_hash"
+    }
+    encoded = json.dumps(
+        canonical,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def build_target_transform_manifest(
+    spec: TargetSpec,
+    transform: TargetTransform,
+    *,
+    outer_fold: int,
+    outer_train_sample_ids: np.ndarray,
+    outer_train_targets: np.ndarray,
+) -> dict[str, Any]:
+    """Create deterministic provenance for one frozen outer-fold transform."""
+    base = transform.manifest()
+    sample_ids = np.asarray(outer_train_sample_ids).astype(str)
+    target_values = _as_single_output_float(outer_train_targets)
+    if len(sample_ids) != len(target_values):
+        raise ValueError("Outer-train sample IDs and targets must have equal length")
+    sample_payload = json.dumps(
+        sorted(sample_ids.tolist()),
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("utf-8")
+    paired_payload = json.dumps(
+        sorted(
+            (sample_id, format(float(value), ".17g"))
+            for sample_id, value in zip(sample_ids.tolist(), target_values)
+        ),
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("utf-8")
+    payload: dict[str, Any] = {
+        "schema_version": TARGET_TRANSFORM_MANIFEST_SCHEMA_VERSION,
+        "target_id": spec.target_id,
+        "source_continuous_target": spec.processed_columns[0],
+        "task_type": spec.task_type,
+        "outer_fold": int(outer_fold),
+        "q": int(base["requested_quantiles"]),
+        "requested_quantiles": int(base["requested_quantiles"]),
+        "boundaries": [float(value) for value in base["boundaries"]],
+        "fit_scope": spec.fit_scope,
+        "fit_sample_count": int(base["fit_sample_count"]),
+        "outer_train_sample_hash": hashlib.sha256(sample_payload).hexdigest(),
+        "outer_train_target_hash": hashlib.sha256(paired_payload).hexdigest(),
+        "transform_policy": spec.transform_policy,
+        "duplicate_boundary_policy": str(base["duplicates"]),
+        "actual_class_count": int(base["actual_class_count"]),
+    }
+    payload["transform_hash"] = stable_target_transform_hash(payload)
+    return payload
+
+
+def validate_target_transform_manifest(
+    manifest: dict[str, Any],
+    *,
+    expected_hash: str | None = None,
+) -> str:
+    """Validate self-integrity and, when supplied, resume compatibility."""
+    stored_hash = str(manifest.get("transform_hash", ""))
+    actual_hash = stable_target_transform_hash(manifest)
+    if not stored_hash or stored_hash != actual_hash:
+        raise ValueError(
+            "Target transform manifest hash mismatch: "
+            f"stored={stored_hash or '<missing>'}, actual={actual_hash}"
+        )
+    if expected_hash is not None and stored_hash != str(expected_hash):
+        raise ValueError(
+            "Incompatible target transform for resume: "
+            f"expected={expected_hash}, actual={stored_hash}"
+        )
+    return stored_hash
 
 
 def _as_single_output_float(y: np.ndarray) -> np.ndarray:

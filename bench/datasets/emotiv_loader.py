@@ -199,7 +199,10 @@ class EmotivDataset(BaseEEGDataset):
         )
         if self.target_cols is None:
             y = pd.to_numeric(df[self.target_col], errors='coerce').to_numpy()
-            if self.target_spec.is_classification:
+            if (
+                self.target_spec.is_classification
+                and not self.target_spec.requires_fold_local_transform
+            ):
                 if self.target_spec.registry_status == 'deprecated_ad_hoc_legacy':
                     y = self._discretize_target(y)
                 finite = np.isfinite(y)
@@ -229,7 +232,10 @@ class EmotivDataset(BaseEEGDataset):
         dropped_feature_rows = int((target_valid_mask & ~feature_valid_mask).sum())
         X = X[valid_mask]
         y = y[valid_mask]
-        if self.target_spec.is_classification:
+        if (
+            self.target_spec.is_classification
+            and not self.target_spec.requires_fold_local_transform
+        ):
             y = np.asarray(np.round(y), dtype=np.int64)
         else:
             y = np.asarray(y, dtype=np.float32)
@@ -299,7 +305,10 @@ class EmotivDataset(BaseEEGDataset):
                 }
         unique_classes = (
             np.unique(y)
-            if self.target_spec.is_classification
+            if (
+                self.target_spec.is_classification
+                and not self.target_spec.requires_fold_local_transform
+            )
             else np.asarray([], dtype=float)
         )
 

@@ -343,11 +343,11 @@ The executable contract is derived from `reports/summary/target_registry.yaml` a
 
 ## Executable targets
 
-Seven scalar PM regressions, the fixed-order seven-output PM regression, and the legacy global `label_q5` benchmark label are executable. The physical `label_q5` column is exposed only as `label_focus_q5_legacy` with registry status `legacy_global_benchmark_label`.
+Seven scalar PM regressions, seven outer-train Q3 proxy tasks, the fixed-order seven-output PM regression, and the legacy global `label_q5` benchmark label are executable. The physical `label_q5` column is exposed only as `label_focus_q5_legacy` with registry status `legacy_global_benchmark_label`.
 
 ## Disabled candidates
 
-Activity proxies, the seven-output activity multilabel target, fold-local Q3/Q5 ordinal candidates, and long-term excitement remain registered but disabled until their scientific or materialization prerequisites are approved.
+Activity proxies, the seven-output activity multilabel target, fold-local Q5 ordinal candidates, and long-term excitement remain registered but disabled until their scientific or materialization prerequisites are approved.
 
 ## Feature target view
 
@@ -355,7 +355,7 @@ The shared feature view accepts `eeg`, `pow`, and `eeg_pow`, preserves source ro
 
 ## Raw target view
 
-{raw_validated} executable raw target views were validated against the existing manifest and deduplicated logical-record selection without reading or rebuilding raw window tensors. Inputs remain `[1, 14, 2560]`; scalar regression labels use `float32`, classification labels use integer dtype, and multi-output regression follows the canonical seven-target order.
+{raw_validated} executable raw target views were validated against the existing manifest and deduplicated logical-record selection without reading or rebuilding raw window tensors. Inputs remain `[1, 14, 2560]`; scalar regression and pre-split Q3 source values use `float32`, legacy classification labels use integer dtype, and multi-output regression follows the canonical seven-target order.
 
 ## Cohort policy
 
@@ -363,7 +363,7 @@ Outer subject-to-fold assignments are immutable. Missing targets create target-s
 
 ## Fold-local ordinal transforms
 
-Q3/Q5 boundaries are fit only on finite outer-train values, then applied unchanged to train, validation, and outer-test partitions. Duplicate boundaries are reported through the actual class count; there is no global fallback and no derived column is materialized.
+Executable Q3 boundaries are fit only on finite outer-train values, then applied unchanged to train, validation, and outer-test partitions. Q5 remains disabled. Duplicate boundaries are reported through the actual class count; there is no global fallback and no derived column is materialized.
 
 ## Legacy aliases
 
@@ -371,7 +371,7 @@ Q3/Q5 boundaries are fit only on finite outer-train values, then applied unchang
 
 ## Task integration
 
-The existing task registry now exposes explicit PM scalar, PM multi-output, and legacy Q5 task IDs while preserving `focus_regression`, `performance_metrics_regression`, and `cognitive_load_5class` compatibility.
+The existing task registry now exposes explicit PM scalar, fold-local Q3, PM multi-output, and legacy Q5 task IDs while preserving `focus_regression`, `performance_metrics_regression`, and `cognitive_load_5class` compatibility.
 
 ## Metrics contract
 
@@ -391,7 +391,7 @@ Legacy feature/raw label-Q5 configurations, scalar focus regression, seven-outpu
 
 ## Limitations
 
-Fold-local ordinal candidates remain disabled as benchmark tasks, activity semantics remain unapproved, and long-term excitement is not materialized in the processed table. Full test-suite status is recorded separately after generation.
+Fold-local Q5 candidates remain disabled, activity semantics remain unapproved, and long-term excitement is not materialized in the processed table. The PM-union delta must be materialized before the expanded canonical raw cohorts are available. Full test-suite status is recorded separately after generation.
 """
     path.write_text(content, encoding="utf-8", newline="\n")
 

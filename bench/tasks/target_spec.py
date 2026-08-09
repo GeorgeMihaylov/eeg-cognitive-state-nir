@@ -99,6 +99,15 @@ class TargetSpec:
     def task_type(self) -> str:
         return "classification" if self.is_classification else "regression"
 
+    @property
+    def requires_fold_local_transform(self) -> bool:
+        """Whether the stored source values must remain continuous until a fold exists."""
+        return (
+            self.target_type == "derived_ordinal_classification"
+            and self.fit_scope == "outer_train_only"
+            and self.transform_policy.startswith("fold_local_quantile_q")
+        )
+
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
         for name in (

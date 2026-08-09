@@ -59,7 +59,7 @@ def build_target_view(
             raise ValueError("additional_availability must match dataframe rows")
         availability &= extra
 
-    if spec.is_classification:
+    if spec.is_classification and not spec.requires_fold_local_transform:
         valid_values = target_matrix[availability]
         if not np.allclose(valid_values, np.round(valid_values)):
             raise ValueError(

@@ -160,6 +160,41 @@ class CognitiveLoad5ClassTask(CognitiveLoadTask):
         return 'cognitive_load_5class'
 
 
+class FoldLocalQ3Task(CognitiveLoadTask):
+    """Continuous PM source values transformed only after the outer split."""
+
+    expected_n_classes = 3
+
+    def _validate_classes(self):
+        labels = np.asarray(self.data.labels, dtype=float)
+        if labels.ndim != 1:
+            raise ValueError(
+                f'Fold-local Q3 requires one-dimensional source values, got '
+                f'{labels.shape}'
+            )
+        if not np.isfinite(labels).all():
+            raise ValueError('Fold-local Q3 source values must be finite')
+        if len(np.unique(labels)) < self.expected_n_classes:
+            raise ValueError('Fold-local Q3 source values lack sufficient variation')
+
+    def get_split(self, subject_id: Optional[str] = None) -> TaskSplit:
+        raise ValueError(
+            'Fold-local Q3 requires runner-level outer GroupKFold; random and '
+            'LOSO task-level splits are not supported'
+        )
+
+    def get_all_splits(self) -> Dict[str, TaskSplit]:
+        raise ValueError('Fold-local Q3 requires runner-level outer GroupKFold')
+
+    @property
+    def n_classes(self) -> int:
+        return self.expected_n_classes
+
+    @property
+    def name(self) -> str:
+        return str(self.data.metadata.get('target_id', 'pm_q3_fold_local'))
+
+
 class FocusRegressionTask(CognitiveLoadTask):
     """Continuous ``target_focus`` task using the shared split machinery."""
 

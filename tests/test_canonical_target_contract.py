@@ -34,6 +34,7 @@ from scripts.build_target_contract import build_contract
 
 EXECUTABLE_IDS = {
     *(f"pm_{metric}_regression" for metric in PM_METRICS),
+    *(f"pm_{metric}_q3_fold_local" for metric in PM_METRICS),
     "pm_multioutput_regression_7",
     "label_focus_q5_legacy",
 }
@@ -125,7 +126,6 @@ def test_legacy_label_has_explicit_status_and_physical_column() -> None:
     "target_id",
     [
         "pm_attention_active_proxy",
-        "pm_focus_q3_fold_local",
         "pm_focus_q5_fold_local",
         "pm_activity_multilabel_7",
         "pm_long_term_excitement_regression",
@@ -230,6 +230,20 @@ def test_target_view_filters_missing_and_preserves_sample_order() -> None:
     ]
     assert view.sample_ids.tolist() == [0, 1, 3, 4, 5, 6, 8, 9]
     assert view.targets.dtype == np.float32
+
+
+def test_fold_local_q3_view_preserves_continuous_source_values() -> None:
+    frame = _canonical_frame()
+    frame.loc[2, "target_attention"] = np.nan
+    spec = get_target_spec("pm_attention_q3_fold_local")
+    view = build_target_view(frame, spec)
+    assert spec.requires_fold_local_transform
+    assert view.targets.dtype == np.float32
+    assert view.sample_ids.tolist() == [0, 1, 3, 4, 5, 6, 7, 8, 9]
+    np.testing.assert_allclose(
+        view.targets,
+        frame.loc[view.cohort.availability_mask, "target_attention"],
+    )
 
 
 def test_multioutput_view_uses_complete_cases_and_fixed_order() -> None:

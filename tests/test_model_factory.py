@@ -66,6 +66,26 @@ def test_build_torch_mlp_classifier() -> None:
     assert model.num_classes == 5
 
 
+def test_build_torch_shallow_convnet_scalar_regressor() -> None:
+    model = build_model(
+        model_name="torch_shallow_convnet",
+        task_type="regression",
+        input_shape=(1, 4, 128),
+        num_outputs=1,
+        params={
+            "n_filters": 4,
+            "temporal_kernel_samples": 9,
+            "pool_size": 16,
+            "pool_stride": 4,
+            "device": "cpu",
+        },
+    )
+
+    assert isinstance(model, TorchClassificationAdapter)
+    assert model.task_type == "regression"
+    assert model.num_outputs == 1
+
+
 def test_reject_incompatible_model_and_task() -> None:
     with pytest.raises(ValueError, match="not available for regression"):
         build_model(

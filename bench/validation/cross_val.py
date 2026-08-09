@@ -3,6 +3,11 @@ import pandas as pd
 from sklearn.model_selection import GroupKFold
 from typing import Dict, List, Tuple, Any, Optional
 from ..core.abstract_task import BaseTask, TaskSplit
+from ..tasks.target_registry import TARGET_REGISTRY
+from ..tasks.target_transforms import (
+    build_fold_local_target_transform,
+    build_target_transform_manifest,
+)
 from .metrics import MetricsCalculator
 
 
@@ -130,13 +135,56 @@ class CrossValidator:
 
             train_records = np.unique(data.record_ids[train_idx])
             test_records = np.unique(data.record_ids[test_idx])
+            y_train, y_test, target_transform_manifest = (
+                self._outer_fold_targets(
+                    train_idx=train_idx,
+                    test_idx=test_idx,
+                    fold_index=fold_index,
+                )
+            )
             test_counts[test_idx] += 1
             fold_name = f"fold_{fold_index:02d}"
+            split_metadata = {
+                'split_type': 'group_kfold_subject',
+                'protocol': 'group_kfold_subject',
+                'task_type': getattr(
+                    self.task, 'task_type', 'classification'
+                ),
+                'fold': fold_index,
+                'fold_name': fold_name,
+                'n_splits': n_splits,
+                'group_column': group_column,
+                'shuffle': False,
+                'random_state': random_state,
+                'precomputed_fold_column': precomputed_fold_column,
+                'observation_unit': data.metadata.get(
+                    'observation_unit', 'window'
+                ),
+                'dataset_metadata': data.metadata,
+                'target_names': data.metadata.get('target_cols'),
+                'n_train_rows': len(train_idx),
+                'n_test_rows': len(test_idx),
+                'n_train_subjects': len(train_subjects),
+                'n_test_subjects': len(test_subjects),
+                'n_train_records': len(train_records),
+                'n_test_records': len(test_records),
+                'train_subject_ids': train_subjects.astype(str).tolist(),
+                'test_subject_ids': test_subjects.astype(str).tolist(),
+                'train_group_ids': train_groups.astype(str).tolist(),
+                'test_group_ids': test_groups.astype(str).tolist(),
+                'group_overlap': [],
+                'subject_overlap': subject_overlap.astype(str).tolist(),
+            }
+            if target_transform_manifest is not None:
+                split_metadata['target_transform'] = target_transform_manifest
+                split_metadata['target_transform_hash'] = (
+                    target_transform_manifest['transform_hash']
+                )
             splits[fold_name] = TaskSplit(
                 X_train=data.data[train_idx],
-                y_train=data.labels[train_idx],
+                y_train=y_train,
                 X_test=data.data[test_idx],
-                y_test=data.labels[test_idx],
+                y_test=y_test,
                 subject_train=data.subject_ids[train_idx],
                 subject_test=data.subject_ids[test_idx],
                 feature_names=data.feature_names,
@@ -152,37 +200,7 @@ class CrossValidator:
                     key: np.asarray(values)[test_idx]
                     for key, values in data.row_metadata.items()
                 },
-                metadata={
-                    'split_type': 'group_kfold_subject',
-                    'protocol': 'group_kfold_subject',
-                    'task_type': getattr(
-                        self.task, 'task_type', 'classification'
-                    ),
-                    'fold': fold_index,
-                    'fold_name': fold_name,
-                    'n_splits': n_splits,
-                    'group_column': group_column,
-                    'shuffle': False,
-                    'random_state': random_state,
-                    'precomputed_fold_column': precomputed_fold_column,
-                    'observation_unit': data.metadata.get(
-                        'observation_unit', 'window'
-                    ),
-                    'dataset_metadata': data.metadata,
-                    'target_names': data.metadata.get('target_cols'),
-                    'n_train_rows': len(train_idx),
-                    'n_test_rows': len(test_idx),
-                    'n_train_subjects': len(train_subjects),
-                    'n_test_subjects': len(test_subjects),
-                    'n_train_records': len(train_records),
-                    'n_test_records': len(test_records),
-                    'train_subject_ids': train_subjects.astype(str).tolist(),
-                    'test_subject_ids': test_subjects.astype(str).tolist(),
-                    'train_group_ids': train_groups.astype(str).tolist(),
-                    'test_group_ids': test_groups.astype(str).tolist(),
-                    'group_overlap': [],
-                    'subject_overlap': subject_overlap.astype(str).tolist(),
-                },
+                metadata=split_metadata,
             )
 
         if len(splits) != n_splits:
@@ -196,6 +214,55 @@ class CrossValidator:
                 f"violations: {invalid_samples[:20].tolist()}"
             )
         return splits
+
+    def _outer_fold_targets(
+            self,
+            *,
+            train_idx: np.ndarray,
+            test_idx: np.ndarray,
+            fold_index: int,
+    ) -> tuple[np.ndarray, np.ndarray, dict[str, Any] | None]:
+        """Fit any derived target exactly once on the current outer train."""
+        data = self.task.data
+        target_id = data.metadata.get('target_id')
+        if target_id is None:
+            return data.labels[train_idx], data.labels[test_idx], None
+        spec = TARGET_REGISTRY.get(str(target_id))
+        if spec is None:
+            return data.labels[train_idx], data.labels[test_idx], None
+        if not spec.requires_fold_local_transform:
+            return data.labels[train_idx], data.labels[test_idx], None
+
+        transform = build_fold_local_target_transform(spec)
+        transform.fit(data.labels[train_idx])
+        if transform.actual_class_count != 3:
+            raise ValueError(
+                f"Fold {fold_index} target {spec.target_id!r} produced "
+                f"{transform.actual_class_count} classes instead of 3; "
+                "outer-train quantile boundaries collapsed"
+            )
+        y_train = transform.transform(data.labels[train_idx])
+        y_test = transform.transform(data.labels[test_idx])
+        if not np.isfinite(y_train).all() or not np.isfinite(y_test).all():
+            raise ValueError(
+                f"Fold {fold_index} target transform produced missing classes"
+            )
+        y_train = y_train.astype(np.int64)
+        y_test = y_test.astype(np.int64)
+        train_classes = np.unique(y_train)
+        if not np.array_equal(train_classes, np.arange(3, dtype=np.int64)):
+            raise ValueError(
+                f"Fold {fold_index} target {spec.target_id!r} has outer-train "
+                f"classes {train_classes.tolist()}, expected [0, 1, 2]"
+            )
+        manifest = build_target_transform_manifest(
+            spec,
+            transform,
+            outer_fold=fold_index,
+            outer_train_sample_ids=data.sample_ids[train_idx],
+            outer_train_targets=data.labels[train_idx],
+        )
+        return y_train, y_test, manifest
 
     @staticmethod
     def _limited_indices(

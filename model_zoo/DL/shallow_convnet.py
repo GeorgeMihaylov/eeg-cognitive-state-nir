@@ -1,4 +1,4 @@
-"""Shallow ConvNet classifier for fixed-size raw EEG windows."""
+"""Shallow ConvNet for classification or scalar raw-EEG regression."""
 
 from __future__ import annotations
 
@@ -40,6 +40,7 @@ class TorchShallowConvNetClassifier(nn.Module, SharedEncoderMixin):
         n_times: int,
         num_classes: int,
         *,
+        task_type: str = "classification",
         n_filters: int = 40,
         temporal_kernel_samples: int = 25,
         pool_size: int = 75,
@@ -51,6 +52,9 @@ class TorchShallowConvNetClassifier(nn.Module, SharedEncoderMixin):
         self.n_channels = int(n_channels)
         self.n_times = int(n_times)
         self.num_classes = int(num_classes)
+        self.task_type = str(task_type).strip().lower()
+        if self.task_type not in {"classification", "regression"}:
+            raise ValueError("task_type must be 'classification' or 'regression'")
         self.n_filters = int(n_filters)
         self.temporal_kernel_samples = int(temporal_kernel_samples)
         self.pool_size = int(pool_size)
@@ -64,8 +68,10 @@ class TorchShallowConvNetClassifier(nn.Module, SharedEncoderMixin):
             self.pool_stride,
         ) <= 0:
             raise ValueError("ShallowConvNet dimensions and pooling sizes must be positive")
-        if self.num_classes < 2:
-            raise ValueError("num_classes must be at least 2")
+        if self.task_type == "classification" and self.num_classes < 2:
+            raise ValueError("classification output width must be at least 2")
+        if self.task_type == "regression" and self.num_classes != 1:
+            raise ValueError("ShallowConvNet regression currently requires one output")
         if self.n_times < self.pool_size:
             raise ValueError(
                 f"n_times={self.n_times} must be at least pool_size={self.pool_size}"
@@ -148,8 +154,10 @@ def build_torch_shallow_convnet(
     input_shape: Sequence[int],
     num_outputs: int,
     params: Optional[Mapping[str, Any]] = None,
+    *,
+    task_type: str = "classification",
 ) -> TorchClassificationAdapter:
-    """Build the shallow raw-EEG module and shared classification adapter."""
+    """Build the shallow raw-EEG module and shared PyTorch adapter."""
     shape = tuple(int(dimension) for dimension in input_shape)
     if len(shape) != 3 or shape[0] != 1:
         raise ValueError(
@@ -172,11 +180,22 @@ def build_torch_shallow_convnet(
     dropout = float(model_params.pop("dropout", 0.5))
     log_minimum = float(model_params.pop("log_minimum", 1e-6))
     random_state = int(model_params.get("random_state", 42))
+    normalized_task_type = {
+        "classifier": "classification",
+        "regressor": "regression",
+    }.get(str(task_type).strip().lower(), str(task_type).strip().lower())
+    if normalized_task_type not in {"classification", "regression"}:
+        raise ValueError("task_type must be 'classification' or 'regression'")
+    if normalized_task_type == "classification" and int(num_outputs) < 2:
+        raise ValueError("classification output width must be at least 2")
+    if normalized_task_type == "regression" and int(num_outputs) != 1:
+        raise ValueError("torch_shallow_convnet supports scalar regression only")
     seed_torch(random_state)
     module = TorchShallowConvNetClassifier(
         n_channels=shape[1],
         n_times=shape[2],
         num_classes=int(num_outputs),
+        task_type=normalized_task_type,
         n_filters=n_filters,
         temporal_kernel_samples=temporal_kernel_samples,
         pool_size=pool_size,
@@ -189,6 +208,7 @@ def build_torch_shallow_convnet(
             model=module,
             input_shape=shape,
             num_classes=int(num_outputs),
+            task_type=normalized_task_type,
             model_metadata={
                 "model_type": "torch_shallow_convnet",
                 "input_layout": "batch,1,channels,time",
@@ -204,6 +224,8 @@ def build_torch_shallow_convnet(
                 "log_minimum": log_minimum,
                 "latent_dim": module.latent_dim,
                 "encoder_api_version": ENCODER_API_VERSION,
+                "task_type": normalized_task_type,
+                "num_outputs": int(num_outputs),
             },
             **model_params,
         )

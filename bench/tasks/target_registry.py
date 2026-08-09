@@ -80,6 +80,7 @@ def _candidate_specs() -> list[TargetSpec]:
             )
         )
         for q in (3, 5):
+            is_executable_q3 = q == 3
             specs.append(
                 TargetSpec(
                     target_id=f"pm_{metric}_q{q}_fold_local",
@@ -98,8 +99,14 @@ def _candidate_specs() -> list[TargetSpec]:
                     + ("ordinal_mae", "adjacent_accuracy"),
                     allowed_feature_inputs=FEATURE_INPUTS,
                     raw_input_supported=True,
-                    execution_status="disabled",
-                    registry_status="registered_candidate",
+                    execution_status=(
+                        "executable" if is_executable_q3 else "disabled"
+                    ),
+                    registry_status=(
+                        "canonical_fold_local"
+                        if is_executable_q3
+                        else "registered_candidate"
+                    ),
                 )
             )
     specs.extend(

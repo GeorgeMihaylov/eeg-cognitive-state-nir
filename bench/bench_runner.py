@@ -16,6 +16,7 @@ from .core.abstract_task import BaseTask, TaskSplit
 from .datasets.datasets_registry import get_dataset
 from .datasets.base_eeg_data_loader import feature_list_sha256
 from .tasks.tasks_registry import get_task
+from .tasks.target_transforms import validate_target_transform_manifest
 from .validation.cross_val import CrossValidator
 from .validation.metrics import MetricsCalculator
 from model_zoo import (
@@ -199,6 +200,17 @@ class BenchmarkRunner:
                                 "Standard benchmark partition "
                                 f"{partition_name} is missing "
                                 f"artifacts: {missing}"
+                            )
+                        transform_path = artifacts.get('target_transform')
+                        if transform_path:
+                            with open(transform_path, encoding='utf-8') as input_file:
+                                transform_manifest = json.load(input_file)
+                            expected_transform_hash = partition_result.get(
+                                'split_metadata', {}
+                            ).get('target_transform_hash')
+                            validate_target_transform_manifest(
+                                transform_manifest,
+                                expected_hash=expected_transform_hash,
                             )
                     predictions_path = Path(
                         protocol_result.get('artifacts', {}).get(
@@ -875,6 +887,18 @@ class BenchmarkRunner:
                 artifact_split_name
             )
         artifact_dir.mkdir(parents=True, exist_ok=True)
+        target_transform = split.metadata.get('target_transform')
+        target_transform_path: Path | None = None
+        if target_transform is not None:
+            transform_hash = validate_target_transform_manifest(target_transform)
+            target_transform_path = artifact_dir / 'target_transform.json'
+            if target_transform_path.exists():
+                with open(target_transform_path, encoding='utf-8') as input_file:
+                    existing_transform = json.load(input_file)
+                validate_target_transform_manifest(
+                    existing_transform,
+                    expected_hash=transform_hash,
+                )
 
         n_test = len(split.y_test)
         sample_ids = (
@@ -1121,6 +1145,18 @@ class BenchmarkRunner:
         predictions_path = artifact_dir / 'predictions.parquet'
         predictions.to_parquet(predictions_path, index=False)
         artifacts = {'predictions': str(predictions_path)}
+        if target_transform is not None:
+            if target_transform_path is None:
+                raise RuntimeError("Target transform artifact path was not initialized")
+            with open(target_transform_path, 'w', encoding='utf-8') as output:
+                json.dump(
+                    target_transform,
+                    output,
+                    indent=2,
+                    sort_keys=True,
+                    default=_json_default,
+                )
+            artifacts['target_transform'] = str(target_transform_path)
         per_target = metrics.get('per_target')
         if per_target:
             per_target_path = artifact_dir / 'per_target_metrics.csv'
