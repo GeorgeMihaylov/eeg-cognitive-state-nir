@@ -21,7 +21,7 @@ class PredictionResult:
 
 
 class CognitiveStateModel(Protocol):
-    """Единый интерфейс модели — реализуется адаптерами в cogstate.models.*."""
+    """Единый интерфейс модели из ``cogstate.model_zoo``."""
 
     version: str
 

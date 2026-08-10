@@ -17,7 +17,7 @@ from typing import Dict, List
 
 import numpy as np
 
-from streaming.buffer import Window
+from cogstate.streaming.buffer import Window
 
 from . import connectivity, entropy, spectral, statistical
 

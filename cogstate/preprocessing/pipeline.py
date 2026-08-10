@@ -15,7 +15,7 @@ from typing import Optional
 
 import numpy as np
 
-from streaming.buffer import Window
+from cogstate.streaming.buffer import Window
 
 from .artifact_removal import ArtifactICA, FasterConfig, apply_faster
 from .filtering import FilterConfig, StreamingFilter
