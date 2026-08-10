@@ -20,3 +20,19 @@ class StreamingModelAdapter:
         classes = getattr(self.estimator, "classes_", None)
         names = self.class_names or ([str(value) for value in classes] if classes is not None else [str(i) for i in range(len(probabilities))])
         return dict(zip(names, map(float, probabilities)))
+
+
+class StreamingPMMultiTaskAdapter:
+    """Expose seven independent PM heads to the streaming inference service."""
+    def __init__(self, estimator, version: str = "model-zoo"):
+        self.estimator, self.version = estimator, version
+
+    def predict_pm_proba(self, features: np.ndarray) -> dict[str, dict[str, float]]:
+        values = np.asarray(features)
+        expected = getattr(self.estimator, "input_shape", None)
+        if expected is not None and tuple(values.shape) == tuple(expected): values = values[None, ...]
+        elif values.ndim == 1: values = values[None, :]
+        return {
+            metric: dict(zip(("low", "medium", "high"), map(float, probabilities[0])))
+            for metric, probabilities in self.estimator.predict_proba(values).items()
+        }

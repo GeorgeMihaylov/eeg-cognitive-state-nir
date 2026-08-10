@@ -18,6 +18,8 @@ class PredictionResult:
     model_version: str
     is_calibrated: bool
     inference_time_ms: float
+    target_labels: Optional[dict] = None
+    target_probabilities: Optional[dict] = None
 
 
 class CognitiveStateModel(Protocol):
@@ -63,8 +65,19 @@ class InferenceService:
             model = self._active_model
             is_calibrated = self._is_calibrated
 
-        probabilities = model.predict_proba(features)
-        label = max(probabilities, key=probabilities.get)
+        if hasattr(model, "predict_pm_proba"):
+            target_probabilities = model.predict_pm_proba(features)
+            target_labels = {
+                metric: max(probabilities, key=probabilities.get)
+                for metric, probabilities in target_probabilities.items()
+            }
+            # Preserve the original single-label field for older consumers.
+            label = target_labels.get("attention", next(iter(target_labels.values()), "unknown"))
+            probabilities = target_probabilities.get("attention", {})
+        else:
+            target_labels = target_probabilities = None
+            probabilities = model.predict_proba(features)
+            label = max(probabilities, key=probabilities.get)
         elapsed_ms = (time.perf_counter() - start) * 1000
 
         return PredictionResult(
@@ -73,6 +86,8 @@ class InferenceService:
             model_version=model.version,
             is_calibrated=is_calibrated,
             inference_time_ms=elapsed_ms,
+            target_labels=target_labels,
+            target_probabilities=target_probabilities,
         )
 
     def calibrate_for_user(
