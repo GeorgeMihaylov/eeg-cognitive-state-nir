@@ -14,6 +14,7 @@ def _metadata_for_records(record_lengths: list[int]) -> pd.DataFrame:
                 "source": "gpn_data" if record_index < 2 else "Old_EEG",
                 "subject_id": f"S{record_index // 2}",
                 "record_id": f"R{record_index}",
+                "record_group_id": f"G{record_index}",
                 "sample_id": sample_id,
                 "t_start": float(time_index * 10),
             })
@@ -203,3 +204,56 @@ def test_gap_filter_preserves_continuous_sequence_count() -> None:
 
     assert len(gap_result.X) == len(old_result.X) == 5
     assert gap_result.stats["sequences_rejected_due_to_gaps"] == 0
+
+
+def test_endpoint_targets_use_unlabelled_context_and_last_sample() -> None:
+    metadata = _metadata_for_records([12])
+    X = np.column_stack([metadata["sample_id"], metadata["t_start"]]).astype(np.float32)
+    endpoints = {110: 2, 111: 1}
+
+    result = build_sequences(
+        X,
+        np.empty(0, dtype=np.int64),
+        metadata,
+        sequence_length=10,
+        endpoint_targets=endpoints,
+    )
+
+    assert result.metadata["target_sample_id"].tolist() == [110, 111]
+    assert result.y.tolist() == [2, 1]
+    assert result.X[:, -1, 0].astype(int).tolist() == [110, 111]
+    assert result.stats["full_target_count"] == 2
+    assert result.stats["sequence_endpoint_count"] == 2
+
+
+def test_endpoint_stats_separate_missing_history_and_gap() -> None:
+    metadata = _metadata_for_records([12])
+    metadata["t_start"] = [0, 10, 20, 30, 40, 50, 60, 70, 80, 100, 110, 120]
+    endpoints = {100: 0, 109: 1, 111: 2}
+
+    result = build_sequences(
+        np.ones((12, 2), dtype=np.float32),
+        np.empty(0, dtype=np.int64),
+        metadata,
+        sequence_length=3,
+        expected_step_seconds=10.0,
+        max_gap_seconds=10.01,
+        endpoint_targets=endpoints,
+    )
+
+    assert result.metadata["target_sample_id"].tolist() == [111]
+    assert result.stats["dropped_no_history"] == 1
+    assert result.stats["dropped_gap"] == 1
+    assert result.stats["dropped_other"] == 0
+
+
+def test_sequences_never_cross_logical_record_group() -> None:
+    metadata = _metadata_for_records([6])
+    metadata.loc[3:, "record_group_id"] = "G-other"
+    X = np.column_stack([metadata["sample_id"], metadata["t_start"]]).astype(np.float32)
+
+    result = build_sequences(X, np.arange(6), metadata, sequence_length=3)
+
+    assert len(result.X) == 2
+    assert set(result.metadata["record_group_id"]) == {"G0", "G-other"}
+    assert result.metadata["record_group_id"].is_unique

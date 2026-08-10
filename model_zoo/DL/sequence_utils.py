@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 
-GROUP_COLUMNS = ("source", "subject_id", "record_id")
+GROUP_COLUMNS = ("source", "subject_id", "record_group_id")
 TIME_COLUMN_PRIORITY = ("t_start", "t_center", "window_id")
 SEQUENCE_INDEX_COLUMNS = (
     "sequence_id",
@@ -88,6 +88,7 @@ def _validate_inputs(
     target_position: str,
     expected_step_seconds: Optional[float],
     max_gap_seconds: Optional[float],
+    endpoint_targets: Optional[Dict[Any, Any]],
 ) -> tuple[np.ndarray, np.ndarray, str]:
     features = np.asarray(X, dtype=np.float32)
     labels = np.asarray(y)
@@ -95,18 +96,23 @@ def _validate_inputs(
         raise ValueError(
             f"Sequence builder expects X=[windows, features], got {features.shape}"
         )
-    if labels.ndim != 1:
+    if endpoint_targets is None and labels.ndim != 1:
         raise ValueError(f"Sequence builder expects one-dimensional y, got {labels.shape}")
-    if len(features) != len(labels) or len(features) != len(metadata):
+    if len(features) != len(metadata) or (
+        endpoint_targets is None and len(features) != len(labels)
+    ):
         raise ValueError(
             "X, y and metadata must have the same number of rows: "
             f"{len(features)}, {len(labels)}, {len(metadata)}"
         )
     if not np.isfinite(features).all():
         raise ValueError("Sequence features contain NaN or infinite values")
-    if not np.issubdtype(labels.dtype, np.number):
+    values_to_validate = labels if endpoint_targets is None else np.asarray(
+        list(endpoint_targets.values())
+    )
+    if values_to_validate.ndim != 1 or not np.issubdtype(values_to_validate.dtype, np.number):
         raise ValueError("Sequence labels must be numeric")
-    if not np.isfinite(labels.astype(np.float64, copy=False)).all():
+    if not np.isfinite(values_to_validate.astype(np.float64, copy=False)).all():
         raise ValueError("Sequence labels contain NaN or infinite values")
     if sequence_length <= 0:
         raise ValueError("sequence_length must be positive")
@@ -164,8 +170,15 @@ def build_sequences(
     target_position: str = "last",
     expected_step_seconds: Optional[float] = None,
     max_gap_seconds: Optional[float] = None,
+    endpoint_targets: Optional[Dict[Any, Any]] = None,
 ) -> SequenceBuildResult:
-    """Build sequence-to-one samples inside records and continuous time segments."""
+    """Build sequence-to-one samples inside logical records.
+
+    When ``endpoint_targets`` is supplied, all rows in ``X`` remain eligible as
+    target-free context while only mapping keys may become sequence endpoints.
+    This preserves one outer-fold target transform fitted before sequence
+    filtering and avoids requiring labels on the preceding context windows.
+    """
     if not isinstance(metadata, pd.DataFrame):
         metadata = pd.DataFrame(metadata)
     metadata = metadata.reset_index(drop=True).copy()
@@ -178,7 +191,9 @@ def build_sequences(
         target_position,
         expected_step_seconds,
         max_gap_seconds,
+        endpoint_targets,
     )
+    endpoint_lookup = None if endpoint_targets is None else dict(endpoint_targets)
 
     sequences = []
     sequence_labels = []
@@ -192,10 +207,11 @@ def build_sequences(
     largest_observed_gap: Optional[float] = None
     windows_excluded_due_to_gaps = 0
     candidate_sequences_without_gap_check = 0
+    candidate_endpoint_ids_without_gap: set[Any] = set()
     gap_check_enabled = max_gap_seconds is not None
 
     grouped = metadata.groupby(list(GROUP_COLUMNS), sort=True, dropna=False)
-    for (source, subject_id, record_id), group in grouped:
+    for (source, subject_id, record_group_id), group in grouped:
         records_total += 1
         ordered = group.sort_values(
             [time_column, "sample_id"], kind="mergesort"
@@ -214,6 +230,10 @@ def build_sequences(
         candidate_sequences_without_gap_check += _sequence_count(
             len(ordered_indices), sequence_length, stride
         )
+        for start in range(0, max(0, len(ordered_indices) - sequence_length + 1), stride):
+            candidate_endpoint_ids_without_gap.add(
+                metadata.at[int(ordered_indices[start + sequence_length - 1]), "sample_id"]
+            )
         if gap_check_enabled:
             break_mask = (time_deltas <= 0) | (time_deltas > max_gap_seconds)
             break_positions = np.flatnonzero(break_mask) + 1
@@ -262,22 +282,25 @@ def build_sequences(
                 target_index = int(indices[-1])
                 first_index = int(indices[0])
                 target_sample_id = metadata.at[target_index, "sample_id"]
+                if endpoint_lookup is not None and target_sample_id not in endpoint_lookup:
+                    continue
+                record_id = metadata.at[target_index, "record_id"]
                 sequence_id = (
-                    f"{source}|{record_id}|{target_sample_id}|"
+                    f"{source}|{record_group_id}|{target_sample_id}|"
                     f"len={sequence_length}|stride={stride}"
                 )
                 sequences.append(features[indices])
-                sequence_labels.append(labels[target_index])
+                sequence_labels.append(
+                    labels[target_index]
+                    if endpoint_lookup is None
+                    else endpoint_lookup[target_sample_id]
+                )
                 sequence_rows.append({
                     "sequence_id": sequence_id,
                     "source": source,
                     "subject_id": subject_id,
                     "record_id": record_id,
-                    "record_group_id": (
-                        metadata.at[target_index, "record_group_id"]
-                        if "record_group_id" in metadata.columns
-                        else record_id
-                    ),
+                    "record_group_id": record_group_id,
                     "segment_id": segment_id,
                     "sequence_length": sequence_length,
                     "sequence_start_sample_id": metadata.at[
@@ -327,6 +350,13 @@ def build_sequences(
         raise ValueError(f"Generated non-unique sequence_id values: {duplicates}")
 
     unique_classes, class_counts = np.unique(sequence_y, return_counts=True)
+    generated_endpoint_ids = set(sequence_metadata["target_sample_id"].tolist())
+    eligible_endpoint_ids = (
+        set(metadata["sample_id"].tolist())
+        if endpoint_lookup is None
+        else set(endpoint_lookup)
+    )
+    eligible_candidates_without_gap = eligible_endpoint_ids & candidate_endpoint_ids_without_gap
     stats: Dict[str, Any] = {
         "window_rows": int(len(features)),
         "sequences_created": int(len(sequence_X)),
@@ -355,6 +385,22 @@ def build_sequences(
         "valid_sequences_after_gap_check": int(len(sequence_X)),
         "sequences_rejected_due_to_gaps": int(
             candidate_sequences_without_gap_check - len(sequence_X)
+        ),
+        "full_target_count": int(len(eligible_endpoint_ids)),
+        "sequence_endpoint_count": int(len(generated_endpoint_ids)),
+        "dropped_no_history": int(
+            len(eligible_endpoint_ids - candidate_endpoint_ids_without_gap)
+        ),
+        "dropped_gap": int(
+            len(eligible_candidates_without_gap - generated_endpoint_ids)
+        ),
+        "dropped_other": int(
+            len(
+                eligible_endpoint_ids
+                - generated_endpoint_ids
+                - (eligible_endpoint_ids - candidate_endpoint_ids_without_gap)
+                - (eligible_candidates_without_gap - generated_endpoint_ids)
+            )
         ),
     }
     return SequenceBuildResult(

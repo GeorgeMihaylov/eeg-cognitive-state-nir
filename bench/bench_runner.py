@@ -1974,26 +1974,46 @@ class BenchmarkRunner:
         target_position = str(sequence_config.get('target_position', 'last'))
         expected_step_seconds = sequence_config.get('expected_step_seconds')
         max_gap_seconds = sequence_config.get('max_gap_seconds')
-        train_result = build_sequences(
-            X=split.X_train,
-            y=split.y_train,
-            metadata=self._partition_sequence_metadata(split, 'train'),
-            sequence_length=sequence_length,
-            stride=stride,
-            target_position=target_position,
-            expected_step_seconds=expected_step_seconds,
-            max_gap_seconds=max_gap_seconds,
-        )
-        test_result = build_sequences(
-            X=split.X_test,
-            y=split.y_test,
-            metadata=self._partition_sequence_metadata(split, 'test'),
-            sequence_length=sequence_length,
-            stride=stride,
-            target_position=target_position,
-            expected_step_seconds=expected_step_seconds,
-            max_gap_seconds=max_gap_seconds,
-        )
+        dataset_metadata = dict(split.metadata.get('dataset_metadata') or {})
+        feature_cache_path = dataset_metadata.get('feature_cache_path')
+
+        def build_partition(partition: str):
+            partition_metadata = self._partition_sequence_metadata(split, partition)
+            partition_X = getattr(split, f'X_{partition}')
+            partition_y = getattr(split, f'y_{partition}')
+            endpoint_targets = None
+            if feature_cache_path is not None:
+                from .features.cogstate_feature_cache import load_feature_cache
+
+                full_X, full_index, _, _ = load_feature_cache(feature_cache_path)
+                subjects = set(
+                    np.asarray(getattr(split, f'subject_{partition}')).astype(str)
+                )
+                positions = np.flatnonzero(
+                    full_index['subject_id'].astype(str).isin(subjects).to_numpy()
+                )
+                context_metadata = full_index.iloc[positions].reset_index(drop=True)
+                partition_X = np.asarray(full_X[positions], dtype=np.float32)
+                sample_ids = np.asarray(
+                    getattr(split, f'sample_id_{partition}')
+                )
+                endpoint_targets = dict(zip(sample_ids.tolist(), np.asarray(partition_y).tolist()))
+                partition_metadata = context_metadata
+                partition_y = np.empty(0, dtype=np.asarray(partition_y).dtype)
+            return build_sequences(
+                X=partition_X,
+                y=partition_y,
+                metadata=partition_metadata,
+                sequence_length=sequence_length,
+                stride=stride,
+                target_position=target_position,
+                expected_step_seconds=expected_step_seconds,
+                max_gap_seconds=max_gap_seconds,
+                endpoint_targets=endpoint_targets,
+            )
+
+        train_result = build_partition('train')
+        test_result = build_partition('test')
         if len(train_result.X) == 0 or len(test_result.X) == 0:
             raise ValueError(
                 "Sequence construction produced an empty partition: "
@@ -2011,6 +2031,15 @@ class BenchmarkRunner:
                 "Subject leakage detected after sequence construction: "
                 f"{sequence_subject_overlap.astype(str).tolist()}"
             )
+        sequence_record_group_overlap = np.intersect1d(
+            train_result.metadata['record_group_id'].unique(),
+            test_result.metadata['record_group_id'].unique(),
+        )
+        if len(sequence_record_group_overlap):
+            raise RuntimeError(
+                "Logical-record leakage detected after sequence construction: "
+                f"{sequence_record_group_overlap.astype(str).tolist()}"
+            )
 
         metadata = dict(split.metadata)
         metadata.update({
@@ -2023,6 +2052,15 @@ class BenchmarkRunner:
             'n_train_sequences': len(train_result.X),
             'n_test_sequences': len(test_result.X),
             'subject_overlap': sequence_subject_overlap.astype(str).tolist(),
+            'record_group_overlap': (
+                sequence_record_group_overlap.astype(str).tolist()
+            ),
+            'evaluation_cohort': 'sequence_eligible',
+            'context_length_windows': sequence_length,
+            'context_seconds': (
+                float(sequence_length * expected_step_seconds)
+                if expected_step_seconds is not None else None
+            ),
             'sequence_stats': {
                 'train': train_result.stats,
                 'test': test_result.stats,
