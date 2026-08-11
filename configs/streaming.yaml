@@ -53,3 +53,8 @@ postprocessing:
 output:
   console: true
   jsonl_path: outputs/live_predictions.jsonl
+
+api:
+  host: 127.0.0.1
+  port: 8000
+  autostart_worker: true

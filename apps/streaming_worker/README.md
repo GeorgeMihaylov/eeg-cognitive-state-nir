@@ -28,3 +28,14 @@ the runtime environment before using that source.
 the real-time default.  The existing entropy/connectivity-heavy pipeline is
 available as `features.profile: full`, but its latency must fit the configured
 window step.  A trained model bundle is tied to exactly one feature profile.
+
+## Optional FastAPI service
+
+Install `requirements-streaming-api.txt`, then run:
+
+```powershell
+python -m apps.streaming_worker.api --config configs/streaming.yaml
+```
+
+The API is a separate layer over the same runtime and exposes health, status,
+latest prediction, worker lifecycle and a WebSocket stream.  See `api/README.md`.

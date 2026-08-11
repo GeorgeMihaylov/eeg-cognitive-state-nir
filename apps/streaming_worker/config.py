@@ -73,6 +73,13 @@ class OutputConfig:
 
 
 @dataclass(frozen=True)
+class APIConfig:
+    host: str = "127.0.0.1"
+    port: int = 8000
+    autostart_worker: bool = True
+
+
+@dataclass(frozen=True)
 class WorkerConfig:
     source: SourceConfig = field(default_factory=SourceConfig)
     signal: SignalConfig = field(default_factory=SignalConfig)
@@ -83,6 +90,7 @@ class WorkerConfig:
     model: ModelConfig = field(default_factory=ModelConfig)
     postprocessing: PostprocessingConfig = field(default_factory=PostprocessingConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
+    api: APIConfig = field(default_factory=APIConfig)
 
     def __post_init__(self) -> None:
         if self.source.type not in {"replay", "lsl"}:
@@ -110,6 +118,8 @@ class WorkerConfig:
             raise ValueError("probability_ema_alpha must be in (0, 1]")
         if self.postprocessing.confirmation_windows < 1:
             raise ValueError("confirmation_windows must be positive")
+        if not self.api.host or not 1 <= self.api.port <= 65535:
+            raise ValueError("A valid API host and port are required")
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "WorkerConfig":
@@ -133,4 +143,5 @@ class WorkerConfig:
             model=ModelConfig(**payload.get("model", {})),
             postprocessing=PostprocessingConfig(**payload.get("postprocessing", {})),
             output=OutputConfig(**payload.get("output", {})),
+            api=APIConfig(**payload.get("api", {})),
         )

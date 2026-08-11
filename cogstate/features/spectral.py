@@ -26,7 +26,7 @@ def _band_power(freqs: np.ndarray, psd: np.ndarray, band: Tuple[float, float]) -
     mask = (freqs >= band[0]) & (freqs <= band[1])
     if not np.any(mask):
         return np.zeros(psd.shape[1])
-    return np.trapz(psd[mask], freqs[mask], axis=0)
+    return np.trapezoid(psd[mask], freqs[mask], axis=0)
 
 
 def compute_band_powers(window: np.ndarray, config: SpectralConfig) -> Dict[str, np.ndarray]:
