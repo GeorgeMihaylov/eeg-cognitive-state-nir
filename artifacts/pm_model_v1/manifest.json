@@ -1,0 +1,7 @@
+{
+  "version": "pm-logreg-bootstrap-v1",
+  "model_type": "logistic_regression",
+  "bootstrap": true,
+  "diagnostic_only": true,
+  "description": "Synthetic smoke-test model. Replace with a trained bundle before interpreting predictions."
+}
