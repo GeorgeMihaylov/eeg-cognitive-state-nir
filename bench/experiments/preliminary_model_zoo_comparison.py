@@ -166,7 +166,9 @@ def _default_params(model_id: str, task_type: str) -> dict[str, Any]:
             )
         return params
     params = {}
-    if model_id in {"random_forest", "mlp", "svm", "xgboost", "logistic_regression"}:
+    if model_id in {"random_forest", "mlp", "xgboost", "logistic_regression"} or (
+        model_id == "svm" and task_type == "classification"
+    ):
         params["random_state"] = 42
     if model_id == "random_forest":
         params.update(n_estimators=200, n_jobs=-1)
