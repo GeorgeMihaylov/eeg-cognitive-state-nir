@@ -4,7 +4,7 @@ from sklearn.base import BaseEstimator
 
 
 CLASSIFICATION_MODEL_NAMES = frozenset(
-    {"logistic_regression", "mlp", "random_forest", "svm", "xgboost"}
+    {"lightgbm", "logistic_regression", "mlp", "random_forest", "svm", "xgboost"}
 )
 REGRESSION_MODEL_NAMES = frozenset(
     {
@@ -13,6 +13,7 @@ REGRESSION_MODEL_NAMES = frozenset(
         "ridge",
         "random_forest",
         "hist_gradient_boosting",
+        "lightgbm",
         "mlp",
         "svm",
         "xgboost",
@@ -60,6 +61,16 @@ def build_sklearn_model(
         )
 
     if normalized_task == "classification":
+        if normalized_name == "lightgbm":
+            try:
+                from lightgbm import LGBMClassifier
+            except ModuleNotFoundError as exc:
+                raise ModuleNotFoundError(
+                    "Optional dependency 'lightgbm' is required for model "
+                    "'lightgbm'. Install it in eeg_benchmark with: "
+                    "conda run -n eeg_benchmark python -m pip install lightgbm"
+                ) from exc
+            return LGBMClassifier(**model_params)
         if normalized_name == "random_forest":
             from sklearn.ensemble import RandomForestClassifier
 
@@ -81,6 +92,16 @@ def build_sklearn_model(
 
             return XGBClassifier(**model_params)
 
+    if normalized_name == "lightgbm":
+        try:
+            from lightgbm import LGBMRegressor
+        except ModuleNotFoundError as exc:
+            raise ModuleNotFoundError(
+                "Optional dependency 'lightgbm' is required for model "
+                "'lightgbm'. Install it in eeg_benchmark with: "
+                "conda run -n eeg_benchmark python -m pip install lightgbm"
+            ) from exc
+        return LGBMRegressor(**model_params)
     if normalized_name == "random_forest":
         from sklearn.ensemble import RandomForestRegressor
 

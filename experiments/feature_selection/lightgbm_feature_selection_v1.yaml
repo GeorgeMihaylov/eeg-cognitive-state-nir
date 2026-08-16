@@ -1,0 +1,42 @@
+experiment_id: lightgbm_feature_selection_v1
+result_status: baseline
+base_protocol_config: experiments/pm_regression/pm_all_targets_feature_baseline.yaml
+
+targets: [attention, engagement, excitement, stress, relaxation, interest, focus]
+tasks: [classification, regression]
+feature_regimes: [all_features, selected_top50]
+
+selector:
+  method: tree_importance
+  top_k: 50
+  importance_threshold: 0.0
+  redundancy_corr_threshold: 0.95
+  random_state: 42
+  provenance: prespecified_primary_selector_no_tuning
+
+lightgbm:
+  params:
+    n_estimators: 300
+    learning_rate: 0.05
+    num_leaves: 31
+    max_depth: -1
+    subsample: 0.8
+    subsample_freq: 1
+    colsample_bytree: 0.8
+    reg_lambda: 0.1
+    random_state: 42
+    n_jobs: -1
+    verbosity: -1
+  provenance: prespecified_new_baseline_no_historical_repository_params_no_tuning
+
+evaluation:
+  protocol: fixed_group_kfold_subject
+  folds: [1, 2, 3, 4, 5]
+  group_column: subject_id
+  participant_aggregation: equal_weight_macro
+
+smoke:
+  targets: [attention]
+  folds: [1]
+
+output_dir: benchmark_results/lightgbm_feature_selection_v1

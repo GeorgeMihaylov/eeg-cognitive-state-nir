@@ -16,7 +16,7 @@ SUPPORTED_METHODS = frozenset({"tree_importance", "mutual_info"})
 
 @dataclass(frozen=True)
 class SelectionConfig:
-    task_type: str
+    task_type: str = "classification"
     method: str = "tree_importance"
     top_k: int | None = 50
     importance_threshold: float = 0.0
