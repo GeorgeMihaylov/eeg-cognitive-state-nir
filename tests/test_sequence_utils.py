@@ -54,6 +54,26 @@ def test_sequences_do_not_cross_source_subject_or_record_and_sort_time() -> None
         assert row.sequence_end_sample_id == sequence_sample_ids[-1]
 
 
+def test_legacy_metadata_derives_record_group_without_crossing_records() -> None:
+    metadata = _metadata_for_records([4, 4]).drop(columns="record_group_id")
+    X = np.column_stack([metadata["sample_id"], metadata["t_start"]]).astype(
+        np.float32
+    )
+    y = metadata["sample_id"].to_numpy(dtype=np.int64)
+
+    result = build_sequences(X, y, metadata, sequence_length=3)
+
+    assert result.stats["record_group_id_source"] == (
+        "derived_from_source_subject_record"
+    )
+    assert result.stats["records_total"] == 2
+    assert result.metadata["record_group_id"].nunique() == 2
+    assert all(
+        row.record_id in row.record_group_id
+        for row in result.metadata.itertuples(index=False)
+    )
+
+
 def test_sequence_length_stride_metadata_and_unique_ids() -> None:
     metadata = _metadata_for_records([14])
     X = np.arange(14 * 5, dtype=np.float32).reshape(14, 5)

@@ -79,6 +79,28 @@ def _select_time_column(metadata: pd.DataFrame) -> str:
     )
 
 
+def _ensure_record_group_id(metadata: pd.DataFrame) -> str:
+    """Keep modern logical groups, with a deterministic legacy fallback."""
+    if "record_group_id" in metadata.columns:
+        return "provided"
+    fallback_columns = ("source", "subject_id", "record_id")
+    missing = sorted(set(fallback_columns) - set(metadata.columns))
+    if missing:
+        raise ValueError(
+            "Sequence metadata without record_group_id requires fallback "
+            f"columns {list(fallback_columns)}; missing={missing}"
+        )
+    if metadata.loc[:, list(fallback_columns)].isna().any().any():
+        raise ValueError(
+            "Sequence record-group fallback columns contain missing values"
+        )
+    # GROUP_COLUMNS already include source and subject_id. Reusing record_id as
+    # the fallback preserves historical sequence IDs and immutable experiment
+    # hashes while still preventing a sequence from crossing a physical record.
+    metadata["record_group_id"] = metadata["record_id"].astype(str)
+    return "derived_from_source_subject_record"
+
+
 def _validate_inputs(
     X: Any,
     y: Any,
@@ -134,7 +156,7 @@ def _validate_inputs(
                 "max_gap_seconds must be at least expected_step_seconds"
             )
 
-    required_columns = set(GROUP_COLUMNS) | {"sample_id"}
+    required_columns = set(GROUP_COLUMNS) | {"record_id", "sample_id"}
     missing = sorted(required_columns - set(metadata.columns))
     if missing:
         raise ValueError(f"Sequence metadata is missing required columns: {missing}")
@@ -182,6 +204,7 @@ def build_sequences(
     if not isinstance(metadata, pd.DataFrame):
         metadata = pd.DataFrame(metadata)
     metadata = metadata.reset_index(drop=True).copy()
+    record_group_id_source = _ensure_record_group_id(metadata)
     features, labels, time_column = _validate_inputs(
         X,
         y,
@@ -372,6 +395,7 @@ def build_sequences(
         "stride": int(stride),
         "target_position": target_position,
         "time_column": time_column,
+        "record_group_id_source": record_group_id_source,
         "expected_step_seconds_config": expected_step_seconds,
         "max_gap_seconds_config": max_gap_seconds,
         "continuous_segments_total": int(continuous_segments_total),
