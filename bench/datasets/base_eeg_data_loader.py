@@ -54,6 +54,7 @@ def resolve_feature_columns(
         'target_main', 'label_q5',
     }
     exclude.update(column for column in columns if column.startswith('target_'))
+    exclude.update(column for column in columns if column.startswith('label_'))
     exclude.update(column for column in columns if column.startswith('PM.'))
     return [column for column in columns if column not in exclude]
 

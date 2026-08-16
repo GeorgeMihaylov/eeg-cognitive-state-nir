@@ -1,0 +1,65 @@
+{
+  "schema_version": "external-mefar-xgboost-v1",
+  "experiment_id": "mefar_multimodal_xgboost_v1",
+  "result_status": "baseline",
+  "dataset": {
+    "name": "mefar",
+    "archive": "data/raw/mefar/archives/MEFAR Dataset Neurophysiological and Biosignal Data.zip",
+    "expected_archive_sha256": "c591ac136150032f58365248adbe52c68d063bc80a8846d22a32f29ad202048a"
+  },
+  "source_rf": {
+    "config": "experiments/external_datasets/mefar_multimodal_v1.json",
+    "output_dir": "benchmark_results/mefar_multimodal_v1",
+    "protocol_hash": "5a3339cab659e53f67b21da4b083191de9ce1e6c6a3eb7bb8bd593e852400ff3",
+    "fold_manifest_hash": "c8b9e80fbe9978eb1252e9fea60d172eee86ed0c91db4689e75e9f7116310232",
+    "sample_ids_hash": "c700c71a533686f949e544bc5a759821d5a22050ee99db8ab0f2f98fb13a9adf"
+  },
+  "target": {
+    "target_id": "mefar_cfs_fatigue_binary",
+    "level": "participant_session",
+    "threshold": {
+      "operator": ">=",
+      "value": 12
+    },
+    "class_names": ["non_fatigue", "fatigue"]
+  },
+  "features": {
+    "modes": ["eeg_only", "wearable_only", "eeg_wearable"],
+    "feature_counts": {
+      "eeg_only": 56,
+      "wearable_only": 57,
+      "eeg_wearable": 113
+    },
+    "semantic_mode_mapping": {
+      "eeg_only": "eeg_only",
+      "wearable_only": "peripheral_only",
+      "eeg_wearable": "eeg_peripheral"
+    }
+  },
+  "evaluation": {
+    "fold_source": "existing_rf_fold_manifest",
+    "group_column": "participant_id",
+    "n_splits": 5,
+    "imputation": "outer_train_median",
+    "scaling": "none",
+    "oversampling": false
+  },
+  "model": {
+    "name": "xgboost",
+    "task_type": "classification",
+    "hyperparameter_search": false,
+    "params": {
+      "n_estimators": 300,
+      "max_depth": 6,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "n_jobs": -1,
+      "random_state": 42
+    }
+  },
+  "output_dir": "benchmark_results/mefar_multimodal_xgboost_v1"
+}

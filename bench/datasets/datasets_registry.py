@@ -5,6 +5,8 @@ from .cog_bci_baseline_dataset import COGBCINBackWindowDataset
 from .cogstate_feature_dataset import CogstateFeatureDataset
 from .emotiv_loader import EmotivDataset
 from .raw_eeg_window_dataset import RawEEGWindowDataset
+from .mefar_dataset import MEFARDataset
+from .clare_cldrive_dataset import CLAREDataset, CLDriveDataset
 from .wesad_loader import WESADDataset
 
 # Используем этот файл для централизованной регистрации датасетов
@@ -20,6 +22,9 @@ DATASET_REGISTRY: Dict[str, DatasetType] = {
     'emotiv_cognitive': EmotivDataset,
     'emotiv_pm_regression': EmotivDataset,
     'emotiv_raw_eeg': RawEEGWindowDataset,
+    'mefar': MEFARDataset,
+    'clare': CLAREDataset,
+    'cl_drive': CLDriveDataset,
     'wesad': WESADDataset,
 }
 

@@ -1,0 +1,96 @@
+{
+  "schema_version": "mefar-multimodal-v1",
+  "experiment_id": "mefar_multimodal_v1",
+  "result_status": "baseline",
+  "dataset": {
+    "name": "mefar",
+    "archive": "data/raw/mefar/archives/MEFAR Dataset Neurophysiological and Biosignal Data.zip",
+    "extracted_root": "data/raw/mefar/extracted",
+    "source_policy": "raw_files_only",
+    "processed_down_mid_up_policy": "audit_only_excluded_from_primary"
+  },
+  "target": {
+    "target_id": "mefar_cfs_fatigue_binary",
+    "level": "session",
+    "score": "Chalder Fatigue Scale Likert total",
+    "threshold": {
+      "operator": ">=",
+      "value": 12,
+      "class_0": "non_fatigue",
+      "class_1": "fatigue"
+    },
+    "session_label_policy": "morning_evening_metadata_only",
+    "diagnostic_target": "mefar_session_time_proxy"
+  },
+  "synchronization": {
+    "fusion_level": "participant_session_summary",
+    "window_seconds": null,
+    "stride_seconds": null,
+    "nearest_neighbor_merge": false,
+    "reason": "EEG has relative time only; E4 has Unix UTC; explicit shared markers are unavailable for 44 of 46 sessions"
+  },
+  "features": {
+    "modes": [
+      "eeg_only",
+      "wearable_only",
+      "eeg_wearable"
+    ],
+    "summary_statistics": [
+      "mean",
+      "std",
+      "min",
+      "max",
+      "median",
+      "q25",
+      "q75"
+    ],
+    "eeg_primary": [
+      "Delta",
+      "Theta",
+      "Alpha1",
+      "Alpha2",
+      "Beta1",
+      "Beta2",
+      "Gamma1",
+      "Gamma2"
+    ],
+    "eeg_device_metrics_primary": false,
+    "wearable": [
+      "BVP",
+      "EDA",
+      "TEMP",
+      "ACC_x",
+      "ACC_y",
+      "ACC_z",
+      "HR",
+      "IBI"
+    ],
+    "ibi_extra": [
+      "rmssd"
+    ]
+  },
+  "evaluation": {
+    "protocol": "group_kfold_participant",
+    "group_column": "participant_id",
+    "n_splits": 5,
+    "random_state": 42,
+    "same_evaluation_cohort_across_modes": true,
+    "oversampling": false,
+    "imputation": "outer_train_median"
+  },
+  "model": {
+    "name": "random_forest",
+    "task_type": "classification",
+    "hyperparameter_search": false,
+    "scaling": "none",
+    "params": {
+      "n_estimators": 300,
+      "max_depth": 12,
+      "min_samples_leaf": 2,
+      "class_weight": null,
+      "n_jobs": -1,
+      "random_state": 42
+    }
+  },
+  "output_dir": "benchmark_results/mefar_multimodal_v1"
+}

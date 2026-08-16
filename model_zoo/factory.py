@@ -11,6 +11,7 @@ TORCH_MODEL_NAMES = frozenset(
         "torch_bilstm",
         "torch_eegnet",
         "torch_shallow_convnet",
+        "torch_shallow_fusion",
         "torch_transformer",
     }
 )
@@ -104,6 +105,18 @@ def build_model(
                     task_type=(
                         "regression" if is_regression else "classification"
                     ),
+                ),
+            )
+
+        if normalized_name == "torch_shallow_fusion":
+            from .DL.shallow_fusion import build_torch_shallow_fusion
+
+            return cast(
+                ModelLike,
+                build_torch_shallow_fusion(
+                    input_shape=input_shape,
+                    num_outputs=int(num_outputs),
+                    params=params,
                 ),
             )
 

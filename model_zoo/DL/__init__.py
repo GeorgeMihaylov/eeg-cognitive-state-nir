@@ -63,6 +63,10 @@ from .shallow_convnet import (
     TorchShallowConvNetClassifier,
     build_torch_shallow_convnet,
 )
+from .shallow_fusion import (
+    TorchShallowFusionClassifier,
+    build_torch_shallow_fusion,
+)
 from .transformer import (
     TorchFeatureTransformerClassifier,
     TransformerPositionalEncoding,
@@ -114,6 +118,7 @@ __all__ = [
     "CoralOrdinalHead",
     "CornOrdinalHead",
     "TorchShallowConvNetClassifier",
+    "TorchShallowFusionClassifier",
     "TorchFeatureTransformerClassifier",
     "TransformerPositionalEncoding",
     "SquareActivation",
@@ -122,6 +127,7 @@ __all__ = [
     "build_torch_eegnet",
     "build_torch_mlp",
     "build_torch_shallow_convnet",
+    "build_torch_shallow_fusion",
     "build_torch_transformer",
     "build_corn_targets_and_masks",
     "build_cumulative_targets",

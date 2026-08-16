@@ -1,0 +1,85 @@
+{
+  "schema_version": "external-cognitive-load-multimodal-v1",
+  "experiment_id": "cl_drive_multimodal_v1",
+  "result_status": "diagnostic",
+  "dataset": {
+    "name": "cl_drive",
+    "archive": "data/raw/cl_drive/archives/doi-10.5683-sp3-jj2yzz.zip",
+    "expected_sha256": "83862102235105dfb600e36706b36406094c6c7887e9d133a90042f54736aac0",
+    "extracted_root": "data/raw/cl_drive/extracted"
+  },
+  "target": {
+    "target_id": "subjective_cognitive_load_3class_fixed",
+    "raw_scale": [1, 9],
+    "raw_target": "subjective_cognitive_load_score",
+    "fixed_bins": {
+      "0": [1, 3],
+      "1": [4, 6],
+      "2": [7, 9]
+    },
+    "class_names": ["low", "medium", "high"],
+    "label_frequency_seconds": 10,
+    "source": "participant_self_report"
+  },
+  "windowing": {
+    "duration_seconds": 10.0,
+    "stride_seconds": 10.0,
+    "eeg_sampling_rate_hz": 256.0,
+    "eeg_samples": 2560,
+    "eeg_channels": ["TP9", "AF7", "AF8", "TP10"],
+    "alignment": "task_segment_relative_label_interval",
+    "nearest_neighbour_merge": false
+  },
+  "features": {
+    "eeg": "channel_wise_spectral_without_nuisance",
+    "peripheral": "ecg_three_calibrated_leads_plus_primary_eda_summary",
+    "gaze_policy": "diagnostic_separate_excluded_from_primary",
+    "secondary_eda_policy": "excluded_for_cross_dataset_schema_and_missing_participant_1716",
+    "statistics": ["mean", "std", "min", "max", "median", "q25", "q75"]
+  },
+  "evaluation": {
+    "protocol": "stratified_group_kfold_participant",
+    "group_column": "participant_id",
+    "n_splits": 5,
+    "random_state": 42,
+    "same_evaluation_cohort_across_modes_and_models": true,
+    "imputation": "outer_train_median",
+    "scaling": "train_only",
+    "oversampling": false
+  },
+  "models": {
+    "xgboost": {
+      "n_estimators": 300,
+      "max_depth": 6,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "objective": "multi:softprob",
+      "eval_metric": "mlogloss",
+      "tree_method": "hist",
+      "n_jobs": -1,
+      "random_state": 42
+    },
+    "torch_shallow": {
+      "n_filters": 40,
+      "temporal_kernel_samples": 25,
+      "pool_size": 75,
+      "pool_stride": 15,
+      "dropout": 0.5,
+      "batch_size": 128,
+      "max_epochs": 15,
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "validation_size": 0.15,
+      "early_stopping_patience": 4,
+      "device": "auto",
+      "random_state": 42
+    },
+    "torch_shallow_fusion": {
+      "peripheral_dim": 28,
+      "peripheral_hidden_dim": 32,
+      "peripheral_dropout": 0.2
+    }
+  },
+  "output_dir": "benchmark_results/cl_drive_multimodal_v1"
+}
