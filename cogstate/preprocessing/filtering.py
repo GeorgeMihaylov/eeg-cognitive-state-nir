@@ -9,11 +9,13 @@ from scipy.signal import butter, filtfilt, iirnotch, lfilter, lfilter_zi
 @dataclass
 class FilterConfig:
     sample_rate: float
+    bandpass_enabled: bool = True
     bandpass_low_hz: float = 1.0
     bandpass_high_hz: float = 45.0
     bandpass_order: int = 4
     notch_freq_hz: float = 50.0
     notch_quality_factor: float = 30.0
+    notch_enabled: bool = True
 
 
     def __post_init__(self) -> None:
@@ -57,11 +59,13 @@ def design_notch(config: FilterConfig):
 
 
 def apply_offline(signal: np.ndarray, config: FilterConfig) -> np.ndarray:
-    b_band, a_band = design_bandpass(config)
-    b_notch, a_notch = design_notch(config)
-
-    filtered = filtfilt(b_band, a_band, signal, axis=0)
-    filtered = filtfilt(b_notch, a_notch, filtered, axis=0)
+    filtered = np.asarray(signal, dtype=float).copy()
+    if config.bandpass_enabled:
+        b_band, a_band = design_bandpass(config)
+        filtered = filtfilt(b_band, a_band, filtered, axis=0)
+    if config.notch_enabled:
+        b_notch, a_notch = design_notch(config)
+        filtered = filtfilt(b_notch, a_notch, filtered, axis=0)
     return filtered
 
 
@@ -73,14 +77,20 @@ class StreamingFilter:
 
         self.config = config
         self._n_channels = int(n_channels)
-        self._b_band, self._a_band = design_bandpass(config)
-        self._b_notch, self._a_notch = design_notch(config)
-
-        self._zi_band_template = lfilter_zi(
-            self._b_band, self._a_band
+        self._b_band, self._a_band = (
+            design_bandpass(config) if config.bandpass_enabled else (None, None)
         )
-        self._zi_notch_template = lfilter_zi(
-            self._b_notch, self._a_notch
+        self._b_notch, self._a_notch = (
+            design_notch(config) if config.notch_enabled else (None, None)
+        )
+
+        self._zi_band_template = (
+            lfilter_zi(self._b_band, self._a_band)
+            if self._b_band is not None else None
+        )
+        self._zi_notch_template = (
+            lfilter_zi(self._b_notch, self._a_notch)
+            if self._b_notch is not None else None
         )
 
         self._zi_band = None
@@ -102,33 +112,36 @@ class StreamingFilter:
         if not np.isfinite(chunk).all():
             raise ValueError("StreamingFilter input contains NaN or Inf")
 
-        if self._zi_band is None:
+        if self._b_band is not None and self._zi_band is None:
             self._zi_band = (
                 self._zi_band_template[:, None]
                 * chunk[0][None, :]
             )
 
-        filtered, self._zi_band = lfilter(
-            self._b_band,
-            self._a_band,
-            chunk,
-            axis=0,
-            zi=self._zi_band,
-        )
+        filtered = chunk
+        if self._b_band is not None:
+            filtered, self._zi_band = lfilter(
+                self._b_band,
+                self._a_band,
+                filtered,
+                axis=0,
+                zi=self._zi_band,
+            )
 
-        if self._zi_notch is None:
+        if self._b_notch is not None and self._zi_notch is None:
             self._zi_notch = (
                 self._zi_notch_template[:, None]
                 * filtered[0][None, :]
             )
 
-        filtered, self._zi_notch = lfilter(
-            self._b_notch,
-            self._a_notch,
-            filtered,
-            axis=0,
-            zi=self._zi_notch,
-        )
+        if self._b_notch is not None:
+            filtered, self._zi_notch = lfilter(
+                self._b_notch,
+                self._a_notch,
+                filtered,
+                axis=0,
+                zi=self._zi_notch,
+            )
 
         return filtered
 

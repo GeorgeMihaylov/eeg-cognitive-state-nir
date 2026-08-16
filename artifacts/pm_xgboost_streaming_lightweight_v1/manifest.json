@@ -1,0 +1,158 @@
+{
+  "channels": [
+    "AF3",
+    "F7",
+    "F3",
+    "FC5",
+    "T7",
+    "P7",
+    "O1",
+    "O2",
+    "P8",
+    "T8",
+    "FC6",
+    "F4",
+    "F8",
+    "AF4"
+  ],
+  "diagnostic_only": false,
+  "feature_profile": "lightweight",
+  "feature_schema_hash": "62736110455c3423c27edff6f42769579b0ee57212099cdf979be92331d77f72",
+  "imputer_file": "imputer.joblib",
+  "model_file": "model.joblib",
+  "model_parameters": {
+    "colsample_bytree": 0.8,
+    "eval_metric": "mlogloss",
+    "learning_rate": 0.05,
+    "max_depth": 6,
+    "n_estimators": 300,
+    "n_jobs": -1,
+    "objective": "multi:softprob",
+    "random_state": 42,
+    "subsample": 0.8,
+    "tree_method": "hist"
+  },
+  "model_type": "xgboost_multitask_q3",
+  "n_features": 336,
+  "preprocessing_hash": "738ad5c5a316d02fee1127073da0b7140c467e50565af5084c358032f2b52d74",
+  "protocol_hash": "459bba20b5c01217a2fff46bd9c79d6b836ca769a43bd58e9d3240cc35533a17",
+  "provenance": {
+    "head": "e5759d35867a0b024f9cba4781bd1d7ee9a78cae",
+    "working_tree_dirty": true,
+    "working_tree_state_hash": "221654ff4bbe309c1330d91fa22aca642dbdb9d57634297f7adcfc8f0b3dfe8a"
+  },
+  "q3_thresholds": {
+    "attention": [
+      0.40640833333333337,
+      0.5057536666666667
+    ],
+    "engagement": [
+      0.5815763333333334,
+      0.685273
+    ],
+    "excitement": [
+      0.19881633333333332,
+      0.3632989999999998
+    ],
+    "focus": [
+      0.369968,
+      0.466155
+    ],
+    "interest": [
+      0.4793866666666667,
+      0.5282209999999999
+    ],
+    "relaxation": [
+      0.25639733333333337,
+      0.3897319999999999
+    ],
+    "stress": [
+      0.40364866666666666,
+      0.46023766666666666
+    ]
+  },
+  "q3_thresholds_hash": "158e7ebb8eac3da1d6827debf889f4dda7015735cc9ad6cc4f05c7242c07333f",
+  "sample_rate": 256.0,
+  "scaler_file": null,
+  "selector_file": null,
+  "signal_preprocessing_hash": "738ad5c5a316d02fee1127073da0b7140c467e50565af5084c358032f2b52d74",
+  "target_contract": "outer-train tertiles; searchsorted(side='right')",
+  "target_metrics": [
+    "attention",
+    "engagement",
+    "excitement",
+    "stress",
+    "relaxation",
+    "interest",
+    "focus"
+  ],
+  "training_fold": {
+    "outer_fold": 1,
+    "split_hash": "e691d3efbaa37c02af80d3f0494865262707496125fc20fde28ec15b2f20c9ef",
+    "test_participant_ids": [
+      "30c140ca",
+      "3110e0c7",
+      "40f0714a",
+      "7150e10a",
+      "71f0603f",
+      "81f1f0fe",
+      "a1721173",
+      "c060c06a",
+      "c112918e",
+      "d111e017",
+      "f1d06060"
+    ],
+    "train_participant_ids": [
+      "0001508a",
+      "0012905a",
+      "0110f12e",
+      "0182e16c",
+      "01c2a0d8",
+      "1081b177",
+      "20201194",
+      "2162c09e",
+      "2182c1cd",
+      "219060fa",
+      "21a031f6",
+      "30908049",
+      "40009139",
+      "41e2010c",
+      "5001d09a",
+      "50c02189",
+      "517001af",
+      "6030f0fd",
+      "7072a0e0",
+      "7092f07b",
+      "71a251fa",
+      "71c09041",
+      "71e10186",
+      "71f21142",
+      "8030618f",
+      "8191f1d9",
+      "81e150c1",
+      "9192c107",
+      "a02151ac",
+      "a1b210fc",
+      "b0700166",
+      "b112005d",
+      "b1c2f044",
+      "c1a150b1",
+      "d0724095",
+      "d0e2d025",
+      "d142d110",
+      "d151b0c4",
+      "d18000a3",
+      "e0c0408a",
+      "f0f2a1e1",
+      "f121f1e0",
+      "f1a0c120"
+    ],
+    "training_record_count": 65,
+    "training_sample_ids_hash": "d504a4bbe84efa9df71b1e9e5f4e543778eac2e948a43b7a06dd7b1b3aee7e4d",
+    "training_window_count": 774
+  },
+  "training_participant_ids_hash": "ba84e06a95f6809205495088cada97ebc8eedff5a1975eafa1e2c0fbf57e6dc2",
+  "training_seconds": 35.83309259999078,
+  "version": "pm-xgboost-streaming-lightweight-v1-fold01-seed42",
+  "window_seconds": 10.0
+}

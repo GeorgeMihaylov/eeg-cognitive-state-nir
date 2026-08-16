@@ -111,12 +111,13 @@ class StreamProcessor:
                 time.sleep(self.poll_interval_s)
                 continue
             try:
-                self._process_window(window)
+                self.process_window(window)
             except Exception:
                 logger.exception("Ошибка при обработке окна [%s, %s]",
                                   window.start_time, window.end_time)
 
-    def _process_window(self, window: Window) -> None:
+    def process_window(self, window: Window) -> ProcessedResult:
+        """Process one ready window synchronously and return its result."""
         trace = self.latency_monitor.start_trace(window)
 
         clean_signal = self.preprocessor(window)
@@ -130,12 +131,19 @@ class StreamProcessor:
 
         trace.finish()
         self.latency_monitor.record(trace)
+        stage_latencies = trace.stage_latencies_ms()
+        stage_latencies["total_processing"] = trace.total_latency_ms()
 
         result = ProcessedResult(
             window=window,
             prediction=prediction,
-            stage_latencies_ms=trace.stage_latencies_ms(),
+            stage_latencies_ms=stage_latencies,
         )
 
         if self.on_result is not None:
             self.on_result(result)
+        return result
+
+    def _process_window(self, window: Window) -> ProcessedResult:
+        """Backward-compatible alias for the former private hook."""
+        return self.process_window(window)

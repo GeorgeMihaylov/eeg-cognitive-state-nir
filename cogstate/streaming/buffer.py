@@ -103,7 +103,9 @@ class SignalBuffer:
             if channel is None:
                 return None
             latest = channel.latest_timestamp()
-            if latest is None or latest < end:
+            # Samples are left-closed/right-open. A regular stream whose last
+            # sample is at ``end - 1 / sample_rate`` already completes window.
+            if latest is None or latest + 1.0 / channel.sample_rate + 1e-9 < end:
                 return None
 
             sliced = channel.slice(start, end)

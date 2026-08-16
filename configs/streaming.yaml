@@ -1,0 +1,60 @@
+source:
+  type: replay
+  path: data/replay_eeg.npy
+  realtime: false
+  speed: 1.0
+  stream_name: EEG
+
+signal:
+  sample_rate: 256
+  channels:
+    - AF3
+    - F7
+    - F3
+    - FC5
+    - T7
+    - P7
+    - O1
+    - O2
+    - P8
+    - T8
+    - FC6
+    - F4
+    - F8
+    - AF4
+
+windowing:
+  window_seconds: 10
+  step_seconds: 1
+
+preprocessing:
+  bandpass_low_hz: 1
+  bandpass_high_hz: 45
+  notch_hz: 50
+  faster: true
+
+quality:
+  max_missing_ratio: 0.05
+  sample_rate_tolerance_ratio: 0.05
+  minimum_finite_ratio: 1.0
+
+features:
+  profile: lightweight
+
+model:
+  artifact_dir: artifacts/pm_model_v1
+  allow_bootstrap: true
+
+postprocessing:
+  probability_ema_alpha: 0.3
+  minimum_confidence: 0.55
+  confirmation_windows: 3
+
+output:
+  console: true
+  jsonl_path: outputs/live_predictions.jsonl
+
+api:
+  host: 127.0.0.1
+  port: 8000
+  autostart_worker: true

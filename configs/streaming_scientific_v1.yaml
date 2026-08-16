@@ -1,0 +1,74 @@
+experiment_id: streaming_scientific_v1
+result_status: diagnostic
+
+source:
+  type: replay
+  path: data/replay/eeg_outer_fold01_test_record.npy
+  realtime: false
+  speed: 1.0
+  stream_name: EEG
+
+signal:
+  sample_rate: 256
+  channels: [AF3, F7, F3, FC5, T7, P7, O1, O2, P8, T8, FC6, F4, F8, AF4]
+
+windowing:
+  window_seconds: 10
+  step_seconds: 1
+
+preprocessing:
+  bandpass_enabled: false
+  bandpass_low_hz: 1
+  bandpass_high_hz: 45
+  notch_enabled: false
+  notch_hz: 50
+  faster: false
+
+quality:
+  max_missing_ratio: 0.05
+  sample_rate_tolerance_ratio: 0.05
+  minimum_finite_ratio: 1.0
+
+features:
+  profile: full
+
+model:
+  artifact_dir: artifacts/pm_xgboost_streaming_v1
+  allow_bootstrap: false
+
+postprocessing:
+  probability_ema_alpha: 0.3
+  minimum_confidence: 0.55
+  confirmation_windows: 3
+
+output:
+  console: false
+  jsonl_path: benchmark_results/streaming_scientific_v1/predictions.jsonl
+
+api:
+  host: 127.0.0.1
+  port: 8000
+  autostart_worker: true
+
+scientific:
+  outer_fold: 1
+  fixed_fold_manifest: benchmark_results/pm_all_targets_feature_baseline_v1/preregistration/fold_manifest.json
+  raw_window_index: data/interim/raw_eeg_window_index_w10_raw_v3.parquet
+  target_table: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  logical_record_map: data/interim/logical_recording_map.parquet
+  output_dir: benchmark_results/streaming_scientific_v1
+  max_windows_per_record: 12
+  feature_workers: 8
+  replay_duration_seconds: 120
+  minimum_prediction_windows: 100
+  xgboost_params:
+    n_estimators: 300
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    objective: multi:softprob
+    eval_metric: mlogloss
+    tree_method: hist
+    n_jobs: -1
+    random_state: 42
