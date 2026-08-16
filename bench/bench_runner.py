@@ -496,6 +496,51 @@ class BenchmarkRunner:
             logger.error(f"Failed to load dataset '{dataset_name}': {e}")
             raise
 
+    def prepare_group_fold(
+            self,
+            dataset_name: str,
+            task_name: str,
+            fold: int,
+            model_type: str,
+    ) -> tuple[TaskSplit, int, str]:
+        """Rebuild one deterministic outer fold without fitting a model.
+
+        This is the supported bridge for experiment-level checkpoint resume and
+        additional evaluation views.  It deliberately reuses the dataset,
+        target-transform, fixed-fold and sequence code used by ``run()``.
+        """
+        evaluation = self.config.get('evaluation', {})
+        if evaluation.get('protocol') != 'group_kfold_subject':
+            raise ValueError(
+                "prepare_group_fold requires evaluation.protocol="
+                "'group_kfold_subject'"
+            )
+        group_column = evaluation.get('group_column')
+        if not group_column:
+            raise ValueError('evaluation.group_column is required')
+        data = self.load_dataset(dataset_name)
+        task = get_task(task_name, data, self.config.get('task_config', {}))
+        task_type = str(
+            getattr(task, 'task_type', 'classification')
+        ).strip().lower()
+        num_outputs = (
+            task.n_classes if task_type == 'classification' else task.n_outputs
+        )
+        splits = CrossValidator(task).run_group_kfold(
+            group_column=group_column,
+            n_splits=int(evaluation.get('n_splits', 5)),
+            random_state=int(evaluation.get('random_state', 42)),
+            precomputed_fold_column=evaluation.get('precomputed_fold_column'),
+        )
+        fold_name = f'fold_{int(fold):02d}'
+        try:
+            split = splits[fold_name]
+        except KeyError as exc:
+            raise ValueError(f'Unknown fixed outer fold: {fold_name}') from exc
+        if model_requires_sequences(model_type):
+            split = self._build_sequence_split(split)
+        return split, int(num_outputs), task_type
+
     def run_for_dataset(self, dataset_name: str) -> Dict[str, Any]:
         logger.info(f"Running benchmark for dataset: {dataset_name}")
         data = self.load_dataset(dataset_name)
@@ -1762,6 +1807,18 @@ class BenchmarkRunner:
                     artifacts['robust_scaling_subject_metrics'] = str(
                         subject_metrics_path
                     )
+
+        else:
+            # sklearn estimators are also checkpoints. Persisting them enables
+            # resume-safe secondary evaluation views without refitting.
+            from sklearn.base import BaseEstimator
+
+            if isinstance(model, BaseEstimator):
+                import joblib
+
+                model_path = artifact_dir / 'model.joblib'
+                joblib.dump(model, model_path)
+                artifacts['model'] = str(model_path)
 
         return artifacts
 
