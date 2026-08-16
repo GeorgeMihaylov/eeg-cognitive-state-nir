@@ -6,6 +6,7 @@
 
 | direction | result | decision | status | report_path |
 |---|---|---|---|---|
+| raw-deduplicated FOMAML | Selected FOMAML reduced participant macro F1 by 0.046338 and increased ordinal MAE by 0.449093 versus supervised full-model adaptation. | do_not_proceed | closed_negative | reports/integration/fomaml_label_q5_raw_diagnostic.md |
 | ShallowConvNet CAR | CAR reduced mean balanced accuracy in the factorial raw-EEG ablation. | Do not adopt CAR as the default for this dataset/model. | closed_negative | reports/preprocessing_factorial_ablation.md |
 | ordinal Transformer losses | Ordinal objectives reduced ordinal errors but did not produce a stable balanced-accuracy gain. | Keep categorical Transformer as the primary classification reference. | closed_negative | reports/ordinal_transformer_multiseed_statistics.md |
 | classification personalization | Full-model fine-tuning was not consistently superior to head-only tuning across subjects. | Report both; avoid claiming universal full-model superiority. | closed_negative | reports/integration/personalization_multiseed_20pct.md |

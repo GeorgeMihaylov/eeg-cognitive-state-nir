@@ -10,10 +10,9 @@
 | status | count |
 |---|---|
 | closed | 10 |
-| infrastructure_ready | 1 |
 | not_required_for_article | 3 |
 | open | 2 |
-| partially_closed | 11 |
+| partially_closed | 12 |
 
 ## Требования
 
@@ -45,7 +44,7 @@
 | R-PERS-01 | Leakage-safe classification и PM personalization | ('scientific',) | closed |  | Поддерживать финальные personalization reports и configs. |
 | R-PERS-Q01 | Accuracy персонализации не ниже 0.75 | ('scientific',) | partially_closed | Максимальная наблюдавшаяся accuracy 0.6349206349 ниже 0.75./Авторитетный первоисточник численного критерия не найден. | Подтвердить происхождение и обязательность порога; не запускать неограниченные fine-tuning sweeps автоматически.
  |
-| R-PERS-02 | Transfer, domain adaptation, meta- и contrastive learning | ('scientific',) | infrastructure_ready | Нет обоснованной domain definition для DANN./Нет production episodic или shared encoder contracts. | Не продолжать deferred mixins без новой научной постановки. |
+| R-PERS-02 | Transfer, domain adaptation, meta- и contrastive learning | ('scientific',) | partially_closed | DANN is partially confirmed only in Old_EEG to gpn_data; FOMAML diagnostic is do_not_proceed; reverse DANN and a target-supervised upper bound remain untested. | Сохранить частично подтверждённый DANN и отрицательный FOMAML; новые sweeps запускать только по новой научной постановке. |
 | R-PLAT | Воспроизводимая интегрированная платформа | ('formal',) | closed |  | Поддерживать registries и architecture documentation. |
 | R-PLAT-01 | Registries, CLI, manifests, resume и summaries | ('formal',) | closed |  | Синхронизировать README с текущими registries. |
 | R-STREAM | Потоковый replay и измерение latency | ('service/demo',) | open | Нет replay API, latency/throughput/memory benchmark или error contract. | Реализовать минимальный offline replay поверх canonical model artifact. |
@@ -63,6 +62,7 @@ reproducibility section, финальный отчёт, таблицы/рису�
 статистически корректные сравнения, related work, вклад, ограничения и
 приложение отрицательных результатов.
 
-**Исключить без новой гипотезы:** DANN, новый contrastive search, полный
-62-канальный cache, дополнительные COG-BCI CNN seeds, AutoML и новые внешние
-наборы.
+**Исключить без новой гипотезы:** дальнейший DANN search, FOMAML sweep,
+новый contrastive search, полный 62-канальный cache, дополнительные COG-BCI
+CNN seeds, AutoML и новые внешние наборы. Уже выполненный confirmatory DANN
+сохраняется как `partially_confirmed` evidence.

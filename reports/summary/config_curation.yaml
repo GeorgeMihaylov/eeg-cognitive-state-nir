@@ -296,6 +296,56 @@ families:
       - reports/label_target_audit.md
       - reports/temporal_label_structure.md
 
+  streaming:
+    canonical_config: configs/streaming_scientific_v1.yaml
+    canonical_smoke_config: configs/streaming.yaml
+    base_configs: []
+    legacy_configs: []
+    diagnostic_configs:
+      - configs/streaming_scientific_lightweight_v1.yaml
+      - configs/streaming_scientific_v1.yaml
+      - configs/streaming.yaml
+    protected_configs:
+      - configs/streaming_scientific_lightweight_v1.yaml
+      - configs/streaming_scientific_v1.yaml
+      - configs/streaming.yaml
+    decision_reason: >
+      Scientific fold-1 held-out replay and the bootstrap-only technical config
+      have distinct deployment roles and must not be mixed in result summaries.
+    evidence:
+      - configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+      - model_zoo/factory.py
+
+  artifact_removal:
+    canonical_config: experiments/preprocessing/artifact_removal_ablation_v1.yaml
+    canonical_smoke_config: null
+    base_configs: []
+    legacy_configs: []
+    diagnostic_configs: []
+    protected_configs:
+      - experiments/preprocessing/artifact_removal_ablation_v1.yaml
+    decision_reason: >
+      Prespecified leakage-safe A/B/C/D artifact-removal comparison on the
+      canonical raw cache; only plan-only and a technical smoke are complete.
+    evidence:
+      - bench/experiments/preprocessing_ablation.py
+      - tests/test_preprocessing_ablation.py
+
+  lightgbm_feature_selection:
+    canonical_config: experiments/feature_selection/lightgbm_feature_selection_v1.yaml
+    canonical_smoke_config: null
+    base_configs: []
+    legacy_configs: []
+    diagnostic_configs: []
+    protected_configs:
+      - experiments/feature_selection/lightgbm_feature_selection_v1.yaml
+    decision_reason: >
+      Prespecified LightGBM all-feature versus fold-local top-50 protocol;
+      execution is blocked until the optional dependency is installed explicitly.
+    evidence:
+      - model_zoo/factory.py
+      - bench/experiments/pm_all_targets_feature_baseline.py
+
 configs:
   - config_path: configs.yaml
     review_status: reviewed
@@ -1345,6 +1395,88 @@ configs:
     linked_experiments: []
     evidence: [reports/temporal_label_structure.md, commit:968aeef]
     notes: []
+    <<: *protected
+
+  - config_path: configs/streaming.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Bootstrap-only streaming configuration retained for technical smoke tests.
+    canonical_config: configs/streaming_scientific_v1.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence: [README.md, commit:e5759d3]
+    unlinked_category: streaming support
+    notes: [Bootstrap model is diagnostic_only and forbidden by the scientific config.]
+    <<: *protected
+
+  - config_path: configs/streaming_scientific_v1.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Leakage-safe outer-fold deployment and held-out replay validation.
+    canonical_config: configs/streaming_scientific_v1.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: [streaming_scientific_v1]
+    evidence: [configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml, model_zoo/factory.py]
+    linked_runtime: benchmark_results/streaming_scientific_v1
+    notes: [Full feature extraction does not currently sustain a one-second live step.]
+    <<: *protected
+
+  - config_path: configs/streaming_scientific_lightweight_v1.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Paired feature-profile ablation on the locked fold-1 cohort and replay.
+    canonical_config: configs/streaming_scientific_v1.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: [streaming_scientific_lightweight_v1]
+    evidence: [configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml, model_zoo/factory.py]
+    linked_runtime: benchmark_results/streaming_scientific_lightweight_v1
+    notes: [Only the feature profile differs from the full scientific streaming diagnostic.]
+    <<: *protected
+
+  - config_path: experiments/preprocessing/artifact_removal_ablation_v1.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Prespecified full artifact-removal ablation with a separate smoke profile.
+    canonical_config: experiments/preprocessing/artifact_removal_ablation_v1.yaml
+    result_status: baseline
+    canonical_status: active
+    provenance_status: documented
+    config_role: full
+    linked_experiments: [artifact_removal_ablation_v1]
+    evidence: [bench/experiments/preprocessing_ablation.py, tests/test_preprocessing_ablation.py]
+    linked_runtime: benchmark_results/artifact_removal_ablation_v1
+    notes: [Full 140-run matrix requires explicit confirmation and has not been executed.]
+    <<: *protected
+
+  - config_path: experiments/feature_selection/lightgbm_feature_selection_v1.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Prespecified LightGBM baseline and fold-local top-50 comparison.
+    canonical_config: experiments/feature_selection/lightgbm_feature_selection_v1.yaml
+    result_status: baseline
+    canonical_status: active
+    provenance_status: documented
+    config_role: full
+    linked_experiments: [lightgbm_feature_selection_v1]
+    evidence: [model_zoo/factory.py, bench/experiments/pm_all_targets_feature_baseline.py]
+    linked_runtime: benchmark_results/lightgbm_feature_selection_v1
+    notes: [Execution is blocked until LightGBM is installed explicitly; no hyperparameter tuning is permitted.]
+    <<: *protected
+
+  - config_path: experiments/targets/pm_union_raw_composite.yaml
+    review_status: not_applicable
+    decision: keep_as_base
+    decision_reason: Canonical PM-union raw target fragment; not a standalone run.
+    canonical_config: experiments/targets/pm_union_raw_composite.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence: [bench/datasets/pm_union_raw_contract.py, tests/test_pm_union_raw_contract.py, commit:fc55e48]
+    unlinked_category: target contract fragment
+    notes: [Fold-local Q3 boundaries remain part of the execution layer.]
     <<: *protected
 
 duplicate_groups:

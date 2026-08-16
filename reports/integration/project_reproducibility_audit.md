@@ -11,12 +11,14 @@
 
 ## Результат
 
-Полный provenance: **29/33**. Неполные записи
+Полный provenance: **39/45**. Неполные записи
 сохраняются в инвентаризации как supporting-only и не используются как
 основное доказательство.
 
 | experiment_id | missing | evidence_role |
 |---|---|---|
+| dann_label_q5_old_eeg_to_gpn_confirmatory_v2_execution | split_hash | supporting_only |
+| dann_label_q5_old_eeg_to_gpn_diagnostic_v1 | split_hash | supporting_only |
 | label_q5_auxiliary_corn_policy | split_hash | supporting_only |
 | label_q5_random_forest_groupkfold | split_hash | supporting_only |
 | label_q5_torch_mlp_groupkfold | split_hash | supporting_only |

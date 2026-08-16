@@ -438,7 +438,7 @@ def test_28_base_configs_are_not_final_runs(project_curation: object) -> None:
         for record in project_curation.records
         if record.curation.get("decision") == "keep_as_base"
     ]
-    assert len(bases) == 11
+    assert len(bases) == 12
     assert all(record.role == "base" and record.status != "final" for record in bases)
 
 
@@ -475,7 +475,7 @@ def test_32_current_curation_passes_strict_validation(
 ) -> None:
     records = {record.path: record for record in project_curation.records}
     document, warnings = audit.load_and_validate_curation(ROOT, CURATION, records)
-    assert len(document["configs"]) == 69
+    assert len(document["configs"]) == 76
     assert len(document["duplicate_groups"]) == 4
     assert len(document["seed_provenance"]) == 4
     assert all(isinstance(value, str) for value in warnings)

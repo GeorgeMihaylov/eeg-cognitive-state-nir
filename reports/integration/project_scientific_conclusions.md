@@ -45,3 +45,16 @@ time-aligned transfer не превосходят random initialization. Физ�
 downstream. **Решение.** `retain_14_channel_cache`, `close_transfer_track`.
 **Ограничение.** Transfer — screening на одном downstream fold. **Статус:**
 диагностический отрицательный результат и приложение статьи.
+
+## FOMAML и DANN
+
+Эпизодическая инфраструктура и безопасные BatchNorm-контракты подтверждены
+инженерно. В raw-deduplicated FOMAML diagnostic выбранная policy ухудшила
+participant macro F1 и ordinal MAE относительно обычной supervised
+full-model адаптации; решение — `do_not_proceed`. DANN в направлении
+`Old_EEG → gpn_data` дал малый положительный средний эффект: четыре из пяти
+folds и оба primary seeds положительны по macro F1. Статус
+`partially_confirmed`: средний эффект ниже +0.01, win fraction ниже 60%, а
+participant bootstrap interval включает ноль. Статистическая значимость не
+установлена; source/target являются provenance-доменами, а не доказанно
+разными устройствами.

@@ -437,5 +437,5 @@ def test_34_utf8_russian_strings_are_preserved(tmp_path: Path) -> None:
 def test_35_current_project_configs_are_all_processed(project_audit: object) -> None:
     paths = audit.discover_config_paths(ROOT)
     assert len(project_audit.records) == len(paths)
-    assert len(paths) == 69
+    assert len(paths) == 78
     assert not [record for record in project_audit.records if record.parse_error]
