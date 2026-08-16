@@ -592,6 +592,11 @@ Examples:
     parser.add_argument('--build-missing-caches', action='store_true')
     parser.add_argument('--cache-only', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--plan-only', action='store_true')
+    parser.add_argument(
+        '--dry-execution',
+        action='store_true',
+        help='Resolve execution costs and checkpoint reuse without training',
+    )
     parser.add_argument('--fold-limit', type=int)
     parser.add_argument('--max-windows', type=int)
     parser.add_argument('--max-epochs', type=int)
@@ -599,6 +604,25 @@ Examples:
         '--calibration-experiment',
         type=str,
         help='Run subject calibration from an existing benchmark run',
+    )
+    parser.add_argument(
+        '--personalization-calibration',
+        type=str,
+        help='Plan the unified seven-PM leakage-safe personalization protocol',
+    )
+    parser.add_argument(
+        '--data-root',
+        type=str,
+        help='Runtime-only data root for protocol planning',
+    )
+    parser.add_argument('--pm', type=str)
+    parser.add_argument(
+        '--task-type',
+        choices=['classification', 'regression'],
+    )
+    parser.add_argument(
+        '--calibration-mode',
+        choices=['zero_shot', 'head_only', 'full_model'],
     )
     parser.add_argument('--subject-limit', type=int)
     parser.add_argument(
@@ -611,13 +635,22 @@ Examples:
     )
     parser.add_argument('--max-calibration-epochs', type=int)
     parser.add_argument(
+        '--calibration-budget-fraction',
+        type=float,
+        help='Select one personalization calibration fraction',
+    )
+    parser.add_argument(
+        '--device', choices=['auto', 'cpu', 'cuda'],
+        help='Runtime device override for personalization execution',
+    )
+    parser.add_argument(
         '--automl-study',
         type=str,
         help='Run a nested AutoML study through the canonical benchmark',
     )
     parser.add_argument('--study-name', type=str)
     parser.add_argument('--storage', type=str)
-    parser.add_argument('--outer-fold', type=int, default=1)
+    parser.add_argument('--outer-fold', type=int)
     parser.add_argument('--n-trials', type=int)
     parser.add_argument('--timeout', type=float)
     parser.add_argument('--inner-splits', type=int)
@@ -696,6 +729,89 @@ Examples:
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
+
+    if args.personalization_calibration:
+        conflicts = {
+            '--config': args.config,
+            '--test': args.test,
+            '--experiment-matrix': args.experiment_matrix,
+            '--calibration-experiment': args.calibration_experiment,
+            '--automl-study': args.automl_study,
+            '--statistical-analysis': args.statistical_analysis,
+            '--cross-source-experiment': args.cross_source_experiment,
+            '--feature-group-experiment': args.feature_group_experiment,
+            '--ordinal-transformer-experiment': args.ordinal_transformer_experiment,
+            '--ordinal-transformer-analysis': args.ordinal_transformer_analysis,
+            '--label-target-audit': args.label_target_audit,
+            '--temporal-target-audit': args.temporal_target_audit,
+            '--label-definition-sensitivity': args.label_definition_sensitivity,
+        }
+        active_conflicts = [name for name, value in conflicts.items() if value]
+        if active_conflicts:
+            parser.error(
+                '--personalization-calibration cannot be combined with '
+                + ', '.join(active_conflicts)
+            )
+        selected_modes = sum(bool(value) for value in (
+            args.plan_only, args.dry_execution, args.run
+        ))
+        if selected_modes != 1:
+            parser.error(
+                '--personalization-calibration requires exactly one of '
+                '--plan-only, --dry-execution, or --run'
+            )
+        from bench.experiments.personalization_calibration import (
+            PersonalizationCalibrationPlanner,
+            PlanFilters,
+        )
+        from bench.experiments.personalization_calibration_execution import (
+            PersonalizationCalibrationExecutor,
+        )
+
+        planner = PersonalizationCalibrationPlanner(
+            args.personalization_calibration,
+            data_root=args.data_root,
+            output_dir=args.output_dir,
+        )
+        personalization_models = None
+        if args.models:
+            personalization_models = [
+                value.strip() for value in args.models.split(',') if value.strip()
+            ]
+            if len(personalization_models) != 1:
+                parser.error(
+                    '--personalization-calibration accepts exactly one --models value'
+                )
+        filters = PlanFilters(
+            outer_fold=args.outer_fold,
+            pm=args.pm,
+            task_type=args.task_type,
+            calibration_mode=args.calibration_mode,
+            model=(None if personalization_models is None else personalization_models[0]),
+            budget_fraction=args.calibration_budget_fraction,
+        )
+        if args.plan_only:
+            result = planner.plan(
+                filters=filters, resume=args.resume, write_artifacts=True,
+            )
+        elif args.dry_execution:
+            result = PersonalizationCalibrationExecutor(planner).dry_execution(
+                filters=filters
+            )
+        else:
+            result = PersonalizationCalibrationExecutor(planner).run(
+                filters=filters,
+                resume=args.resume,
+                subject_limit=args.subject_limit,
+                max_epochs=(
+                    args.max_calibration_epochs
+                    if args.max_calibration_epochs is not None
+                    else args.max_epochs
+                ),
+                device=args.device,
+            )
+        print(json.dumps(result, indent=2, default=str))
+        return
 
     if args.ordinal_transformer_analysis:
         conflicts = {
@@ -1066,7 +1182,7 @@ Examples:
 
         study = AutoMLStudyRunner(
             args.automl_study,
-            outer_fold=args.outer_fold,
+            outer_fold=1 if args.outer_fold is None else args.outer_fold,
             study_name=args.study_name,
             storage=args.storage,
             n_trials=args.n_trials,

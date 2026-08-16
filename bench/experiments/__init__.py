@@ -14,6 +14,19 @@ from .user_calibration import (
     chronological_window_partition,
     resolve_calibration_parameters,
 )
+from .personalization_calibration import (
+    PersonalizationCalibrationPlanner,
+    PlanFilters,
+    aggregate_participant_metrics,
+    build_participant_calibration_plan,
+    build_run_matrix,
+)
+from .personalization_calibration_execution import (
+    PersonalizationCalibrationExecutor,
+    aggregate_execution_results,
+    build_eligibility_table,
+    temporal_adaptation_split,
+)
 from .ordinal_transformer import (
     OrdinalTransformerSmokeExperiment,
     OrdinalTransformerTrialPlan,
@@ -146,6 +159,15 @@ __all__ = [
     "calibration_normalization_statistics",
     "chronological_window_partition",
     "resolve_calibration_parameters",
+    "PersonalizationCalibrationPlanner",
+    "PlanFilters",
+    "aggregate_participant_metrics",
+    "build_participant_calibration_plan",
+    "build_run_matrix",
+    "PersonalizationCalibrationExecutor",
+    "aggregate_execution_results",
+    "build_eligibility_table",
+    "temporal_adaptation_split",
     "AUXILIARY_WEIGHTS",
     "AuxiliaryCornTransformerSmokeExperiment",
     "AuxiliaryCornTrialPlan",

@@ -45,6 +45,91 @@ class EmotivDataset(BaseEEGDataset):
 
     def load(self) -> EEGData:
         df = self._load_dataframe()
+        if 'sample_id' not in df.columns:
+            # The raw-window target join uses the canonical processed-table
+            # index as sample_id.  Materialize it before any cohort filtering
+            # so feature models can consume the exact same supervised universe.
+            df = df.copy()
+            df.insert(0, 'sample_id', df.index.to_numpy(dtype=np.int64))
+        cohort_manifest_path = self.config.get('cohort_manifest_path')
+        cohort_manifest = None
+        if cohort_manifest_path is not None:
+            cohort_path = Path(cohort_manifest_path)
+            if not cohort_path.is_file():
+                raise FileNotFoundError(
+                    f"Cohort manifest not found: {cohort_path}"
+                )
+            cohort_manifest = (
+                pd.read_csv(cohort_path)
+                if cohort_path.suffix.lower() == '.csv'
+                else pd.read_parquet(cohort_path)
+            )
+            required = {'sample_id', 'outer_fold'}
+            missing = sorted(required - set(cohort_manifest.columns))
+            if missing:
+                raise ValueError(
+                    f"Cohort manifest is missing required columns: {missing}"
+                )
+            if cohort_manifest['sample_id'].duplicated().any():
+                raise ValueError('Cohort manifest sample_id values must be unique')
+            if df['sample_id'].duplicated().any():
+                raise ValueError('Dataset sample_id values must be unique')
+            manifest_ids = set(cohort_manifest['sample_id'].astype(str))
+            dataset_ids = set(df['sample_id'].astype(str))
+            missing_ids = sorted(manifest_ids - dataset_ids)
+            if missing_ids:
+                raise ValueError(
+                    'Cohort manifest contains sample IDs absent from the dataset: '
+                    f'{missing_ids[:20]}'
+                )
+            manifest = cohort_manifest.copy()
+            manifest['_sample_id_key'] = manifest['sample_id'].astype(str)
+            selected = df.copy()
+            selected['_sample_id_key'] = selected['sample_id'].astype(str)
+            selected = selected.loc[
+                selected['_sample_id_key'].isin(manifest_ids)
+            ].copy()
+            manifest_columns = ['_sample_id_key', 'outer_fold']
+            for column in ('subject_id', 'record_id', 'record_group_id'):
+                if column in manifest.columns:
+                    manifest_columns.append(column)
+            selected = selected.merge(
+                manifest[manifest_columns],
+                on='_sample_id_key',
+                how='left',
+                validate='one_to_one',
+                suffixes=('', '_cohort'),
+            )
+            for column in ('subject_id', 'record_id', 'record_group_id'):
+                cohort_column = f'{column}_cohort'
+                if cohort_column in selected.columns:
+                    if column in {'subject_id', 'record_id'}:
+                        mismatch = (
+                            selected[column].astype(str)
+                            != selected[cohort_column].astype(str)
+                        )
+                        if mismatch.any():
+                            raise ValueError(
+                                f'Cohort manifest {column} does not match dataset rows'
+                            )
+                    selected = selected.drop(columns=[cohort_column])
+            if 'outer_fold_cohort' in selected.columns:
+                mismatch = selected['outer_fold'].astype(int) != selected[
+                    'outer_fold_cohort'
+                ].astype(int)
+                if mismatch.any():
+                    raise ValueError(
+                        'Cohort manifest outer_fold does not match dataset rows'
+                    )
+                selected = selected.drop(columns=['outer_fold_cohort'])
+            selected = selected.drop(columns=['_sample_id_key'])
+            if len(selected) != len(manifest):
+                raise RuntimeError(
+                    'Cohort manifest selection did not preserve every sample exactly once'
+                )
+            df = selected.sort_values('sample_id', kind='mergesort').reset_index(
+                drop=True
+            )
         include_sources = self.config.get('include_sources')
         normalized_sources = None
         if include_sources is not None:
@@ -157,7 +242,7 @@ class EmotivDataset(BaseEEGDataset):
             column
             for column in (
                 'source', 't_start', 't_center', 'window_id',
-                'record_group_id', 'datetime_from_name', 'day', 'part',
+                'record_group_id', 'outer_fold', 'datetime_from_name', 'day', 'part',
             )
             if column in df.columns
         ]
@@ -352,6 +437,11 @@ class EmotivDataset(BaseEEGDataset):
                 'max_windows': max_windows,
                 'include_subject_ids': normalized_subject_ids,
                 'include_sources': normalized_sources,
+                'cohort_manifest_path': (
+                    None
+                    if cohort_manifest_path is None
+                    else str(cohort_manifest_path)
+                ),
                 'logical_recording_map_path': (
                     None if logical_map_path is None else str(logical_map_path)
                 ),
