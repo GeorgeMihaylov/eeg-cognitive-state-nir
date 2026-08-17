@@ -10,6 +10,7 @@ import joblib
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
+from cogstate.features import FEATURE_SCHEMA_VERSION
 from cogstate.model_zoo.multitask import PMMultiTaskClassifier
 from cogstate.protocol import PM_METRICS
 
@@ -30,6 +31,7 @@ class ModelManifest:
     model_file: str = "model.joblib"
     scaler_file: str | None = "scaler.joblib"
     selector_file: str | None = None
+    feature_schema_version: str = "legacy"
 
     @classmethod
     def from_path(cls, path: Path) -> "ModelManifest":
@@ -90,6 +92,7 @@ def _validate_manifest(
     channels: tuple[str, ...],
     window_seconds: float,
     feature_profile: str,
+    feature_schema_version: str,
 ) -> None:
     errors: list[str] = []
     if manifest.n_features != n_features:
@@ -104,6 +107,11 @@ def _validate_manifest(
         errors.append(
             f"feature_profile {manifest.feature_profile!r} != {feature_profile!r}"
         )
+    if manifest.feature_schema_version != feature_schema_version:
+        errors.append(
+            "feature_schema_version "
+            f"{manifest.feature_schema_version!r} != {feature_schema_version!r}"
+        )
     if errors:
         raise ValueError("Incompatible model bundle: " + "; ".join(errors))
 
@@ -115,6 +123,7 @@ def _bootstrap_bundle(
     channels: tuple[str, ...],
     window_seconds: float,
     feature_profile: str,
+    feature_schema_version: str = FEATURE_SCHEMA_VERSION,
     version: str = "pm-logreg-bootstrap-v1",
 ) -> BundlePMModel:
     """Fit a real model-zoo estimator on synthetic anchors for smoke tests."""
@@ -139,6 +148,7 @@ def _bootstrap_bundle(
         channels=channels,
         window_seconds=window_seconds,
         feature_profile=feature_profile,
+        feature_schema_version=feature_schema_version,
         diagnostic_only=True,
         model_file="",
         scaler_file=None,
@@ -155,6 +165,7 @@ def load_model_bundle(
     window_seconds: float,
     feature_profile: str,
     allow_bootstrap: bool,
+    feature_schema_version: str = FEATURE_SCHEMA_VERSION,
 ) -> BundlePMModel:
     directory = Path(artifact_dir)
     manifest_path = directory / "manifest.json"
@@ -169,6 +180,7 @@ def load_model_bundle(
                 channels=channels,
                 window_seconds=window_seconds,
                 feature_profile=feature_profile,
+                feature_schema_version=feature_schema_version,
                 version=payload.get("version", "pm-logreg-bootstrap-v1"),
             )
 
@@ -180,6 +192,7 @@ def load_model_bundle(
             channels=channels,
             window_seconds=window_seconds,
             feature_profile=feature_profile,
+            feature_schema_version=feature_schema_version,
         )
         estimator = joblib.load(directory / manifest.model_file)
         scaler = (
@@ -204,4 +217,5 @@ def load_model_bundle(
         channels=channels,
         window_seconds=window_seconds,
         feature_profile=feature_profile,
+        feature_schema_version=feature_schema_version,
     )
