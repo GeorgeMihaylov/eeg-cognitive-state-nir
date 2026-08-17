@@ -38,11 +38,20 @@ def compute_zero_crossing_rate(window: np.ndarray) -> np.ndarray:
 
 
 def compute_basic_moments(window: np.ndarray) -> Dict[str, np.ndarray]:
+    standard_deviation = np.std(window, axis=0)
+    variable = standard_deviation > np.finfo(float).eps
+    skewness = np.zeros(window.shape[1])
+    excess_kurtosis = np.zeros(window.shape[1])
+    if np.any(variable):
+        skewness[variable] = skew(window[:, variable], axis=0)
+        excess_kurtosis[variable] = kurtosis(
+            window[:, variable], axis=0, fisher=True
+        )
     return {
         "mean": np.mean(window, axis=0),
-        "std": np.std(window, axis=0),
-        "skewness": skew(window, axis=0),
-        "kurtosis": kurtosis(window, axis=0, fisher=True),
+        "std": standard_deviation,
+        "skewness": np.nan_to_num(skewness, nan=0.0),
+        "kurtosis": np.nan_to_num(excess_kurtosis, nan=0.0),
         "peak_to_peak": np.ptp(window, axis=0),
         "rms": np.sqrt(np.mean(window ** 2, axis=0)),
     }

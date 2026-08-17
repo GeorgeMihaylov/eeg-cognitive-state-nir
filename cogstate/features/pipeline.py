@@ -56,9 +56,20 @@ class FeaturePipeline:
         self.config = config
 
     def __call__(self, clean_signal: np.ndarray, window: Window) -> np.ndarray:
-        spectral_features = spectral.extract_spectral_features(clean_signal, self.config.spectral_config)
+        power_spectrum = spectral.compute_power_spectrum(
+            clean_signal, self.config.spectral_config
+        )
+        spectral_features = spectral.extract_spectral_features(
+            clean_signal,
+            self.config.spectral_config,
+            spectrum=power_spectrum,
+        )
         statistical_features = statistical.extract_statistical_features(clean_signal, self.config.statistical_config)
-        entropy_features = entropy.extract_entropy_features(clean_signal, self.config.entropy_config)
+        entropy_features = entropy.extract_entropy_features(
+            clean_signal,
+            self.config.entropy_config,
+            spectrum=power_spectrum,
+        )
         connectivity_features = connectivity.extract_connectivity_features(clean_signal, self.config.connectivity_config)
 
         return np.concatenate([

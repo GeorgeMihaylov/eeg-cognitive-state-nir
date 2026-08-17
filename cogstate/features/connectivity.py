@@ -1,21 +1,4 @@
-"""
-connectivity.py — связностные признаки ЭЭГ (10.2.3).
-
-Характеризуют не отдельный канал, а взаимодействие между парами
-каналов — это отдельный класс признаков, дополняющий спектральные и
-статистические: рост синхронизации между областями коры часто
-сопровождает изменения когнитивной нагрузки и внимания.
-
-Реализованы три меры попарной связности:
-    - когерентность (coherence) по частотным ритмам;
-    - phase locking value (PLV) — синхронность фазы, независимо от амплитуды;
-    - корреляция Пирсона во временной области (самый дешёвый вариант).
-
-Число пар каналов растёт квадратично, поэтому матрицы связности не
-идут в модель как есть — сводятся к скалярным сводкам (среднее,
-максимум) на уровне окна, см. summarize_connectivity_matrix().
-"""
-
+"""Connectivity features with explicit pair masks and band-limited phase."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -23,7 +6,7 @@ from itertools import combinations
 from typing import Dict, List, Tuple
 
 import numpy as np
-from scipy.signal import coherence, hilbert
+from scipy.signal import butter, coherence, hilbert, sosfiltfilt
 
 from .spectral import DEFAULT_BANDS
 
@@ -31,100 +14,170 @@ from .spectral import DEFAULT_BANDS
 @dataclass
 class ConnectivityConfig:
     sample_rate: float
-    bands: Dict[str, Tuple[float, float]] = field(default_factory=lambda: dict(DEFAULT_BANDS))
+    bands: Dict[str, Tuple[float, float]] = field(
+        default_factory=lambda: dict(DEFAULT_BANDS)
+    )
     nperseg: int = 128
-    max_channel_pairs: int = 50   # ограничение на число пар для полной матрицы (вычислительный бюджет)
+    max_channel_pairs: int | None = 50
+    phase_filter_order: int = 4
+
+    def __post_init__(self) -> None:
+        if self.sample_rate <= 0 or self.nperseg < 2:
+            raise ValueError("sample_rate must be positive and nperseg >= 2")
+        if self.max_channel_pairs is not None and self.max_channel_pairs < 1:
+            raise ValueError("max_channel_pairs must be positive or None")
+        if self.phase_filter_order < 1:
+            raise ValueError("phase_filter_order must be positive")
+        nyquist = self.sample_rate / 2.0
+        for name, (low, high) in self.bands.items():
+            if not 0 < low < high < nyquist:
+                raise ValueError(
+                    f"Connectivity band {name!r} must lie strictly below Nyquist"
+                )
 
 
-def compute_correlation_matrix(window: np.ndarray) -> np.ndarray:
-    """window: [n_samples, n_channels] -> [n_channels, n_channels] матрица корреляции Пирсона."""
-    return np.corrcoef(window, rowvar=False)
+def _window_matrix(window: object) -> np.ndarray:
+    values = np.asarray(window, dtype=float)
+    if values.ndim != 2 or not values.shape[0] or not values.shape[1]:
+        raise ValueError("Window must be a non-empty [samples, channels] matrix")
+    if not np.isfinite(values).all():
+        raise ValueError("Window contains non-finite values")
+    return values
 
 
-def compute_coherence_matrix(window: np.ndarray, config: ConnectivityConfig, band: Tuple[float, float]) -> np.ndarray:
-    """
-    Матрица средней когерентности в заданной полосе частот между
-    всеми парами каналов. Симметрична, диагональ = 1.
-    """
-    n_channels = window.shape[1]
-    matrix = np.eye(n_channels)
-    nperseg = min(config.nperseg, window.shape[0])
+def _selected_pairs(n_channels: int, maximum: int | None) -> list[tuple[int, int]]:
+    pairs = list(combinations(range(n_channels), 2))
+    if maximum is None or maximum >= len(pairs):
+        return pairs
+    # Even coverage avoids always favoring low-index channels when a latency
+    # budget prevents computing every pair.
+    indices = np.linspace(0, len(pairs) - 1, num=maximum, dtype=int)
+    return [pairs[index] for index in np.unique(indices)]
 
-    pairs = list(combinations(range(n_channels), 2))[: config.max_channel_pairs]
-    for ch1, ch2 in pairs:
-        freqs, coh = coherence(window[:, ch1], window[:, ch2], fs=config.sample_rate, nperseg=nperseg)
-        mask = (freqs >= band[0]) & (freqs <= band[1])
-        value = np.mean(coh[mask]) if np.any(mask) else 0.0
-        matrix[ch1, ch2] = matrix[ch2, ch1] = value
 
+def _empty_connectivity_matrix(n_channels: int) -> np.ndarray:
+    matrix = np.full((n_channels, n_channels), np.nan)
+    np.fill_diagonal(matrix, 1.0)
     return matrix
 
 
-def compute_plv_matrix(window: np.ndarray, config: ConnectivityConfig) -> np.ndarray:
-    """
-    Phase Locking Value между всеми парами каналов на основе фазы
-    аналитического сигнала (преобразование Гильберта). В отличие от
-    когерентности не чувствителен к амплитудным различиям между
-    каналами — устойчивее при разном контакте электродов.
-    """
-    n_channels = window.shape[1]
-    phases = np.angle(hilbert(window, axis=0))  # [n_samples, n_channels]
+def compute_correlation_matrix(window: np.ndarray) -> np.ndarray:
+    values = _window_matrix(window)
+    centered = values - np.mean(values, axis=0, keepdims=True)
+    norms = np.linalg.norm(centered, axis=0)
+    denominator = norms[:, None] * norms[None, :]
+    matrix = np.divide(
+        centered.T @ centered,
+        denominator,
+        out=np.zeros((values.shape[1], values.shape[1])),
+        where=denominator > np.finfo(float).eps,
+    )
+    np.fill_diagonal(matrix, 1.0)
+    return np.clip(matrix, -1.0, 1.0)
 
-    matrix = np.eye(n_channels)
-    pairs = list(combinations(range(n_channels), 2))[: config.max_channel_pairs]
-    for ch1, ch2 in pairs:
-        phase_diff = phases[:, ch1] - phases[:, ch2]
-        plv = np.abs(np.mean(np.exp(1j * phase_diff)))
-        matrix[ch1, ch2] = matrix[ch2, ch1] = plv
 
+def compute_coherence_matrix(
+    window: np.ndarray,
+    config: ConnectivityConfig,
+    band: Tuple[float, float],
+) -> np.ndarray:
+    values = _window_matrix(window)
+    matrix = _empty_connectivity_matrix(values.shape[1])
+    nperseg = min(config.nperseg, len(values))
+    for first, second in _selected_pairs(
+        values.shape[1], config.max_channel_pairs
+    ):
+        if np.std(values[:, first]) <= np.finfo(float).eps or np.std(
+            values[:, second]
+        ) <= np.finfo(float).eps:
+            value = 0.0
+        else:
+            frequencies, magnitude = coherence(
+                values[:, first],
+                values[:, second],
+                fs=config.sample_rate,
+                nperseg=nperseg,
+            )
+            mask = (frequencies >= band[0]) & (frequencies < band[1])
+            value = float(np.nanmean(magnitude[mask])) if np.any(mask) else 0.0
+            if not np.isfinite(value):
+                value = 0.0
+        matrix[first, second] = matrix[second, first] = value
+    return matrix
+
+
+def compute_plv_matrix(
+    window: np.ndarray,
+    config: ConnectivityConfig,
+    band: Tuple[float, float] | None = None,
+) -> np.ndarray:
+    values = _window_matrix(window)
+    if band is not None:
+        sos = butter(
+            config.phase_filter_order,
+            band,
+            btype="bandpass",
+            fs=config.sample_rate,
+            output="sos",
+        )
+        values = sosfiltfilt(sos, values, axis=0)
+    phases = np.angle(hilbert(values, axis=0))
+    matrix = _empty_connectivity_matrix(values.shape[1])
+    for first, second in _selected_pairs(
+        values.shape[1], config.max_channel_pairs
+    ):
+        phase_difference = phases[:, first] - phases[:, second]
+        value = float(np.abs(np.mean(np.exp(1j * phase_difference))))
+        matrix[first, second] = matrix[second, first] = value
     return matrix
 
 
 def summarize_connectivity_matrix(matrix: np.ndarray) -> Dict[str, float]:
-    """
-    Свести полную матрицу связности к нескольким скалярам —
-    признакам уровня окна, а не пары каналов, чтобы не раздувать
-    размерность признакового пространства с ростом числа электродов.
-    """
-    n = matrix.shape[0]
-    off_diagonal = matrix[~np.eye(n, dtype=bool)]
-    if off_diagonal.size == 0:
+    values = np.asarray(matrix, dtype=float)
+    if values.ndim != 2 or values.shape[0] != values.shape[1]:
+        raise ValueError("Connectivity matrix must be square")
+    upper = values[np.triu_indices(len(values), k=1)]
+    measured = upper[np.isfinite(upper)]
+    if not len(measured):
         return {"mean": 0.0, "std": 0.0, "max": 0.0}
     return {
-        "mean": float(np.mean(off_diagonal)),
-        "std": float(np.std(off_diagonal)),
-        "max": float(np.max(off_diagonal)),
+        "mean": float(np.mean(measured)),
+        "std": float(np.std(measured)),
+        "max": float(np.max(measured)),
     }
 
 
-def extract_connectivity_features(window: np.ndarray, config: ConnectivityConfig) -> Dict[str, np.ndarray]:
-    """
-    window: [n_samples, n_channels]
-    return: {имя_признака: скаляр} — по одной сводной статистике на
-    (метод связности × ритм), а не полная матрица, для совместимости
-    с плоским вектором признаков окна (features/pipeline.py).
-    """
+def extract_connectivity_features(
+    window: np.ndarray, config: ConnectivityConfig
+) -> Dict[str, np.ndarray]:
     features: Dict[str, np.ndarray] = {}
-
-    corr_summary = summarize_connectivity_matrix(compute_correlation_matrix(window))
-    for stat_name, value in corr_summary.items():
-        features[f"correlation_{stat_name}"] = np.array([value])
+    correlation = summarize_connectivity_matrix(compute_correlation_matrix(window))
+    for statistic, value in correlation.items():
+        features[f"correlation_{statistic}"] = np.array([value])
 
     for band_name, band in config.bands.items():
-        coh_summary = summarize_connectivity_matrix(compute_coherence_matrix(window, config, band))
-        for stat_name, value in coh_summary.items():
-            features[f"coherence_{band_name}_{stat_name}"] = np.array([value])
-
-    plv_summary = summarize_connectivity_matrix(compute_plv_matrix(window, config))
-    for stat_name, value in plv_summary.items():
-        features[f"plv_{stat_name}"] = np.array([value])
-
+        coherence_summary = summarize_connectivity_matrix(
+            compute_coherence_matrix(window, config, band)
+        )
+        plv_summary = summarize_connectivity_matrix(
+            compute_plv_matrix(window, config, band)
+        )
+        for statistic, value in coherence_summary.items():
+            features[f"coherence_{band_name}_{statistic}"] = np.array([value])
+        for statistic, value in plv_summary.items():
+            features[f"plv_{band_name}_{statistic}"] = np.array([value])
     return features
 
 
 def feature_names(config: ConnectivityConfig) -> List[str]:
-    names = [f"correlation_{s}" for s in ("mean", "std", "max")]
+    names = [f"correlation_{statistic}" for statistic in ("mean", "std", "max")]
     for band_name in config.bands:
-        names += [f"coherence_{band_name}_{s}" for s in ("mean", "std", "max")]
-    names += [f"plv_{s}" for s in ("mean", "std", "max")]
+        names += [
+            f"coherence_{band_name}_{statistic}"
+            for statistic in ("mean", "std", "max")
+        ]
+        names += [
+            f"plv_{band_name}_{statistic}"
+            for statistic in ("mean", "std", "max")
+        ]
     return names

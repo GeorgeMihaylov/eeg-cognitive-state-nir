@@ -21,6 +21,9 @@ from typing import Dict, List
 
 import numpy as np
 from scipy.signal import welch
+from scipy.special import xlogy
+
+from .spectral import PowerSpectrum
 
 
 @dataclass
@@ -30,15 +33,40 @@ class EntropyConfig:
     permutation_delay: int = 1
     sample_entropy_m: int = 2       # длина шаблона для sample entropy
     sample_entropy_r_ratio: float = 0.2  # порог как доля от std сигнала
+    spectral_low_hz: float = 1.0
+    spectral_high_hz: float | None = None
+
+    def __post_init__(self) -> None:
+        high = self.spectral_high_hz or self.sample_rate / 2.0
+        if self.sample_rate <= 0 or not 0 <= self.spectral_low_hz < high <= self.sample_rate / 2.0:
+            raise ValueError("Invalid spectral entropy frequency range")
+
+
+def spectral_entropy_from_psd(
+    frequencies: np.ndarray,
+    psd: np.ndarray,
+    *,
+    band: tuple[float, float],
+) -> np.ndarray:
+    """Normalized Shannon entropy for every PSD column."""
+    mask = (frequencies >= band[0]) & (frequencies <= band[1])
+    selected = np.asarray(psd[mask], dtype=float)
+    if selected.shape[0] < 2:
+        return np.zeros(psd.shape[1])
+    probabilities = selected / np.maximum(
+        np.sum(selected, axis=0, keepdims=True), np.finfo(float).tiny
+    )
+    entropy = -np.sum(xlogy(probabilities, probabilities), axis=0) / np.log(2.0)
+    return entropy / np.log2(selected.shape[0])
 
 
 def spectral_entropy_1d(x: np.ndarray, sample_rate: float) -> float:
     """Энтропия Шеннона нормированного спектра мощности одного канала."""
     freqs, psd = welch(x, fs=sample_rate, nperseg=min(len(x), 256))
-    psd_norm = psd / (np.sum(psd) + 1e-12)
-    psd_norm = psd_norm[psd_norm > 0]
-    entropy = -np.sum(psd_norm * np.log2(psd_norm))
-    return float(entropy / np.log2(len(psd_norm) + 1e-12))  # нормировка на [0, 1]
+    value = spectral_entropy_from_psd(
+        freqs, psd[:, None], band=(1.0, sample_rate / 2.0)
+    )
+    return float(value[0])
 
 
 def permutation_entropy_1d(x: np.ndarray, order: int = 3, delay: int = 1) -> float:
@@ -102,14 +130,34 @@ def sample_entropy_1d(x: np.ndarray, m: int = 2, r_ratio: float = 0.2) -> float:
     return float(-np.log(a / b))
 
 
-def extract_entropy_features(window: np.ndarray, config: EntropyConfig) -> Dict[str, np.ndarray]:
+def extract_entropy_features(
+    window: np.ndarray,
+    config: EntropyConfig,
+    *,
+    spectrum: PowerSpectrum | None = None,
+) -> Dict[str, np.ndarray]:
     """
     window: [n_samples, n_channels]
     return: {имя_признака: [n_channels]}
     """
     n_channels = window.shape[1]
 
-    spectral_ent = np.array([spectral_entropy_1d(window[:, ch], config.sample_rate) for ch in range(n_channels)])
+    if spectrum is None:
+        spectral_ent = np.array(
+            [
+                spectral_entropy_1d(window[:, ch], config.sample_rate)
+                for ch in range(n_channels)
+            ]
+        )
+    else:
+        spectral_ent = spectral_entropy_from_psd(
+            spectrum.frequencies,
+            spectrum.psd,
+            band=(
+                config.spectral_low_hz,
+                config.spectral_high_hz or config.sample_rate / 2.0,
+            ),
+        )
     permutation_ent = np.array([
         permutation_entropy_1d(window[:, ch], config.permutation_order, config.permutation_delay)
         for ch in range(n_channels)
