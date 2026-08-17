@@ -2,7 +2,9 @@
 
 ## Статус
 
-Подготовлен воспроизводимый диагностический протокол без обучения моделей. Исходный ZIP и вложенные RAR прошли проверку SHA-256/CRC, распакованы с проверкой путей, исходный ZIP после операции не изменился.
+Воспроизводимый диагностический протокол и полные XGBoost/Shallow запуски
+завершены. Исходный ZIP и вложенные RAR прошли проверку SHA-256/CRC,
+распакованы с проверкой путей, исходный ZIP после операции не изменился.
 
 ## Архив и фактическая структура
 
@@ -43,16 +45,36 @@ Shallow EEG-only использует существующий raw encoder бе�
 
 ## Ограничения и рекомендация
 
-CL-Drive — более сильный из двух кандидатов для первичного ShallowConvNet/fusion запуска: больше участников с полным EEG, явное время labels, больше завершённых задач и лучшее межмодальное согласование начала записи. Ограничения — всего 21 участник, субъективная 1–9 цель с инженерным 3-class mapping, недокументированная EEG acquisition history и исключение неполного второго EDA/gaze из primary contract. Результат остаётся внешней диагностической проверкой, а не самостоятельным окончательным доказательством универсальности мультимодального эффекта.
+CL-Drive — более сильный из двух внешних наборов: больше участников с полным
+EEG, явное время labels, больше завершённых задач и лучшее межмодальное
+согласование начала записи. Ограничения — всего 21 участник, субъективная 1–9
+цель с инженерным 3-class mapping, недокументированная EEG acquisition history
+и исключение неполного второго EDA/gaze из primary contract. Результат остаётся
+внешней диагностической проверкой, а не самостоятельным окончательным
+доказательством универсальности мультимодального эффекта.
+
+## Завершённые результаты
+
+| Модель | Режим | Macro F1 | Balanced Accuracy | Accuracy |
+|---|---|---:|---:|---:|
+| XGBoost | EEG-only | 0.380451 | 0.391735 | 0.453112 |
+| XGBoost | peripheral-only | 0.372275 | 0.396630 | 0.470337 |
+| XGBoost | EEG + peripheral | 0.391571 | 0.405932 | 0.506894 |
+| ShallowConvNet | EEG-only | 0.321056 | 0.373332 | 0.528485 |
+| ShallowFusion | EEG + peripheral | 0.250893 | 0.342057 | 0.461263 |
+
+Для XGBoost fusion даёт небольшой ΔMacro F1 +0.011120 относительно EEG-only.
+Для Shallow-моделей fusion, напротив, даёт −0.070163. Все значения — средние
+по тем же пяти participant-disjoint folds; fold-level источники находятся в
+`benchmark_results/cl_drive_multimodal_v1/runs/`, сводки — в
+`summary_xgboost.csv` и `summary_shallow.csv` этого каталога.
 
 Protocol hash: `bb9aef380f8ed9edd19cfd8b565366ea0baf1d7855ab73dbe9f8e50e3de2bbbd`.
 
 Команды:
 
 ```powershell
-& 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\cl_drive_multimodal_v1.json --plan-only
-& 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\cl_drive_multimodal_v1.json --run-xgboost
-& 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\cl_drive_multimodal_v1.json --run-shallow
+python scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\cl_drive_multimodal_v1.json --plan-only
+python scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\cl_drive_multimodal_v1.json --run-xgboost
+python scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\cl_drive_multimodal_v1.json --run-shallow
 ```
-
-Команды обучения только подготовлены; они не запускались.

@@ -1,51 +1,64 @@
 # Итоговое состояние проекта
 
-Дата консолидации: 2026-08-04. Пакет построен только из существующих
-артефактов; обучение, новые folds/seeds и перестроение кэшей не выполнялись.
+Дата актуализации: 2026-08-17. Состояние сверено с текущим кодом, configs и
+доступными runtime manifests. Обучение, новые folds/seeds и перестроение кэшей
+в ходе аудита не выполнялись.
 
-## Масштаб
+## Закрытый контур
 
-- Экспериментов и инфраструктурных этапов: **45**.
-- Completed: **16**.
-- Diagnostic: **4**.
-- Closed negative: **7**.
-- Infrastructure only: **16**.
-- Полный provenance по автоматической проверке: **39/45**.
+- Семь PM и исторический `label_q5` имеют явные target contracts.
+- Основной outer protocol — participant-disjoint GroupKFold; inner validation
+  и любые fitted transforms используют только train-группы.
+- Реализованы feature-window, feature-sequence и raw-EEG модели, ordinal heads,
+  единые predictions/manifests и resume-аудит.
+- Temporal-quality RF matrix завершена: 280 runs; raw PM остаётся reference.
+- LightGBM feature selection завершён: 140/140 runs, 448 → 50 признаков.
+- Band-pass/notch/CAR ablation завершена; CAR не поддержан как default.
+- Персонализация classification и семи PM проверена в leakage-safe
+  chronological protocol и на нескольких seeds.
+- DANN confirmatory, contrastive screening и FOMAML diagnostic завершены с
+  честно сохранёнными частичными/отрицательными решениями.
+- MEFAR, CL-Drive и CLARE имеют завершённые participant-disjoint multimodal
+  сравнения.
+- Streaming replay, worker, LSL source, модельный inference, quality checks,
+  postprocessing, FastAPI и WebSocket реализованы; lightweight профиль
+  вычислительно быстрее real-time.
 
-Основные таблицы находятся в `reports/summary/final_result_tables/`, рисунки —
-в `reports/summary/final_result_tables/figures/`, а канонический индекс —
-`reports/summary/final_experiment_inventory.csv`.
+## Ключевые решения
 
-## Зафиксированные решения
+1. Главный научный контур — семь PM, а `label_q5` служит историческим
+   Focus-specific benchmark.
+2. Raw PM — канонический target-вариант: smoothing не дал универсального
+   downstream преимущества.
+3. 50-feature профиль полезен для ограниченных вычислений, но не повышает
+   качество относительно 448 признаков.
+4. Сложные neural models не гарантируют универсального выигрыша: результат
+   зависит от representation, target и cohort.
+5. Персонализация даёт небольшой средний эффект, но Accuracy ≥75% не
+   достигнута.
+6. DANN имеет статус `partially_confirmed`; contrastive track закрыт, FOMAML —
+   `do_not_proceed`.
+7. Multimodal fusion зависит от dataset и модели; универсального 5–10%
+   улучшения нет.
+8. Software real-time подтверждён только для lightweight профиля; физический
+   end-to-end путь не проверен.
 
-1. Основной научный протокол — outer GroupKFold по `subject_id` с
-   group-aware inner validation.
-2. Для `label_q5` наиболее сильные feature-sequence модели находятся около
-   macro F1 0.36; случайный уровень 0.20 не используется как единственный
-   критерий качества.
-3. Семь PM targets оцениваются отдельно и macro-агрегируются только внутри
-   одной регрессионной задачи.
-4. COG-BCI нативный и transfer screening завершены как diagnostic/negative
-   evidence.
-5. Решения `retain_14_channel_cache` и `close_transfer_track` закрывают
-   расширение 62-channel cache и contrastive transfer без новой гипотезы.
-6. Raw-deduplicated FOMAML diagnostic получил `do_not_proceed`: Δmacro F1
-   −0.046338 против supervised full-model при одном fold, одном seed и пяти
-   участниках.
-7. Confirmatory DANN дал небольшой положительный participant-level эффект
-   (Δmacro F1 +0.008048; Δbalanced accuracy +0.008332; Δordinal MAE −0.034008),
-   но имеет статус `partially_confirmed`, не `confirmed`.
+## Два условно незакрытых научных эксперимента
 
-Экспериментальная работа **не объявляется полностью завершённой или
-замороженной**: пакет фиксирует только текущее состояние evidence.
+Полный selected-model seven-PM benchmark и полная quantitative
+FASTER-like/ICA ablation подготовлены, но не выполнены. В tracked-дереве нет
+авторитетного исходного текста ТЗ, поэтому их формальная обязательность не
+может быть установлена по репозиторию. Если п. 10.2.4 требует именно
+confirmatory сравнение выбранных моделей на всех семи PM, первый эксперимент
+нужен. Если п. 10.2.2 требует количественно сравнить artifact-removal методы,
+нужен второй. Если формулировки требуют только реализовать и функционально
+проверить методы, текущих implementation + smoke достаточно.
 
-## Неполный provenance
+## Что осталось безусловно
 
-| experiment_id | status | missing | evidence_role |
-|---|---|---|---|
-| dann_label_q5_old_eeg_to_gpn_confirmatory_v2_execution | completed | split_hash | supporting_only |
-| dann_label_q5_old_eeg_to_gpn_diagnostic_v1 | diagnostic | split_hash | supporting_only |
-| label_q5_auxiliary_corn_policy | closed_negative | split_hash | supporting_only |
-| label_q5_random_forest_groupkfold | completed | split_hash | supporting_only |
-| label_q5_torch_mlp_groupkfold | completed | split_hash | supporting_only |
-| pm_robust_scaling_unwired_groupkfold | superseded | resolved_config | supporting_only |
+- live end-to-end проверка с физическим EEG-устройством;
+- финальная presentation/report packaging и data/feature dictionary;
+- решение научных руководителей по двум условным full benchmarks.
+
+Каноническая матрица статусов:
+[`final_requirement_coverage.md`](../requirements/final_requirement_coverage.md).

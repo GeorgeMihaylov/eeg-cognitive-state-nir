@@ -2,7 +2,10 @@
 
 ## Статус
 
-Подготовлен воспроизводимый диагностический протокол без обучения моделей. Исходный ZIP и пять вложенных RAR проверены, безопасно распакованы без переименования файлов и повторно хешированы. `plan-only` не создаёт результаты обучения.
+Воспроизводимый диагностический протокол и полные XGBoost/Shallow запуски
+завершены. Исходный ZIP и пять вложенных RAR проверены, безопасно распакованы
+без переименования файлов и повторно хешированы. `plan-only` сам по себе не
+создаёт результаты обучения.
 
 ## Архив и фактическая структура
 
@@ -49,16 +52,34 @@ ShallowConvNet получает только raw EEG. Fusion-модель исп
 
 ## Ограничения и рекомендация
 
-CLARE пригоден как независимый диагностический мультимодальный benchmark. Научную силу ограничивают 19 участников с EEG, неполные modality-файлы, вывод времени labels из порядка строк и недокументированные единицы/референс/история фильтрации EEG. Для формального окончательного вывода результаты следует трактовать вместе с MEFAR и CL-Drive, а не как единственное подтверждение мультимодальности.
+CLARE пригоден как независимый диагностический мультимодальный benchmark.
+Научную силу ограничивают 19 участников с EEG, неполные modality-файлы, вывод
+времени labels из порядка строк и недокументированные
+единицы/референс/история фильтрации EEG. Для формального окончательного вывода
+результаты следует трактовать вместе с MEFAR и CL-Drive, а не как единственное
+подтверждение мультимодальности.
+
+## Завершённые результаты
+
+| Модель | Режим | Macro F1 | Balanced Accuracy | Accuracy |
+|---|---|---:|---:|---:|
+| XGBoost | EEG-only | 0.308288 | 0.341916 | 0.465114 |
+| XGBoost | peripheral-only | 0.301579 | 0.344329 | 0.448661 |
+| XGBoost | EEG + peripheral | 0.270310 | 0.330160 | 0.496119 |
+| ShallowConvNet | EEG-only | 0.320658 | 0.379469 | 0.534586 |
+| ShallowFusion | EEG + peripheral | 0.208120 | 0.298542 | 0.433355 |
+
+Fusion ухудшает Macro F1 относительно EEG-only и для XGBoost (−0.037978), и
+для Shallow (−0.112538). Fold-level источники находятся в
+`benchmark_results/clare_multimodal_v1/runs/`, сводки — в
+`summary_xgboost.csv` и `summary_shallow.csv` этого каталога.
 
 Protocol hash: `05ad2616be5af41206f46633cd7d354f1ffde025e3e2c409be2a239abed5a9d3`.
 
 Команды:
 
 ```powershell
-& 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\clare_multimodal_v1.json --plan-only
-& 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\clare_multimodal_v1.json --run-xgboost
-& 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\clare_multimodal_v1.json --run-shallow
+python scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\clare_multimodal_v1.json --plan-only
+python scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\clare_multimodal_v1.json --run-xgboost
+python scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\clare_multimodal_v1.json --run-shallow
 ```
-
-Последние две команды подготовлены для будущего запуска и в рамках текущей задачи не выполнялись.

@@ -1,4 +1,4 @@
-# MEFAR XGBoost: адаптация к общему external multimodal protocol
+# MEFAR XGBoost: общий external multimodal protocol и результат
 
 ## Научный контракт
 
@@ -48,13 +48,28 @@ MEFAR содержит NeuroSky-derived band powers, а не пригодный 
 ## Команды
 
 ```powershell
-& 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\mefar_multimodal_xgboost_v1.json --plan-only
+python scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\mefar_multimodal_xgboost_v1.json --plan-only
 ```
 
-Будущий полный XGBoost запуск:
+Полный XGBoost запуск:
 
 ```powershell
-& 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\mefar_multimodal_xgboost_v1.json --run-xgboost
+python scripts\run_external_multimodal_protocol.py --config experiments\external_datasets\mefar_multimodal_xgboost_v1.json --run-xgboost
 ```
 
-В текущей задаче обучение не выполнялось: `models_trained = 0`, `summary_xgboost.csv` и каталог `runs/` отсутствуют.
+## Завершённый результат
+
+Все 15 units завершены. Средние по пяти participant-disjoint folds:
+
+| Режим | Macro F1 | Balanced Accuracy | Accuracy |
+|---|---:|---:|---:|
+| EEG-only | 0.397172 | 0.421667 | 0.400000 |
+| wearable-only | 0.577597 | 0.630000 | 0.585000 |
+| EEG + wearable | 0.511133 | 0.585000 | 0.525000 |
+
+Fusion превосходит EEG-only по Macro F1 на +0.113961, но уступает
+wearable-only на −0.066465. Следовательно, MEFAR подтверждает полезность
+периферических сигналов, но не преимущество fusion над лучшей отдельной
+модальностью. Первичные fold-level метрики находятся в
+`benchmark_results/mefar_multimodal_xgboost_v1/runs/`, сводка — в
+`benchmark_results/mefar_multimodal_xgboost_v1/summary_xgboost.csv`.

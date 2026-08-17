@@ -1,6 +1,7 @@
 # Эксперимент по качеству временных рядов PM (п. 10.2.1)
 
-Статус результата: **diagnostic**. Эксперимент не обучает EEG-модели и не
+Статус временного аудита: **diagnostic**. Дополняющий downstream-этап Random
+Forest выполнен как полный пятифолдовый sensitivity-анализ. Ни один этап не
 изменяет канонический Parquet или target registry.
 
 ## Подтверждённый исходный контракт
@@ -127,11 +128,36 @@ outlier-level audit и behavioral inventory сохранены отдельны�
 
 Дополнительное causal smoothing заметно меняет PM и 9.6–21.9% fold-local Q3
 labels в зависимости от метода. Оно снижает first-difference variability, но
-median одновременно даёт наблюдаемый lag 10 s. Поэтому сильного основания
-включать smoothing в canonical pipeline без downstream EEG→PM проверки нет.
-Для такой проверки подготовлен отдельный runner на фиксированных 371 EEG
-features, LogisticRegression/RandomForest и Ridge/RandomForestRegressor; в
-текущей задаче он не запускался.
+median одновременно даёт наблюдаемый lag 10 s.
+
+## Полный downstream EEG → PM
+
+После временного аудита выполнена заранее зафиксированная Random Forest
+матрица: 7 PM × 4 варианта цели × classification/regression × 5 folds = 280
+запусков, по 56 на fold. Во всех пяти fold manifests отсутствуют failed runs;
+Q3-пороги fitted только на outer-train, матрица из 371 EEG-признака читалась из
+существующего feature cache без перестроения. Средние ниже рассчитаны по 35
+сопоставимым PM×fold результатам каждого варианта.
+
+| Variant | Classification Macro F1 | Balanced Accuracy | Regression MAE | RMSE | R² | Pearson | Spearman |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| baseline_raw | 0.473036 | 0.479122 | 0.098373 | 0.128938 | 0.185193 | 0.445013 | 0.390826 |
+| causal_median_w3 | 0.450473 | 0.456828 | 0.095423 | 0.124984 | 0.121694 | 0.368132 | 0.325278 |
+| causal_ema_a05 | 0.467406 | 0.473061 | 0.087494 | 0.114079 | 0.156884 | 0.418815 | 0.374152 |
+| causal_hampel_w5_k3 | 0.457189 | 0.462928 | 0.097546 | 0.128670 | 0.145751 | 0.398696 | 0.348878 |
+
+EMA и median снижают абсолютные ошибки относительно изменённой сглаженной
+цели, однако raw превосходит их по classification, R² и корреляциям. Поскольку
+варианты меняют сам target, одно снижение MAE нельзя трактовать как улучшение
+исходной PM-задачи. Универсального downstream-выигрыша нет; `baseline_raw`
+остаётся каноническим вариантом.
+
+Первичные runtime-артефакты находятся в
+`benchmark_results/pm_temporal_quality_rf_final_v1/` рабочего дерева
+PM-quality. В исторических fold manifests поле `result_status` осталось
+`diagnostic` из-за исправленной позднее ошибки propagation metadata; это не
+меняет splits, predictions или метрики. Исправляющий migration script не
+запускался в рамках настоящего аудита.
 
 Config hash: `5a36f2cc3675bce384e87dde3d58003cfbf818c6adb467a524e015bc6ef8fbc5`.
 

@@ -1,60 +1,96 @@
 # Научные выводы проекта
 
-## Основная классификация
+## Цели и протокол
 
-**Гипотеза.** EEG/POW и временной контекст позволяют предсказывать
-пятиуровневый `label_q5` между испытуемыми. **Протокол.** Пятифолдовый
-subject-disjoint GroupKFold, train-only preprocessing и group-aware inner
-validation. **Результат.** Последовательные LSTM/BiLSTM/Transformer достигают
-macro F1 около 0.36, превосходя RF/MLP и raw CNN baselines. **Решение.**
-Transformer и recurrent модели остаются основными feature-based references.
-**Ограничение.** Цель инерционна во времени и основана на глобальных
-квантилях. **Статус для статьи:** основной результат с обязательным
-sensitivity analysis разметки.
+Главный контур проекта — семь непрерывных Performance Metrics: Attention,
+Engagement, Excitement, Stress, Relaxation, Interest и Focus. Исторический
+`label_q5` остаётся полезной Focus-specific задачей сопоставимости, но не
+представляет всё пространство когнитивных состояний. Основная оценка —
+subject-disjoint GroupKFold; preprocessing, thresholds и selection fitted
+только на train.
 
-## Порядковая постановка
+## PM и признаки
 
-**Гипотеза.** Учёт порядка классов снизит тяжёлые ошибки без потери
-категориального качества. **Протокол.** Три seeds, пять folds, subject-level
-paired analysis; auxiliary weight выбирался только на inner validation.
-**Результат.** CORN снижает ordinal MAE и severe-error rate, но balanced
-accuracy не улучшается устойчиво; auxiliary policy также не поддержана.
-**Решение.** Категориальный Transformer — основной baseline, CORN —
-дополнительный анализ. **Ограничение.** Один набор и три seeds. **Статус для
-статьи:** отрицательный/компромиссный результат.
+Дополнительное causal smoothing уменьшает кратковременную вариативность PM, но
+не даёт универсального downstream выигрыша. Raw PM имеет лучшие итоговые
+classification, R² и correlation показатели и остаётся каноническим.
 
-## Регрессия и персонализация
+Fold-local LightGBM selection уменьшает 448 EEG+POW признаков до 50 и ускоряет
+fit примерно в 6.78 раза, но немного ухудшает средние classification и
+regression метрики. Это обоснованный lightweight/offline профиль, а не метод
+повышения качества. Полный профиль следует сохранять там, где качество важнее
+стоимости.
 
-**Гипотеза.** EEG+POW позволяют оценивать семь PM и адаптироваться к новому
-пользователю. **Протокол.** Пятифолдовая RF-регрессия и leakage-safe
-chronological 20% calibration. **Результат.** RF превосходит mean baseline;
-full-model PM fine-tuning даёт небольшой устойчивый macro-MAE gain, но
-классификационный full-model не универсально лучше head-only. **Решение.**
-Для статьи показывать эффект и межсубъектную вариативность, не утверждать
-универсальное превосходство полной настройки. **Ограничение.** Один бюджет
-20%. **Статус:** основной результат с осторожной интерпретацией.
+## Модели и порядковая постановка
 
-## COG-BCI
+LSTM, BiLSTM и Transformer сильнее оконных и raw-CNN baselines в историческом
+`label_q5` benchmark, однако neural complexity сама по себе не гарантирует
+выигрыш. CORN снижает ordinal errors, но не даёт устойчивого прироста Balanced
+Accuracy; categorical Transformer остаётся основной reference-моделью, ordinal
+варианты — sensitivity analysis.
 
-**Гипотеза.** Внешний N-Back корпус может подтвердить raw CNN, преимущества
-62 каналов или перенос энкодера. **Протокол.** Record-safe caches,
-subject-disjoint folds и заранее защищённый downstream fold. **Результат.**
-CNN близки к chance; 62 канала дают только +0.0077 BA; shape-only и
-time-aligned transfer не превосходят random initialization. Физическое
-согласование улучшило contrastive representation diagnostics, но не
-downstream. **Решение.** `retain_14_channel_cache`, `close_transfer_track`.
-**Ограничение.** Transfer — screening на одном downstream fold. **Статус:**
-диагностический отрицательный результат и приложение статьи.
+Полный selected-model seven-PM protocol подготовлен, но не выполнен. Поэтому
+preliminary fold-1 ranking нельзя переносить на все folds как confirmatory
+вывод.
 
-## FOMAML и DANN
+## EEG preprocessing
 
-Эпизодическая инфраструктура и безопасные BatchNorm-контракты подтверждены
-инженерно. В raw-deduplicated FOMAML diagnostic выбранная policy ухудшила
-participant macro F1 и ordinal MAE относительно обычной supervised
-full-model адаптации; решение — `do_not_proceed`. DANN в направлении
-`Old_EEG → gpn_data` дал малый положительный средний эффект: четыре из пяти
-folds и оба primary seeds положительны по macro F1. Статус
-`partially_confirmed`: средний эффект ниже +0.01, win fraction ниже 60%, а
-participant bootstrap interval включает ноль. Статистическая значимость не
-установлена; source/target являются provenance-доменами, а не доказанно
-разными устройствами.
+Band-pass/notch дают малые и seed-dependent изменения. CAR имеет отрицательный
+средний описательный эффект по Balanced Accuracy (−0.0285) и не должен быть
+default без новой гипотезы. Fold-safe FASTER-like/ICA реализованы и прошли
+smoke; quantitative 5-fold effect неизвестен. Mean-channel interpolation не
+следует называть канонической сферической FASTER-интерполяцией.
+
+## Персонализация и перенос
+
+Chronological personalization семи PM даёт небольшой воспроизводимый эффект:
+full-model MAE улучшение 0.002685 и Spearman +0.011985. Эффект неоднороден
+между участниками. Для `label_q5` Accuracy ≥75% не достигнута: средняя Accuracy
+после full-model около 0.3138, наблюдаемый максимум 0.634921, достигших порога
+участников 0/53.
+
+DANN `Old_EEG → gpn_data` дал небольшой partially-confirmed эффект
+(ΔMacro F1 +0.008048; bootstrap CI включает ноль). Источники —
+provenance-домены, а не доказанно разные устройства. Contrastive transfer не
+дал устойчивого downstream improvement; FOMAML ухудшил Macro F1 относительно
+обычной supervised adaptation и получил `do_not_proceed`. Без новой гипотезы
+новые FOMAML/contrastive sweeps не обоснованы.
+
+## Мультимодальность
+
+Fusion не имеет универсального знака эффекта. XGBoost улучшает Macro F1 на
+MEFAR и немного на CL-Drive, но ухудшает на CLARE; ShallowFusion ухудшает
+результат на обоих raw-EEG внешних наборах. На MEFAR wearable-only лучше
+fusion. Следовательно, мультимодальность должна проектироваться и оцениваться
+отдельно для каждого dataset/target/model.
+
+## Потоковая обработка
+
+Lightweight 336-feature streaming имеет Total P95 12.215 ms при 1-секундном
+шаге; full 399-feature профиль имеет 3052.311 ms и в этот бюджет не
+укладывается. Это software replay latency, не физическая end-to-end задержка.
+Для online-контура рекомендован lightweight профиль; полноценная проверка
+`headset → transport → processing → API/UI` требует устройства.
+
+## Методические рекомендации
+
+1. Использовать subject-level GroupKFold и явно сохранять outer/inner group
+   audits.
+2. Fit preprocessing, imputation, scaling, clipping, thresholds и feature
+   selection только на train текущего fold.
+3. Рассматривать семь PM как основной target-space; `label_q5` — только как
+   историческую sensitivity-задачу.
+4. Использовать raw PM как baseline; smoothing вводить лишь по новой
+   предварительно сформулированной гипотезе.
+5. Использовать 50-feature профиль при ограниченных ресурсах, а полный профиль
+   — при приоритете качества.
+6. Не включать CAR по умолчанию; FASTER-like/ICA не объявлять улучшающими
+   качество до quantitative experiment.
+7. Оценивать multimodal fusion dataset-specific и всегда сравнивать с каждой
+   отдельной модальностью.
+8. Не продолжать FOMAML/contrastive search без новой гипотезы и decision rule.
+9. Для online-контура использовать lightweight streaming; full profile
+   оставлять offline или оптимизировать отдельно.
+
+Эти выводы не утверждают статистическую значимость там, где confidence
+interval включает ноль или эксперимент имеет diagnostic/preliminary статус.
