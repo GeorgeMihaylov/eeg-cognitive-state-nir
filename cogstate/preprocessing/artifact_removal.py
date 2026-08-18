@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
+from typing import List, Literal, Optional, Tuple
 
 import numpy as np
 from scipy.signal import welch
@@ -289,6 +289,13 @@ class IcaConfig:
     max_iter: int = 500
     random_state: int = 42
     faster_config: FasterConfig = field(default_factory=FasterConfig)
+    component_metric_profile: Literal["legacy", "full_faster"] = "legacy"
+
+    def __post_init__(self) -> None:
+        if self.component_metric_profile not in {"legacy", "full_faster"}:
+            raise ValueError(
+                "component_metric_profile must be 'legacy' or 'full_faster'"
+            )
 
 
 class ArtifactICA:
@@ -402,7 +409,11 @@ class ArtifactICA:
             )
 
         mixing_matrix = self._ica.mixing_
-        self._artifact_components = detect_bad_components(
+        component_detector = detect_bad_components
+        if self.config.component_metric_profile == "full_faster":
+            from .full_faster import detect_bad_components as component_detector
+
+        self._artifact_components = component_detector(
             sources,
             mixing_matrix,
             sample_rate,

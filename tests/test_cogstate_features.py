@@ -59,6 +59,35 @@ def test_spectral_sine_bands_relative_power_and_determinism() -> None:
         np.testing.assert_array_equal(alpha[name], repeated[name])
 
 
+def test_opt_in_engagement_index_uses_standard_beta_over_alpha_plus_theta() -> None:
+    ratios = spectral.compute_band_ratios(
+        {
+            "theta": np.array([2.0]),
+            "alpha": np.array([3.0]),
+            "beta": np.array([10.0]),
+        }
+    )
+    np.testing.assert_allclose(ratios["engagement_index"], [2.0])
+    default = SpectralConfig(sample_rate=256.0)
+    opted_in = SpectralConfig(sample_rate=256.0, include_engagement_index=True)
+    assert "engagement_index" not in spectral.feature_names(default)
+    assert "engagement_index" in spectral.feature_names(opted_in)
+
+
+def test_opt_in_spectral_edge_band_ignores_out_of_band_power() -> None:
+    time = np.arange(2048) / 256.0
+    window = (
+        np.sin(2 * np.pi * 10 * time) + 20.0 * np.sin(2 * np.pi * 60 * time)
+    )[:, None]
+    config = SpectralConfig(
+        sample_rate=256.0, spectral_edge_band_hz=(1.0, 45.0)
+    )
+    edge = spectral.compute_spectral_edge_frequency(window, config)
+    assert 8.0 <= edge[0] <= 45.0
+    extracted = spectral.extract_spectral_features(window, config)
+    np.testing.assert_array_equal(extracted["spectral_edge_frequency"], edge)
+
+
 @pytest.mark.parametrize(
     "window",
     [
@@ -196,6 +225,42 @@ def test_plv_computes_hilbert_once_per_window(monkeypatch: pytest.MonkeyPatch) -
     assert calls == 1
 
 
+def test_pair_budget_and_band_limited_plv_helpers_are_explicit() -> None:
+    rng = np.random.default_rng(2)
+    time = np.arange(2048) / 256.0
+    shared_alpha = np.sin(2 * np.pi * 10 * time)
+    window = np.column_stack(
+        (
+            shared_alpha + 0.8 * np.sin(2 * np.pi * 20 * time),
+            shared_alpha + 0.8 * np.sin(2 * np.pi * 23 * time + rng.uniform()),
+            rng.normal(size=len(time)),
+            rng.normal(size=len(time)),
+        )
+    )
+    budget = ConnectivityConfig(sample_rate=256.0, max_channel_pairs=3)
+    coherence_matrix = connectivity.compute_coherence_matrix(
+        window, budget, budget.bands["alpha"]
+    )
+    assert np.isfinite(coherence_matrix[np.triu_indices(4, k=1)]).sum() == 3
+
+    alpha = connectivity.compute_plv_matrix(
+        window[:, :2], budget, budget.bands["alpha"]
+    )[0, 1]
+    beta = connectivity.compute_plv_matrix(
+        window[:, :2], budget, budget.bands["beta"]
+    )[0, 1]
+    assert alpha > 0.95
+    assert alpha > beta
+
+
+def test_band_plv_is_opt_in_and_default_schema_is_unchanged() -> None:
+    broadband = ConnectivityConfig(sample_rate=256.0)
+    band = ConnectivityConfig(sample_rate=256.0, plv_mode="band")
+    assert "plv_mean" in connectivity.feature_names(broadband)
+    assert "plv_alpha_mean" in connectivity.feature_names(band)
+    assert len(connectivity.feature_names(band)) > len(connectivity.feature_names(broadband))
+
+
 @pytest.mark.parametrize(
     "group,expected_prefix",
     [
@@ -263,6 +328,32 @@ def test_feature_hash_is_independent_of_input_mapping_order() -> None:
     )
     assert first_pipeline.feature_names() == second_pipeline.feature_names()
     assert first_pipeline.feature_hash() == second_pipeline.feature_hash()
+
+
+def test_default_feature_hash_remains_backward_compatible_and_opt_in_changes_it() -> None:
+    channels = tuple(f"C{index}" for index in range(14))
+    legacy = FeaturePipeline(
+        FeaturePipelineConfig(sample_rate=256.0, channel_names=channels)
+    )
+    opted_in = FeaturePipeline(
+        FeaturePipelineConfig(
+            sample_rate=256.0,
+            channel_names=channels,
+            spectral_config=SpectralConfig(
+                sample_rate=256.0,
+                include_engagement_index=True,
+                spectral_edge_band_hz=(1.0, 45.0),
+            ),
+            connectivity_config=ConnectivityConfig(
+                sample_rate=256.0, plv_mode="band"
+            ),
+        )
+    )
+    assert legacy.feature_hash() == (
+        "a06eb9e844c229366e604768c3e9a47a16790731e5be2b85622376f3bac2b493"
+    )
+    assert opted_in.feature_hash() != legacy.feature_hash()
+    assert len(opted_in.feature_names()) > len(legacy.feature_names())
 
 
 def test_sample_entropy_adds_one_feature_per_channel() -> None:

@@ -6,7 +6,12 @@ layout. The package is target-free and does not import ``bench`` or
 partition supplied by the caller.
 """
 
-from .connectivity import ConnectivityConfig, channel_pairs
+from .connectivity import (
+    ConnectivityConfig,
+    channel_pairs,
+    compute_coherence_matrix,
+    compute_plv_matrix,
+)
 from .entropy import EntropyConfig
 from .pipeline import (
     FEATURE_SCHEMA_VERSION,
@@ -15,7 +20,7 @@ from .pipeline import (
     build_default_pipeline,
 )
 from .selection import FeatureSelector, SelectionConfig, SelectionResult
-from .spectral import DEFAULT_BANDS, SpectralConfig
+from .spectral import DEFAULT_BANDS, PowerSpectrum, SpectralConfig, compute_power_spectrum
 from .statistical import StatisticalConfig
 
 __all__ = [
@@ -26,10 +31,14 @@ __all__ = [
     "FeaturePipeline",
     "FeaturePipelineConfig",
     "FeatureSelector",
+    "PowerSpectrum",
     "SelectionConfig",
     "SelectionResult",
     "SpectralConfig",
     "StatisticalConfig",
     "build_default_pipeline",
     "channel_pairs",
+    "compute_coherence_matrix",
+    "compute_plv_matrix",
+    "compute_power_spectrum",
 ]

@@ -22,6 +22,14 @@ DEFAULT_BANDS: dict[str, tuple[float, float]] = {
 
 
 @dataclass(frozen=True)
+class PowerSpectrum:
+    """One shared Welch estimate reusable by all spectral feature helpers."""
+
+    frequencies: np.ndarray
+    psd: np.ndarray
+
+
+@dataclass(frozen=True)
 class SpectralConfig:
     sample_rate: float
     bands: Mapping[str, tuple[float, float]] = field(
@@ -34,6 +42,8 @@ class SpectralConfig:
     scaling: str = "density"
     average: str = "mean"
     spectral_edge: float = 0.95
+    spectral_edge_band_hz: tuple[float, float] | None = None
+    include_engagement_index: bool = False
 
     def __post_init__(self) -> None:
         validate_sample_rate(self.sample_rate)
@@ -44,13 +54,19 @@ class SpectralConfig:
             raise ValueError("noverlap must be non-negative or None")
         if not 0.0 < float(self.spectral_edge) <= 1.0:
             raise ValueError("spectral_edge must be in (0, 1]")
+        if self.spectral_edge_band_hz is not None:
+            low, high = self.spectral_edge_band_hz
+            if not (0.0 <= float(low) < float(high) <= self.sample_rate / 2.0):
+                raise ValueError("spectral_edge_band_hz must lie inside Nyquist")
 
     @property
     def ordered_bands(self) -> tuple[tuple[str, tuple[float, float]], ...]:
         return ordered_bands(self.bands, sample_rate=self.sample_rate)
 
 
-def _welch(window: np.ndarray, config: SpectralConfig) -> tuple[np.ndarray, np.ndarray]:
+def compute_power_spectrum(
+    window: np.ndarray, config: SpectralConfig
+) -> PowerSpectrum:
     signal = validate_window(window)
     nperseg = min(int(config.nperseg), signal.shape[0])
     noverlap = config.noverlap
@@ -67,7 +83,12 @@ def _welch(window: np.ndarray, config: SpectralConfig) -> tuple[np.ndarray, np.n
         average=config.average,
         axis=0,
     )
-    return frequencies, psd
+    return PowerSpectrum(frequencies=frequencies, psd=psd)
+
+
+def _welch(window: np.ndarray, config: SpectralConfig) -> tuple[np.ndarray, np.ndarray]:
+    estimate = compute_power_spectrum(window, config)
+    return estimate.frequencies, estimate.psd
 
 
 def _band_power(
@@ -132,10 +153,18 @@ def compute_band_ratios(
     beta = np.asarray(band_powers["beta"], dtype=float)
     if not np.isfinite(np.stack([theta, alpha, beta])).all():
         raise ValueError("band power arrays contain NaN or Inf")
-    return {
+    ratios = {
         "theta_beta_ratio": theta / np.maximum(beta, eps),
         "alpha_theta_ratio": alpha / np.maximum(theta, eps),
     }
+    if required.issubset(band_powers):
+        total = np.sum(
+            np.stack([np.asarray(value, dtype=float) for value in band_powers.values()]),
+            axis=0,
+        )
+        floor = np.maximum(total * 1e-12, eps)
+        ratios["engagement_index"] = beta / np.maximum(alpha + theta, floor)
+    return ratios
 
 
 def _spectral_edge_from_psd(
@@ -156,11 +185,26 @@ def _spectral_edge_from_psd(
     return result
 
 
+def _spectral_edge_inputs(
+    frequencies: np.ndarray,
+    psd: np.ndarray,
+    config: SpectralConfig,
+) -> tuple[np.ndarray, np.ndarray]:
+    if config.spectral_edge_band_hz is None:
+        return frequencies, psd
+    low, high = config.spectral_edge_band_hz
+    mask = (frequencies >= low) & (frequencies <= high)
+    return frequencies[mask], psd[mask]
+
+
 def compute_spectral_edge_frequency(
     window: np.ndarray,
     config: SpectralConfig,
 ) -> np.ndarray:
     frequencies, psd = _welch(window, config)
+    frequencies, psd = _spectral_edge_inputs(frequencies, psd, config)
+    if frequencies.size == 0:
+        return np.zeros(psd.shape[1], dtype=float)
     return _spectral_edge_from_psd(frequencies, psd, config.spectral_edge)
 
 
@@ -178,9 +222,20 @@ def extract_spectral_features(
         features[f"power_{name}"] = band_powers[name]
     for name, _ in config.ordered_bands:
         features[f"relpower_{name}"] = relative[name]
-    features.update(ratios)
-    features["spectral_edge_frequency"] = _spectral_edge_from_psd(
-        frequencies, psd, config.spectral_edge
+    features.update(
+        {
+            name: value
+            for name, value in ratios.items()
+            if name != "engagement_index" or config.include_engagement_index
+        }
+    )
+    edge_frequencies, edge_psd = _spectral_edge_inputs(frequencies, psd, config)
+    features["spectral_edge_frequency"] = (
+        np.zeros(psd.shape[1], dtype=float)
+        if edge_frequencies.size == 0
+        else _spectral_edge_from_psd(
+            edge_frequencies, edge_psd, config.spectral_edge
+        )
     )
     if not all(np.isfinite(value).all() for value in features.values()):
         raise RuntimeError("spectral feature extraction produced NaN or Inf")
@@ -189,10 +244,13 @@ def extract_spectral_features(
 
 def feature_names(config: SpectralConfig) -> list[str]:
     bands = [name for name, _ in config.ordered_bands]
-    return [
+    names = [
         *[f"power_{name}" for name in bands],
         *[f"relpower_{name}" for name in bands],
         "theta_beta_ratio",
         "alpha_theta_ratio",
-        "spectral_edge_frequency",
     ]
+    if config.include_engagement_index:
+        names.append("engagement_index")
+    names.append("spectral_edge_frequency")
+    return names

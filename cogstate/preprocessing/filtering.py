@@ -59,7 +59,14 @@ def design_notch(config: FilterConfig):
 
 
 def apply_offline(signal: np.ndarray, config: FilterConfig) -> np.ndarray:
-    filtered = np.asarray(signal, dtype=float).copy()
+    filtered = np.asarray(signal, dtype=float)
+    if filtered.ndim != 2:
+        raise ValueError("apply_offline expects [n_samples, n_channels]")
+    if filtered.shape[0] == 0 or filtered.shape[1] == 0:
+        raise ValueError("apply_offline received an empty dimension")
+    if not np.isfinite(filtered).all():
+        raise ValueError("apply_offline input contains NaN or Inf")
+    filtered = filtered.copy()
     if config.bandpass_enabled:
         b_band, a_band = design_bandpass(config)
         filtered = filtfilt(b_band, a_band, filtered, axis=0)
@@ -67,6 +74,23 @@ def apply_offline(signal: np.ndarray, config: FilterConfig) -> np.ndarray:
         b_notch, a_notch = design_notch(config)
         filtered = filtfilt(b_notch, a_notch, filtered, axis=0)
     return filtered
+
+
+def apply_causal(signal: np.ndarray, config: FilterConfig) -> np.ndarray:
+    """Filter one complete record with the causal streaming semantics.
+
+    This convenience function deliberately delegates to ``StreamingFilter`` so
+    that whole-record offline diagnostics and chunked production processing use
+    identical state initialization and filter ordering.
+    """
+    values = np.asarray(signal, dtype=float)
+    if values.ndim != 2:
+        raise ValueError("apply_causal expects [n_samples, n_channels]")
+    if values.shape[0] == 0 or values.shape[1] == 0:
+        raise ValueError("apply_causal received an empty dimension")
+    if not np.isfinite(values).all():
+        raise ValueError("apply_causal input contains NaN or Inf")
+    return StreamingFilter(config, n_channels=values.shape[1]).process(values)
 
 
 class StreamingFilter:

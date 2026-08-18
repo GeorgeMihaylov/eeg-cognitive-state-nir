@@ -17,7 +17,11 @@ import numpy as np
 
 from ..streaming.buffer import Window
 
-from .artifact_removal import ArtifactICA, FasterConfig, apply_faster
+from .artifact_removal import (
+    ArtifactICA,
+    FasterConfig as OnlineFasterConfig,
+    apply_faster as apply_faster_online,
+)
 from .filtering import FilterConfig, StreamingFilter
 
 
@@ -29,13 +33,13 @@ class PreprocessingPipeline:
     """
 
     streaming_filter: StreamingFilter
-    faster_config: FasterConfig
+    faster_config: OnlineFasterConfig
     ica: Optional[ArtifactICA] = None    # None -> без ICA-очистки (например, до калибровки)
 
     def __call__(self, window: Window) -> np.ndarray:
         raw = window.data["eeg"]                       # [n_samples, n_channels]
         filtered = self.streaming_filter.process(raw)
-        cleaned = apply_faster(filtered, self.faster_config)
+        cleaned = apply_faster_online(filtered, self.faster_config)
 
         if self.ica is not None:
             cleaned = self.ica.transform(cleaned)
@@ -52,6 +56,6 @@ def build_default_pipeline(
     streaming_filter = StreamingFilter(FilterConfig(sample_rate=sample_rate), n_channels=n_channels)
     return PreprocessingPipeline(
         streaming_filter=streaming_filter,
-        faster_config=FasterConfig(),
+        faster_config=OnlineFasterConfig(),
         ica=ica,
     )

@@ -282,6 +282,15 @@ class FeaturePipeline:
         pairs = connectivity.channel_pairs(
             len(channels), self.config.connectivity_config.max_channel_pairs
         )
+        spectral_spec = asdict(self.config.spectral_config)
+        if spectral_spec.get("spectral_edge_band_hz") is None:
+            spectral_spec.pop("spectral_edge_band_hz", None)
+        if spectral_spec.get("include_engagement_index") is False:
+            spectral_spec.pop("include_engagement_index", None)
+        connectivity_spec = asdict(self.config.connectivity_config)
+        if connectivity_spec.get("plv_mode") == "broadband":
+            connectivity_spec.pop("plv_mode", None)
+            connectivity_spec.pop("phase_filter_order", None)
         payload = {
             "schema_version": FEATURE_SCHEMA_VERSION,
             "input_layout": "samples,channels",
@@ -297,11 +306,11 @@ class FeaturePipeline:
                 )
                 if enabled
             ],
-            "spectral": asdict(self.config.spectral_config),
+            "spectral": spectral_spec,
             "statistical": asdict(self.config.statistical_config),
             "entropy": asdict(self.config.entropy_config),
             "connectivity": {
-                **asdict(self.config.connectivity_config),
+                **connectivity_spec,
                 "pair_policy": (
                     "all_unique_unordered"
                     if self.config.connectivity_config.max_channel_pairs is None
