@@ -67,6 +67,41 @@ def test_factory_builds_torch_eegnet_and_fits_numpy_data():
     assert model.get_training_summary()["input_shape"] == [1, 4, 64]
 
 
+def test_factory_builds_torch_eegnet_for_scalar_regression():
+    rng = np.random.default_rng(123)
+    X = rng.normal(size=(24, 1, 4, 64)).astype(np.float32)
+    y = rng.normal(size=24).astype(np.float32)
+    model = build_model(
+        model_name="torch_eegnet",
+        task_type="regression",
+        input_shape=(1, 4, 64),
+        num_outputs=1,
+        params={
+            "sampling_rate": 64,
+            "temporal_kernel_seconds": 0.25,
+            "separable_kernel_seconds": 0.125,
+            "f1": 2,
+            "depth_multiplier": 1,
+            "f2": 2,
+            "pool1": 2,
+            "pool2": 2,
+            "dropout": 0.1,
+            "batch_size": 8,
+            "max_epochs": 1,
+            "early_stopping_patience": 1,
+            "validation_size": 0.2,
+            "device": "cpu",
+            "random_state": 42,
+        },
+    )
+    model.fit(X, y)
+    prediction = model.predict(X[:7])
+
+    assert prediction.shape == (7,)
+    assert np.isfinite(prediction).all()
+    assert model.task_type == "regression"
+
+
 def test_runner_executes_small_lazy_raw_eeg_smoke(tmp_path):
     rng = np.random.default_rng(7)
     n_subjects = 20

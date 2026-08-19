@@ -1,4 +1,4 @@
-"""A compact EEGNet-style classifier for real raw EEG windows."""
+"""A compact EEGNet-style model for real raw EEG windows."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from .encoder import ENCODER_API_VERSION, SharedEncoderMixin
 
 
 class TorchEEGNetClassifier(nn.Module, SharedEncoderMixin):
-    """EEGNet-inspired temporal/spatial/separable convolutional classifier."""
+    """EEGNet-inspired temporal/spatial/separable convolutional model."""
 
     def __init__(
         self,
@@ -20,6 +20,7 @@ class TorchEEGNetClassifier(nn.Module, SharedEncoderMixin):
         n_times: int,
         num_classes: int,
         *,
+        task_type: str = "classification",
         temporal_kernel_samples: int,
         separable_kernel_samples: int,
         f1: int = 8,
@@ -33,12 +34,20 @@ class TorchEEGNetClassifier(nn.Module, SharedEncoderMixin):
         self.n_channels = int(n_channels)
         self.n_times = int(n_times)
         self.num_classes = int(num_classes)
+        self.task_type = {
+            "classifier": "classification",
+            "regressor": "regression",
+        }.get(str(task_type).strip().lower(), str(task_type).strip().lower())
         self.temporal_kernel_samples = int(temporal_kernel_samples)
         self.separable_kernel_samples = int(separable_kernel_samples)
         if self.n_channels <= 0 or self.n_times <= 0:
             raise ValueError("n_channels and n_times must be positive")
-        if self.num_classes < 2:
-            raise ValueError("num_classes must be at least 2")
+        if self.task_type not in {"classification", "regression"}:
+            raise ValueError("task_type must be 'classification' or 'regression'")
+        if self.task_type == "classification" and self.num_classes < 2:
+            raise ValueError("classification output width must be at least 2")
+        if self.task_type == "regression" and self.num_classes != 1:
+            raise ValueError("EEGNet regression currently requires one output")
         if min(f1, depth_multiplier, f2, pool1, pool2) <= 0:
             raise ValueError("EEGNet filter, depth, and pooling sizes must be positive")
         if not 0 <= dropout < 1:
@@ -133,8 +142,10 @@ def build_torch_eegnet(
     input_shape: Sequence[int],
     num_outputs: int,
     params: Optional[Mapping[str, Any]] = None,
+    *,
+    task_type: str = "classification",
 ) -> TorchClassificationAdapter:
-    """Build EEGNet and the shared sklearn-like classification adapter."""
+    """Build EEGNet and the shared sklearn-like Torch adapter."""
     shape = tuple(int(dimension) for dimension in input_shape)
     if len(shape) != 3 or shape[0] != 1:
         raise ValueError(
@@ -171,11 +182,22 @@ def build_torch_eegnet(
     pool2 = int(model_params.pop("pool2", 8))
     dropout = float(model_params.pop("dropout", 0.5))
     random_state = int(model_params.get("random_state", 42))
+    normalized_task_type = {
+        "classifier": "classification",
+        "regressor": "regression",
+    }.get(str(task_type).strip().lower(), str(task_type).strip().lower())
+    if normalized_task_type not in {"classification", "regression"}:
+        raise ValueError("task_type must be 'classification' or 'regression'")
+    if normalized_task_type == "classification" and int(num_outputs) < 2:
+        raise ValueError("classification output width must be at least 2")
+    if normalized_task_type == "regression" and int(num_outputs) != 1:
+        raise ValueError("torch_eegnet supports scalar regression only")
     seed_torch(random_state)
     model = TorchEEGNetClassifier(
         n_channels=shape[1],
         n_times=shape[2],
         num_classes=int(num_outputs),
+        task_type=normalized_task_type,
         temporal_kernel_samples=temporal_kernel_samples,
         separable_kernel_samples=separable_kernel_samples,
         f1=f1,
@@ -190,8 +212,10 @@ def build_torch_eegnet(
             model=model,
             input_shape=shape,
             num_classes=int(num_outputs),
+            task_type=normalized_task_type,
             model_metadata={
                 "model_type": "torch_eegnet",
+                "task_type": normalized_task_type,
                 "input_layout": "batch,1,channels,time",
                 "sampling_rate": sampling_rate,
                 "channel_names": channel_names,
@@ -209,6 +233,7 @@ def build_torch_eegnet(
                 "dropout": dropout,
                 "latent_dim": model.latent_dim,
                 "encoder_api_version": ENCODER_API_VERSION,
+                "num_outputs": int(num_outputs),
             },
             **model_params,
         )

@@ -60,16 +60,53 @@ def participant_plan(pm: str = "attention", windows: int = 100):
     )
 
 
-def test_config_covers_all_pm_and_two_tasks() -> None:
+def test_config_covers_all_pm_and_classification_task() -> None:
     resolved = validate_protocol_config(config())
-    assert len(resolved["pms"]) == 7
-    assert resolved["task_types"] == ["classification", "regression"]
+    assert resolved["pms"] == [
+        "attention", "engagement", "excitement", "stress",
+        "relaxation", "interest", "focus",
+    ]
+    assert resolved["task_types"] == ["classification"]
+    assert resolved["protocol"]["n_outer_folds"] == 5
+    assert resolved["calibration"]["budgets_fraction"] == [
+        0.0, 0.01, 0.05, 0.1, 0.2,
+    ]
+    assert resolved["calibration"]["modes"] == [
+        "zero_shot", "head_only", "full_model",
+    ]
     assert resolved["protocol"]["fraction_allocation"] == "global_prefix"
     assert resolved["protocol"]["q3_fit_scope"] == "outer_train_only"
     assert resolved["execution"]["feature_scaling"]["strategy"] == "standard_clip"
+    assert resolved["analysis"] == {
+        "formal_accuracy_threshold": 0.75,
+        "aggregation": "participant_macro",
+        "threshold_role": "report_only_not_for_selection",
+    }
     assert set(resolved["execution"]["model_params"]) == {
         "torch_shallow_convnet", "torch_eegnet", "torch_mlp"
     }
+
+
+def test_validator_retains_global_regression_support() -> None:
+    document = config()
+    document["task_types"] = ["classification", "regression"]
+    assert validate_protocol_config(document)["task_types"] == [
+        "classification", "regression"
+    ]
+
+    document["task_types"] = ["regression"]
+    assert validate_protocol_config(document)["task_types"] == ["regression"]
+
+    document["task_types"] = ["regression", "classification"]
+    with pytest.raises(ValueError, match="registry order"):
+        validate_protocol_config(document)
+
+
+def test_formal_accuracy_threshold_cannot_be_used_for_selection() -> None:
+    document = config()
+    document["analysis"]["threshold_role"] = "hyperparameter_selection"
+    with pytest.raises(ValueError, match="report-only"):
+        validate_protocol_config(document)
 
 
 def test_temporal_split_is_deterministic_disjoint_and_fixed_across_budgets() -> None:
@@ -84,6 +121,7 @@ def test_temporal_split_is_deterministic_disjoint_and_fixed_across_budgets() -> 
         x["transform_hash"] for x in repeated.values()
     ]
     assert first.outer_train_subject_overlap.max() == 0
+    assert first.outer_train_record_group_overlap.max() == 0
     assert first.calibration_evaluation_overlap.max() == 0
     assert first.calibration_before_evaluation.all()
     assert first.groupby(["pm", "outer_fold", "subject_id"])[
@@ -107,6 +145,19 @@ def test_q3_fit_uses_only_outer_train_arguments() -> None:
     assert transform.transform(np.array([-100., .5, 100.])).tolist() == [0., 1., 2.]
 
 
+def test_outer_record_group_leakage_is_rejected() -> None:
+    frame = target_frame()
+    leaked_group = frame.loc[frame["outer_fold"].eq(1), "record_group_id"].iloc[0]
+    frame.loc[frame["outer_fold"].eq(2), "record_group_id"] = leaked_group
+    with pytest.raises(RuntimeError, match="Outer logical-record leakage"):
+        build_participant_calibration_plan(
+            frame,
+            pm="attention",
+            budgets=config()["calibration"]["budgets_fraction"],
+            protocol=config()["protocol"],
+        )
+
+
 def test_insufficient_data_never_borrows_evaluation_rows() -> None:
     plan, _ = participant_plan(windows=3)
     positive = plan.loc[plan.budget_fraction.gt(0)]
@@ -118,7 +169,7 @@ def test_insufficient_data_never_borrows_evaluation_rows() -> None:
     assert used.le(positive.total_available_windows).all()
 
 
-def test_factory_and_run_matrix_make_unsupported_explicit() -> None:
+def test_factory_supports_regression_but_current_matrix_is_classification_only() -> None:
     document = validate_protocol_config(config())
     compatibility = build_model_compatibility(document["models"])
     assert len(compatibility) == 6
@@ -128,7 +179,8 @@ def test_factory_and_run_matrix_make_unsupported_explicit() -> None:
         compatibility.model.eq("torch_eegnet")
         & compatibility.task_type.eq("regression")
     ].iloc[0]
-    assert not eegnet_reg.factory_supported
+    assert eegnet_reg.factory_supported
+    assert eegnet_reg.head_only_supported
     base, _ = participant_plan()
     participants = pd.concat(
         [base.assign(pm=pm) for pm in document["pms"]], ignore_index=True
@@ -137,13 +189,15 @@ def test_factory_and_run_matrix_make_unsupported_explicit() -> None:
         config=document, compatibility=compatibility,
         participant_plan=participants,
     )
-    assert len(matrix) == 1890
-    assert matrix.status.eq("unsupported").sum() == 315
+    assert len(matrix) == 945
+    assert not matrix.status.eq("unsupported").any()
+    assert set(matrix.task_type) == {"classification"}
+    assert set(matrix.status) <= {"planned", "insufficient_data"}
     assert matrix.condition_id.is_unique
     filtered = build_run_matrix(
         config=document, compatibility=compatibility,
         participant_plan=participants,
-        filters=PlanFilters(1, "attention", "regression", "head_only"),
+        filters=PlanFilters(1, "attention", "classification", "head_only"),
     )
     assert len(filtered) == 12
 
@@ -179,13 +233,19 @@ def test_plan_only_artifacts_and_resume(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(planner, "_load_target_frame", lambda pm: target_frame(pm))
     manifest = planner.plan()
     assert not manifest["training_executed"]
-    assert manifest["run_conditions"] == 1890
-    assert manifest["unsupported_conditions"] == 315
+    assert manifest["run_conditions"] == 945
+    assert manifest["unsupported_conditions"] == 0
+    assert manifest["leakage_checks"]["outer_record_group_overlap_max"] == 0
+    assert manifest["formal_criteria"] == {
+        "classification_accuracy_threshold": 0.75,
+        "aggregation": "participant_macro",
+        "threshold_role": "report_only_not_for_selection",
+    }
     assert manifest["protocol_hash"] == (
-        "9e985d1df33a8d46d20e25f71753a187e3864e2379996dbc9ad8bd18c7a20c0e"
+        "a3723e8f77ec1a9eeef21a2b5a88660d9cd42a717084e6e1aadb12429085d0d4"
     )
     assert manifest["plan_hash"] == (
-        "dd96afc845a15267c9c7547010bc050e8c491e87cd3d4576c44212502d0cca7d"
+        "d8c7430e75e692fcf8cf53b7052d48faa2c8f392bb2cd7a049657204d3396412"
     )
     assert all((tmp_path / "plan" / name).is_file() for name in PLAN_FILES)
     with pytest.raises(FileExistsError):

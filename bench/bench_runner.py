@@ -19,6 +19,7 @@ from .tasks.tasks_registry import get_task
 from .tasks.target_transforms import validate_target_transform_manifest
 from .validation.cross_val import CrossValidator
 from .validation.metrics import MetricsCalculator
+from .core.artifact_paths import portable_artifact_directory
 from model_zoo import (
     BaseModelAdapter,
     ModelLike,
@@ -904,10 +905,24 @@ class BenchmarkRunner:
             task_name: str,
             model_name: str
     ) -> Path:
-        artifact_dir = self.output_dir / self.timestamp
-        for component in (dataset_name, task_name, model_name):
-            artifact_dir = artifact_dir / self._safe_path_component(component)
-        return artifact_dir
+        return self._artifact_dir(dataset_name, task_name, model_name)
+
+    def _artifact_dir(self, *components: Any) -> Path:
+        """Resolve a readable or compact directory under the current run.
+
+        Short paths retain the historical hierarchy.  Only a hierarchy that
+        would exceed the conservative portable path budget is replaced by a
+        deterministic ``_a/<hash>`` directory.
+        """
+
+        safe_components = tuple(
+            self._safe_path_component(component) for component in components
+        )
+        return portable_artifact_directory(
+            self.output_dir / self.timestamp,
+            safe_components,
+            compact_namespace="_a",
+        )
 
     def _save_split_artifacts(
             self,
@@ -924,21 +939,14 @@ class BenchmarkRunner:
             detailed_predictions: Optional[Mapping[str, Any]] = None,
             subject_target_predictions: Optional[pd.DataFrame] = None,
     ) -> Dict[str, str]:
-        artifact_dir = self._model_artifact_dir(
-            dataset_name, task_name, model_name
-        )
+        artifact_components: list[Any] = [dataset_name, task_name, model_name]
         protocol = split.metadata.get('protocol')
         if protocol:
             fold_name = split.metadata.get('fold_name', artifact_split_name)
-            artifact_dir = (
-                artifact_dir
-                / self._safe_path_component(protocol)
-                / self._safe_path_component(fold_name)
-            )
+            artifact_components.extend((protocol, fold_name))
         else:
-            artifact_dir = artifact_dir / self._safe_path_component(
-                artifact_split_name
-            )
+            artifact_components.append(artifact_split_name)
+        artifact_dir = self._artifact_dir(*artifact_components)
         artifact_dir.mkdir(parents=True, exist_ok=True)
         target_transform = split.metadata.get('target_transform')
         target_transform_path: Path | None = None
@@ -2205,9 +2213,8 @@ class BenchmarkRunner:
             task_name=task_name,
             artifact_split_name=split_name,
         )
-        protocol_dir = (
-            self._model_artifact_dir(dataset_name, task_name, model_name)
-            / 'cross_source_holdout'
+        protocol_dir = self._artifact_dir(
+            dataset_name, task_name, model_name, 'cross_source_holdout'
         )
         protocol_dir.mkdir(parents=True, exist_ok=True)
         unified_predictions = protocol_dir / 'predictions.parquet'
@@ -2320,9 +2327,8 @@ class BenchmarkRunner:
                 )
 
         aggregated = self._aggregate_group_metrics(per_fold_results)
-        protocol_dir = (
-            self._model_artifact_dir(dataset_name, task_name, model_name)
-            / protocol
+        protocol_dir = self._artifact_dir(
+            dataset_name, task_name, model_name, protocol
         )
         protocol_dir.mkdir(parents=True, exist_ok=True)
         predictions_path = protocol_dir / 'predictions.parquet'

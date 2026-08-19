@@ -96,7 +96,7 @@ def test_unsupported_runs_are_isolated_in_status_matrix() -> None:
     ].eq("unsupported").all()
     assert status.loc[
         status.model.eq("torch_eegnet") & status.task_type.eq("regression"), "status"
-    ].eq("unsupported").all()
+    ].eq("blocked").all()
 
 
 def test_benchmark_configs_route_raw_sequence_and_features(tmp_path: Path) -> None:

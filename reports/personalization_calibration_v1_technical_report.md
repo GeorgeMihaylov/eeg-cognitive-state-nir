@@ -2,15 +2,18 @@
 
 ## Scope
 
-This change prepares an executable, but not yet scientifically executed, unified participant-personalization
-experiment for the seven canonical Performance Metrics (PM).  The protocol uses
+This change prepares an executable, but not yet scientifically executed, unified
+participant-personalization classification experiment for the seven canonical
+Performance Metrics (PM). The protocol uses
 the existing deduplicated raw-window universe, fixed participant folds, target
 registry, fold-local target transforms, model factory and shared Torch adapter.
-No project EEG model was trained and no project checkpoint was created during this task.
+ShallowConvNet is the primary model for interpreting the formal requirement;
+EEGNet and MLP remain comparison models. A one-subject, one-epoch head-only
+ShallowConvNet technical smoke has passed, but no full experiment was run.
 
 ## Existing infrastructure audit
 
-| Area | Existing behavior at `48676159` | Reuse / limitation |
+| Area | Existing behavior at `44dfc17` | Reuse / limitation |
 |---|---|---|
 | Classification personalization | `bench/experiments/user_calibration.py` provides zero-shot, subject normalization, head-only and full-model modes, checkpoint cloning, per-condition artifacts and resume hashes. | Reused split, fixed-evaluation and adapter contracts. Its configured scientific target is legacy `label_q5`, so it is not the new primary target. |
 | PM regression personalization | `bench/experiments/pm_regression_personalization.py` supports the canonical seven-output PM order, zero-shot, bias, affine, head-only and full-model adaptation. | Scientifically useful prior implementation, but fixed to multi-output complete cases, 20%, Torch MLP and seed 42. It does not provide seven target-specific regression/Q3 cells. |
@@ -23,9 +26,10 @@ No project EEG model was trained and no project checkpoint was created during th
 | Checkpoints/resume | Existing experiments hash base checkpoints, clone state, audit frozen/trainable parameters and reject incompatible resume state. | The execution bridge now validates the complete base identity and independently resumes base folds and participant adaptations. |
 
 No existing personalization path was found that is simultaneously target-specific
-for all seven PM, supports both scalar regression and fold-local Q3, covers raw
-CNNs and produces one deterministic full run matrix.  That missing orchestration,
-not a second model-training implementation, is the scope of v1.
+for all seven PM in fold-local Q3 classification, covers raw CNNs and produces
+one deterministic full run matrix. That missing orchestration, not a second
+model-training implementation, is the scope of v1. Scalar regression remains a
+supported project capability, but it is outside this confirmatory experiment.
 
 ## Execution bridge
 
@@ -88,22 +92,26 @@ global quantiles and evaluation targets never contribute to the fit.
 
 ## Compatibility and run matrix
 
-Factory probing at plan time produced the following contract:
+Factory probing at plan time produced the following classification contract:
 
-- ShallowConvNet: Q3 and scalar regression; zero-shot, head-only and full-model.
-- EEGNet: Q3 only; scalar regression is explicitly `unsupported` because the
-  current factory exposes EEGNet as classification-only.
-- Torch MLP: Q3 and scalar regression through the shared adapter. Its input is
+- ShallowConvNet: Q3; zero-shot, head-only and full-model. This is the primary
+  model for interpreting the formal requirement.
+- EEGNet: Q3 through the same shared adapter and output head contract; the
+  convolutional encoder and training loop are unchanged.
+- Torch MLP: Q3 through the shared adapter. Its input is
   the 448-feature EEG+POW view matched to the same canonical sample IDs; it must
   not be presented as a raw-input CNN.
 
-The full matrix contains 1,890 fold-level conditions:
+The project factory continues to support scalar regression for these models;
+removing regression from this config does not remove or weaken that shared API.
 
-`7 PM × 2 task types × 3 models × 5 folds × (1 zero-shot + 4 head-only + 4 full-model)`.
+The classification-only matrix contains 945 fold-level conditions:
 
-Of these, 1,575 are supported and 315 EEGNet-regression conditions are explicitly
-unsupported. The real participant plan contains 1,885 PM/participant/budget rows
-and 15,455 supported participant executions after minimum-cohort checks. There
+`7 PM × 1 task × 3 models × 5 folds × (1 zero-shot + 4 head-only + 4 full-model)`.
+
+All 945 conditions are supported. The real participant plan contains 1,885
+PM/participant/budget rows and 9,273 participant executions after
+minimum-cohort checks. There
 are 54 unique participants; Attention has 53 target-available participants and
 the other six PMs have 54.
 
@@ -118,7 +126,7 @@ not silently removed.
 
 The planner verifies:
 
-1. fixed-fold outer train/test participant overlap is zero;
+1. fixed-fold outer train/test participant and logical-record overlap is zero;
 2. each participant maps to exactly one outer fold;
 3. calibration/evaluation sample overlap is zero;
 4. all calibration timestamps precede all evaluation timestamps;
@@ -129,40 +137,45 @@ The planner verifies:
 9. insufficient cells do not duplicate or borrow windows;
 10. resume requires both the immutable protocol hash and the filter-specific plan hash.
 
-Real `plan-only` result: outer subject overlap 0, calibration/evaluation overlap
-0, all calibration-before-evaluation checks true, and fixed evaluation hashes
-true. Protocol hash: `9e985d1df33a8d46d20e25f71753a187e3864e2379996dbc9ad8bd18c7a20c0e`.
+Real `plan-only` result: outer subject overlap 0, outer logical-record overlap 0,
+calibration/evaluation overlap 0, all calibration-before-evaluation checks true,
+and fixed evaluation hashes true. The preregistered 75% accuracy criterion is
+stored as a participant-macro, report-only threshold and is never used for
+selection or tuning. Protocol hash:
+`a3723e8f77ec1a9eeef21a2b5a88660d9cd42a717084e6e1aadb12429085d0d4`.
+The unfiltered plan hash is
+`d8c7430e75e692fcf8cf53b7052d48faa2c8f392bb2cd7a049657204d3396412`.
 
 ## Dry execution result
 
 The full metadata-only dry execution completed without loading raw EEG tensors
-or fitting a model. It resolved 175 unique supported base units: 70
-ShallowConvNet (35 Q3 + 35 regression), 70 MLP (35 + 35), and 35 EEGNet Q3.
-No existing checkpoint passed the exact new identity contract, so 0 can be
-reused and all 175 would require base training. Historical `label_q5` and
-seven-output PM checkpoints are deliberately rejected as incompatible.
+or fitting a model. It resolved 105 unique supported base units: 35 Q3 units
+each for ShallowConvNet, EEGNet and MLP. No existing checkpoint passed the exact
+new identity contract, so 0 can be reused and all 105 would require base
+training. Historical `label_q5` and seven-output PM checkpoints are deliberately
+rejected as incompatible.
 
-The supported plan contains 1,865 pure shared-evaluation zero-shot inferences,
-6,795 head-only adaptations and 6,795 full-model adaptations. Thus the future
-full execution has 13,590 adaptation trainings and 13,765 total training jobs
-after adding the 175 shared base trainings. This is 1,690 fewer trainings than
-the 15,455 participant executions; the difference is explained by replacing
-1,865 zero-shot participant trainings with inference while adding 175 reusable
+The supported plan contains 1,119 pure shared-evaluation zero-shot inferences,
+4,077 head-only adaptations and 4,077 full-model adaptations. Thus the future
+full execution has 8,154 adaptation trainings and 8,259 total training jobs
+after adding the 105 shared base trainings. This is 1,014 fewer trainings than
+the 9,273 participant executions; the difference is explained by replacing
+1,119 zero-shot participant trainings with inference while adding 105 reusable
 base trainings. If every adapted model is retained, the upper-bound checkpoint
-count is 13,765. There are 1,510 insufficient-data participant-condition
+count is 8,259. There are 906 insufficient-data participant-condition
 occurrences across the supported expanded matrix; the 1% budget is preserved
 and reported rather than silently removed.
 
 | Scope | Base | Zero-shot inference | Head adaptations | Full adaptations | Training jobs |
 |---|---:|---:|---:|---:|---:|
-| Full | 175 | 1,865 | 6,795 | 6,795 | 13,765 |
-| ShallowConvNet only | 70 | 746 | 2,718 | 2,718 | 5,506 |
-| Head-only + shared zero-shot | 175 | 1,865 | 6,795 | 0 | 6,970 |
-| Fold 1 | 35 | 385 | 1,380 | 1,380 | 2,795 |
-| Fold 2 | 35 | 360 | 1,340 | 1,340 | 2,715 |
-| Fold 3 | 35 | 385 | 1,395 | 1,395 | 2,825 |
-| Fold 4 | 35 | 350 | 1,285 | 1,285 | 2,605 |
-| Fold 5 | 35 | 385 | 1,395 | 1,395 | 2,825 |
+| Full | 105 | 1,119 | 4,077 | 4,077 | 8,259 |
+| ShallowConvNet only | 35 | 373 | 1,359 | 1,359 | 2,753 |
+| Head-only + shared zero-shot | 105 | 1,119 | 4,077 | 0 | 4,182 |
+| Fold 1 | 21 | 231 | 828 | 828 | 1,677 |
+| Fold 2 | 21 | 216 | 804 | 804 | 1,629 |
+| Fold 3 | 21 | 231 | 837 | 837 | 1,695 |
+| Fold 4 | 21 | 210 | 771 | 771 | 1,563 |
+| Fold 5 | 21 | 231 | 837 | 837 | 1,695 |
 | Fold-1 Focus-Q3 Shallow head-only smoke | 1 | 11 | 39 | 0 | 40 |
 
 No defensible runtime estimate is reported because no exact compatible
@@ -171,14 +184,15 @@ measure time.
 
 ## Commands
 
-Plan-only (executed):
+Final plan-only command (the completed audit used an isolated temporary output
+directory so existing results were not modified):
 
 ```powershell
 & 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' cli.py `
   --personalization-calibration experiments\calibration\personalization_calibration_v1.json `
   --plan-only `
   --data-root F:\EEG `
-  --output-dir benchmark_results\personalization_calibration_v1 `
+  --output-dir benchmark_results\personalization_calibration_v1_classification `
   --verbose
 ```
 
@@ -190,7 +204,7 @@ Dry execution (executed; no training):
   --dry-execution --data-root F:\EEG --verbose
 ```
 
-Minimal future real smoke (specified, not executed):
+Previously completed technical head-only smoke:
 
 ```powershell
 & 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' cli.py `
@@ -198,8 +212,10 @@ Minimal future real smoke (specified, not executed):
   --run --outer-fold 1 --pm focus --task-type classification `
   --models torch_shallow_convnet --calibration-mode head_only `
   --calibration-budget-fraction 0.05 --subject-limit 1 `
-  --max-calibration-epochs 1 --device cpu `
-  --data-root F:\EEG --resume --verbose
+  --max-calibration-epochs 1 --device cuda `
+  --data-root F:\EEG `
+  --output-dir benchmark_results\personalization_calibration_v1_smoke `
+  --resume --verbose
 ```
 
 Intended final command (specified, not executed):
@@ -207,11 +223,13 @@ Intended final command (specified, not executed):
 ```powershell
 & 'C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe' cli.py `
   --personalization-calibration experiments\calibration\personalization_calibration_v1.json `
-  --run --data-root F:\EEG --resume --verbose
+  --run --data-root F:\EEG `
+  --output-dir benchmark_results\personalization_calibration_v1_classification `
+  --resume --verbose
 ```
 
-The CLI now accepts exactly one of `--plan-only`, `--dry-execution`, or `--run`.
-The real smoke and final commands above were intentionally not executed.
+The CLI accepts exactly one of `--plan-only`, `--dry-execution`, or `--run`.
+The full-model real smoke and final full command were not executed in this step.
 
 ## Scientific limitations
 
@@ -229,8 +247,10 @@ The real smoke and final commands above were intentionally not executed.
 
 ## Short description for a colleague
 
-We prepared a unified leakage-safe personalization protocol for all seven EEG
-Performance Metrics in both continuous regression and fold-local Q3 form. The
+We prepared a unified leakage-safe classification-personalization protocol for
+all seven EEG Performance Metrics in fold-local Q3 form. Regression is not part
+of this confirmatory experiment, although the shared project API still supports
+it. The
 global model is trained without each held-out participant using the existing five
 fixed subject folds. For a new participant, calibration is a strict chronological
 prefix and evaluation is a later fixed suffix shared by all budgets and modes.
@@ -238,6 +258,7 @@ Q3 thresholds are fitted only on outer-train targets and are frozen before any
 new-user data are processed. The comparison includes zero-shot, head-only and
 full-model adaptation with 0%, 1%, 5%, 10% and 20% budgets. Results will be
 computed per participant and then macro-averaged, so users with many windows do
-not dominate. ShallowConvNet and MLP support both tasks, while current EEGNet
-regression is explicitly unsupported. The execution bridge and full dry cost
-plan are now implemented; no project EEG model training was performed.
+not dominate. ShallowConvNet is the primary model for interpreting the formal
+requirement; EEGNet and MLP are comparison models. The execution bridge and full
+dry cost plan are implemented. The 75% accuracy threshold remains a report-only
+formal criterion and is not a model- or hyperparameter-selection objective.

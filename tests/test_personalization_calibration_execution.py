@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import cli
+from bench.core.artifact_paths import PORTABLE_PATH_LIMIT, absolute_path_length
 
 from bench.experiments.personalization_calibration import (
     PersonalizationCalibrationPlanner,
@@ -19,9 +20,11 @@ from bench.experiments.personalization_calibration_execution import (
     _adapter_state_hash,
     adapter_normalization_hash,
     aggregate_execution_results,
+    base_run_directory,
     base_unit_id,
     base_unit_key,
     build_eligibility_table,
+    participant_run_directory,
     temporal_adaptation_split,
     validate_base_checkpoint_manifest,
     validate_participant_resume_result,
@@ -31,6 +34,30 @@ from model_zoo.factory import build_model
 
 
 CONFIG = Path("experiments/calibration/personalization_calibration_v1.json")
+
+
+def test_personalization_direct_artifact_paths_are_portable(
+    tmp_path: Path,
+) -> None:
+    missing = 145 - absolute_path_length(tmp_path) - 1
+    output = tmp_path if missing <= 0 else tmp_path / ("p" * missing)
+    base = base_run_directory(output, "b" * 20)
+    participant = participant_run_directory(output, "p" * 24)
+
+    assert base.parent.name == "_b"
+    assert participant.parent.name == "_p"
+    assert absolute_path_length(
+        base / "base_checkpoint_manifest.json"
+    ) <= PORTABLE_PATH_LIMIT
+    assert absolute_path_length(
+        participant / "predictions.parquet"
+    ) <= PORTABLE_PATH_LIMIT
+    assert base == base_run_directory(output, "b" * 20)
+    assert participant == participant_run_directory(output, "p" * 24)
+    assert base_run_directory(Path("o"), "unit") == Path("o/base_runs/unit")
+    assert participant_run_directory(Path("o"), "run") == Path(
+        "o/participant_runs/run"
+    )
 
 
 def _metadata(n: int, *, offset: float = 0.0) -> pd.DataFrame:
@@ -99,6 +126,39 @@ def test_torch_clone_adaptations_are_independent_and_keep_base_unchanged() -> No
     assert _adapter_state_hash(participant_a) != base_hash
     assert adapter_normalization_hash(base) == normalization_hash
     assert adapter_normalization_hash(participant_a) == normalization_hash
+
+
+@pytest.mark.parametrize("mode", ["head_only", "full_model"])
+def test_shallowconvnet_classification_adaptation_paths(mode: str) -> None:
+    rng = np.random.default_rng(42)
+    X = rng.normal(size=(30, 1, 4, 128)).astype(np.float32)
+    y = np.tile(np.arange(3), 10).astype(np.int64)
+    base = build_model(
+        model_name="torch_shallow_convnet", task_type="classification",
+        input_shape=(1, 4, 128), num_outputs=3,
+        params={
+            "n_filters": 4, "temporal_kernel_samples": 9,
+            "pool_size": 16, "pool_stride": 4, "dropout": 0.0,
+            "batch_size": 8, "max_epochs": 1,
+            "early_stopping_patience": 1, "validation_size": 0.2,
+            "device": "cpu", "random_state": 42,
+        },
+    )
+    base.fit(X, y)
+    base_hash = _adapter_state_hash(base)
+    adapted = base.clone()
+    adapted.fine_tune(
+        X[:18], y[:18], mode=mode,
+        X_validation=X[18:24], y_validation=y[18:24],
+        max_epochs=1, early_stopping_patience=1, random_state=7,
+    )
+
+    assert _adapter_state_hash(base) == base_hash
+    assert _adapter_state_hash(adapted) != base_hash
+    assert adapted.predict(X[24:]).shape == (6,)
+    probabilities = adapted.predict_proba(X[24:])
+    assert probabilities.shape == (6, 3)
+    np.testing.assert_allclose(probabilities.sum(axis=1), 1.0, atol=1e-6)
 
 
 def _matrix_and_participants() -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -189,6 +249,10 @@ def test_executor_reuses_one_base_for_participants_and_budgets(
     assert backend.base_calls == 1
     assert len(backend.execution_calls) == 6
     assert manifest["completed_participant_executions"] == 6
+    assert manifest["formal_criteria"]["classification_accuracy_threshold"] == 0.75
+    assert manifest["formal_criteria"]["threshold_role"] == (
+        "report_only_not_for_selection"
+    )
     results = pd.read_csv(tmp_path / "out" / "participant_results.csv")
     assert results.groupby(["outer_fold", "subject_id"])[
         "evaluation_sample_hash"
@@ -283,6 +347,11 @@ def test_dry_execution_does_not_train(tmp_path: Path, monkeypatch) -> None:
     assert report["base_training_units"] == 1
     assert report["zero_shot_shared_eval_inferences"] == 2
     assert report["head_only_adaptation_trainings"] == 4
+    assert report["formal_criteria"] == {
+        "classification_accuracy_threshold": 0.75,
+        "aggregation": "participant_macro",
+        "threshold_role": "report_only_not_for_selection",
+    }
 
 
 def test_cli_routes_dry_and_run_modes_without_implicit_execution(

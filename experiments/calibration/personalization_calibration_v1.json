@@ -44,8 +44,7 @@
     "focus"
   ],
   "task_types": [
-    "classification",
-    "regression"
+    "classification"
   ],
   "models": [
     {
@@ -114,6 +113,11 @@
     ],
     "aggregation": "participant_macro",
     "reference": "zero_shot_on_identical_evaluation_samples"
+  },
+  "analysis": {
+    "formal_accuracy_threshold": 0.75,
+    "aggregation": "participant_macro",
+    "threshold_role": "report_only_not_for_selection"
   },
   "execution": {
     "save_adapted_checkpoints": true,

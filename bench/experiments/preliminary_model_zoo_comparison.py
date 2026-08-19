@@ -86,7 +86,8 @@ def compatibility_matrix() -> pd.DataFrame:
                     CLASSIFICATION_MODEL_NAMES | TORCH_MODEL_NAMES
                 ),
                 "regression_supported": model_id in (
-                    REGRESSION_MODEL_NAMES | {"torch_mlp", "torch_shallow_convnet"}
+                    REGRESSION_MODEL_NAMES
+                    | {"torch_mlp", "torch_eegnet", "torch_shallow_convnet"}
                 ),
                 "input_family": family,
                 "required_input_shape": {

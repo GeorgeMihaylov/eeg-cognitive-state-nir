@@ -8,8 +8,62 @@ import pandas as pd
 from unittest.mock import Mock, patch
 
 from bench.bench_runner import BenchmarkRunner
+from bench.core.artifact_paths import PORTABLE_PATH_LIMIT, absolute_path_length
 from bench.core.abstract_dataset import EEGData
 from bench.core.abstract_task import TaskSplit
+
+
+def _path_with_minimum_length(root: Path, minimum: int) -> Path:
+    absolute = root.absolute()
+    missing = int(minimum) - absolute_path_length(absolute) - 1
+    return absolute if missing <= 0 else absolute / ("p" * missing)
+
+
+def test_long_windows_like_output_path_uses_compact_artifact_directory(
+    tmp_path: Path,
+) -> None:
+    runner = object.__new__(BenchmarkRunner)
+    runner.output_dir = _path_with_minimum_length(tmp_path, 130)
+    runner.timestamp = "20260819_120000"
+    components = (
+        "emotiv_raw_eeg",
+        "pm_focus_q3_fold_local",
+        "personalization_base",
+        "group_kfold_subject",
+        "fold_01",
+    )
+    filename = "selected_logical_records.parquet"
+    legacy = runner.output_dir / runner.timestamp
+    for component in components:
+        legacy /= runner._safe_path_component(component)
+    legacy /= filename
+    assert absolute_path_length(legacy) >= 260
+
+    compact = runner._artifact_dir(*components)
+    assert compact.parent.name == "_a"
+    assert compact == runner._artifact_dir(*components)
+    assert compact != runner._artifact_dir(*components[:-1], "fold_02")
+    assert absolute_path_length(compact / filename) <= PORTABLE_PATH_LIMIT
+
+    compact.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"record_group_id": ["logical-1"]}).to_parquet(
+        compact / filename,
+        index=False,
+    )
+    assert (compact / filename).is_file()
+
+    short_runner = object.__new__(BenchmarkRunner)
+    short_runner.output_dir = Path("o")
+    short_runner.timestamp = runner.timestamp
+    assert short_runner._artifact_dir(*components) == (
+        Path("o").joinpath(runner.timestamp, *components)
+    )
+
+    short_config = {"output_dir": str(tmp_path), "models": {}}
+    long_config = {"output_dir": str(runner.output_dir), "models": {}}
+    assert BenchmarkRunner.config_hash_for(short_config) == (
+        BenchmarkRunner.config_hash_for(long_config)
+    )
 
 @pytest.fixture
 def temp_dir():

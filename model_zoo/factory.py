@@ -55,7 +55,11 @@ def build_model(
             "classifier",
         }
         is_regression = normalized_task_type in {"regression", "regressor"}
-        regression_models = {"torch_mlp", "torch_shallow_convnet"}
+        regression_models = {
+            "torch_mlp",
+            "torch_eegnet",
+            "torch_shallow_convnet",
+        }
         if not is_classification and not (
             normalized_name in regression_models and is_regression
         ):
@@ -90,6 +94,9 @@ def build_model(
                     input_shape=input_shape,
                     num_outputs=int(num_outputs),
                     params=params,
+                    task_type=(
+                        "regression" if is_regression else "classification"
+                    ),
                 ),
             )
 

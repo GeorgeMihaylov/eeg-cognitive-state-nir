@@ -139,9 +139,17 @@ def validate_protocol_config(config: Mapping[str, Any]) -> dict[str, Any]:
     if pms != tuple(PM_METRICS):
         raise ValueError("pms must contain all seven canonical PMs in registry order")
     tasks = tuple(resolved.get("task_types", ()))
-    if tasks != SUPPORTED_TASK_TYPES:
+    if (
+        not tasks
+        or len(set(tasks)) != len(tasks)
+        or any(task not in SUPPORTED_TASK_TYPES for task in tasks)
+        or tasks != tuple(
+            task for task in SUPPORTED_TASK_TYPES if task in set(tasks)
+        )
+    ):
         raise ValueError(
-            "task_types must be ['classification', 'regression'] in that order"
+            "task_types must be a non-empty, unique subset of "
+            "['classification', 'regression'] in registry order"
         )
     modes = tuple(resolved.get("calibration", {}).get("modes", ()))
     if modes != SUPPORTED_MODES:
@@ -173,6 +181,15 @@ def validate_protocol_config(config: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError("Only strict participant-level global_prefix is allowed in v1")
     if protocol.get("q3_fit_scope") != "outer_train_only":
         raise ValueError("Q3 fit scope must remain outer_train_only")
+    analysis = resolved.get("analysis", {})
+    if float(analysis.get("formal_accuracy_threshold", -1.0)) != 0.75:
+        raise ValueError("analysis.formal_accuracy_threshold must remain 0.75")
+    if analysis.get("aggregation") != "participant_macro":
+        raise ValueError("analysis.aggregation must remain participant_macro")
+    if analysis.get("threshold_role") != "report_only_not_for_selection":
+        raise ValueError(
+            "The 75% accuracy threshold must be report-only, not a selection rule"
+        )
     if not resolved.get("models"):
         raise ValueError("At least one model is required")
     execution = resolved.get("execution")
@@ -444,6 +461,18 @@ def build_participant_calibration_plan(
             raise RuntimeError(
                 f"Outer subject leakage in fold {outer_fold}: {sorted(subject_overlap)}"
             )
+        if train["record_group_id"].isna().any() or test[
+            "record_group_id"
+        ].isna().any():
+            raise ValueError("record_group_id must be present for every outer-fold row")
+        train_record_groups = set(train["record_group_id"].astype(str))
+        test_record_groups = set(test["record_group_id"].astype(str))
+        record_group_overlap = train_record_groups & test_record_groups
+        if record_group_overlap:
+            raise RuntimeError(
+                "Outer logical-record leakage in fold "
+                f"{outer_fold}: {sorted(record_group_overlap)[:20]}"
+            )
         _, manifest = fit_outer_train_q3(
             pm=pm,
             outer_fold=outer_fold,
@@ -508,6 +537,9 @@ def build_participant_calibration_plan(
                         ),
                         "q3_transform_hash": manifest["transform_hash"],
                         "outer_train_subject_overlap": len(subject_overlap),
+                        "outer_train_record_group_overlap": len(
+                            record_group_overlap
+                        ),
                         **audit,
                         "status": "insufficient_data" if reasons else "planned",
                         "reason": "|".join(reasons),
@@ -853,6 +885,9 @@ class PersonalizationCalibrationPlanner:
                 "outer_subject_overlap_max": int(
                     participants["outer_train_subject_overlap"].max()
                 ),
+                "outer_record_group_overlap_max": int(
+                    participants["outer_train_record_group_overlap"].max()
+                ),
                 "calibration_evaluation_overlap_max": int(
                     participants["calibration_evaluation_overlap"].max()
                 ),
@@ -866,6 +901,13 @@ class PersonalizationCalibrationPlanner:
                     ].nunique().max()
                     == 1
                 ),
+            },
+            "formal_criteria": {
+                "classification_accuracy_threshold": float(
+                    self.config["analysis"]["formal_accuracy_threshold"]
+                ),
+                "aggregation": self.config["analysis"]["aggregation"],
+                "threshold_role": self.config["analysis"]["threshold_role"],
             },
             "resume_contract": {
                 "key": "condition_id",

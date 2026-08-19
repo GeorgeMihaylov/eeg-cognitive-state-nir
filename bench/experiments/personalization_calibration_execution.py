@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 
 from bench.bench_runner import BenchmarkRunner, benchmark_config_hash
+from bench.core.artifact_paths import portable_artifact_directory
 from bench.tasks.tasks_registry import get_task
 from bench.validation.cross_val import CrossValidator
 from bench.validation.metrics import MetricsCalculator
@@ -44,6 +45,26 @@ RESULT_FILES = (
     "eligibility.csv",
     "execution_manifest.json",
 )
+
+
+def base_run_directory(output_dir: str | Path, unit_id: str) -> Path:
+    """Return the legacy base path or a compact portable equivalent."""
+
+    return portable_artifact_directory(
+        output_dir,
+        ("base_runs", str(unit_id)),
+        compact_namespace="_b",
+    )
+
+
+def participant_run_directory(output_dir: str | Path, execution_id: str) -> Path:
+    """Return the legacy participant path or a compact portable equivalent."""
+
+    return portable_artifact_directory(
+        output_dir,
+        ("participant_runs", str(execution_id)),
+        compact_namespace="_p",
+    )
 
 
 def _file_sha256(path: Path) -> str:
@@ -482,7 +503,7 @@ class BenchmarkPersonalizationBackend:
                 )
             )
         return {
-            "output_dir": str(self.planner.output_dir / "base_runs" / unit_id),
+            "output_dir": str(base_run_directory(self.planner.output_dir, unit_id)),
             "raw_preprocessing": deepcopy(data["raw_preprocessing"]),
             "datasets": {dataset_name: dataset},
             "tasks": [base["target_id"]],
@@ -636,7 +657,7 @@ class BenchmarkPersonalizationBackend:
             "q3_transform_hash": participant["q3_transform_hash"],
         }
         execution_id = stable_hash(identity)[:24]
-        run_dir = self.planner.output_dir / "participant_runs" / execution_id
+        run_dir = participant_run_directory(self.planner.output_dir, execution_id)
         result_path = run_dir / "result.json"
         if result_path.is_file() and resume:
             saved = json.loads(result_path.read_text(encoding="utf-8"))
@@ -869,7 +890,10 @@ class PersonalizationCalibrationExecutor:
         reusable = 0
         base_rows = []
         for unit_id, unit in sorted(bases.items()):
-            manifest = self.planner.output_dir / "base_runs" / unit_id / "base_checkpoint_manifest.json"
+            manifest = (
+                base_run_directory(self.planner.output_dir, unit_id)
+                / "base_checkpoint_manifest.json"
+            )
             can_reuse = False
             reason = "no exact execution-bridge manifest"
             if manifest.is_file():
@@ -912,6 +936,13 @@ class PersonalizationCalibrationExecutor:
             "participant_executions": zero + head + full,
             "unsupported_conditions": int(matrix["status"].eq("unsupported").sum()),
             "insufficient_data_participant_conditions": insufficient,
+            "formal_criteria": {
+                "classification_accuracy_threshold": float(
+                    self.planner.config["analysis"]["formal_accuracy_threshold"]
+                ),
+                "aggregation": self.planner.config["analysis"]["aggregation"],
+                "threshold_role": self.planner.config["analysis"]["threshold_role"],
+            },
             "estimated_checkpoint_files": len(bases) + head + full,
             "runtime_estimate": None,
             "runtime_estimate_reason": (
@@ -1055,6 +1086,13 @@ class PersonalizationCalibrationExecutor:
             "insufficient_data": int(
                 participant_results["status"].eq("insufficient_data").sum()
             ) if not participant_results.empty else 0,
+            "formal_criteria": {
+                "classification_accuracy_threshold": float(
+                    self.planner.config["analysis"]["formal_accuracy_threshold"]
+                ),
+                "aggregation": self.planner.config["analysis"]["aggregation"],
+                "threshold_role": self.planner.config["analysis"]["threshold_role"],
+            },
             "result_files": list(RESULT_FILES),
         }
         (self.planner.output_dir / "execution_manifest.json").write_text(
@@ -1074,7 +1112,9 @@ __all__ = [
     "aggregate_execution_results",
     "base_unit_id",
     "base_unit_key",
+    "base_run_directory",
     "build_eligibility_table",
+    "participant_run_directory",
     "temporal_adaptation_split",
     "validate_base_checkpoint_manifest",
     "validate_participant_resume_result",
