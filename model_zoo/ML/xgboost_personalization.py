@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import hashlib
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -84,6 +85,9 @@ class XGBoostMarginHeadAdapter:
         ).to(self.device)
 
         self.reset_head()
+        self.training_log_: list[dict[str, float | int]] = []
+        self.n_epochs_trained_ = 0
+        self.best_validation_loss_: float | None = None
 
     @property
     def global_model_hash(self) -> str:
@@ -323,7 +327,30 @@ class XGBoostMarginHeadAdapter:
                 "state registered when the adapter was created"
             )
 
+        self.training_log_ = training_log
+        self.n_epochs_trained_ = len(training_log)
+        self.best_validation_loss_ = best_loss
         return training_log
+
+    def save_head(self, path: str | Path) -> None:
+        """Save only the participant-specific head and immutable base hash."""
+        destination = Path(path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {
+                "schema_version": "xgboost-margin-head-v1",
+                "global_model_hash": self.global_model_hash,
+                "classes": self.classes_.tolist(),
+                "head_state_dict": {
+                    name: tensor.detach().cpu()
+                    for name, tensor in self.head.state_dict().items()
+                },
+                "training_log": self.training_log_,
+                "n_epochs_trained": self.n_epochs_trained_,
+                "best_validation_loss": self.best_validation_loss_,
+            },
+            destination,
+        )
 
     def _encode_labels(
         self,

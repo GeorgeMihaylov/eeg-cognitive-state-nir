@@ -1,7 +1,12 @@
 import numpy as np
+import torch
 from sklearn.datasets import make_classification
 from xgboost import XGBClassifier
 
+from bench.experiments.personalization_calibration_execution import (
+    load_xgboost_checkpoint,
+    save_xgboost_checkpoint,
+)
 from model_zoo.ML.xgboost_personalization import (
     XGBoostMarginHeadAdapter,
     xgboost_state_sha256,
@@ -134,3 +139,55 @@ def test_fitting_head_does_not_modify_xgboost():
     assert set(np.unique(predictions)).issubset(
         set(model.classes_)
     )
+
+
+def test_native_xgboost_checkpoint_roundtrip(tmp_path):
+    X_train, y_train, _, _, X_eval, _ = _dataset()
+    model = _model(X_train, y_train)
+    checkpoint = tmp_path / "xgboost_base.ubj"
+
+    save_xgboost_checkpoint(model, checkpoint)
+    loaded = load_xgboost_checkpoint(
+        checkpoint,
+        params={
+            "n_estimators": 20,
+            "max_depth": 3,
+            "learning_rate": 0.1,
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "random_state": 42,
+            "n_jobs": 1,
+        },
+    )
+
+    assert xgboost_state_sha256(loaded) == xgboost_state_sha256(model)
+    np.testing.assert_array_equal(loaded.predict(X_eval), model.predict(X_eval))
+    np.testing.assert_allclose(
+        loaded.predict_proba(X_eval),
+        model.predict_proba(X_eval),
+        rtol=0,
+        atol=0,
+    )
+
+
+def test_margin_head_checkpoint_contains_only_head_and_base_identity(tmp_path):
+    X_train, y_train, X_calibration, y_calibration, _, _ = _dataset()
+    adapter = XGBoostMarginHeadAdapter(_model(X_train, y_train))
+    adapter.fit_head(
+        X_calibration[:80],
+        y_calibration[:80],
+        X_calibration[80:],
+        y_calibration[80:],
+        max_epochs=2,
+        patience=1,
+    )
+    checkpoint = tmp_path / "margin_head.pt"
+
+    adapter.save_head(checkpoint)
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+
+    assert payload["schema_version"] == "xgboost-margin-head-v1"
+    assert payload["global_model_hash"] == adapter.global_model_hash
+    assert payload["n_epochs_trained"] == len(adapter.training_log_)
+    assert payload["best_validation_loss"] == adapter.best_validation_loss_
+    assert set(payload["head_state_dict"]) == {"weight", "bias"}

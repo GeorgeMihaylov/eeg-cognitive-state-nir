@@ -1,8 +1,9 @@
 """Execution bridge for the leakage-safe personalization-calibration protocol.
 
 Base models are trained exclusively by :class:`BenchmarkRunner`. Participant
-adaptation delegates to the existing Torch adapter ``clone``/``fine_tune``
-surface; this module only owns deterministic orchestration and artifacts.
+adaptation delegates to the existing Torch adapter or the frozen-XGBoost
+margin-head adapter; this module only owns deterministic orchestration and
+artifacts.
 """
 
 from __future__ import annotations
@@ -45,6 +46,12 @@ RESULT_FILES = (
     "eligibility.csv",
     "execution_manifest.json",
 )
+XGBOOST_NORMALIZATION_CONTRACT = {
+    "strategy": "none",
+    "fit_scope": "none",
+    "participant_refit": False,
+}
+XGBOOST_CHECKPOINT_NAME = "xgboost_base.ubj"
 
 
 def base_run_directory(output_dir: str | Path, unit_id: str) -> Path:
@@ -114,7 +121,18 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _adapter_state_hash(adapter: TorchClassificationAdapter) -> str:
+def _is_xgboost_adapter(adapter: Any) -> bool:
+    from model_zoo.ML.xgboost_personalization import XGBoostMarginHeadAdapter
+
+    return isinstance(adapter, XGBoostMarginHeadAdapter)
+
+
+def _adapter_state_hash(adapter: Any) -> str:
+    if _is_xgboost_adapter(adapter):
+        return stable_hash({
+            "global_model_hash": adapter.global_model_hash,
+            "head_hash": adapter.head_hash,
+        })
     digest = hashlib.sha256()
     for name, tensor in sorted(adapter.model.state_dict().items()):
         digest.update(name.encode("utf-8"))
@@ -122,8 +140,10 @@ def _adapter_state_hash(adapter: TorchClassificationAdapter) -> str:
     return digest.hexdigest()
 
 
-def adapter_normalization_hash(adapter: TorchClassificationAdapter) -> str:
+def adapter_normalization_hash(adapter: Any) -> str:
     """Hash the fitted outer-train transform without reading evaluation data."""
+    if _is_xgboost_adapter(adapter):
+        return stable_hash(XGBOOST_NORMALIZATION_CONTRACT)
     state = adapter.get_feature_preprocessing_state()
     if state is not None:
         return stable_hash(state)
@@ -133,6 +153,38 @@ def adapter_normalization_hash(adapter: TorchClassificationAdapter) -> str:
     if adapter.feature_scale_ is not None:
         payload["feature_scale"] = np.asarray(adapter.feature_scale_).tolist()
     return stable_hash(payload)
+
+
+def save_xgboost_checkpoint(model: Any, path: str | Path) -> Path:
+    """Atomically save a fitted classifier through XGBoost's native UBJ format."""
+    from xgboost import XGBClassifier
+
+    if not isinstance(model, XGBClassifier):
+        raise TypeError("Expected a fitted XGBClassifier base model")
+    model.get_booster()
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(f"{destination.stem}.tmp.ubj")
+    model.save_model(temporary)
+    temporary.replace(destination)
+    return destination
+
+
+def load_xgboost_checkpoint(
+    path: str | Path,
+    *,
+    params: Mapping[str, Any],
+) -> Any:
+    """Load a native XGBoost classifier checkpoint without fitting."""
+    from xgboost import XGBClassifier
+
+    checkpoint = Path(path)
+    if not checkpoint.is_file():
+        raise FileNotFoundError(f"XGBoost base checkpoint is missing: {checkpoint}")
+    model = XGBClassifier(**dict(params))
+    model.load_model(checkpoint)
+    model.get_booster()
+    return model
 
 
 def temporal_adaptation_split(
@@ -327,7 +379,7 @@ def aggregate_execution_results(
                 })
 
     positive = completed.loc[
-        completed["mode"].isin(["head_only", "full_model"])
+        completed["mode"].isin(["head_only", "full_model", "margin_head"])
         & completed["budget_fraction"].gt(0)
     ].copy()
     common_keys = ["outer_fold", "subject_id"]
@@ -406,12 +458,16 @@ def _scope_cost_table(matrix: pd.DataFrame) -> pd.DataFrame:
         zero = int(frame.loc[frame["mode"].eq("zero_shot"), "participant_execution_count"].sum())
         head = int(frame.loc[frame["mode"].eq("head_only"), "participant_execution_count"].sum())
         full = int(frame.loc[frame["mode"].eq("full_model"), "participant_execution_count"].sum())
+        margin = int(frame.loc[
+            frame["mode"].eq("margin_head"), "participant_execution_count"
+        ].sum())
         rows.append({
             "scope": name, "base_trainings": bases,
             "zero_shot_inferences": zero, "head_only_adaptations": head,
             "full_model_adaptations": full,
-            "training_jobs": bases + head + full,
-            "estimated_checkpoint_files": bases + head + full,
+            "margin_head_adaptations": margin,
+            "training_jobs": bases + head + full + margin,
+            "estimated_checkpoint_files": bases + head + full + margin,
         })
     return pd.DataFrame(rows)
 
@@ -432,7 +488,7 @@ class ExecutionBackend(Protocol):
 @dataclass
 class BaseRunHandle:
     unit: dict[str, Any]
-    adapter: TorchClassificationAdapter
+    adapter: Any
     split: Any
     checkpoint_path: Path
     checkpoint_sha256: str
@@ -470,10 +526,17 @@ class BenchmarkPersonalizationBackend:
         params = deepcopy(model_config.get("params", {}))
         params.update(deepcopy(model_config.get(f"{task_type}_params", {})))
         execution = self.config.get("execution", {})
-        params.update(deepcopy(execution.get("base_training", {})))
         configured_model_params = execution.get("model_params", {}).get(
             model, {}
         )
+        if model == "xgboost":
+            params.update(deepcopy(configured_model_params.get("common", {})))
+            params.update(deepcopy(configured_model_params.get(task_type, {})))
+            params.setdefault(
+                "random_state", int(self.config["experiment"]["random_state"])
+            )
+            return params
+        params.update(deepcopy(execution.get("base_training", {})))
         params.update(deepcopy(configured_model_params.get("common", {})))
         params.update(deepcopy(configured_model_params.get(task_type, {})))
         params.setdefault("batch_size", 128)
@@ -531,7 +594,7 @@ class BenchmarkPersonalizationBackend:
             "task_type": base["task_type"],
             "params": model_params,
         }
-        if family == "features":
+        if family == "features" and str(base["model"]) != "xgboost":
             model["feature_scaling"] = deepcopy(
                 self.config.get("execution", {}).get(
                     "feature_scaling",
@@ -587,10 +650,30 @@ class BenchmarkPersonalizationBackend:
         completed = BenchmarkRunner.find_completed_run(
             config, search_directories=[config["output_dir"]]
         )
-        resumed = completed is not None
-        if completed is None:
-            runner.run()
-            completed = runner.completed_run()
+        model_name = str(base["model"])
+        model_config = config["models"]["personalization_base"]
+        params = deepcopy(model_config["params"])
+        base_dir = Path(config["output_dir"])
+        manifest_path = base_dir / "base_checkpoint_manifest.json"
+        if model_name == "xgboost":
+            checkpoint = base_dir / XGBOOST_CHECKPOINT_NAME
+            resumed = completed is not None and checkpoint.is_file()
+            if resumed:
+                estimator = load_xgboost_checkpoint(checkpoint, params=params)
+            else:
+                if checkpoint.exists() and completed is None:
+                    raise RuntimeError(
+                        "Orphan XGBoost checkpoint has no exact completed benchmark"
+                    )
+                runner.run()
+                completed = runner.completed_run()
+                estimator = runner.last_fitted_model
+                save_xgboost_checkpoint(estimator, checkpoint)
+        else:
+            resumed = completed is not None
+            if completed is None:
+                runner.run()
+                completed = runner.completed_run()
         dataset_name = next(iter(config["datasets"]))
         data = runner.load_dataset(dataset_name)
         task_name = str(base["target_id"])
@@ -602,26 +685,33 @@ class BenchmarkPersonalizationBackend:
             precomputed_fold_column=config["evaluation"]["precomputed_fold_column"],
         )
         split = folds[f"fold_{int(base['outer_fold']):02d}"]
-        fold_result = self._result_fold(
-            completed, dataset_name, task_name, int(base["outer_fold"])
-        )
-        checkpoint = Path(fold_result["artifacts"]["model"])
-        model_config = config["models"]["personalization_base"]
-        params = deepcopy(model_config["params"])
-        if split.metadata.get("observation_unit") == "raw_eeg_window":
-            rates = np.asarray(split.row_metadata_train["sfreq_target"], dtype=float)
-            params.setdefault("sampling_rate", float(np.median(rates)))
-            params.setdefault("channel_names", list(split.feature_names or []))
-        adapter = build_model(
-            model_name=str(base["model"]),
-            task_type=str(base["task_type"]),
-            input_shape=tuple(split.X_train.shape[1:]),
-            num_outputs=3 if base["task_type"] == "classification" else 1,
-            params=params,
-        )
-        if not isinstance(adapter, TorchClassificationAdapter):
-            raise TypeError("Personalization requires TorchClassificationAdapter")
-        adapter.load(checkpoint)
+        if model_name == "xgboost":
+            from model_zoo.ML.xgboost_personalization import (
+                XGBoostMarginHeadAdapter,
+            )
+
+            adapter = XGBoostMarginHeadAdapter(estimator, device="cpu")
+        else:
+            fold_result = self._result_fold(
+                completed, dataset_name, task_name, int(base["outer_fold"])
+            )
+            checkpoint = Path(fold_result["artifacts"]["model"])
+            if split.metadata.get("observation_unit") == "raw_eeg_window":
+                rates = np.asarray(
+                    split.row_metadata_train["sfreq_target"], dtype=float
+                )
+                params.setdefault("sampling_rate", float(np.median(rates)))
+                params.setdefault("channel_names", list(split.feature_names or []))
+            adapter = build_model(
+                model_name=model_name,
+                task_type=str(base["task_type"]),
+                input_shape=tuple(split.X_train.shape[1:]),
+                num_outputs=3 if base["task_type"] == "classification" else 1,
+                params=params,
+            )
+            if not isinstance(adapter, TorchClassificationAdapter):
+                raise TypeError("Personalization requires TorchClassificationAdapter")
+            adapter.load(checkpoint)
         target_hash = str(split.metadata.get("target_transform_hash", ""))
         if base["task_type"] == "classification" and target_hash != str(
             base.get("q3_transform_hash", "")
@@ -648,9 +738,13 @@ class BenchmarkPersonalizationBackend:
             "checkpoint_sha256": _file_sha256(checkpoint),
         }
         identity["checkpoint_identity_hash"] = stable_hash(identity)
-        manifest_path = Path(config["output_dir"]) / "base_checkpoint_manifest.json"
         if manifest_path.is_file():
             previous = json.loads(manifest_path.read_text(encoding="utf-8"))
+            validate_base_checkpoint_manifest(
+                previous,
+                protocol_hash=self.planner.protocol_hash,
+                unit=base,
+            )
             if previous != identity:
                 raise RuntimeError("Incompatible base checkpoint identity manifest")
         else:
@@ -730,11 +824,15 @@ class BenchmarkPersonalizationBackend:
         )
         cached_zero = self._zero_shot_cache.get(zero_key)
         if cached_zero is None:
-            zero_pred = adapter.predict(X_evaluation)
-            zero_proba = (
-                adapter.predict_proba(X_evaluation)
-                if condition["task_type"] == "classification" else None
-            )
+            if _is_xgboost_adapter(adapter):
+                zero_proba = adapter.zero_shot_predict_proba(X_evaluation)
+                zero_pred = adapter.classes_[np.argmax(zero_proba, axis=1)]
+            else:
+                zero_pred = adapter.predict(X_evaluation)
+                zero_proba = (
+                    adapter.predict_proba(X_evaluation)
+                    if condition["task_type"] == "classification" else None
+                )
             zero_metrics = MetricsCalculator.calculate_all_metrics(
                 y_evaluation, zero_pred, zero_proba,
                 task_type=str(condition["task_type"]),
@@ -784,29 +882,53 @@ class BenchmarkPersonalizationBackend:
             X_validation, y_validation = self._subset_by_ids(
                 base_handle.split, validation_ids
             )
-            adapted = adapter.clone()
+            mode = str(condition["mode"])
+            adapted = (
+                adapter.clone_for_participant()
+                if mode == "margin_head"
+                else adapter.clone()
+            )
             if _adapter_state_hash(adapted) != base_state_before:
                 raise RuntimeError("Cloned participant model differs from base")
             started = time.perf_counter()
-            adapted.fine_tune(
-                X_train, y_train, mode=str(condition["mode"]),
-                X_validation=X_validation, y_validation=y_validation,
-                max_epochs=(
-                    int(self.max_epochs)
-                    if self.max_epochs is not None
-                    else int(self.config["calibration"]["max_epochs"])
-                ),
-                learning_rate=float(self.config["calibration"][
-                    "head_only_learning_rate"
-                    if condition["mode"] == "head_only"
-                    else "full_model_learning_rate"
-                ]),
-                weight_decay=float(self.config["calibration"]["weight_decay"]),
-                early_stopping_patience=int(
-                    self.config["calibration"]["early_stopping_patience"]
-                ),
-                random_state=int(condition["seed"]),
+            effective_max_epochs = (
+                int(self.max_epochs)
+                if self.max_epochs is not None
+                else int(self.config["calibration"]["max_epochs"])
             )
+            if mode == "margin_head":
+                adapted.fit_head(
+                    X_train,
+                    y_train,
+                    X_validation,
+                    y_validation,
+                    learning_rate=float(
+                        self.config["calibration"]["margin_head_learning_rate"]
+                    ),
+                    weight_decay=float(
+                        self.config["calibration"]["weight_decay"]
+                    ),
+                    max_epochs=effective_max_epochs,
+                    patience=int(
+                        self.config["calibration"]["early_stopping_patience"]
+                    ),
+                )
+            else:
+                adapted.fine_tune(
+                    X_train, y_train, mode=mode,
+                    X_validation=X_validation, y_validation=y_validation,
+                    max_epochs=effective_max_epochs,
+                    learning_rate=float(self.config["calibration"][
+                        "head_only_learning_rate"
+                        if mode == "head_only"
+                        else "full_model_learning_rate"
+                    ]),
+                    weight_decay=float(self.config["calibration"]["weight_decay"]),
+                    early_stopping_patience=int(
+                        self.config["calibration"]["early_stopping_patience"]
+                    ),
+                    random_state=int(condition["seed"]),
+                )
             training_time = time.perf_counter() - started
             if adapter_normalization_hash(adapted) != normalization_before:
                 raise RuntimeError("Fine-tuning changed frozen outer-train normalization")
@@ -814,16 +936,24 @@ class BenchmarkPersonalizationBackend:
             if bool(self.config.get("execution", {}).get(
                 "save_adapted_checkpoints", True
             )):
-                adapted_checkpoint = run_dir / "model.pt"
-                adapted.save(adapted_checkpoint)
+                if mode == "margin_head":
+                    adapted_checkpoint = run_dir / "margin_head.pt"
+                    adapted.save_head(adapted_checkpoint)
+                else:
+                    adapted_checkpoint = run_dir / "model.pt"
+                    adapted.save(adapted_checkpoint)
                 pd.DataFrame(adapted.training_log_).to_csv(
                     run_dir / "training_log.csv", index=False
                 )
-        adapted_pred = adapted.predict(X_evaluation)
-        adapted_proba = (
-            adapted.predict_proba(X_evaluation)
-            if condition["task_type"] == "classification" else None
-        )
+        if condition["mode"] == "zero_shot" and _is_xgboost_adapter(adapter):
+            adapted_pred = np.asarray(zero_pred).copy()
+            adapted_proba = np.asarray(zero_proba).copy()
+        else:
+            adapted_pred = adapted.predict(X_evaluation)
+            adapted_proba = (
+                adapted.predict_proba(X_evaluation)
+                if condition["task_type"] == "classification" else None
+            )
         adapted_metrics = MetricsCalculator.calculate_all_metrics(
             y_evaluation, adapted_pred, adapted_proba,
             task_type=str(condition["task_type"]),
@@ -998,6 +1128,9 @@ class PersonalizationCalibrationExecutor:
         zero = int(planned.loc[planned["mode"].eq("zero_shot"), "participant_execution_count"].sum())
         head = int(planned.loc[planned["mode"].eq("head_only"), "participant_execution_count"].sum())
         full = int(planned.loc[planned["mode"].eq("full_model"), "participant_execution_count"].sum())
+        margin = int(planned.loc[
+            planned["mode"].eq("margin_head"), "participant_execution_count"
+        ].sum())
         insufficient = int(matrix.loc[
             matrix["status"].ne("unsupported"), "participants_insufficient"
         ].sum())
@@ -1012,8 +1145,9 @@ class PersonalizationCalibrationExecutor:
             "zero_shot_shared_eval_inferences": zero,
             "head_only_adaptation_trainings": head,
             "full_model_adaptation_trainings": full,
-            "adaptation_trainings": head + full,
-            "participant_executions": zero + head + full,
+            "margin_head_adaptation_trainings": margin,
+            "adaptation_trainings": head + full + margin,
+            "participant_executions": zero + head + full + margin,
             "unsupported_conditions": int(matrix["status"].eq("unsupported").sum()),
             "insufficient_data_participant_conditions": insufficient,
             "formal_criteria": {
@@ -1023,7 +1157,7 @@ class PersonalizationCalibrationExecutor:
                 "aggregation": self.planner.config["analysis"]["aggregation"],
                 "threshold_role": self.planner.config["analysis"]["threshold_role"],
             },
-            "estimated_checkpoint_files": len(bases) + head + full,
+            "estimated_checkpoint_files": len(bases) + head + full + margin,
             "runtime_estimate": None,
             "runtime_estimate_reason": (
                 "No exact compatible completed base/adaptation runtime artifacts; "

@@ -22,6 +22,9 @@ from bench.experiments.personalization_calibration import (
 )
 
 CONFIG_PATH = Path("experiments/calibration/personalization_calibration_v1.json")
+XGBOOST_CONFIG_PATH = Path(
+    "experiments/calibration/personalization_calibration_xgboost_v1.json"
+)
 
 
 def config() -> dict:
@@ -251,3 +254,37 @@ def test_plan_only_artifacts_and_resume(tmp_path: Path, monkeypatch) -> None:
     with pytest.raises(FileExistsError):
         planner.plan()
     assert planner.plan(resume=True)["protocol_hash"] == manifest["protocol_hash"]
+
+
+def test_xgboost_plan_has_only_supported_classification_conditions(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    planner = PersonalizationCalibrationPlanner(
+        XGBOOST_CONFIG_PATH,
+        data_root=tmp_path,
+        output_dir=tmp_path / "xgboost-plan",
+    )
+    monkeypatch.setattr(
+        planner,
+        "_load_target_frame",
+        lambda pm: target_frame(pm),
+    )
+
+    tables = planner.materialize_tables()
+    matrix = tables["run_matrix"]
+    manifest = planner.plan(write_artifacts=False)
+
+    assert planner.protocol_hash == (
+        "404182d1072cb610792a9aae25e708676f9de3438d5976ef48ba6741091d7d7a"
+    )
+    assert manifest["plan_hash"] == (
+        "0af12d5b539f0d8eddb653c6c23e4146d3d09f85db3d4b97801d7cea575ca9e4"
+    )
+    assert len(matrix) == manifest["run_conditions"] == 175
+    assert matrix["status"].ne("unsupported").all()
+    assert set(matrix["task_type"]) == {"classification"}
+    assert set(matrix["pm"]) == set(config()["pms"])
+    assert set(matrix["outer_fold"]) == {1, 2, 3, 4, 5}
+    assert matrix.loc[matrix["mode"].eq("zero_shot")].shape[0] == 35
+    assert matrix.loc[matrix["mode"].eq("margin_head")].shape[0] == 140

@@ -36,7 +36,7 @@ from .user_calibration import (
 
 SCHEMA_VERSION = "personalization-calibration-v1"
 SUPPORTED_TASK_TYPES = ("classification", "regression")
-SUPPORTED_MODES = ("zero_shot", "head_only", "full_model")
+SUPPORTED_MODES = ("zero_shot", "head_only", "full_model", "margin_head")
 CLASSIFICATION_METRICS = (
     "accuracy",
     "balanced_accuracy",
@@ -115,7 +115,7 @@ class PlanFilters:
                 f"calibration_mode must be one of {list(SUPPORTED_MODES)}"
             )
         if self.model is not None and self.model not in {
-            "torch_shallow_convnet", "torch_eegnet", "torch_mlp"
+            "torch_shallow_convnet", "torch_eegnet", "torch_mlp", "xgboost"
         }:
             raise ValueError(f"Unknown personalization model {self.model!r}")
         if self.budget_fraction is not None and float(self.budget_fraction) not in {
@@ -152,9 +152,20 @@ def validate_protocol_config(config: Mapping[str, Any]) -> dict[str, Any]:
             "['classification', 'regression'] in registry order"
         )
     modes = tuple(resolved.get("calibration", {}).get("modes", ()))
-    if modes != SUPPORTED_MODES:
+    canonical_modes = tuple(
+        mode for mode in SUPPORTED_MODES if mode in set(modes)
+    )
+    if (
+        not modes
+        or len(set(modes)) != len(modes)
+        or any(mode not in SUPPORTED_MODES for mode in modes)
+        or modes != canonical_modes
+        or modes[0] != "zero_shot"
+    ):
         raise ValueError(
-            "calibration.modes must be zero_shot, head_only, full_model"
+            "calibration.modes must be a unique ordered subset of "
+            "zero_shot, head_only, full_model, margin_head and must "
+            "start with zero_shot"
         )
     budgets = tuple(
         float(value)
@@ -217,49 +228,104 @@ def validate_protocol_config(config: Mapping[str, Any]) -> dict[str, Any]:
 def build_model_compatibility(
     models: Sequence[Mapping[str, Any]],
 ) -> pd.DataFrame:
-    """Probe the current factory and shared adapter instead of a stale list."""
+    """Probe supported personalization modes for each model/task pair."""
     rows: list[dict[str, Any]] = []
+
     for model_config in models:
         model_name = str(model_config["model_id"])
         family = str(model_config["input_family"])
         input_shape = (1, 14, 2560) if family == "raw" else (448,)
+
         for task_type in SUPPORTED_TASK_TYPES:
-            num_outputs = 3 if task_type == "classification" else 1
             supported = False
             reason = ""
             head_only = False
             full_model = False
+            margin_head = False
             adapter_name = ""
+
             try:
-                adapter = build_model(
-                    model_name=model_name,
-                    task_type=task_type,
-                    input_shape=input_shape,
-                    num_outputs=num_outputs,
-                    params={
-                        "device": "cpu",
-                        "batch_size": 2,
-                        "max_epochs": 1,
-                        "early_stopping_patience": 1,
-                        "random_state": 42,
-                        "num_workers": 0,
-                    },
-                )
-                adapter_name = type(adapter).__name__
-                if not isinstance(adapter, TorchClassificationAdapter):
-                    reason = "factory result does not use TorchClassificationAdapter"
+                if model_name == "xgboost":
+                    if family != "features":
+                        reason = (
+                            "xgboost personalization requires feature input"
+                        )
+                    elif task_type != "classification":
+                        reason = (
+                            "xgboost margin_head personalization is "
+                            "classification-only"
+                        )
+                    else:
+                        estimator = build_model(
+                            model_name="xgboost",
+                            task_type="classification",
+                            input_shape=None,
+                            num_outputs=3,
+                            params={
+                                "n_estimators": 1,
+                                "max_depth": 1,
+                                "learning_rate": 0.1,
+                                "objective": "multi:softprob",
+                                "num_class": 3,
+                                "random_state": 42,
+                                "n_jobs": 1,
+                            },
+                        )
+                        adapter_name = type(estimator).__name__
+                        supported = True
+                        margin_head = True
+
                 else:
-                    supported = True
-                    full_model = callable(getattr(adapter, "fine_tune", None))
-                    prefixes = getattr(
-                        adapter.model, "output_head_parameter_prefixes", None
+                    num_outputs = (
+                        3 if task_type == "classification" else 1
                     )
-                    head_only = callable(prefixes) and bool(tuple(prefixes()))
-                    if not full_model:
-                        supported = False
-                        reason = "shared adapter fine_tune() is unavailable"
-            except Exception as exc:  # factory error is part of compatibility output
+                    adapter = build_model(
+                        model_name=model_name,
+                        task_type=task_type,
+                        input_shape=input_shape,
+                        num_outputs=num_outputs,
+                        params={
+                            "device": "cpu",
+                            "batch_size": 2,
+                            "max_epochs": 1,
+                            "early_stopping_patience": 1,
+                            "random_state": 42,
+                            "num_workers": 0,
+                        },
+                    )
+                    adapter_name = type(adapter).__name__
+
+                    if not isinstance(
+                        adapter, TorchClassificationAdapter
+                    ):
+                        reason = (
+                            "factory result does not use "
+                            "TorchClassificationAdapter"
+                        )
+                    else:
+                        supported = True
+                        full_model = callable(
+                            getattr(adapter, "fine_tune", None)
+                        )
+                        prefixes = getattr(
+                            adapter.model,
+                            "output_head_parameter_prefixes",
+                            None,
+                        )
+                        head_only = (
+                            callable(prefixes)
+                            and bool(tuple(prefixes()))
+                        )
+
+                        if not full_model:
+                            supported = False
+                            reason = (
+                                "shared adapter fine_tune() is unavailable"
+                            )
+
+            except Exception as exc:
                 reason = f"{type(exc).__name__}: {exc}"
+
             rows.append(
                 {
                     "model": model_name,
@@ -267,14 +333,23 @@ def build_model_compatibility(
                     "task_type": task_type,
                     "factory_supported": supported,
                     "zero_shot_supported": supported,
-                    "head_only_supported": supported and head_only,
-                    "full_model_supported": supported and full_model,
+                    "head_only_supported": (
+                        supported and head_only
+                    ),
+                    "full_model_supported": (
+                        supported and full_model
+                    ),
+                    "margin_head_supported": (
+                        supported and margin_head
+                    ),
                     "adapter": adapter_name,
                     "reason": reason,
                 }
             )
+
     return pd.DataFrame(rows).sort_values(
-        ["model", "task_type"], kind="mergesort"
+        ["model", "task_type"],
+        kind="mergesort",
     ).reset_index(drop=True)
 
 

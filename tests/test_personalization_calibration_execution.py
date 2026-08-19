@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
 import pytest
 import cli
+from xgboost import XGBClassifier
 from bench.core.artifact_paths import PORTABLE_PATH_LIMIT, absolute_path_length
 
 from bench.experiments.personalization_calibration import (
@@ -29,15 +31,24 @@ from bench.experiments.personalization_calibration_execution import (
     execution_scope_directory,
     participant_execution_identity,
     participant_run_directory,
+    load_xgboost_checkpoint,
+    save_xgboost_checkpoint,
     temporal_adaptation_split,
     validate_base_checkpoint_manifest,
     validate_participant_resume_result,
 )
 from bench.experiments.personalization_calibration import stable_hash
+from model_zoo.ML.xgboost_personalization import (
+    XGBoostMarginHeadAdapter,
+    xgboost_state_sha256,
+)
 from model_zoo.factory import build_model
 
 
 CONFIG = Path("experiments/calibration/personalization_calibration_v1.json")
+XGBOOST_CONFIG = Path(
+    "experiments/calibration/personalization_calibration_xgboost_v1.json"
+)
 
 
 def test_personalization_direct_artifact_paths_are_portable(
@@ -561,6 +572,253 @@ def test_dry_execution_does_not_train(tmp_path: Path, monkeypatch) -> None:
         "aggregation": "participant_macro",
         "threshold_role": "report_only_not_for_selection",
     }
+
+
+def test_xgboost_params_exclude_torch_training_and_scaling(tmp_path: Path) -> None:
+    planner = PersonalizationCalibrationPlanner(
+        XGBOOST_CONFIG,
+        data_root=tmp_path,
+        output_dir=tmp_path / "xgboost",
+    )
+    backend = BenchmarkPersonalizationBackend(planner, plan_hash="plan")
+
+    params = backend._model_params("xgboost", "classification")
+    config = backend._base_config({
+        "pm": "focus",
+        "task_type": "classification",
+        "target_id": "pm_focus_q3_fold_local",
+        "model": "xgboost",
+        "input_family": "features",
+        "outer_fold": 1,
+        "seed": 42,
+    })
+
+    assert params == {
+        "n_estimators": 200,
+        "n_jobs": 4,
+        "random_state": 42,
+    }
+    assert set(params).isdisjoint({
+        "max_epochs", "weight_decay", "validation_size",
+        "early_stopping_patience", "device", "num_workers",
+        "standardize", "batch_size",
+    })
+    dataset = config["datasets"]["emotiv_cognitive"]
+    model = config["models"]["personalization_base"]
+    assert dataset["feature_set"] == "pow_plus_eeg"
+    assert "feature_scaling" not in model
+
+
+def test_margin_head_is_aggregated_and_counted_by_dry_execution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    common = {
+        "pm": "focus", "task_type": "classification",
+        "target_id": "pm_focus_q3_fold_local", "model": "xgboost",
+        "input_family": "features", "outer_fold": 1, "seed": 42,
+        "q3_transform_hash": "q3", "participants_total": 2,
+        "participants_sufficient": 2, "participants_insufficient": 0,
+        "participant_execution_count": 2, "status": "planned", "reason": "",
+    }
+    matrix = pd.DataFrame([
+        {**common, "mode": "zero_shot", "budget_fraction": 0.0,
+         "condition_id": "zero"},
+        {**common, "mode": "margin_head", "budget_fraction": 0.2,
+         "condition_id": "margin"},
+    ])
+    participants = pd.DataFrame([
+        {
+            "pm": "focus", "outer_fold": 1, "subject_id": subject,
+            "budget_fraction": budget, "status": "planned",
+            "calibration_sample_hash": f"cal-{subject}-{budget}",
+            "evaluation_sample_hash": f"eval-{subject}",
+            "q3_transform_hash": "q3",
+        }
+        for subject in ("A", "B") for budget in (0.0, 0.2)
+    ])
+    eligibility = build_eligibility_table(matrix, participants)
+    result_rows = []
+    for subject in ("A", "B"):
+        for mode, budget, gain in (
+            ("zero_shot", 0.0, 0.0), ("margin_head", 0.2, 0.1)
+        ):
+            row = {
+                "pm": "focus", "task_type": "classification",
+                "model": "xgboost", "mode": mode,
+                "budget_fraction": budget, "outer_fold": 1,
+                "subject_id": subject, "status": "completed",
+            }
+            for metric in (
+                "accuracy", "balanced_accuracy", "macro_f1", "weighted_f1"
+            ):
+                row[f"zero_shot_{metric}"] = 0.4
+                row[f"adapted_{metric}"] = 0.4 + gain
+                row[f"delta_{metric}"] = gain
+            result_rows.append(row)
+
+    _, curve = aggregate_execution_results(pd.DataFrame(result_rows), eligibility)
+    assert set(curve["mode"]) == {"margin_head"}
+    assert curve["mean_delta_available_participant"].eq(0.1).all()
+
+    planner = PersonalizationCalibrationPlanner(
+        XGBOOST_CONFIG,
+        data_root=tmp_path,
+        output_dir=tmp_path / "dry-xgboost",
+    )
+    monkeypatch.setattr(planner, "materialize_tables", lambda **_: {
+        "run_matrix": matrix, "participants": participants,
+        "compatibility": pd.DataFrame(), "transforms": {}, "cohorts": {},
+        "filters": PlanFilters(),
+    })
+    report = PersonalizationCalibrationExecutor(planner).dry_execution(
+        write_artifacts=False
+    )
+    assert report["zero_shot_shared_eval_inferences"] == 2
+    assert report["margin_head_adaptation_trainings"] == 2
+    assert report["head_only_adaptation_trainings"] == 0
+    assert report["full_model_adaptation_trainings"] == 0
+    assert report["adaptation_trainings"] == 2
+    assert report["participant_executions"] == 4
+    assert report["estimated_checkpoint_files"] == 3
+
+
+def test_xgboost_synthetic_participant_execution_and_resume(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rng = np.random.default_rng(42)
+    X_global = rng.normal(size=(180, 12)).astype(np.float32)
+    y_global = np.tile(np.arange(3), 60).astype(np.int64)
+    global_model = XGBClassifier(
+        n_estimators=5,
+        max_depth=2,
+        random_state=42,
+        n_jobs=1,
+    ).fit(X_global, y_global)
+    base_booster_hash = xgboost_state_sha256(global_model)
+    adapter = XGBoostMarginHeadAdapter(global_model)
+
+    n_samples = 40
+    sample_ids = np.asarray([f"participant-{index:03d}" for index in range(n_samples)])
+    X_participant = rng.normal(size=(n_samples, 12)).astype(np.float32)
+    y_participant = np.tile(np.arange(3), 14)[:n_samples].astype(np.int64)
+    frame = pd.DataFrame({
+        "sample_id": sample_ids,
+        "source": "synthetic",
+        "subject_id": "participant-1",
+        "record_id": "record-1",
+        "record_group_id": "record-group-1",
+        "t_start": np.arange(n_samples, dtype=float) * 10.0,
+        "t_end": (np.arange(n_samples, dtype=float) + 1.0) * 10.0,
+        "absolute_t_start": np.arange(n_samples, dtype=float) * 10.0,
+        "outer_fold": 1,
+        "target_value": np.linspace(0.0, 1.0, n_samples),
+    })
+    checkpoint = tmp_path / "xgboost_base.ubj"
+    save_xgboost_checkpoint(global_model, checkpoint)
+    loaded = load_xgboost_checkpoint(
+        checkpoint,
+        params={"n_estimators": 5, "max_depth": 2, "random_state": 42,
+                "n_jobs": 1},
+    )
+    assert xgboost_state_sha256(loaded) == base_booster_hash
+
+    planner = PersonalizationCalibrationPlanner(
+        XGBOOST_CONFIG,
+        data_root=tmp_path,
+        output_dir=tmp_path / "execution",
+    )
+    monkeypatch.setattr(planner, "_load_target_frame", lambda pm: frame.copy())
+    backend = BenchmarkPersonalizationBackend(
+        planner,
+        plan_hash=(
+            "0af12d5b539f0d8eddb653c6c23e4146d3d09f85db3d4b97801d7cea575ca9e4"
+        ),
+        max_epochs=2,
+    )
+    normalization_hash = adapter_normalization_hash(adapter)
+    handle = BaseRunHandle(
+        unit={},
+        adapter=adapter,
+        split=SimpleNamespace(
+            sample_id_test=sample_ids,
+            X_test=X_participant,
+            y_test=y_participant,
+        ),
+        checkpoint_path=checkpoint,
+        checkpoint_sha256="base-checkpoint",
+        checkpoint_identity_hash="base-identity",
+        normalization_hash=normalization_hash,
+        target_transform_hash="q3-outer-train",
+        resumed=False,
+    )
+    condition_common = {
+        "pm": "focus", "task_type": "classification", "model": "xgboost",
+        "outer_fold": 1, "seed": 42,
+    }
+    conditions = {
+        "zero": {
+            **condition_common, "condition_id": "zero-condition",
+            "mode": "zero_shot", "budget_fraction": 0.0,
+        },
+        "margin": {
+            **condition_common, "condition_id": "margin-condition",
+            "mode": "margin_head", "budget_fraction": 0.2,
+        },
+    }
+    participant_common = {
+        "subject_id": "participant-1",
+        "evaluation_sample_hash": "fixed-evaluation",
+        "q3_transform_hash": "q3-outer-train",
+    }
+    participants = {
+        "zero": {
+            **participant_common, "calibration_sample_hash": "empty-calibration",
+        },
+        "margin": {
+            **participant_common, "calibration_sample_hash": "prefix-20-percent",
+        },
+    }
+
+    zero = backend.execute_participant(
+        handle, conditions["zero"], participants["zero"], resume=False
+    )
+    margin = backend.execute_participant(
+        handle, conditions["margin"], participants["margin"], resume=False
+    )
+
+    assert xgboost_state_sha256(global_model) == base_booster_hash
+    assert zero["adapted_checkpoint"] is None
+    assert zero["epochs_trained"] == 0
+    assert margin["epochs_trained"] in {1, 2}
+    assert np.isfinite(margin["best_validation_loss"])
+    head_checkpoint = Path(margin["adapted_checkpoint"])
+    assert head_checkpoint.name == "margin_head.pt"
+    assert head_checkpoint.is_file()
+    assert (head_checkpoint.parent / "training_log.csv").is_file()
+    zero_predictions = pd.read_parquet(
+        participant_run_directory(planner.output_dir, zero["execution_id"])
+        / "predictions.parquet"
+    )
+    margin_predictions = pd.read_parquet(
+        participant_run_directory(planner.output_dir, margin["execution_id"])
+        / "predictions.parquet"
+    )
+    assert zero_predictions["sample_id"].tolist() == margin_predictions[
+        "sample_id"
+    ].tolist()
+    assert zero["q3_transform_hash"] == margin["q3_transform_hash"] == (
+        "q3-outer-train"
+    )
+
+    result_path = head_checkpoint.parent / "result.json"
+    original_result = result_path.read_bytes()
+    resumed = backend.execute_participant(
+        handle, conditions["margin"], participants["margin"], resume=True
+    )
+    assert resumed["participant_resumed"] is True
+    assert result_path.read_bytes() == original_result
 
 
 def test_dry_execution_model_uses_full_plan_hash_and_scoped_artifacts(
