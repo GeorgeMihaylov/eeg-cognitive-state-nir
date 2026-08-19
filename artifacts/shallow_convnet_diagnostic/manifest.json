@@ -1,0 +1,22 @@
+{
+  "version": "shallow-convnet-diagnostic-v1",
+  "model_type": "torch_shallow_convnet",
+  "input_mode": "raw_eeg",
+  "input_layout": "batch,1,channels,time",
+  "sample_rate": 256,
+  "channels": ["AF3", "F7", "F3", "FC5", "T7", "P7", "O1", "O2", "P8", "T8", "FC6", "F4", "F8", "AF4"],
+  "window_seconds": 10,
+  "n_times": 2560,
+  "class_names": ["low", "medium", "high"],
+  "preprocessing": {
+    "bandpass_low_hz": 1,
+    "bandpass_high_hz": 45,
+    "notch_hz": 50,
+    "faster": true,
+    "filter_mode": "causal"
+  },
+  "bootstrap": true,
+  "diagnostic_only": true,
+  "model_file": "model.pt",
+  "description": "Untrained ShallowConvNet for smoke tests only. Predictions have no scientific meaning."
+}
