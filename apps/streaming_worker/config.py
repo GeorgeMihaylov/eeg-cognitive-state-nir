@@ -55,8 +55,9 @@ class FeatureConfig:
 
 @dataclass(frozen=True)
 class ModelConfig:
-    artifact_dir: str = "artifacts/pm_model_v1"
+    artifact_dir: str = "artifacts/shallow_convnet_diagnostic"
     allow_bootstrap: bool = True
+    device: str = "auto"
 
 
 @dataclass(frozen=True)
@@ -114,6 +115,8 @@ class WorkerConfig:
             raise ValueError("minimum_finite_ratio must be in (0, 1]")
         if self.features.profile not in {"lightweight", "full"}:
             raise ValueError("features.profile must be 'lightweight' or 'full'")
+        if not self.model.device:
+            raise ValueError("model.device must not be empty")
         if not 0 < self.postprocessing.probability_ema_alpha <= 1:
             raise ValueError("probability_ema_alpha must be in (0, 1]")
         if self.postprocessing.confirmation_windows < 1:

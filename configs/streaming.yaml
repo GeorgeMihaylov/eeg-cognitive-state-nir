@@ -39,11 +39,13 @@ quality:
   minimum_finite_ratio: 1.0
 
 features:
+  # Used only when the selected model manifest has input_mode: features.
   profile: lightweight
 
 model:
-  artifact_dir: artifacts/pm_model_v1
+  artifact_dir: artifacts/shallow_convnet_diagnostic
   allow_bootstrap: true
+  device: auto
 
 postprocessing:
   probability_ema_alpha: 0.3

@@ -17,7 +17,11 @@ from cogstate.streaming.inference import InferenceService, PredictionResult
 from cogstate.streaming.processor import StreamProcessor
 
 from .config import WorkerConfig
-from .model_bundle import BundlePMModel, load_model_bundle
+from .model_bundle import (
+    FeatureModelBundle,
+    ShallowConvNetBundle,
+    load_model_bundle,
+)
 from .postprocessing import PredictionFilter
 from .quality import EEGQualityGate, QualityReport
 from .sinks import CompositeSink, ConsoleSink, JsonlSink, LatestStateSink
@@ -56,6 +60,21 @@ class _WindowArtifactPreprocessor:
     def __call__(self, window: Window) -> np.ndarray:
         signal = window.data["eeg"]
         return apply_faster(signal, self.config) if self.enabled else signal.copy()
+
+
+class _RawEEGWindowInput:
+    """Convert ``[time, channels]`` windows to model input ``[1, channels, time]``."""
+
+    def __init__(self, n_channels: int, n_times: int) -> None:
+        self.expected_shape = (n_times, n_channels)
+
+    def __call__(self, clean_signal: np.ndarray, window: Window) -> np.ndarray:
+        values = np.asarray(clean_signal, dtype=np.float32)
+        if values.shape != self.expected_shape:
+            raise ValueError(
+                f"Expected cleaned EEG window {self.expected_shape}, got {values.shape}"
+            )
+        return np.ascontiguousarray(values.T[None, :, :])
 
 
 class StreamingRuntime:
@@ -99,25 +118,40 @@ class StreamingRuntime:
             n_channels=len(channels),
             config=config.quality,
         )
-        self._features = (
+        feature_pipeline = (
             build_lightweight_pipeline(sample_rate)
             if config.features.profile == "lightweight"
             else build_full_feature_pipeline(sample_rate)
         )
-        feature_count = len(self._features.feature_names(len(channels)))
-        self.model: BundlePMModel = load_model_bundle(
+        feature_count = len(feature_pipeline.feature_names(len(channels)))
+        preprocessing_contract = {
+            "bandpass_low_hz": config.preprocessing.bandpass_low_hz,
+            "bandpass_high_hz": config.preprocessing.bandpass_high_hz,
+            "notch_hz": config.preprocessing.notch_hz,
+            "faster": config.preprocessing.faster,
+            "filter_mode": "causal",
+        }
+        self.model: ShallowConvNetBundle | FeatureModelBundle = load_model_bundle(
             config.model.artifact_dir,
-            n_features=feature_count,
             sample_rate=sample_rate,
             channels=channels,
             window_seconds=config.windowing.window_seconds,
-            feature_profile=config.features.profile,
+            preprocessing=preprocessing_contract,
             allow_bootstrap=config.model.allow_bootstrap,
+            device=config.model.device,
+            n_features=feature_count,
+            feature_profile=config.features.profile,
         )
+        if self.model.manifest.input_mode == "raw_eeg":
+            model_input = _RawEEGWindowInput(
+                len(channels), self.model.manifest.n_times
+            )
+        else:
+            model_input = feature_pipeline
         self._processor = StreamProcessor(
             buffer=self._buffer,
             preprocessor=_WindowArtifactPreprocessor(config.preprocessing.faster),
-            feature_extractor=self._features,
+            feature_extractor=model_input,
             inference_service=InferenceService(self.model),
         )
         self._prediction_filter = PredictionFilter(config.postprocessing)
