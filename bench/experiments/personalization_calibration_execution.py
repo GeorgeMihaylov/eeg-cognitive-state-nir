@@ -67,6 +67,45 @@ def participant_run_directory(output_dir: str | Path, execution_id: str) -> Path
     )
 
 
+def participant_execution_identity(
+    *,
+    protocol_hash: str,
+    plan_hash: str,
+    base_checkpoint_identity_hash: str,
+    condition: Mapping[str, Any],
+    participant: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Build the immutable identity shared by full and scoped execution."""
+
+    return {
+        "protocol_hash": str(protocol_hash),
+        "plan_hash": str(plan_hash),
+        "base_checkpoint_identity_hash": str(base_checkpoint_identity_hash),
+        "condition_id": condition["condition_id"],
+        "subject_id": str(participant["subject_id"]),
+        "budget_fraction": float(condition["budget_fraction"]),
+        "mode": condition["mode"],
+        "calibration_sample_hash": participant["calibration_sample_hash"],
+        "evaluation_sample_hash": participant["evaluation_sample_hash"],
+        "q3_transform_hash": participant["q3_transform_hash"],
+    }
+
+
+def execution_scope_directory(
+    output_dir: str | Path,
+    execution_model: str | None,
+) -> Path:
+    """Keep unfiltered artifacts stable and isolate operational model scopes."""
+
+    if execution_model is None:
+        return Path(output_dir)
+    return portable_artifact_directory(
+        output_dir,
+        ("execution_scopes", f"model_{execution_model}"),
+        compact_namespace="_x",
+    )
+
+
 def _file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as source:
@@ -644,18 +683,13 @@ class BenchmarkPersonalizationBackend:
         *,
         resume: bool,
     ) -> dict[str, Any]:
-        identity = {
-            "protocol_hash": self.planner.protocol_hash,
-            "plan_hash": self.plan_hash,
-            "base_checkpoint_identity_hash": base_handle.checkpoint_identity_hash,
-            "condition_id": condition["condition_id"],
-            "subject_id": str(participant["subject_id"]),
-            "budget_fraction": float(condition["budget_fraction"]),
-            "mode": condition["mode"],
-            "calibration_sample_hash": participant["calibration_sample_hash"],
-            "evaluation_sample_hash": participant["evaluation_sample_hash"],
-            "q3_transform_hash": participant["q3_transform_hash"],
-        }
+        identity = participant_execution_identity(
+            protocol_hash=self.planner.protocol_hash,
+            plan_hash=self.plan_hash,
+            base_checkpoint_identity_hash=base_handle.checkpoint_identity_hash,
+            condition=condition,
+            participant=participant,
+        )
         execution_id = stable_hash(identity)[:24]
         run_dir = participant_run_directory(self.planner.output_dir, execution_id)
         result_path = run_dir / "result.json"
@@ -856,6 +890,45 @@ class PersonalizationCalibrationExecutor:
     def _tables(self, filters: PlanFilters) -> dict[str, Any]:
         return self.planner.materialize_tables(filters=filters)
 
+    def _select_execution_matrix(
+        self,
+        matrix: pd.DataFrame,
+        execution_model: str | None,
+    ) -> pd.DataFrame:
+        if execution_model is None:
+            return matrix
+        configured = {
+            str(item["model_id"]) for item in self.planner.config["models"]
+        }
+        if execution_model not in configured:
+            raise ValueError(
+                f"Unknown execution model {execution_model!r}; "
+                f"expected one of {sorted(configured)}"
+            )
+        selected = matrix.loc[matrix["model"].eq(execution_model)].copy()
+        if selected.empty:
+            raise ValueError(
+                f"Execution model {execution_model!r} has no rows in the "
+                "scientific plan selected by PlanFilters"
+            )
+        return selected
+
+    def _plan_hash(self, filters: PlanFilters) -> str:
+        return stable_hash({
+            "protocol_hash": self.planner.protocol_hash,
+            "filters": {
+                "outer_fold": filters.outer_fold,
+                "pm": filters.pm,
+                "task_type": filters.task_type,
+                "calibration_mode": filters.calibration_mode,
+                **({"model": filters.model} if filters.model is not None else {}),
+                **(
+                    {"budget_fraction": filters.budget_fraction}
+                    if filters.budget_fraction is not None else {}
+                ),
+            },
+        })
+
     def _write_cohort_manifests(self, cohorts: Mapping[str, pd.DataFrame]) -> None:
         root = self.planner.output_dir / "cohorts"
         root.mkdir(parents=True, exist_ok=True)
@@ -878,10 +951,17 @@ class PersonalizationCalibrationExecutor:
             else:
                 selected.to_parquet(path, index=False)
 
-    def dry_execution(self, *, filters: PlanFilters | None = None) -> dict[str, Any]:
+    def dry_execution(
+        self,
+        *,
+        filters: PlanFilters | None = None,
+        execution_model: str | None = None,
+        write_artifacts: bool = True,
+    ) -> dict[str, Any]:
         filters = filters or PlanFilters()
         tables = self._tables(filters)
-        matrix = tables["run_matrix"]
+        full_matrix = tables["run_matrix"]
+        matrix = self._select_execution_matrix(full_matrix, execution_model)
         planned = matrix.loc[matrix["status"].eq("planned")]
         bases = {
             base_unit_id(row): base_unit_key(row)
@@ -950,21 +1030,33 @@ class PersonalizationCalibrationExecutor:
                 "no benchmark was launched for timing."
             ),
         }
-        self.planner.output_dir.mkdir(parents=True, exist_ok=True)
-        pd.DataFrame(base_rows).to_csv(
-            self.planner.output_dir / "base_execution_units.csv", index=False
-        )
-        eligibility.to_csv(self.planner.output_dir / "eligibility.csv", index=False)
-        cost.to_csv(self.planner.output_dir / "scope_cost_table.csv", index=False)
-        (self.planner.output_dir / "dry_execution.json").write_text(
-            json.dumps(report, indent=2) + "\n", encoding="utf-8"
-        )
+        if execution_model is not None:
+            report.update({
+                "execution_filter": {"model": execution_model},
+                "plan_hash": self._plan_hash(filters),
+                "full_plan_conditions": int(len(full_matrix)),
+                "selected_execution_conditions": int(len(matrix)),
+            })
+        if write_artifacts:
+            artifact_dir = execution_scope_directory(
+                self.planner.output_dir, execution_model
+            )
+            artifact_dir.mkdir(parents=True, exist_ok=True)
+            pd.DataFrame(base_rows).to_csv(
+                artifact_dir / "base_execution_units.csv", index=False
+            )
+            eligibility.to_csv(artifact_dir / "eligibility.csv", index=False)
+            cost.to_csv(artifact_dir / "scope_cost_table.csv", index=False)
+            (artifact_dir / "dry_execution.json").write_text(
+                json.dumps(report, indent=2) + "\n", encoding="utf-8"
+            )
         return report
 
     def run(
         self,
         *,
         filters: PlanFilters | None = None,
+        execution_model: str | None = None,
         resume: bool = False,
         subject_limit: int | None = None,
         max_epochs: int | None = None,
@@ -975,22 +1067,11 @@ class PersonalizationCalibrationExecutor:
         if subject_limit is not None and subject_limit <= 0:
             raise ValueError("subject_limit must be positive")
         tables = self._tables(filters)
-        matrix = tables["run_matrix"]
+        full_matrix = tables["run_matrix"]
+        matrix = self._select_execution_matrix(full_matrix, execution_model)
         participants = tables["participants"]
         self._write_cohort_manifests(tables["cohorts"])
-        plan_hash = stable_hash({
-            "protocol_hash": self.planner.protocol_hash,
-            "filters": {
-                "outer_fold": filters.outer_fold, "pm": filters.pm,
-                "task_type": filters.task_type,
-                "calibration_mode": filters.calibration_mode,
-                **({"model": filters.model} if filters.model is not None else {}),
-                **(
-                    {"budget_fraction": filters.budget_fraction}
-                    if filters.budget_fraction is not None else {}
-                ),
-            },
-        })
+        plan_hash = self._plan_hash(filters)
         if backend is None:
             backend = BenchmarkPersonalizationBackend(
                 self.planner, plan_hash=plan_hash,
@@ -1063,17 +1144,20 @@ class PersonalizationCalibrationExecutor:
         aggregate, budget_curve = aggregate_execution_results(
             participant_results, eligibility
         )
-        self.planner.output_dir.mkdir(parents=True, exist_ok=True)
+        artifact_dir = execution_scope_directory(
+            self.planner.output_dir, execution_model
+        )
+        artifact_dir.mkdir(parents=True, exist_ok=True)
         participant_results.to_csv(
-            self.planner.output_dir / "participant_results.csv", index=False
+            artifact_dir / "participant_results.csv", index=False
         )
         aggregate.to_csv(
-            self.planner.output_dir / "aggregate_results.csv", index=False
+            artifact_dir / "aggregate_results.csv", index=False
         )
         budget_curve.to_csv(
-            self.planner.output_dir / "budget_curve.csv", index=False
+            artifact_dir / "budget_curve.csv", index=False
         )
-        eligibility.to_csv(self.planner.output_dir / "eligibility.csv", index=False)
+        eligibility.to_csv(artifact_dir / "eligibility.csv", index=False)
         manifest = {
             "schema_version": EXECUTION_SCHEMA_VERSION,
             "result_status": "completed",
@@ -1095,7 +1179,14 @@ class PersonalizationCalibrationExecutor:
             },
             "result_files": list(RESULT_FILES),
         }
-        (self.planner.output_dir / "execution_manifest.json").write_text(
+        if execution_model is not None:
+            manifest.update({
+                "execution_filter": {"model": execution_model},
+                "full_plan_conditions": int(len(full_matrix)),
+                "selected_execution_conditions": int(len(matrix)),
+                "full_plan_execution": False,
+            })
+        (artifact_dir / "execution_manifest.json").write_text(
             json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
         )
         return manifest
@@ -1113,6 +1204,8 @@ __all__ = [
     "base_unit_id",
     "base_unit_key",
     "base_run_directory",
+    "execution_scope_directory",
+    "participant_execution_identity",
     "build_eligibility_table",
     "participant_run_directory",
     "temporal_adaptation_split",

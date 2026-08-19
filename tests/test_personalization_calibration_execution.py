@@ -16,6 +16,8 @@ from bench.experiments.personalization_calibration import (
     PlanFilters,
 )
 from bench.experiments.personalization_calibration_execution import (
+    BaseRunHandle,
+    BenchmarkPersonalizationBackend,
     PersonalizationCalibrationExecutor,
     _adapter_state_hash,
     adapter_normalization_hash,
@@ -24,6 +26,8 @@ from bench.experiments.personalization_calibration_execution import (
     base_unit_id,
     base_unit_key,
     build_eligibility_table,
+    execution_scope_directory,
+    participant_execution_identity,
     participant_run_directory,
     temporal_adaptation_split,
     validate_base_checkpoint_manifest,
@@ -195,13 +199,19 @@ def _matrix_and_participants() -> tuple[pd.DataFrame, pd.DataFrame]:
 class _FakeBackend:
     def __init__(self) -> None:
         self.base_calls = 0
+        self.base_models: list[str] = []
+        self.participant_models: list[str] = []
+        self.condition_ids: list[str] = []
         self.execution_calls: list[tuple[str, str, float, bool]] = []
 
     def ensure_base(self, base, *, resume):
         self.base_calls += 1
+        self.base_models.append(str(base["model"]))
         return {"base": base_unit_id(base), "state": 0}
 
     def execute_participant(self, handle, condition, participant, *, resume):
+        self.participant_models.append(str(condition["model"]))
+        self.condition_ids.append(str(condition["condition_id"]))
         key = (
             str(participant["subject_id"]), str(condition["mode"]),
             float(condition["budget_fraction"]), bool(resume),
@@ -228,6 +238,24 @@ class _FakeBackend:
                 for metric in ("accuracy", "balanced_accuracy", "macro_f1", "weighted_f1")
             },
         }
+
+
+def _multi_model_matrix_and_participants() -> tuple[pd.DataFrame, pd.DataFrame]:
+    matrix, participants = _matrix_and_participants()
+    rows = []
+    for model, family in (
+        ("torch_shallow_convnet", "raw"),
+        ("torch_eegnet", "raw"),
+        ("torch_mlp", "features"),
+    ):
+        for row in matrix.to_dict("records"):
+            rows.append({
+                **row,
+                "model": model,
+                "input_family": family,
+                "condition_id": f"{model}-{row['condition_id']}",
+            })
+    return pd.DataFrame(rows), participants
 
 
 def test_executor_reuses_one_base_for_participants_and_budgets(
@@ -259,6 +287,81 @@ def test_executor_reuses_one_base_for_participants_and_budgets(
     ].nunique().max() == 1
     assert (tmp_path / "out" / "aggregate_results.csv").is_file()
     assert (tmp_path / "out" / "budget_curve.csv").is_file()
+
+
+def test_execution_model_filters_after_full_plan_without_changing_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    planner = PersonalizationCalibrationPlanner(
+        CONFIG, data_root=tmp_path, output_dir=tmp_path / "out"
+    )
+    matrix, participants = _multi_model_matrix_and_participants()
+    monkeypatch.setattr(planner, "materialize_tables", lambda **_: {
+        "run_matrix": matrix, "participants": participants,
+        "compatibility": pd.DataFrame(), "transforms": {}, "cohorts": {},
+        "filters": PlanFilters(),
+    })
+    protocol_hash = planner.protocol_hash
+    full_condition_ids = set(
+        matrix.loc[
+            matrix["model"].eq("torch_shallow_convnet"), "condition_id"
+        ].astype(str)
+    )
+    backend = _FakeBackend()
+
+    manifest = PersonalizationCalibrationExecutor(planner).run(
+        backend=backend,
+        resume=True,
+        execution_model="torch_shallow_convnet",
+    )
+
+    assert planner.protocol_hash == protocol_hash == (
+        "a3723e8f77ec1a9eeef21a2b5a88660d9cd42a717084e6e1aadb12429085d0d4"
+    )
+    assert manifest["plan_hash"] == (
+        "d8c7430e75e692fcf8cf53b7052d48faa2c8f392bb2cd7a049657204d3396412"
+    )
+    assert set(backend.condition_ids) == full_condition_ids
+    assert backend.base_models == ["torch_shallow_convnet"]
+    assert set(backend.participant_models) == {"torch_shallow_convnet"}
+    assert manifest["full_plan_conditions"] == len(matrix)
+    assert manifest["selected_execution_conditions"] == len(full_condition_ids)
+    scope = execution_scope_directory(
+        planner.output_dir, "torch_shallow_convnet"
+    )
+    assert (scope / "participant_results.csv").is_file()
+    assert not (planner.output_dir / "participant_results.csv").exists()
+
+
+def test_unfiltered_execution_keeps_previous_all_model_behavior(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    planner = PersonalizationCalibrationPlanner(
+        CONFIG, data_root=tmp_path, output_dir=tmp_path / "out"
+    )
+    matrix, participants = _multi_model_matrix_and_participants()
+    monkeypatch.setattr(planner, "materialize_tables", lambda **_: {
+        "run_matrix": matrix, "participants": participants,
+        "compatibility": pd.DataFrame(), "transforms": {}, "cohorts": {},
+        "filters": PlanFilters(),
+    })
+    backend = _FakeBackend()
+
+    manifest = PersonalizationCalibrationExecutor(planner).run(
+        backend=backend, resume=True
+    )
+
+    assert set(backend.base_models) == {
+        "torch_shallow_convnet", "torch_eegnet", "torch_mlp"
+    }
+    assert set(backend.participant_models) == set(backend.base_models)
+    assert manifest["plan_hash"] == (
+        "d8c7430e75e692fcf8cf53b7052d48faa2c8f392bb2cd7a049657204d3396412"
+    )
+    assert "execution_filter" not in manifest
+    assert (planner.output_dir / "participant_results.csv").is_file()
 
 
 def test_participant_macro_and_paired_common_cohort() -> None:
@@ -332,6 +435,112 @@ def test_participant_resume_requires_exact_identity_and_checkpoint_hash(
         validate_participant_resume_result(result, {**identity, "subject_id": "x"})
 
 
+def test_execution_scope_reuses_existing_participant_identity_without_rewrite(
+    tmp_path: Path,
+) -> None:
+    planner = PersonalizationCalibrationPlanner(
+        CONFIG, data_root=tmp_path, output_dir=tmp_path / "out"
+    )
+    plan_hash = (
+        "d8c7430e75e692fcf8cf53b7052d48faa2c8f392bb2cd7a049657204d3396412"
+    )
+    condition = _multi_model_matrix_and_participants()[0].loc[
+        lambda frame: frame["model"].eq("torch_shallow_convnet")
+    ].iloc[0].to_dict()
+    participant = _matrix_and_participants()[1].iloc[0].to_dict()
+    handle = BaseRunHandle(
+        unit={}, adapter=None, split=None,
+        checkpoint_path=tmp_path / "model.pt", checkpoint_sha256="checkpoint",
+        checkpoint_identity_hash="base-identity", normalization_hash="normalization",
+        target_transform_hash="q3", resumed=True,
+    )
+    identity = participant_execution_identity(
+        protocol_hash=planner.protocol_hash,
+        plan_hash=plan_hash,
+        base_checkpoint_identity_hash=handle.checkpoint_identity_hash,
+        condition=condition,
+        participant=participant,
+    )
+    execution_id = stable_hash(identity)[:24]
+    result_path = (
+        participant_run_directory(planner.output_dir, execution_id) / "result.json"
+    )
+    result_path.parent.mkdir(parents=True)
+    payload = {
+        **identity,
+        "execution_identity": identity,
+        "execution_id": execution_id,
+        "status": "completed",
+        "adapted_checkpoint": None,
+    }
+    original = json.dumps(payload, indent=2) + "\n"
+    result_path.write_text(original, encoding="utf-8")
+    backend = BenchmarkPersonalizationBackend(planner, plan_hash=plan_hash)
+
+    resumed = backend.execute_participant(
+        handle, condition, participant, resume=True
+    )
+
+    assert resumed["participant_resumed"] is True
+    assert resumed["execution_identity"] == identity
+    assert result_path.read_text(encoding="utf-8") == original
+
+
+def test_interrupted_participant_directory_without_result_is_not_resumed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    planner = PersonalizationCalibrationPlanner(
+        CONFIG, data_root=tmp_path, output_dir=tmp_path / "out"
+    )
+    plan_hash = (
+        "d8c7430e75e692fcf8cf53b7052d48faa2c8f392bb2cd7a049657204d3396412"
+    )
+    condition = _multi_model_matrix_and_participants()[0].loc[
+        lambda frame: frame["model"].eq("torch_shallow_convnet")
+    ].iloc[0].to_dict()
+    participant = _matrix_and_participants()[1].iloc[0].to_dict()
+    handle = BaseRunHandle(
+        unit={}, adapter=None, split=None,
+        checkpoint_path=tmp_path / "model.pt", checkpoint_sha256="checkpoint",
+        checkpoint_identity_hash="base-identity", normalization_hash="normalization",
+        target_transform_hash="q3", resumed=True,
+    )
+    identity = participant_execution_identity(
+        protocol_hash=planner.protocol_hash,
+        plan_hash=plan_hash,
+        base_checkpoint_identity_hash=handle.checkpoint_identity_hash,
+        condition=condition,
+        participant=participant,
+    )
+    run_dir = participant_run_directory(
+        planner.output_dir, stable_hash(identity)[:24]
+    )
+    run_dir.mkdir(parents=True)
+    marker = run_dir / "interrupted.marker"
+    marker.write_text("partial", encoding="utf-8")
+    monkeypatch.setattr(
+        planner,
+        "_load_target_frame",
+        lambda pm: pd.DataFrame({
+            "outer_fold": [1], "subject_id": [participant["subject_id"]],
+        }),
+    )
+    monkeypatch.setattr(
+        "bench.experiments.personalization_calibration_execution._participant_partition",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            RuntimeError("continued interrupted execution")
+        ),
+    )
+    backend = BenchmarkPersonalizationBackend(planner, plan_hash=plan_hash)
+
+    with pytest.raises(RuntimeError, match="continued interrupted execution"):
+        backend.execute_participant(handle, condition, participant, resume=True)
+
+    assert marker.read_text(encoding="utf-8") == "partial"
+    assert not (run_dir / "result.json").exists()
+
+
 def test_dry_execution_does_not_train(tmp_path: Path, monkeypatch) -> None:
     planner = PersonalizationCalibrationPlanner(
         CONFIG, data_root=tmp_path, output_dir=tmp_path / "dry"
@@ -352,6 +561,38 @@ def test_dry_execution_does_not_train(tmp_path: Path, monkeypatch) -> None:
         "aggregation": "participant_macro",
         "threshold_role": "report_only_not_for_selection",
     }
+
+
+def test_dry_execution_model_uses_full_plan_hash_and_scoped_artifacts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    planner = PersonalizationCalibrationPlanner(
+        CONFIG, data_root=tmp_path, output_dir=tmp_path / "dry"
+    )
+    matrix, participants = _multi_model_matrix_and_participants()
+    monkeypatch.setattr(planner, "materialize_tables", lambda **_: {
+        "run_matrix": matrix, "participants": participants,
+        "compatibility": pd.DataFrame(), "transforms": {}, "cohorts": {},
+        "filters": PlanFilters(),
+    })
+
+    report = PersonalizationCalibrationExecutor(planner).dry_execution(
+        execution_model="torch_shallow_convnet"
+    )
+
+    assert report["protocol_hash"] == planner.protocol_hash
+    assert report["plan_hash"] == (
+        "d8c7430e75e692fcf8cf53b7052d48faa2c8f392bb2cd7a049657204d3396412"
+    )
+    assert report["full_plan_conditions"] == len(matrix)
+    assert report["selected_execution_conditions"] == len(matrix) // 3
+    assert report["base_training_units"] == 1
+    scope = execution_scope_directory(
+        planner.output_dir, "torch_shallow_convnet"
+    )
+    assert (scope / "dry_execution.json").is_file()
+    assert not (planner.output_dir / "dry_execution.json").exists()
 
 
 def test_cli_routes_dry_and_run_modes_without_implicit_execution(
@@ -386,9 +627,25 @@ def test_cli_routes_dry_and_run_modes_without_implicit_execution(
         "--subject-limit", "1", "--max-calibration-epochs", "1",
         "--device", "cpu", "--output-dir", str(tmp_path / "run"),
     ])
+    cli.main([
+        "--personalization-calibration", str(CONFIG), "--run", "--resume",
+        "--execution-model", "torch_shallow_convnet",
+        "--output-dir", str(tmp_path / "scoped"),
+    ])
     assert calls[0][0] == "dry"
     assert calls[1][0] == "run"
     assert calls[1][1]["filters"].model == "torch_mlp"
     assert calls[1][1]["filters"].budget_fraction == 0.05
     assert calls[1][1]["device"] == "cpu"
+    assert calls[2][0] == "run"
+    assert calls[2][1]["filters"].model is None
+    assert calls[2][1]["execution_model"] == "torch_shallow_convnet"
     assert '"training_executed": false' in capsys.readouterr().out.lower()
+
+
+def test_cli_rejects_execution_model_during_plan_only() -> None:
+    with pytest.raises(SystemExit):
+        cli.main([
+            "--personalization-calibration", str(CONFIG), "--plan-only",
+            "--execution-model", "torch_shallow_convnet",
+        ])

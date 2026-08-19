@@ -644,6 +644,14 @@ Examples:
         help='Runtime device override for personalization execution',
     )
     parser.add_argument(
+        '--execution-model',
+        type=str,
+        help=(
+            'Execution-only personalization model filter; preserves the full '
+            'scientific plan and all condition identities'
+        ),
+    )
+    parser.add_argument(
         '--automl-study',
         type=str,
         help='Run a nested AutoML study through the canonical benchmark',
@@ -726,6 +734,9 @@ Examples:
     
     args = parser.parse_args(argv)
 
+    if args.execution_model and not args.personalization_calibration:
+        parser.error('--execution-model requires --personalization-calibration')
+
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
@@ -759,6 +770,11 @@ Examples:
             parser.error(
                 '--personalization-calibration requires exactly one of '
                 '--plan-only, --dry-execution, or --run'
+            )
+        if args.execution_model and args.plan_only:
+            parser.error(
+                '--execution-model is execution-only and cannot be used with '
+                '--plan-only'
             )
         from bench.experiments.personalization_calibration import (
             PersonalizationCalibrationPlanner,
@@ -796,11 +812,13 @@ Examples:
             )
         elif args.dry_execution:
             result = PersonalizationCalibrationExecutor(planner).dry_execution(
-                filters=filters
+                filters=filters,
+                execution_model=args.execution_model,
             )
         else:
             result = PersonalizationCalibrationExecutor(planner).run(
                 filters=filters,
+                execution_model=args.execution_model,
                 resume=args.resume,
                 subject_limit=args.subject_limit,
                 max_epochs=(
