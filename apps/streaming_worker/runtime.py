@@ -38,6 +38,9 @@ class StreamingOutput:
     prediction: PredictionResult | None
     stage_latencies_ms: dict[str, float]
     model_version: str
+    model_type: str
+    input_mode: str
+    class_names: tuple[str, ...]
     diagnostic_model: bool
 
     def as_dict(self) -> dict[str, Any]:
@@ -48,6 +51,9 @@ class StreamingOutput:
             "prediction": asdict(self.prediction) if self.prediction else None,
             "stage_latencies_ms": self.stage_latencies_ms,
             "model_version": self.model_version,
+            "model_type": self.model_type,
+            "input_mode": self.input_mode,
+            "class_names": list(self.class_names),
             "diagnostic_model": self.diagnostic_model,
         }
 
@@ -199,6 +205,15 @@ class StreamingRuntime:
                 prediction=None,
                 stage_latencies_ms={},
                 model_version=self.model.version,
+                model_type=self.model.manifest.model_type,
+                input_mode=self.model.manifest.input_mode,
+                class_names=tuple(
+                    getattr(
+                        self.model.manifest,
+                        "class_names",
+                        ("low", "medium", "high"),
+                    )
+                ),
                 diagnostic_model=self.model.manifest.diagnostic_only,
             )
         )
@@ -242,6 +257,15 @@ class StreamingRuntime:
                         prediction=prediction,
                         stage_latencies_ms=processed.stage_latencies_ms,
                         model_version=self.model.version,
+                        model_type=self.model.manifest.model_type,
+                        input_mode=self.model.manifest.input_mode,
+                        class_names=tuple(
+                            getattr(
+                                self.model.manifest,
+                                "class_names",
+                                ("low", "medium", "high"),
+                            )
+                        ),
                         diagnostic_model=self.model.manifest.diagnostic_only,
                     )
                 )

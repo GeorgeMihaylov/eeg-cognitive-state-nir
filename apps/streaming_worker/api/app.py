@@ -14,7 +14,11 @@ from .schemas import (
     RuntimeActionResponse,
     RuntimeStatusResponse,
 )
-from .state import StreamingService
+from .state import (
+    RuntimeAlreadyRunningError,
+    RuntimeStartError,
+    StreamingService,
+)
 
 
 def create_app(
@@ -32,7 +36,12 @@ def create_app(
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         if worker_config.api.autostart_worker:
-            worker_service.start()
+            try:
+                worker_service.start()
+            except RuntimeStartError:
+                # Keep the control plane available and expose the failure via
+                # health/status so data or model mounts can be repaired.
+                pass
         try:
             yield
         finally:
@@ -40,7 +49,7 @@ def create_app(
 
     app = FastAPI(
         title="Cogstate Streaming API",
-        version="1.0.0",
+        version="1.1.0",
         lifespan=lifespan,
     )
     app.state.streaming_service = worker_service
@@ -49,8 +58,10 @@ def create_app(
     def health() -> HealthResponse:
         status = worker_service.status()
         return HealthResponse(
-            status="degraded" if status.last_error else "ok",
+            status="degraded" if status.state == "failed" else "ok",
             worker_running=status.running,
+            runtime_state=status.state,
+            run_id=status.run_id,
             last_error=status.last_error,
         )
 
@@ -62,6 +73,10 @@ def create_app(
     def start_runtime() -> RuntimeActionResponse:
         try:
             changed = worker_service.start()
+        except RuntimeAlreadyRunningError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except RuntimeStartError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
         except Exception as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
         return RuntimeActionResponse(
@@ -79,37 +94,66 @@ def create_app(
 
     @app.get("/v1/predictions/latest", response_model=PredictionEnvelope)
     def latest_prediction() -> PredictionEnvelope:
-        sequence, prediction = worker_service.store.snapshot()
-        if prediction is None:
+        snapshot = worker_service.store.snapshot()
+        if snapshot.prediction is None or snapshot.run_id is None:
             raise HTTPException(status_code=404, detail="No prediction is available")
-        return PredictionEnvelope(sequence=sequence, prediction=prediction)
+        return PredictionEnvelope(
+            run_id=snapshot.run_id,
+            sequence=snapshot.sequence,
+            prediction=snapshot.prediction,
+        )
 
     @app.websocket("/v1/stream")
     async def prediction_stream(websocket: WebSocket) -> None:
         await websocket.accept()
-        sequence, prediction = worker_service.store.snapshot()
+        snapshot = worker_service.store.snapshot()
+        run_id = snapshot.run_id
+        sequence = snapshot.sequence
         try:
-            if prediction is not None:
+            if snapshot.prediction is not None and run_id is not None:
                 await websocket.send_json(
                     PredictionEnvelope(
-                        sequence=sequence, prediction=prediction
+                        run_id=run_id,
+                        sequence=sequence,
+                        prediction=snapshot.prediction,
                     ).model_dump()
                 )
+            if snapshot.terminal is not None:
+                await websocket.send_json(snapshot.terminal)
+                return
             while True:
-                next_sequence, next_prediction = await asyncio.to_thread(
-                    worker_service.store.wait_after, sequence, 1.0
+                next_snapshot = await asyncio.to_thread(
+                    worker_service.store.wait_after, run_id, sequence, 1.0
                 )
-                if next_prediction is None:
+                if next_snapshot.run_id != run_id:
                     await websocket.send_json(
-                        {"type": "heartbeat", "sequence": sequence}
+                        {
+                            "type": "runtime_replaced",
+                            "run_id": run_id,
+                            "sequence": sequence,
+                        }
                     )
-                    continue
-                sequence = next_sequence
-                await websocket.send_json(
-                    PredictionEnvelope(
-                        sequence=sequence, prediction=next_prediction
-                    ).model_dump()
-                )
+                    return
+                if next_snapshot.prediction is not None and run_id is not None:
+                    sequence = next_snapshot.sequence
+                    await websocket.send_json(
+                        PredictionEnvelope(
+                            run_id=run_id,
+                            sequence=sequence,
+                            prediction=next_snapshot.prediction,
+                        ).model_dump()
+                    )
+                if next_snapshot.terminal is not None:
+                    await websocket.send_json(next_snapshot.terminal)
+                    return
+                if next_snapshot.prediction is None:
+                    await websocket.send_json(
+                        {
+                            "type": "heartbeat",
+                            "run_id": run_id,
+                            "sequence": sequence,
+                        }
+                    )
         except (WebSocketDisconnect, RuntimeError):
             return
 
