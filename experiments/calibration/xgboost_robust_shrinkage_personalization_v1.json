@@ -1,0 +1,95 @@
+{
+  "schema_version": "xgboost-robust-shrinkage-personalization-v1",
+  "experiment": {
+    "experiment_id": "seven_pm_xgboost_robust_shrinkage_personalization_v1",
+    "result_status": "confirmatory",
+    "output_dir": "benchmark_results/xgboost_robust_shrinkage_personalization_v1",
+    "random_state": 42
+  },
+  "source": {
+    "personalization_config": "experiments/calibration/personalization_calibration_xgboost_v1.json",
+    "plan_dir": "benchmark_results/_plan_personalization_xgboost_v1",
+    "run_dir": "benchmark_results/personalization_calibration_xgboost_v1",
+    "protocol_hash": "404182d1072cb610792a9aae25e708676f9de3438d5976ef48ba6741091d7d7a",
+    "plan_hash": "0af12d5b539f0d8eddb653c6c23e4146d3d09f85db3d4b97801d7cea575ca9e4"
+  },
+  "scope": {
+    "pms": [
+      "attention",
+      "engagement",
+      "excitement",
+      "stress",
+      "relaxation",
+      "interest",
+      "focus"
+    ],
+    "task_type": "classification",
+    "target_classes": 3,
+    "outer_folds": [1, 2, 3, 4, 5],
+    "calibration_budget_fraction": 0.2
+  },
+  "alignment": {
+    "method": "robust_location_scale",
+    "alpha_candidates": [0.0, 0.1, 0.25, 0.5, 0.75, 1.0],
+    "scale_epsilon": 1e-12,
+    "reference_fit_scope_inner": "inner_train_only",
+    "reference_fit_scope_outer": "outer_train_only",
+    "participant_fit_scope": "chronological_calibration_prefix_only"
+  },
+  "selection": {
+    "strategy": "fixed_outer_groups_as_inner_pseudo_test",
+    "objective": "participant_macro_macro_f1_across_all_seven_pm",
+    "aggregation_order": [
+      "mean_pm_within_participant",
+      "mean_participants_within_inner_fold",
+      "mean_inner_folds"
+    ],
+    "tie_break": [
+      "higher_macro_f1",
+      "higher_balanced_accuracy",
+      "smaller_alpha"
+    ],
+    "numeric_tolerance": 1e-12,
+    "one_alpha_per_outer_fold": true,
+    "participant_specific_alpha_forbidden": true,
+    "pm_specific_alpha_forbidden": true
+  },
+  "model": {
+    "type": "xgboost",
+    "params": {
+      "n_estimators": 200,
+      "n_jobs": 4,
+      "random_state": 42
+    },
+    "inner_checkpoint_cache_key": [
+      "outer_fold",
+      "inner_pseudo_test_fold",
+      "pm"
+    ]
+  },
+  "protocol": {
+    "outer_group_column": "subject_id",
+    "fixed_outer_fold_column": "outer_fold",
+    "inner_pseudo_test_group_source": "fixed_outer_fold_assignments",
+    "q3_inner_fit_scope": "inner_train_only",
+    "q3_outer_fit_scope": "outer_train_only",
+    "calibration_split": "chronological_global_prefix",
+    "fixed_evaluation_reference_budget_fraction": 0.2,
+    "outer_test_locked_until_selection": true,
+    "outer_test_labels_used_for_selection": false,
+    "alignment_fit_uses_labels": false,
+    "evaluation_used_for_fit": false
+  },
+  "metrics": {
+    "primary": "macro_f1",
+    "secondary": "balanced_accuracy",
+    "additional": ["accuracy", "weighted_f1"],
+    "aggregation": "participant_macro"
+  },
+  "execution": {
+    "cache_inner_models": true,
+    "reuse_completed_outer_bases": true,
+    "train_missing_outer_bases": false,
+    "resume_completed_inner_units": true
+  }
+}
