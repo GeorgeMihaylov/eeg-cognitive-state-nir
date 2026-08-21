@@ -10,7 +10,7 @@ from cogstate.model_zoo.factory import build_model
 def raw_manifest(**overrides):
     payload = {
         "version": "shallow-test-v1",
-        "model_type": "torch_shallow_convnet",
+        "model_type": "torch_shallow_convnet_multitask",
         "input_mode": "raw_eeg",
         "input_layout": "batch,1,channels,time",
         "sample_rate": 128,
@@ -18,6 +18,7 @@ def raw_manifest(**overrides):
         "window_seconds": 2,
         "n_times": 256,
         "class_names": ["low", "medium", "high"],
+        "target_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
         "preprocessing": {
             "bandpass_low_hz": 1,
             "bandpass_high_hz": 45,
@@ -57,11 +58,11 @@ def test_raw_eeg_bootstrap_accepts_shallow_convnet_window(tmp_path):
         device="cpu",
     )
 
-    probabilities = bundle.predict_proba(np.zeros((1, 4, 256), dtype=np.float32))
+    probabilities = bundle.predict_pm_proba(np.zeros((1, 4, 256), dtype=np.float32))
 
     assert bundle.manifest.input_mode == "raw_eeg"
-    assert set(probabilities) == {"low", "medium", "high"}
-    assert sum(probabilities.values()) == pytest.approx(1.0)
+    assert len(probabilities) == 7
+    assert all(sum(values.values()) == pytest.approx(1.0) for values in probabilities.values())
 
 
 def test_raw_eeg_bundle_rejects_preprocessing_mismatch(tmp_path):
@@ -85,13 +86,14 @@ def test_raw_eeg_bundle_rejects_preprocessing_mismatch(tmp_path):
 
 def test_saved_shallow_convnet_weights_load_as_raw_bundle(tmp_path):
     estimator = build_model(
-        "torch_shallow_convnet",
+        "torch_shallow_convnet_multitask",
         "classification",
         (1, 4, 256),
         3,
         {
             "sampling_rate": 128,
             "channel_names": ["C1", "C2", "C3", "C4"],
+            "metric_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
             "standardize": False,
             "device": "cpu",
         },
@@ -113,7 +115,7 @@ def test_saved_shallow_convnet_weights_load_as_raw_bundle(tmp_path):
         allow_bootstrap=False,
         device="cpu",
     )
-    probabilities = bundle.predict_proba(np.zeros((1, 4, 256), dtype=np.float32))
+    probabilities = bundle.predict_pm_proba(np.zeros((1, 4, 256), dtype=np.float32))
 
     assert bundle.estimator.model_metadata["sampling_rate"] == 128
     assert bundle.estimator.model_metadata["channel_names"] == [
@@ -122,7 +124,8 @@ def test_saved_shallow_convnet_weights_load_as_raw_bundle(tmp_path):
         "C3",
         "C4",
     ]
-    assert sum(probabilities.values()) == pytest.approx(1.0)
+    assert len(probabilities) == 7
+    assert all(sum(values.values()) == pytest.approx(1.0) for values in probabilities.values())
 
 
 def test_bundle_contract_rejects_wrong_feature_profile(tmp_path):

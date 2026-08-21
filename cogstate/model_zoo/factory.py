@@ -11,6 +11,7 @@ TORCH_MODEL_NAMES = frozenset(
         "torch_bilstm",
         "torch_eegnet",
         "torch_shallow_convnet",
+        "torch_shallow_convnet_multitask",
     }
 )
 SEQUENCE_MODEL_NAMES = frozenset({"torch_lstm", "torch_bilstm"})
@@ -83,6 +84,18 @@ def build_model(
             return cast(
                 ModelLike,
                 build_torch_shallow_convnet(
+                    input_shape=input_shape,
+                    num_outputs=int(num_outputs),
+                    params=params,
+                ),
+            )
+
+        if normalized_name == "torch_shallow_convnet_multitask":
+            from .DL.shallow_convnet import build_torch_shallow_convnet_multitask
+
+            return cast(
+                ModelLike,
+                build_torch_shallow_convnet_multitask(
                     input_shape=input_shape,
                     num_outputs=int(num_outputs),
                     params=params,

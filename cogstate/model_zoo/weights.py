@@ -15,6 +15,7 @@ _ARCHITECTURE_KEYS = {
     "torch_lstm": {"hidden_size", "num_layers", "bidirectional", "dropout", "classifier_hidden"},
     "torch_bilstm": {"hidden_size", "num_layers", "bidirectional", "dropout", "classifier_hidden"},
     "torch_shallow_convnet": {"sampling_rate", "channel_names", "n_filters", "temporal_kernel_samples", "pool_size", "pool_stride", "dropout", "log_minimum"},
+    "torch_shallow_convnet_multitask": {"sampling_rate", "channel_names", "metric_names", "n_filters", "temporal_kernel_samples", "pool_size", "pool_stride", "dropout", "log_minimum"},
 }
 
 

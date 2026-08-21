@@ -99,7 +99,7 @@ def test_replay_to_shallow_convnet_end_to_end(tmp_path):
         json.dumps(
             {
                 "version": "shallow-diagnostic-v1",
-                "model_type": "torch_shallow_convnet",
+                "model_type": "torch_shallow_convnet_multitask",
                 "input_mode": "raw_eeg",
                 "input_layout": "batch,1,channels,time",
                 "sample_rate": sample_rate,
@@ -107,6 +107,7 @@ def test_replay_to_shallow_convnet_end_to_end(tmp_path):
                 "window_seconds": 2,
                 "n_times": 256,
                 "class_names": ["low", "medium", "high"],
+                "target_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
                 "preprocessing": {
                     "bandpass_low_hz": 1,
                     "bandpass_high_hz": 45,
@@ -152,9 +153,7 @@ def test_replay_to_shallow_convnet_end_to_end(tmp_path):
     assert runtime.model.manifest.input_mode == "raw_eeg"
     assert runtime.processed_windows == 2
     assert len(sink.results) == 2
-    assert sink.results[-1].prediction.target_labels is None
-    assert set(sink.results[-1].prediction.probabilities) == {
-        "low",
-        "medium",
-        "high",
+    assert set(sink.results[-1].prediction.target_labels) == {
+        "attention", "engagement", "excitement", "stress",
+        "relaxation", "interest", "focus",
     }
