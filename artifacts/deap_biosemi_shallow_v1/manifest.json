@@ -1,15 +1,16 @@
 {
   "version": "deap-biosemi-shallow-v1",
-  "model_type": "torch_shallow_convnet",
+  "model_type": "torch_shallow_convnet_multitask",
   "input_mode": "raw_eeg",
   "input_layout": "batch,1,channels,time",
   "sample_rate": 512,
   "channels": ["Fp1", "AF3", "F3", "F7", "FC5", "FC1", "C3", "T7", "CP5", "CP1", "P3", "P7", "PO3", "O1", "Oz", "Pz", "Fp2", "AF4", "Fz", "F4", "F8", "FC6", "FC2", "Cz", "C4", "T8", "CP6", "CP2", "P4", "P8", "PO4", "O2"],
   "window_seconds": 10,
   "n_times": 5120,
-  "class_names": ["low", "high"],
+  "class_names": ["low", "medium", "high"],
+  "target_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
   "preprocessing": {"bandpass_low_hz": 1, "bandpass_high_hz": 45, "notch_hz": 50, "faster": true, "filter_mode": "causal"},
   "diagnostic_only": false,
   "model_file": "model.pt",
-  "description": "BioSemi ActiveTwo raw DEAP contract; class semantics must be set by the chosen emotion target."
+  "description": "BioSemi ActiveTwo input contract for seven PM heads; PM labels or a documented target-mapping procedure are required for training."
 }

@@ -1,6 +1,6 @@
 {
   "version": "flight-deck-epoc-x-shallow-v1",
-  "model_type": "torch_shallow_convnet",
+  "model_type": "torch_shallow_convnet_multitask",
   "input_mode": "raw_eeg",
   "input_layout": "batch,1,channels,time",
   "sample_rate": 128,
@@ -8,6 +8,7 @@
   "window_seconds": 10,
   "n_times": 1280,
   "class_names": ["low", "medium", "high"],
+  "target_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
   "preprocessing": {"bandpass_low_hz": 1, "bandpass_high_hz": 45, "notch_hz": 50, "faster": true, "filter_mode": "causal"},
   "diagnostic_only": false,
   "model_file": "model.pt",

@@ -19,7 +19,7 @@ from cogstate.protocol import PM_METRICS
 
 DEFAULT_CLASS_NAMES = ("low", "medium", "high")
 RAW_EEG_INPUT_MODE = "raw_eeg"
-SHALLOW_CONVNET_MODEL_TYPE = "torch_shallow_convnet"
+SHALLOW_CONVNET_MODEL_TYPE = "torch_shallow_convnet_multitask"
 
 
 @dataclass(frozen=True)
@@ -60,6 +60,7 @@ class RawEEGModelManifest:
     window_seconds: float
     n_times: int
     class_names: tuple[str, ...] = DEFAULT_CLASS_NAMES
+    target_names: tuple[str, ...] = PM_METRICS
     input_mode: str = RAW_EEG_INPUT_MODE
     input_layout: str = "batch,1,channels,time"
     diagnostic_only: bool = False
@@ -75,6 +76,7 @@ class RawEEGModelManifest:
         payload["class_names"] = tuple(
             payload.get("class_names", DEFAULT_CLASS_NAMES)
         )
+        payload["target_names"] = tuple(payload.get("target_names", PM_METRICS))
         return cls(**payload)
 
 
@@ -127,14 +129,16 @@ BundlePMModel = FeatureModelBundle
 
 
 class ShallowConvNetBundle:
-    """Expose a restored raw-EEG classifier to ``InferenceService``."""
+    """Expose seven raw-EEG PM classification heads to ``InferenceService``."""
 
     def __init__(self, estimator: Any, *, manifest: RawEEGModelManifest) -> None:
         self.estimator = estimator
         self.manifest = manifest
         self.version = manifest.version
 
-    def predict_proba(self, eeg_window: np.ndarray) -> dict[str, float]:
+    def predict_pm_proba(
+        self, eeg_window: np.ndarray
+    ) -> dict[str, dict[str, float]]:
         values = np.asarray(eeg_window, dtype=np.float32)
         expected = (1, len(self.manifest.channels), self.manifest.n_times)
         if values.shape == expected:
@@ -146,13 +150,20 @@ class ShallowConvNetBundle:
             )
         if not np.isfinite(values).all():
             raise ValueError("EEG model input contains non-finite values")
-        probabilities = np.asarray(self.estimator.predict_proba(values))[0]
-        if len(probabilities) != len(self.manifest.class_names):
-            raise ValueError(
-                "Model output count does not match manifest.class_names: "
-                f"{len(probabilities)} != {len(self.manifest.class_names)}"
+        raw = self.estimator.predict_proba(values)
+        if set(raw) != set(self.manifest.target_names):
+            raise ValueError("Model targets do not match manifest.target_names")
+        result: dict[str, dict[str, float]] = {}
+        for metric in self.manifest.target_names:
+            probabilities = np.asarray(raw[metric])[0]
+            if len(probabilities) != len(self.manifest.class_names):
+                raise ValueError(
+                    f"Model output count for {metric!r} does not match class_names"
+                )
+            result[metric] = dict(
+                zip(self.manifest.class_names, map(float, probabilities))
             )
-        return dict(zip(self.manifest.class_names, map(float, probabilities)))
+        return result
 
 
 def _validate_raw_manifest(
@@ -187,6 +198,10 @@ def _validate_raw_manifest(
         manifest.class_names
     ):
         errors.append("class_names must contain at least two unique names")
+    if manifest.target_names != PM_METRICS:
+        errors.append(
+            "target_names must contain all seven PM metrics in protocol order"
+        )
     for name, expected_value in preprocessing.items():
         if name not in manifest.preprocessing:
             errors.append(f"preprocessing.{name} is missing")
@@ -230,6 +245,12 @@ def _validate_estimator(estimator: Any, manifest: RawEEGModelManifest) -> None:
         raise ValueError("Saved model sampling_rate does not match manifest")
     if tuple(metadata.get("channel_names", ())) != manifest.channels:
         raise ValueError("Saved model channel order does not match manifest")
+    metric_names = tuple(getattr(estimator, "metric_names", ()))
+    if metric_names != manifest.target_names:
+        raise ValueError(
+            f"Saved model targets {metric_names} do not match manifest "
+            f"{manifest.target_names}"
+        )
 
 
 def _bootstrap_raw_bundle(
@@ -244,6 +265,7 @@ def _bootstrap_raw_bundle(
         {
             "sampling_rate": manifest.sample_rate,
             "channel_names": list(manifest.channels),
+            "metric_names": list(manifest.target_names),
             "standardize": False,
             "device": device,
             "random_state": 42,

@@ -11,11 +11,12 @@ WORKDIR /app
 RUN groupadd --gid 10001 cogstate \
     && useradd --uid 10001 --gid cogstate --no-create-home --shell /usr/sbin/nologin cogstate
 
-COPY requirements-preprocessing.txt requirements-streaming-api.txt ./
+COPY requirements-preprocessing.txt requirements-streaming-api.txt requirements-streaming-cli.txt ./
 RUN python -m pip install --upgrade pip \
     && python -m pip install \
         -r requirements-preprocessing.txt \
-        -r requirements-streaming-api.txt
+        -r requirements-streaming-api.txt \
+        -r requirements-streaming-cli.txt
 
 COPY --chown=cogstate:cogstate cogstate ./cogstate
 COPY --chown=cogstate:cogstate apps ./apps
