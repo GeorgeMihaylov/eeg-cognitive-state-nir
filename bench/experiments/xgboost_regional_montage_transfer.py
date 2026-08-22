@@ -1275,7 +1275,7 @@ def aggregate_full(
 
     per_fold = (
         participants.groupby(
-            ["fold", "profile"],
+            ["outer_fold", "profile"],
             as_index=False,
             sort=True,
         )[
