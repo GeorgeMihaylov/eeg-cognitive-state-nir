@@ -1208,6 +1208,314 @@ def run_smoke(
     return aggregate_smoke(config, summaries)
 
 
+
+def aggregate_full(
+    config: Mapping[str, Any],
+    runs: Sequence[tuple[Mapping[str, Any], str]],
+) -> dict[str, Any]:
+    """Aggregate the complete 5-fold execution.
+
+    `execution_profile` is either ``smoke`` for validated fold-1 units
+    reused from the smoke run or ``full`` for normal full-run units.
+    """
+    output = _repo_path(config["output_dir"])
+
+    prediction_frames = []
+    participant_frames = []
+
+    for summary, execution_profile in runs:
+        spec = MontageTrainingSpec(
+            pm=str(summary["pm"]),
+            fold=int(summary["fold"]),
+        )
+        run_dir = _run_dir(config, execution_profile, spec)
+
+        participant_frames.append(
+            pd.read_csv(run_dir / "participant_metrics.csv")
+        )
+
+        for profile in PROFILE_ORDER:
+            prediction_frames.append(
+                pd.read_parquet(
+                    run_dir
+                    / "evaluations"
+                    / profile
+                    / "predictions.parquet"
+                )
+            )
+
+    predictions = pd.concat(prediction_frames, ignore_index=True)
+    participants = pd.concat(participant_frames, ignore_index=True)
+
+    predictions.to_parquet(
+        output / "full_predictions.parquet",
+        index=False,
+    )
+    _write_csv(
+        output / "full_participant_metrics.csv",
+        participants,
+    )
+
+    per_pm = (
+        participants.groupby(
+            ["pm", "profile"],
+            as_index=False,
+            sort=True,
+        )[
+            [
+                "accuracy",
+                "balanced_accuracy",
+                "macro_f1",
+                "weighted_f1",
+            ]
+        ]
+        .mean()
+    )
+    _write_csv(output / "full_per_pm_metrics.csv", per_pm)
+
+    per_fold = (
+        participants.groupby(
+            ["fold", "profile"],
+            as_index=False,
+            sort=True,
+        )[
+            [
+                "accuracy",
+                "balanced_accuracy",
+                "macro_f1",
+                "weighted_f1",
+            ]
+        ]
+        .mean()
+    )
+    _write_csv(output / "full_per_fold_metrics.csv", per_fold)
+
+    # First average PMs within participant, then give every participant
+    # equal weight in the final aggregate.
+    subject_pm_macro = (
+        participants.groupby(
+            ["subject_id", "profile"],
+            as_index=False,
+            sort=True,
+        )[
+            [
+                "accuracy",
+                "balanced_accuracy",
+                "macro_f1",
+                "weighted_f1",
+            ]
+        ]
+        .mean()
+    )
+
+    overall = (
+        subject_pm_macro.groupby(
+            "profile",
+            as_index=False,
+            sort=True,
+        )[
+            [
+                "accuracy",
+                "balanced_accuracy",
+                "macro_f1",
+                "weighted_f1",
+            ]
+        ]
+        .mean()
+    )
+
+    reference = overall.loc[
+        overall["profile"].eq("full_14")
+    ].iloc[0]
+
+    for metric in (
+        "accuracy",
+        "balanced_accuracy",
+        "macro_f1",
+        "weighted_f1",
+    ):
+        overall[f"delta_{metric}_vs_full_14"] = (
+            overall[metric] - float(reference[metric])
+        )
+
+    overall["profile"] = pd.Categorical(
+        overall["profile"],
+        PROFILE_ORDER,
+        ordered=True,
+    )
+    overall = overall.sort_values("profile").reset_index(drop=True)
+    overall["profile"] = overall["profile"].astype(str)
+
+    _write_csv(
+        output / "full_participant_macro_by_profile.csv",
+        overall,
+    )
+
+    all_identity = all(
+        bool(summary["sample_identity_audit"]["exact_identity"])
+        for summary, _ in runs
+    )
+
+    booster_reused = all(
+        len(
+            {
+                payload["booster_hash"]
+                for payload in summary["metrics"].values()
+            }
+        )
+        == 1
+        for summary, _ in runs
+    )
+
+    folds = sorted(
+        {int(summary["fold"]) for summary, _ in runs}
+    )
+    pms = {
+        str(summary["pm"])
+        for summary, _ in runs
+    }
+
+    smoke_units = sum(
+        execution_profile == "smoke"
+        for _, execution_profile in runs
+    )
+    full_units = sum(
+        execution_profile == "full"
+        for _, execution_profile in runs
+    )
+
+    result = {
+        "status": "complete",
+        "result_status": config["result_status"],
+        "completed_xgboost_trainings": len(runs),
+        "completed_prediction_evaluations": (
+            len(runs) * len(PROFILE_ORDER)
+        ),
+        "all_seven_pm": pms == set(PM_METRICS),
+        "outer_folds": folds,
+        "one_fit_per_pm_fold": all(
+            int(summary["model_fit_count"]) == 1
+            for summary, _ in runs
+        ),
+        "same_booster_all_profiles": booster_reused,
+        "exact_profile_sample_identity": all_identity,
+        "reused_smoke_units": int(smoke_units),
+        "full_execution_units": int(full_units),
+        "participant_macro_by_profile": overall.to_dict("records"),
+        "per_pm_metrics_path": _relative_path(
+            output / "full_per_pm_metrics.csv"
+        ),
+        "per_fold_metrics_path": _relative_path(
+            output / "full_per_fold_metrics.csv"
+        ),
+        "predictions_path": _relative_path(
+            output / "full_predictions.parquet"
+        ),
+    }
+
+    if len(runs) != 35:
+        raise RuntimeError(
+            f"Full execution must contain 35 PM×fold units, got {len(runs)}"
+        )
+    if folds != [1, 2, 3, 4, 5]:
+        raise RuntimeError(
+            f"Full execution must contain folds 1-5, got {folds}"
+        )
+    if pms != set(PM_METRICS):
+        raise RuntimeError(
+            "Full execution does not contain all seven PM"
+        )
+
+    _atomic_json(output / "full_summary.json", result)
+    return result
+
+
+def run_full(
+    config_path: str | Path,
+    *,
+    resume: bool = True,
+) -> dict[str, Any]:
+    config = load_config(config_path)
+    plan = write_plan(config_path)
+
+    cache_path = _feature_cache_dir(config) / CACHE_MANIFEST_NAME
+    if (
+        not cache_path.is_file()
+        or json.loads(
+            cache_path.read_text(encoding="utf-8")
+        ).get("status")
+        != "complete"
+    ):
+        build_feature_cache(config_path, resume=resume)
+
+    matrix, index, _, cache_manifest = load_feature_cache(config)
+    universe = load_signal_universe(config)
+
+    specs = list(build_run_matrix(config))
+    if len(specs) != 35:
+        raise RuntimeError(
+            f"Full run must contain 35 XGBoost units, got {len(specs)}"
+        )
+
+    smoke_folds = set(
+        map(int, config["smoke"]["folds"])
+    )
+    smoke_targets = set(config["smoke"]["targets"])
+
+    runs: list[tuple[Mapping[str, Any], str]] = []
+
+    for spec in specs:
+        # Fold-1 smoke is scientifically the same PM×fold specification.
+        # Reuse it only if its specification/protocol/plan/cache identity
+        # still matches the current execution exactly.
+        if (
+            resume
+            and spec.fold in smoke_folds
+            and spec.pm in smoke_targets
+        ):
+            specification_hash = run_specification_hash(
+                spec,
+                protocol_hash=str(plan["protocol_hash"]),
+                cache_identity_hash=str(
+                    cache_manifest["identity"]["cache_identity_hash"]
+                ),
+            )
+
+            smoke_summary_path = (
+                _run_dir(config, "smoke", spec)
+                / "run_summary.json"
+            )
+
+            existing = resumable_summary(
+                smoke_summary_path,
+                specification_hash=specification_hash,
+            )
+
+            if (
+                existing is not None
+                and str(existing.get("protocol_hash"))
+                == str(plan["protocol_hash"])
+                and str(existing.get("plan_hash"))
+                == str(plan["plan_hash"])
+            ):
+                runs.append((existing, "smoke"))
+                continue
+
+        summary = execute_training_unit(
+            config_path,
+            spec,
+            smoke=False,
+            resume=resume,
+            plan=plan,
+            universe=universe,
+            matrix=matrix,
+            index=index,
+            cache_manifest=cache_manifest,
+        )
+        runs.append((summary, "full"))
+
+    return aggregate_full(config, runs)
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -1218,6 +1526,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     actions.add_argument("--plan-only", action="store_true")
     actions.add_argument("--build-cache", action="store_true")
     actions.add_argument("--smoke", action="store_true")
+    actions.add_argument("--run", action="store_true")
     parser.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args(argv)
     if args.plan_only:
@@ -1234,8 +1543,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         }, indent=2, ensure_ascii=False, default=str))
     elif args.build_cache:
         print(json.dumps(build_feature_cache(args.config, resume=args.resume), indent=2))
-    else:
+    elif args.smoke:
         print(json.dumps(run_smoke(args.config, resume=args.resume), indent=2, default=str))
+    else:
+        print(json.dumps(run_full(args.config, resume=args.resume), indent=2, default=str))
     return 0
 
 
