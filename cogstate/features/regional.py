@@ -27,6 +27,11 @@ from .montage import (
 
 
 REGIONAL_FEATURE_SCHEMA_VERSION = "cogstate-regional-features-v1"
+REGIONAL_FEATURE_SCHEMA_VERSION_V2 = "cogstate-regional-features-v2"
+REGIONAL_FEATURE_SCHEMA_VERSIONS = (
+    REGIONAL_FEATURE_SCHEMA_VERSION,
+    REGIONAL_FEATURE_SCHEMA_VERSION_V2,
+)
 REGIONAL_FEATURE_GROUP_ORDER = ("spectral", "statistical", "entropy")
 REGIONAL_AGGREGATIONS = ("median", "iqr")
 
@@ -55,7 +60,10 @@ class RegionalFeatureConfig:
         default_factory=statistical.StatisticalConfig
     )
     entropy_config: entropy.EntropyConfig | None = None
+    schema_version: str = REGIONAL_FEATURE_SCHEMA_VERSION
     aggregations: tuple[str, ...] = REGIONAL_AGGREGATIONS
+    include_region_present: bool = True
+    include_channel_count: bool = True
     missing_fill_value: float = 0.0
     custom_channel_mapping: (
         Mapping[str, str] | Sequence[tuple[str, str]] | None
@@ -67,6 +75,12 @@ class RegionalFeatureConfig:
             (self.include_spectral, self.include_statistical, self.include_entropy)
         ):
             raise ValueError("at least one regional feature group must be enabled")
+        schema_version = str(self.schema_version).strip()
+        if schema_version not in REGIONAL_FEATURE_SCHEMA_VERSIONS:
+            raise ValueError(
+                "schema_version must be one of "
+                f"{REGIONAL_FEATURE_SCHEMA_VERSIONS}"
+            )
         requested = tuple(str(name).strip().lower() for name in self.aggregations)
         unknown = set(requested) - set(REGIONAL_AGGREGATIONS)
         if unknown or not requested or len(set(requested)) != len(requested):
@@ -86,6 +100,7 @@ class RegionalFeatureConfig:
             if float(nested_rate) != rate:
                 raise ValueError(f"{name}.sample_rate must equal sample_rate")
         object.__setattr__(self, "sample_rate", rate)
+        object.__setattr__(self, "schema_version", schema_version)
         object.__setattr__(self, "aggregations", ordered)
         object.__setattr__(self, "missing_fill_value", fill)
         object.__setattr__(self, "spectral_config", spectral_config)
@@ -140,18 +155,16 @@ class RegionalFeaturePipeline:
                         for aggregation in self.config.aggregations
                     )
         for region in CANONICAL_REGIONS:
-            names.extend(
-                (
-                    f"coverage__{region}__present",
-                    f"coverage__{region}__channel_count",
-                )
-            )
+            if self.config.include_region_present:
+                names.append(f"coverage__{region}__present")
+            if self.config.include_channel_count:
+                names.append(f"coverage__{region}__channel_count")
         return names
 
     def feature_specification(self) -> dict[str, Any]:
         """Return a device-independent semantic schema specification."""
         payload = {
-            "schema_version": REGIONAL_FEATURE_SCHEMA_VERSION,
+            "schema_version": self.config.schema_version,
             "input_layout": "samples,channels",
             "sample_rate": float(self.config.sample_rate),
             "canonical_regions": list(CANONICAL_REGIONS),
@@ -166,7 +179,14 @@ class RegionalFeaturePipeline:
             "aggregation_policy": list(self.config.aggregations),
             "missing_policy": {
                 "fill_value": float(self.config.missing_fill_value),
-                "coverage_features": ["present", "channel_count"],
+                "coverage_features": [
+                    name
+                    for name, included in (
+                        ("present", self.config.include_region_present),
+                        ("channel_count", self.config.include_channel_count),
+                    )
+                    if included
+                ],
             },
             "connectivity": {
                 "included": False,
@@ -219,21 +239,47 @@ class RegionalFeaturePipeline:
         )
         ordered_indices = [int(row["input_index"]) for row in ordered_rows]
         ordered_signal = signal[:, ordered_indices]
-        region_indices = {region: [] for region in CANONICAL_REGIONS}
-        for canonical_index, row in enumerate(ordered_rows):
-            region_indices[str(row["region"])].append(canonical_index)
+        features = self._extract_ordered_channel_features(ordered_signal)
+        return self._aggregate_channel_features(features, ordered_rows)
 
-        output: list[float] = []
-        for _, enabled, extractor, name_builder, group_config in self._group_definitions():
+    def _extract_ordered_channel_features(
+        self, ordered_signal: np.ndarray
+    ) -> dict[str, dict[str, np.ndarray]]:
+        result: dict[str, dict[str, np.ndarray]] = {}
+        for group, enabled, extractor, name_builder, group_config in self._group_definitions():
             if not enabled:
                 continue
             features = extractor(ordered_signal, group_config)
             expected_names = name_builder(group_config)
             if tuple(features) != tuple(expected_names):
                 raise RuntimeError("extractor feature order differs from its schema")
+            normalized: dict[str, np.ndarray] = {}
             for base_name in expected_names:
                 channel_values = np.asarray(features[base_name], dtype=float).reshape(-1)
                 if len(channel_values) != ordered_signal.shape[1]:
+                    raise RuntimeError("extractor did not return one value per channel")
+                normalized[base_name] = channel_values
+            result[group] = normalized
+        return result
+
+    def _aggregate_channel_features(
+        self,
+        features_by_group: Mapping[str, Mapping[str, np.ndarray]],
+        ordered_rows: Sequence[Mapping[str, Any]],
+    ) -> np.ndarray:
+        region_indices = {region: [] for region in CANONICAL_REGIONS}
+        for canonical_index, row in enumerate(ordered_rows):
+            region_indices[str(row["region"])].append(canonical_index)
+
+        output: list[float] = []
+        for group, enabled, _, name_builder, group_config in self._group_definitions():
+            if not enabled:
+                continue
+            features = features_by_group[group]
+            expected_names = name_builder(group_config)
+            for base_name in expected_names:
+                channel_values = np.asarray(features[base_name], dtype=float).reshape(-1)
+                if len(channel_values) != len(ordered_rows):
                     raise RuntimeError("extractor did not return one value per channel")
                 for region in CANONICAL_REGIONS:
                     indices = region_indices[region]
@@ -250,13 +296,83 @@ class RegionalFeaturePipeline:
                     )
         for region in CANONICAL_REGIONS:
             count = len(region_indices[region])
-            output.extend((float(count > 0), float(count)))
+            if self.config.include_region_present:
+                output.append(float(count > 0))
+            if self.config.include_channel_count:
+                output.append(float(count))
 
         result = np.ascontiguousarray(output, dtype=np.float64)
         if len(result) != len(self.feature_names()):
             raise RuntimeError("regional feature vector width differs from schema")
         if not np.isfinite(result).all():
             raise RuntimeError("regional feature pipeline produced NaN or Inf")
+        return result
+
+    def transform_profiles(
+        self,
+        window: np.ndarray,
+        *,
+        channel_names: Sequence[str],
+        profiles: Mapping[str, Sequence[str]],
+    ) -> dict[str, np.ndarray]:
+        """Transform nested montage subsets with one channel-feature extraction.
+
+        Every requested profile must be a subset of ``channel_names``. Extractors
+        run once on the canonicalized source montage; profile-specific work is
+        limited to deterministic regional aggregation.
+        """
+        signal = validate_window(window)
+        source_manifest = self.montage_manifest(channel_names)
+        if len(source_manifest["channels"]) != signal.shape[1]:
+            raise ValueError(
+                "channel_names length must match the EEG window channel dimension"
+            )
+        source_rows = sorted(
+            source_manifest["channels"], key=lambda row: str(row["normalized_name"])
+        )
+        source_indices = [int(row["input_index"]) for row in source_rows]
+        ordered_signal = signal[:, source_indices]
+        source_features = self._extract_ordered_channel_features(ordered_signal)
+        source_position = {
+            str(row["normalized_name"]): index for index, row in enumerate(source_rows)
+        }
+
+        result: dict[str, np.ndarray] = {}
+        for raw_profile_name, profile_channels in profiles.items():
+            profile_name = str(raw_profile_name).strip()
+            if not profile_name or profile_name in result:
+                raise ValueError("profile names must be non-empty and unique")
+            profile_manifest = self.montage_manifest(profile_channels)
+            profile_rows = sorted(
+                profile_manifest["channels"],
+                key=lambda row: str(row["normalized_name"]),
+            )
+            missing = [
+                str(row["channel_name"])
+                for row in profile_rows
+                if str(row["normalized_name"]) not in source_position
+            ]
+            if missing:
+                raise ValueError(
+                    f"profile {profile_name!r} contains channels outside source montage: "
+                    f"{missing}"
+                )
+            selected_positions = np.asarray(
+                [source_position[str(row["normalized_name"])] for row in profile_rows],
+                dtype=int,
+            )
+            selected_features = {
+                group: {
+                    base_name: np.asarray(values)[selected_positions]
+                    for base_name, values in group_features.items()
+                }
+                for group, group_features in source_features.items()
+            }
+            result[profile_name] = self._aggregate_channel_features(
+                selected_features, profile_rows
+            )
+        if not result:
+            raise ValueError("profiles must be a non-empty mapping")
         return result
 
     def transform_batch(

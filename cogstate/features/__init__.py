@@ -27,6 +27,7 @@ from .pipeline import (
 )
 from .regional import (
     REGIONAL_FEATURE_SCHEMA_VERSION,
+    REGIONAL_FEATURE_SCHEMA_VERSION_V2,
     RegionalFeatureConfig,
     RegionalFeaturePipeline,
 )
@@ -47,6 +48,7 @@ __all__ = [
     "MONTAGE_SCHEMA_VERSION",
     "PowerSpectrum",
     "REGIONAL_FEATURE_SCHEMA_VERSION",
+    "REGIONAL_FEATURE_SCHEMA_VERSION_V2",
     "RegionalFeatureConfig",
     "RegionalFeaturePipeline",
     "SelectionConfig",

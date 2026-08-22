@@ -1,0 +1,63 @@
+{
+  "schema_version": "xgboost-regional-montage-transfer-v2",
+  "experiment_id": "seven_pm_xgboost_regional_montage_transfer_v2",
+  "result_status": "confirmatory",
+  "output_dir": "benchmark_results/xgboost_regional_montage_transfer_v2",
+  "dataset": {
+    "raw_window_index": "data/interim/raw_eeg_window_index_w10_raw_v3.parquet",
+    "target_table": "data/processed/windowed_eeg_pm_dataset_w10.parquet",
+    "logical_recording_map": "data/interim/logical_recording_map.parquet",
+    "reference_fold_manifest": "benchmark_results/pm_all_targets_feature_baseline_v1/preregistration/fold_manifest.json",
+    "raw_preprocessing": {
+      "resample_hz": 256,
+      "bandpass": {"enabled": false, "low_hz": 1.0, "high_hz": 45.0},
+      "notch": {"enabled": false, "frequency_hz": 50.0, "quality_factor": 30.0},
+      "rereference": {"mode": "none"},
+      "artifact_rejection": {"enabled": false, "max_abs_amplitude": null, "max_flat_fraction": null}
+    },
+    "expected_counts": {
+      "signal_windows": 30958,
+      "attention": 29569,
+      "engagement": 30958,
+      "excitement": 30958,
+      "stress": 30958,
+      "relaxation": 30958,
+      "interest": 30958,
+      "focus": 30958
+    }
+  },
+  "profiles": {
+    "full_14": ["AF3", "F7", "F3", "FC5", "T7", "P7", "O1", "O2", "P8", "T8", "FC6", "F4", "F8", "AF4"],
+    "reduced_12": ["AF3", "F3", "FC5", "T7", "P7", "O1", "O2", "P8", "T8", "FC6", "F4", "AF4"],
+    "regional_10": ["F3", "FC5", "T7", "P7", "O1", "O2", "P8", "T8", "FC6", "F4"],
+    "coverage_8": ["F3", "T7", "P7", "O1", "O2", "P8", "T8", "F4"],
+    "coverage_6": ["F3", "T7", "P7", "P8", "T8", "F4"]
+  },
+  "regional_features": {
+    "schema_version": "cogstate-regional-features-v2",
+    "sample_rate_hz": 256,
+    "feature_width": 364,
+    "dtype": "float32",
+    "connectivity_included": false,
+    "aggregations": ["median"],
+    "include_region_present": true,
+    "include_channel_count": false
+  },
+  "targets": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
+  "model": {
+    "name": "xgboost",
+    "params": {"n_estimators": 200, "n_jobs": 4, "random_state": 42}
+  },
+  "evaluation": {
+    "protocol": "fixed_group_kfold_subject",
+    "folds": [1, 2, 3, 4, 5],
+    "group_column": "subject_id",
+    "record_group_column": "record_group_id",
+    "target_transform": "FoldLocalQuantileTargetTransform",
+    "q": 3,
+    "q3_fit_scope": "outer_train_only",
+    "participant_aggregation": "equal_weight_macro"
+  },
+  "cache": {"chunk_size": 64, "workers": 4},
+  "smoke": {"folds": [1], "targets": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"]}
+}

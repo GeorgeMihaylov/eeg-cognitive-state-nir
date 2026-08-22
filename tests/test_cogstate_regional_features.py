@@ -11,6 +11,7 @@ from cogstate.features import (
     FeaturePipelineConfig,
     RegionalFeatureConfig,
     RegionalFeaturePipeline,
+    REGIONAL_FEATURE_SCHEMA_VERSION_V2,
 )
 
 
@@ -26,6 +27,16 @@ STANDARD_64 = (
 
 def _pipeline(**kwargs: object) -> RegionalFeaturePipeline:
     return RegionalFeaturePipeline(RegionalFeatureConfig(sample_rate=256.0, **kwargs))
+
+
+def _pipeline_v2(**kwargs: object) -> RegionalFeaturePipeline:
+    return _pipeline(
+        schema_version=REGIONAL_FEATURE_SCHEMA_VERSION_V2,
+        aggregations=("median",),
+        include_region_present=True,
+        include_channel_count=False,
+        **kwargs,
+    )
 
 
 def _montages() -> tuple[tuple[str, ...], ...]:
@@ -54,6 +65,98 @@ def test_fixed_schema_across_8_14_32_64_channel_montages() -> None:
         assert np.isfinite(vector).all()
         montage_hashes.append(pipeline.montage_hash(channels))
     assert len(set(montage_hashes)) == 4
+
+
+def test_v1_default_schema_remains_byte_semantically_compatible() -> None:
+    pipeline = _pipeline()
+    assert len(pipeline.feature_names()) == 728
+    assert pipeline.schema_hash() == (
+        "10d3beb20bfa2829374916fbbcd1878b851ccccd962ce6fbcf93a343592a2575"
+    )
+    assert pipeline.feature_names()[:3] == [
+        "spectral__power_delta__frontal_left__median",
+        "spectral__power_delta__frontal_left__iqr",
+        "spectral__power_delta__frontal_midline__median",
+    ]
+    assert pipeline.feature_names()[-3:] == [
+        "coverage__occipital_midline__channel_count",
+        "coverage__occipital_right__present",
+        "coverage__occipital_right__channel_count",
+    ]
+
+
+def test_v2_fixed_schema_across_8_14_32_64_channel_montages() -> None:
+    pipeline = _pipeline_v2()
+    rng = np.random.default_rng(2026)
+    names = pipeline.feature_names()
+    schema_hash = pipeline.schema_hash()
+    montage_hashes: list[str] = []
+    for channels in _montages():
+        vector = pipeline.transform_window(
+            rng.normal(size=(256, len(channels))), channel_names=channels
+        )
+        assert vector.shape == (364,)
+        assert np.isfinite(vector).all()
+        assert pipeline.feature_names() == names
+        assert pipeline.schema_hash() == schema_hash
+        montage_hashes.append(pipeline.montage_hash(channels))
+    assert schema_hash == (
+        "5db7a691b3f505bb16ca89680ed4080972b7fd9ab07e8b03cdaf6a17cbe7f96e"
+    )
+    assert len(set(montage_hashes)) == 4
+    assert not any("__iqr" in name for name in names)
+    assert not any("channel_count" in name for name in names)
+    assert sum(name.startswith("coverage__") for name in names) == 14
+
+
+def test_v2_channel_permutation_invariance_and_determinism() -> None:
+    pipeline = _pipeline_v2()
+    rng = np.random.default_rng(207)
+    window = rng.normal(size=(384, len(EMOTIV_14_CHANNELS)))
+    permutation = rng.permutation(len(EMOTIV_14_CHANNELS))
+    expected = pipeline.transform_window(
+        window, channel_names=EMOTIV_14_CHANNELS
+    )
+    actual = pipeline.transform_window(
+        window[:, permutation],
+        channel_names=tuple(EMOTIV_14_CHANNELS[index] for index in permutation),
+    )
+    np.testing.assert_array_equal(actual, expected)
+    np.testing.assert_array_equal(
+        pipeline.transform_window(window, channel_names=EMOTIV_14_CHANNELS),
+        expected,
+    )
+
+
+def test_v2_missing_region_is_distinct_from_measured_zero_and_metadata_keeps_counts() -> None:
+    pipeline = _pipeline_v2(include_spectral=False, include_entropy=False)
+    vector = pipeline.transform_window(
+        np.zeros((128, 1), dtype=float), channel_names=("AF3",)
+    )
+    values = dict(zip(pipeline.feature_names(), vector))
+    manifest = pipeline.montage_manifest(("AF3",))
+    assert np.isfinite(vector).all()
+    assert values["statistical__mean__frontal_left__median"] == 0.0
+    assert values["statistical__mean__frontal_right__median"] == 0.0
+    assert values["coverage__frontal_left__present"] == 1.0
+    assert values["coverage__frontal_right__present"] == 0.0
+    assert manifest["input_channel_count"] == 1
+    assert manifest["region_channel_counts"]["frontal_left"] == 1
+    assert manifest["region_channel_counts"]["frontal_right"] == 0
+
+
+def test_v1_and_v2_have_distinct_schema_contracts_but_same_montage_mapping() -> None:
+    v1 = _pipeline()
+    v2 = _pipeline_v2()
+    assert len(v1.feature_names()) == 728
+    assert len(v2.feature_names()) == 364
+    assert v1.schema_hash() != v2.schema_hash()
+    assert v1.montage_manifest(EMOTIV_14_CHANNELS) == v2.montage_manifest(
+        EMOTIV_14_CHANNELS
+    )
+    assert v1.montage_hash(EMOTIV_14_CHANNELS) == v2.montage_hash(
+        EMOTIV_14_CHANNELS
+    )
 
 
 def test_channel_permutation_invariance_and_determinism() -> None:
@@ -164,6 +267,38 @@ def test_batch_equals_stack_of_single_windows() -> None:
         ]
     )
     np.testing.assert_array_equal(batch, expected)
+
+
+def test_nested_profiles_share_one_extraction_and_match_direct_transform(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pipeline = _pipeline()
+    window = np.random.default_rng(91).normal(size=(256, 14))
+    calls = 0
+    original = pipeline._extract_ordered_channel_features
+
+    def counted(signal: np.ndarray) -> dict[str, dict[str, np.ndarray]]:
+        nonlocal calls
+        calls += 1
+        return original(signal)
+
+    monkeypatch.setattr(pipeline, "_extract_ordered_channel_features", counted)
+    profiles = {
+        "full": EMOTIV_14_CHANNELS,
+        "reduced": EMOTIV_14_CHANNELS[2:12],
+    }
+    transformed = pipeline.transform_profiles(
+        window, channel_names=EMOTIV_14_CHANNELS, profiles=profiles
+    )
+    assert calls == 1
+    direct = _pipeline().transform_window(
+        window[:, 2:12], channel_names=EMOTIV_14_CHANNELS[2:12]
+    )
+    np.testing.assert_allclose(transformed["reduced"], direct, rtol=1e-12, atol=1e-12)
+    np.testing.assert_array_equal(
+        transformed["full"],
+        _pipeline().transform_window(window, channel_names=EMOTIV_14_CHANNELS),
+    )
 
 
 def test_duplicate_channels_within_region_preserve_median_and_zero_iqr() -> None:
