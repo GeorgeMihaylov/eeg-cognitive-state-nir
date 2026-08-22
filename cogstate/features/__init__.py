@@ -13,11 +13,22 @@ from .connectivity import (
     compute_plv_matrix,
 )
 from .entropy import EntropyConfig
+from .montage import (
+    CANONICAL_REGIONS,
+    EMOTIV_14_CHANNELS,
+    MONTAGE_SCHEMA_VERSION,
+    build_montage_manifest,
+)
 from .pipeline import (
     FEATURE_SCHEMA_VERSION,
     FeaturePipeline,
     FeaturePipelineConfig,
     build_default_pipeline,
+)
+from .regional import (
+    REGIONAL_FEATURE_SCHEMA_VERSION,
+    RegionalFeatureConfig,
+    RegionalFeaturePipeline,
 )
 from .selection import FeatureSelector, SelectionConfig, SelectionResult
 from .spectral import DEFAULT_BANDS, PowerSpectrum, SpectralConfig, compute_power_spectrum
@@ -25,18 +36,25 @@ from .statistical import StatisticalConfig
 
 __all__ = [
     "ConnectivityConfig",
+    "CANONICAL_REGIONS",
     "DEFAULT_BANDS",
+    "EMOTIV_14_CHANNELS",
     "EntropyConfig",
     "FEATURE_SCHEMA_VERSION",
     "FeaturePipeline",
     "FeaturePipelineConfig",
     "FeatureSelector",
+    "MONTAGE_SCHEMA_VERSION",
     "PowerSpectrum",
+    "REGIONAL_FEATURE_SCHEMA_VERSION",
+    "RegionalFeatureConfig",
+    "RegionalFeaturePipeline",
     "SelectionConfig",
     "SelectionResult",
     "SpectralConfig",
     "StatisticalConfig",
     "build_default_pipeline",
+    "build_montage_manifest",
     "channel_pairs",
     "compute_coherence_matrix",
     "compute_plv_matrix",
