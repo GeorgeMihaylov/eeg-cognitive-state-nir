@@ -17,7 +17,7 @@ input_mode: features  -> feature pipeline -> scaler/selector -> model (.joblib)
 ```
 
 Both modes share exactly the same streaming source, causal filtering, windowing,
-quality checks, FASTER handling, postprocessing and outputs.  A raw-EEG manifest
+quality checks, optional MNE-FASTER handling, postprocessing and outputs. A raw-EEG manifest
 also records the preprocessing contract and the worker rejects configurations
 that differ from training.
 
@@ -36,6 +36,12 @@ containing `model.pt`.  The older feature-mode diagnostic bundle remains at
 
 LSL is optional and imported only for `source.type: lsl`; install `pylsl` in
 the runtime environment before using that source.
+
+MNE-FASTER is also optional. The default configuration disables it. To use a
+calibration bundle, install `requirements-streaming-mne-faster.txt`, set
+`preprocessing.mne_faster_enabled: true`, and provide
+`preprocessing.mne_faster_bundle_dir`. The worker never fits ICA on live data;
+it loads the fixed ICA and bad-channel decisions produced during calibration.
 
 `features.profile` is used only by manifests with `input_mode: features`.
 `lightweight` provides spectral/statistical features; `full` also enables the

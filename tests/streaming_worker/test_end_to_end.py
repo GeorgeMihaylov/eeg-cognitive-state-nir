@@ -41,7 +41,7 @@ def test_replay_to_model_end_to_end(tmp_path):
                 "bandpass_low_hz": 1,
                 "bandpass_high_hz": 45,
                 "notch_hz": 50,
-                "faster": False,
+                "mne_faster_enabled": False,
             },
             "model": {
                 "artifact_dir": str(tmp_path / "missing_bundle"),
@@ -112,8 +112,9 @@ def test_replay_to_shallow_convnet_end_to_end(tmp_path):
                     "bandpass_low_hz": 1,
                     "bandpass_high_hz": 45,
                     "notch_hz": 50,
-                    "faster": False,
                     "filter_mode": "causal",
+                    "artifact_removal": "none",
+                    "artifact_bundle_version": None,
                 },
                 "bootstrap": True,
                 "diagnostic_only": True,
@@ -132,7 +133,7 @@ def test_replay_to_shallow_convnet_end_to_end(tmp_path):
                 "bandpass_low_hz": 1,
                 "bandpass_high_hz": 45,
                 "notch_hz": 50,
-                "faster": False,
+                "mne_faster_enabled": False,
             },
             "model": {
                 "artifact_dir": str(artifact_dir),

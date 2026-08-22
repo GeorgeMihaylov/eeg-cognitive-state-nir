@@ -38,7 +38,8 @@ class PreprocessingConfig:
     bandpass_low_hz: float = 1.0
     bandpass_high_hz: float = 45.0
     notch_hz: float = 50.0
-    faster: bool = True
+    mne_faster_enabled: bool = False
+    mne_faster_bundle_dir: str | None = None
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,14 @@ class WorkerConfig:
             raise ValueError("Bandpass frequencies must be inside the Nyquist range")
         if not 0 < self.preprocessing.notch_hz < nyquist:
             raise ValueError("notch_hz must be inside the Nyquist range")
+        if (
+            self.preprocessing.mne_faster_enabled
+            and not self.preprocessing.mne_faster_bundle_dir
+        ):
+            raise ValueError(
+                "preprocessing.mne_faster_bundle_dir is required when "
+                "mne_faster_enabled=true"
+            )
         if not 0 <= self.quality.max_missing_ratio < 1:
             raise ValueError("max_missing_ratio must be in [0, 1)")
         if not 0 < self.quality.minimum_finite_ratio <= 1:

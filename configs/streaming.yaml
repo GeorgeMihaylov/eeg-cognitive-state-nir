@@ -31,7 +31,8 @@ preprocessing:
   bandpass_low_hz: 1
   bandpass_high_hz: 45
   notch_hz: 50
-  faster: true
+  mne_faster_enabled: false
+  mne_faster_bundle_dir: null
 
 quality:
   max_missing_ratio: 0.05

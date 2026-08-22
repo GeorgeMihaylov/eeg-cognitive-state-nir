@@ -1,17 +1,11 @@
 """Composable preprocessing pipeline for offline EEG model training."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
 
-from .artifact_removal import (
-    ArtifactICA,
-    FasterConfig,
-    detect_bad_channels,
-    interpolate_channels,
-)
 from .denoising import (
     WaveletDenoisingConfig,
     WaveletDenoisingReport,
@@ -45,7 +39,6 @@ class OfflinePreprocessingConfig:
     robust_reference_z_threshold: float = 3.0
     robust_reference_max_iterations: int = 5
     detect_and_interpolate_bad_channels: bool = True
-    faster_config: FasterConfig = field(default_factory=FasterConfig)
     wavelet_config: WaveletDenoisingConfig | None = None
     use_eog_regression: bool = False
     eog_ridge_alpha: float = 1e-6
@@ -73,7 +66,6 @@ class OfflinePreprocessingReport:
     filter_mode: str
     detrend_order: int | None
     eog_regression: EOGRegressionReport | None
-    ica_applied: bool
     wavelet: WaveletDenoisingReport | None
 
 
@@ -99,18 +91,18 @@ class OfflinePreprocessingPipeline:
 
     The EOG model has an explicit ``fit`` step so cross-validation code cannot
     silently estimate regression coefficients from validation/test records.
-    ICA is likewise accepted only as an already fitted transform.
+    Batch artifact rejection and ICA are handled separately by
+    :class:`MNEFasterCalibrator`, because they operate on epoched recordings and
+    may remove epochs.
     """
 
     def __init__(
         self,
         config: OfflinePreprocessingConfig,
         *,
-        ica: ArtifactICA | None = None,
         eog_regressor: EOGRegression | None = None,
     ) -> None:
         self.config = config
-        self.ica = ica
         self.eog_regressor = eog_regressor
 
     def _temporal_steps(self, signal: np.ndarray) -> np.ndarray:
@@ -139,7 +131,12 @@ class OfflinePreprocessingPipeline:
         values = self._temporal_steps(values)
         bad_channels: set[int] = set()
         if self.config.detect_and_interpolate_bad_channels:
-            bad_channels.update(detect_bad_channels(values, self.config.faster_config))
+            _, detection_report = robust_average_reference(
+                values,
+                z_threshold=self.config.robust_reference_z_threshold,
+                max_iterations=self.config.robust_reference_max_iterations,
+            )
+            bad_channels.update(detection_report.excluded_channels)
 
         if self.config.reference_method == "common_average" and bad_channels:
             values = common_average_reference(values, exclude=bad_channels)
@@ -156,8 +153,15 @@ class OfflinePreprocessingPipeline:
             )
         bad_channels.update(reference_report.excluded_channels)
 
-        if self.config.detect_and_interpolate_bad_channels:
-            values = interpolate_channels(values, sorted(bad_channels))
+        if self.config.detect_and_interpolate_bad_channels and bad_channels:
+            good = [
+                index for index in range(values.shape[1]) if index not in bad_channels
+            ]
+            if not good:
+                raise ValueError("Cannot interpolate when every EEG channel is bad")
+            values[:, sorted(bad_channels)] = np.mean(
+                values[:, good], axis=1, keepdims=True
+            )
         return values, reference_report, tuple(sorted(bad_channels))
 
     def fit(self, eeg: object, *, eog: object | None = None) -> "OfflinePreprocessingPipeline":
@@ -194,9 +198,6 @@ class OfflinePreprocessingPipeline:
                 ),
             )
 
-        if self.ica is not None:
-            values = self.ica.transform(values)
-
         wavelet_report: WaveletDenoisingReport | None = None
         if self.config.wavelet_config is not None:
             values, wavelet_report = wavelet_denoise(
@@ -214,7 +215,6 @@ class OfflinePreprocessingPipeline:
                 filter_mode=self.config.filter_mode,
                 detrend_order=self.config.detrend_order,
                 eog_regression=eog_report,
-                ica_applied=self.ica is not None,
                 wavelet=wavelet_report,
             ),
         )

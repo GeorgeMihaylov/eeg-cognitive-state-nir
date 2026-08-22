@@ -6,8 +6,6 @@ from typing import Iterable, Literal
 
 import numpy as np
 
-from .artifact_removal import FasterConfig, detect_bad_channels
-
 
 ReferenceMethod = Literal["none", "common_average", "median", "robust_average"]
 
@@ -64,14 +62,21 @@ def robust_average_reference(
     values = _as_signal(signal)
     if z_threshold <= 0 or max_iterations < 1:
         raise ValueError("Invalid robust-reference parameters")
-    config = FasterConfig(z_threshold=z_threshold)
     excluded: set[int] = set()
 
     for iteration in range(1, max_iterations + 1):
         good = [index for index in range(values.shape[1]) if index not in excluded]
         robust_reference = np.median(values[:, good], axis=1, keepdims=True)
         referenced = values - robust_reference
-        detected = set(detect_bad_channels(referenced, config))
+        variances = np.var(referenced[:, good], axis=0)
+        scores = np.log(np.maximum(variances, np.finfo(float).tiny))
+        spread = float(np.std(scores))
+        detected = set()
+        if spread > np.finfo(float).eps:
+            local = np.flatnonzero(
+                np.abs((scores - np.mean(scores)) / spread) > z_threshold
+            )
+            detected = {good[int(index)] for index in local}
         updated = excluded | detected
         if len(updated) >= values.shape[1]:
             # Never construct a reference from zero channels.

@@ -207,12 +207,23 @@ def _render_model(console: Console, path: Path, manifest: dict[str, Any]) -> Non
 
 
 def _preprocessing_contract(config: WorkerConfig) -> dict[str, Any]:
+    bundle_version = None
+    if config.preprocessing.mne_faster_enabled:
+        from cogstate.preprocessing.mne_faster import MNEFasterBundle
+
+        assert config.preprocessing.mne_faster_bundle_dir is not None
+        bundle_version = MNEFasterBundle.load(
+            config.preprocessing.mne_faster_bundle_dir
+        ).version
     return {
         "bandpass_low_hz": config.preprocessing.bandpass_low_hz,
         "bandpass_high_hz": config.preprocessing.bandpass_high_hz,
         "notch_hz": config.preprocessing.notch_hz,
-        "faster": config.preprocessing.faster,
         "filter_mode": "causal",
+        "artifact_removal": (
+            "mne_faster" if config.preprocessing.mne_faster_enabled else "none"
+        ),
+        "artifact_bundle_version": bundle_version,
     }
 
 

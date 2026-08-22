@@ -1,18 +1,5 @@
 """EEG preprocessing for offline training and streaming inference."""
 
-from .artifact_removal import (
-    ArtifactICA,
-    FasterConfig,
-    FasterReport,
-    IcaConfig,
-    apply_faster,
-    detect_bad_channel_epoch_pairs,
-    detect_bad_channels,
-    detect_bad_components,
-    detect_bad_epochs,
-    interpolate_channels,
-    run_faster,
-)
 from .denoising import (
     WaveletDenoisingConfig,
     WaveletDenoisingReport,
@@ -28,6 +15,12 @@ from .offline import (
     OfflinePreprocessingResult,
 )
 from .filtering import FilterConfig, StreamingFilter, apply_causal, apply_offline
+from .mne_faster import (
+    MNEFasterBundle,
+    MNEFasterCalibrator,
+    MNEFasterConfig,
+    MNEFasterReport,
+)
 from .referencing import (
     ReferenceMethod,
     ReferenceReport,
@@ -38,13 +31,13 @@ from .referencing import (
 )
 
 __all__ = [
-    "ArtifactICA",
     "EOGRegression",
     "EOGRegressionReport",
-    "FasterConfig",
-    "FasterReport",
     "FilterConfig",
-    "IcaConfig",
+    "MNEFasterBundle",
+    "MNEFasterCalibrator",
+    "MNEFasterConfig",
+    "MNEFasterReport",
     "OfflinePreprocessingConfig",
     "OfflinePreprocessingPipeline",
     "OfflinePreprocessingReport",
@@ -55,20 +48,13 @@ __all__ = [
     "WaveletDenoisingConfig",
     "WaveletDenoisingReport",
     "baseline_correct_epochs",
-    "apply_faster",
     "apply_causal",
     "apply_offline",
     "common_average_reference",
     "detrend_signal",
-    "detect_bad_channel_epoch_pairs",
-    "detect_bad_channels",
-    "detect_bad_components",
-    "detect_bad_epochs",
-    "interpolate_channels",
     "median_reference",
     "regress_eog",
     "rereference",
     "robust_average_reference",
-    "run_faster",
     "wavelet_denoise",
 ]

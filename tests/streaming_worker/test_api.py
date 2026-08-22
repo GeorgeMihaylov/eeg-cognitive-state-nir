@@ -318,7 +318,7 @@ def test_feature_model_output_matches_typed_api_contract(tmp_path):
                 "bandpass_low_hz": 1,
                 "bandpass_high_hz": 45,
                 "notch_hz": 50,
-                "faster": False,
+                "mne_faster_enabled": False,
             },
             "model": {
                 "artifact_dir": str(tmp_path / "missing_feature_bundle"),

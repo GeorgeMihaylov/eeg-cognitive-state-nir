@@ -23,8 +23,9 @@ def raw_manifest(**overrides):
             "bandpass_low_hz": 1,
             "bandpass_high_hz": 45,
             "notch_hz": 50,
-            "faster": False,
             "filter_mode": "causal",
+            "artifact_removal": "none",
+            "artifact_bundle_version": None,
         },
         "bootstrap": True,
         "diagnostic_only": True,
@@ -39,8 +40,9 @@ def raw_preprocessing():
         "bandpass_low_hz": 1,
         "bandpass_high_hz": 45,
         "notch_hz": 50,
-        "faster": False,
         "filter_mode": "causal",
+        "artifact_removal": "none",
+        "artifact_bundle_version": None,
     }
 
 
@@ -70,9 +72,9 @@ def test_raw_eeg_bundle_rejects_preprocessing_mismatch(tmp_path):
         json.dumps(raw_manifest()), encoding="utf-8"
     )
     incompatible = raw_preprocessing()
-    incompatible["faster"] = True
+    incompatible["artifact_removal"] = "mne_faster"
 
-    with pytest.raises(ValueError, match="preprocessing.faster"):
+    with pytest.raises(ValueError, match="preprocessing.artifact_removal"):
         load_model_bundle(
             tmp_path,
             sample_rate=128,

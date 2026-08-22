@@ -9,7 +9,7 @@
   "n_times": 5000,
   "class_names": ["low", "medium", "high"],
   "target_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
-  "preprocessing": {"bandpass_low_hz": 1, "bandpass_high_hz": 45, "notch_hz": 50, "faster": true, "filter_mode": "causal"},
+  "preprocessing": {"bandpass_low_hz": 1, "bandpass_high_hz": 45, "notch_hz": 50, "filter_mode": "causal", "artifact_removal": "none", "artifact_bundle_version": null},
   "diagnostic_only": false,
   "model_file": "model.pt",
   "description": "Neurocom EEGMAT input contract for seven PM heads; the native binary label alone cannot supervise every head."

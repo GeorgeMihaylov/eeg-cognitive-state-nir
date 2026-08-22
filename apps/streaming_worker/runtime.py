@@ -10,8 +10,8 @@ import numpy as np
 
 from cogstate.features.pipeline import build_default_pipeline as build_full_feature_pipeline
 from cogstate.features.streaming import build_lightweight_pipeline
-from cogstate.preprocessing.artifact_removal import FasterConfig, apply_faster
 from cogstate.preprocessing.filtering import FilterConfig, StreamingFilter
+from cogstate.preprocessing.mne_faster import MNEFasterBundle
 from cogstate.streaming.buffer import SignalBuffer, StreamSample, Window
 from cogstate.streaming.inference import InferenceService, PredictionResult
 from cogstate.streaming.processor import StreamProcessor
@@ -59,13 +59,12 @@ class StreamingOutput:
 
 
 class _WindowArtifactPreprocessor:
-    def __init__(self, enabled: bool) -> None:
-        self.enabled = enabled
-        self.config = FasterConfig()
+    def __init__(self, bundle: MNEFasterBundle | None) -> None:
+        self.bundle = bundle
 
     def __call__(self, window: Window) -> np.ndarray:
         signal = window.data["eeg"]
-        return apply_faster(signal, self.config) if self.enabled else signal.copy()
+        return self.bundle.transform(signal) if self.bundle is not None else signal.copy()
 
 
 class _RawEEGWindowInput:
@@ -130,12 +129,27 @@ class StreamingRuntime:
             else build_full_feature_pipeline(sample_rate)
         )
         feature_count = len(feature_pipeline.feature_names(len(channels)))
-        preprocessing_contract = {
+        filter_contract = {
             "bandpass_low_hz": config.preprocessing.bandpass_low_hz,
             "bandpass_high_hz": config.preprocessing.bandpass_high_hz,
             "notch_hz": config.preprocessing.notch_hz,
-            "faster": config.preprocessing.faster,
             "filter_mode": "causal",
+        }
+        artifact_bundle: MNEFasterBundle | None = None
+        if config.preprocessing.mne_faster_enabled:
+            assert config.preprocessing.mne_faster_bundle_dir is not None
+            artifact_bundle = MNEFasterBundle.load(
+                config.preprocessing.mne_faster_bundle_dir
+            )
+            artifact_bundle.validate(
+                sample_rate=sample_rate,
+                channel_names=channels,
+                preprocessing_contract=filter_contract,
+            )
+        preprocessing_contract = {
+            **filter_contract,
+            "artifact_removal": "mne_faster" if artifact_bundle else "none",
+            "artifact_bundle_version": artifact_bundle.version if artifact_bundle else None,
         }
         self.model: ShallowConvNetBundle | FeatureModelBundle = load_model_bundle(
             config.model.artifact_dir,
@@ -156,7 +170,7 @@ class StreamingRuntime:
             model_input = feature_pipeline
         self._processor = StreamProcessor(
             buffer=self._buffer,
-            preprocessor=_WindowArtifactPreprocessor(config.preprocessing.faster),
+            preprocessor=_WindowArtifactPreprocessor(artifact_bundle),
             feature_extractor=model_input,
             inference_service=InferenceService(self.model),
         )

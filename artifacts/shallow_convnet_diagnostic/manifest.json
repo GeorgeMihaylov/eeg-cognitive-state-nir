@@ -13,8 +13,9 @@
     "bandpass_low_hz": 1,
     "bandpass_high_hz": 45,
     "notch_hz": 50,
-    "faster": true,
-    "filter_mode": "causal"
+    "filter_mode": "causal",
+    "artifact_removal": "none",
+    "artifact_bundle_version": null
   },
   "bootstrap": true,
   "diagnostic_only": true,
