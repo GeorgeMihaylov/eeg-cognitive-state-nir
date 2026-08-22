@@ -12,6 +12,7 @@ from bench.features.cogstate_feature_cache import (
     build_canonical_feature_index,
     load_feature_cache,
     materialize_cogstate_features,
+    plan_cogstate_feature_cache,
 )
 from cogstate.features import FeaturePipeline, FeaturePipelineConfig
 
@@ -33,6 +34,8 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
             "n_channels": [2] * 4,
             "n_samples_expected": [128] * 4,
             "preprocessing_hash": ["raw-hash"] * 4,
+            "label_q5": [0, 1, 2, 0],
+            "target_focus": [0.1, 0.2, 0.3, 0.4],
             "outer_fold": [1, 1, 2, 2],
             "source": ["a"] * 4,
             "t_start": [0.0, 0.5, 0.0, 0.5],
@@ -85,6 +88,10 @@ def test_tiny_materialization_reload_and_direct_transform(tmp_path: Path) -> Non
     assert matrix.dtype == np.float32
     assert np.isfinite(matrix).all()
     assert index["sample_id"].tolist() == [10, 11, 12, 13]
+    assert "label_q5" not in index.columns
+    assert "target_focus" not in index.columns
+    assert cache_manifest["identity"]["target_columns_present"] is False
+    assert summary["target_columns_present"] is False
     assert cache_manifest["status"] == "complete"
     pipeline = FeaturePipeline(
         FeaturePipelineConfig.from_mapping(json.loads(profile.read_text()))
@@ -143,3 +150,47 @@ def test_incompatible_resume_identity_is_rejected(tmp_path: Path) -> None:
             output_dir=output,
             resume=True,
         )
+
+
+def test_plan_only_is_target_free_deterministic_and_writes_nothing(
+    tmp_path: Path,
+) -> None:
+    manifest, logical, profile, _ = _fixture(tmp_path)
+    output = tmp_path / "planned-cache"
+    kwargs = dict(
+        manifest_path=manifest,
+        logical_recording_map_path=logical,
+        cache_path_root=tmp_path,
+        feature_profile_path=profile,
+        output_dir=output,
+    )
+    first = plan_cogstate_feature_cache(**kwargs)
+    second = plan_cogstate_feature_cache(**kwargs)
+    assert first == second
+    assert first["status"] == "plan_only"
+    assert first["expected_matrix_shape"] == [4, 20]
+    assert first["source_target_columns_excluded"] == [
+        "label_q5",
+        "target_focus",
+    ]
+    assert first["target_columns_present"] is False
+    assert first["identity"]["target_columns_present"] is False
+    assert not output.exists()
+
+
+def test_loader_rejects_legacy_index_with_target_columns(tmp_path: Path) -> None:
+    manifest, logical, profile, _ = _fixture(tmp_path)
+    output = tmp_path / "features"
+    materialize_cogstate_features(
+        manifest_path=manifest,
+        logical_recording_map_path=logical,
+        cache_path_root=tmp_path,
+        feature_profile_path=profile,
+        output_dir=output,
+    )
+    index_path = output / "feature_index.parquet"
+    index = pd.read_parquet(index_path)
+    index["label_q5"] = 0
+    index.to_parquet(index_path, index=False)
+    with pytest.raises(ValueError, match="contains target columns"):
+        load_feature_cache(output)

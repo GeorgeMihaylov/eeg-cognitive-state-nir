@@ -28,6 +28,8 @@ FEATURE_NAMES_NAME = "feature_names.json"
 FEATURE_MANIFEST_NAME = "feature_materialization_manifest.json"
 FEATURE_SUMMARY_JSON_NAME = "feature_materialization_summary.json"
 FEATURE_SUMMARY_CSV_NAME = "feature_materialization_summary.csv"
+_TARGET_COLUMN_NAMES = {"target", "target_main", "y", "y_true", "y_pred"}
+_TARGET_COLUMN_PREFIXES = ("target_", "label_")
 
 
 def _atomic_json(path: Path, payload: Mapping[str, Any]) -> None:
@@ -58,6 +60,26 @@ def sample_id_universe_hash(sample_ids: Iterable[Any]) -> str:
         digest.update(str(value).encode("utf-8"))
         digest.update(b"\n")
     return digest.hexdigest()
+
+
+def target_columns(columns: Iterable[Any]) -> list[str]:
+    """Return target/label columns that must not enter a feature cache index."""
+    names = [str(column) for column in columns]
+    return [
+        name
+        for name in names
+        if name.lower() in _TARGET_COLUMN_NAMES
+        or name.lower().startswith(_TARGET_COLUMN_PREFIXES)
+    ]
+
+
+def target_free_feature_index(index: pd.DataFrame) -> pd.DataFrame:
+    """Strip targets while preserving deterministic sample/audit metadata."""
+    excluded = target_columns(index.columns)
+    result = index.drop(columns=excluded).copy() if excluded else index.copy()
+    if target_columns(result.columns):
+        raise RuntimeError("Target columns remain in the feature cache index")
+    return result
 
 
 def load_feature_profile(path: str | Path) -> tuple[dict[str, Any], FeaturePipeline]:
@@ -150,6 +172,7 @@ def feature_cache_identity(
     preprocessing_hashes = sorted(
         index["preprocessing_hash"].dropna().astype(str).unique()
     )
+    stored_index = target_free_feature_index(index)
     identity = {
         "cache_schema_version": FEATURE_CACHE_SCHEMA_VERSION,
         "sample_id_universe_hash": sample_id_universe_hash(index["sample_id"]),
@@ -164,9 +187,51 @@ def feature_cache_identity(
             int(shape["n_samples_expected"]),
             int(shape["n_channels"]),
         ],
+        "feature_index_columns": [str(column) for column in stored_index.columns],
+        "target_columns_present": False,
     }
     identity["cache_identity_hash"] = _semantic_hash(identity)
     return identity
+
+
+def plan_cogstate_feature_cache(
+    *,
+    manifest_path: str | Path,
+    logical_recording_map_path: str | Path,
+    cache_path_root: str | Path,
+    feature_profile_path: str | Path,
+    output_dir: str | Path,
+    max_rows: int | None = None,
+) -> dict[str, Any]:
+    """Resolve and validate a materialization identity without writing files."""
+    profile, pipeline = load_feature_profile(feature_profile_path)
+    index = build_canonical_feature_index(manifest_path, logical_recording_map_path)
+    if max_rows is not None:
+        if int(max_rows) <= 0:
+            raise ValueError("max_rows must be positive or None")
+        index = index.head(int(max_rows)).copy()
+    identity = feature_cache_identity(index, pipeline)
+    matrix_size_bytes = (
+        int(identity["rows"])
+        * int(identity["n_features"])
+        * np.dtype(identity["dtype"]).itemsize
+    )
+    return {
+        "status": "plan_only",
+        "profile_id": profile.get("profile_id"),
+        "manifest_path": str(Path(manifest_path)),
+        "logical_recording_map_path": str(Path(logical_recording_map_path)),
+        "cache_path_root": str(Path(cache_path_root)),
+        "output_dir": str(Path(output_dir)),
+        "expected_matrix_shape": [
+            int(identity["rows"]),
+            int(identity["n_features"]),
+        ],
+        "expected_matrix_size_bytes": matrix_size_bytes,
+        "source_target_columns_excluded": target_columns(index.columns),
+        "target_columns_present": False,
+        "identity": identity,
+    }
 
 
 def _window_batch(view: RawEEGWindowArrayView, start: int, stop: int) -> np.ndarray:
@@ -248,6 +313,7 @@ def materialize_cogstate_features(
             raise ValueError("max_rows must be positive or None")
         index = index.head(int(max_rows)).copy()
     identity = feature_cache_identity(index, pipeline)
+    stored_feature_index = target_free_feature_index(index)
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     manifest_file = output / FEATURE_MANIFEST_NAME
@@ -277,7 +343,7 @@ def materialize_cogstate_features(
         if not matrix_file.is_file() or not index_file.is_file() or not names_file.is_file():
             raise FileNotFoundError("Resumable feature cache is missing required files")
     else:
-        index.to_parquet(index_file, index=False)
+        stored_feature_index.to_parquet(index_file, index=False)
         _atomic_json(names_file, {"feature_names": names})
         matrix = np.lib.format.open_memmap(
             matrix_file,
@@ -306,6 +372,10 @@ def materialize_cogstate_features(
     if completed_rows < 0 or completed_rows > len(index):
         raise ValueError(f"Invalid completed_rows in cache manifest: {completed_rows}")
     stored_index = pd.read_parquet(index_file)
+    if target_columns(stored_index.columns):
+        raise ValueError("Stored feature index contains target columns")
+    if list(stored_index.columns) != identity["feature_index_columns"]:
+        raise ValueError("Stored feature index schema does not match cache identity")
     if not stored_index["sample_id"].reset_index(drop=True).equals(
         index["sample_id"].reset_index(drop=True)
     ):
@@ -385,7 +455,7 @@ def materialize_cogstate_features(
         "chunk_size": int(chunk_size),
         "feature_matrix_size_bytes": int(matrix_file.stat().st_size),
         "feature_names_count": int(len(loaded_names)),
-        "target_columns_present": False,
+        "target_columns_present": bool(target_columns(loaded_index.columns)),
         "label_q5_dependency": False,
     }
     _atomic_json(output / FEATURE_SUMMARY_JSON_NAME, summary)
@@ -407,6 +477,15 @@ def load_feature_cache(
             f"Feature cache is not complete: status={manifest.get('status')!r}"
         )
     index = pd.read_parquet(output / FEATURE_INDEX_NAME)
+    forbidden_targets = target_columns(index.columns)
+    if forbidden_targets:
+        raise ValueError(
+            "Feature cache index contains target columns: "
+            f"{forbidden_targets}"
+        )
+    expected_columns = identity.get("feature_index_columns")
+    if expected_columns is not None and list(index.columns) != expected_columns:
+        raise ValueError("Feature cache index schema differs from its identity")
     names_payload = json.loads((output / FEATURE_NAMES_NAME).read_text(encoding="utf-8"))
     names = [str(value) for value in names_payload["feature_names"]]
     matrix = np.load(output / FEATURE_MATRIX_NAME, mmap_mode="r", allow_pickle=False)

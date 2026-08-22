@@ -19,6 +19,7 @@ from bench.features.cogstate_feature_cache import (
     build_canonical_feature_index,
     load_feature_profile,
     materialize_cogstate_features,
+    plan_cogstate_feature_cache,
 )
 
 
@@ -47,6 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--benchmark-workers", action="store_true")
     parser.add_argument("--benchmark-windows", type=int, default=32)
+    parser.add_argument("--plan-only", action="store_true")
     return parser
 
 
@@ -58,6 +60,19 @@ def main() -> int:
     args = build_parser().parse_args()
     manifest = _resolve(args.data_root, args.manifest)
     logical = _resolve(args.data_root, args.logical_map)
+    if args.plan_only and args.benchmark_workers:
+        raise ValueError("--plan-only and --benchmark-workers are mutually exclusive")
+    if args.plan_only:
+        plan = plan_cogstate_feature_cache(
+            manifest_path=manifest,
+            logical_recording_map_path=logical,
+            cache_path_root=args.data_root,
+            feature_profile_path=args.profile,
+            output_dir=args.output_dir,
+            max_rows=args.max_rows,
+        )
+        print(json.dumps(plan, indent=2))
+        return 0
     if args.benchmark_workers:
         profile, _ = load_feature_profile(args.profile)
         index = build_canonical_feature_index(manifest, logical).head(args.benchmark_windows)
