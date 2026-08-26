@@ -1,0 +1,96 @@
+{
+  "schema_version": "preprocessing-factorial-q3-all-pm-v1",
+  "experiment_id": "preprocessing_factorial_q3_all_pm_v1",
+  "result_status": "diagnostic",
+  "output_dir": "benchmark_results/preprocessing_factorial_q3_all_pm_v1",
+  "runner_output_dir": "benchmark_results/preprocessing_factorial_q3_all_pm_v1/_runner",
+  "preprocessing_matrix_spec": "experiments/preprocessing_ablation_shallowconvnet.yaml",
+  "task_type": "classification",
+  "targets": [
+    "attention",
+    "engagement",
+    "excitement",
+    "stress",
+    "relaxation",
+    "interest",
+    "focus"
+  ],
+  "variants": ["A", "B", "C", "D", "E", "F", "G", "H"],
+  "folds": [1, 2, 3, 4, 5],
+  "seed": 42,
+  "data": {
+    "target_table": "data/processed/windowed_eeg_pm_dataset_w10.parquet",
+    "logical_recording_map": "data/interim/logical_recording_map.parquet",
+    "canonical_windows": 30958
+  },
+  "preprocessing_variants": [
+    {"variant": "A", "bandpass": false, "notch": false, "car": false},
+    {"variant": "B", "bandpass": true,  "notch": false, "car": false},
+    {"variant": "C", "bandpass": false, "notch": true,  "car": false},
+    {"variant": "D", "bandpass": false, "notch": false, "car": true},
+    {"variant": "E", "bandpass": true,  "notch": true,  "car": false},
+    {"variant": "F", "bandpass": true,  "notch": false, "car": true},
+    {"variant": "G", "bandpass": false, "notch": true,  "car": true},
+    {"variant": "H", "bandpass": true,  "notch": true,  "car": true}
+  ],
+  "model": {
+    "name": "torch_shallow_convnet",
+    "input_contract": [1, 14, 2560],
+    "params": {
+      "n_filters": 40,
+      "temporal_kernel_samples": 25,
+      "pool_size": 75,
+      "pool_stride": 15,
+      "dropout": 0.5,
+      "batch_size": 128,
+      "max_epochs": 5,
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "validation_size": 0.15,
+      "early_stopping_patience": 2,
+      "device": "auto",
+      "random_state": 42,
+      "standardize": true,
+      "num_workers": 0
+    }
+  },
+  "validation": {
+    "strategy": "group_record",
+    "group_column": "record_group_id",
+    "validation_size": 0.15,
+    "random_state": 42
+  },
+  "evaluation": {
+    "protocol": "fixed_group_kfold_subject",
+    "n_splits": 5,
+    "group_column": "subject_id",
+    "precomputed_fold_column": "outer_fold"
+  },
+  "smoke": {
+    "target": "attention",
+    "outer_fold": 1,
+    "variants": ["A", "H"],
+    "max_epochs": 1
+  },
+  "metrics": {
+    "primary": [
+      "participant_macro_macro_f1",
+      "participant_macro_balanced_accuracy"
+    ],
+    "secondary": [
+      "participant_macro_accuracy",
+      "participant_macro_weighted_f1",
+      "pooled_window_metrics",
+      "confusion_matrices"
+    ],
+    "class_labels": [0, 1, 2]
+  },
+  "effects": {
+    "participant_pm_first": true,
+    "participant_equal_weight": true,
+    "test": "two_sided_wilcoxon",
+    "zero_method": "wilcox",
+    "multiplicity": "holm",
+    "family": "3_factors_x_2_primary_metrics"
+  }
+}

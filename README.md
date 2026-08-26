@@ -1,442 +1,422 @@
 # EEG Cognitive State Benchmark
 
-Единая воспроизводимая платформа для исследования когнитивного состояния по
-электроэнцефалографии (ЭЭГ): загрузка и предобработка данных, явные контракты
-целевых переменных, межсубъектная оценка, персонализация и перенос, единые
-метрики и артефакты, а также потоковый replay и прикладной API.
+Воспроизводимая исследовательская платформа для классификации когнитивных состояний по данным электроэнцефалографии (ЭЭГ) с межсубъектной оценкой, персонализацией, внешней валидацией, исследованием предобработки и потоковым программным контуром.
 
-Актуализация README: **16 августа 2026 года**. Проект находится на этапе
-консолидации результатов и подготовки отчётных материалов. Основные
-исследовательские и программные контуры реализованы, но физический end-to-end
-тест с реальным EEG-устройством ещё не выполнен.
+**Актуализация README: 26 августа 2026 года.**
 
 ## Текущее состояние
 
-Репозиторий поддерживает:
+Основной научный контур проекта ориентирован на классификацию всех семи Performance Metrics (PM):
 
-- семь непрерывных Performance Metrics (PM) и получаемые из них fold-local
-  категориальные proxy-состояния;
-- историческую пяти-классовую задачу `label_q5` для сопоставимости;
-- пятифолдовый межсубъектный benchmark;
-- feature-window, feature-sequence и raw-EEG модели;
-- временной аудит PM, персонализацию, DANN, внешние мультимодальные наборы и
-  автоматический отбор признаков;
-- научный streaming replay, streaming worker и FastAPI;
-- единые manifests, predictions, split-аудиты, checkpoints и сводные метрики.
+- `target_attention`;
+- `target_engagement`;
+- `target_excitement`;
+- `target_stress`;
+- `target_relaxation`;
+- `target_interest`;
+- `target_focus`.
 
-Последняя полная проверка текущего кода на этом состоянии ветки:
-**1475 passed, 1 skipped, 37 warnings**. Длительные эксперименты не запускаются
-автоматически тестами.
+Для каждого PM используется трёхклассовая постановка Q3: низкое, среднее и высокое состояние. Пороговые значения тертилей вычисляются отдельно внутри каждого внешнего разбиения **только по outer-train** и затем без переоценки применяются к outer-test.
 
-## Данные и целевые переменные
+Историческая пяти-классовая Focus-разметка `label_q5` сохранена только для воспроизводимости ранних экспериментов и не является основной постановкой текущего проекта.
 
-### `gpn_data` и `Old_EEG`
+Реализованы:
 
-Основной набор объединяет два исходных источника Emotiv-класса: `gpn_data` и
-`Old_EEG`. Они отличаются организацией файлов и экспериментальным дизайном,
-но не считаются автоматически разными устройствами или независимыми доменами.
-Совпадающие логические записи отслеживаются через `record_group_id`.
+- фиксированная пятифолдовая межсубъектная оценка;
+- raw-EEG, признаковые и последовательностные модели;
+- единый целевой контракт для семи PM;
+- временной аудит PM-разметки;
+- факторная абляция предобработки A–H;
+- MNE-FASTER и FASTER-like/ICA абляции;
+- персональная калибровка нового пользователя;
+- внешняя мультимодальная валидация;
+- независимый cross-dataset эксперимент CL-Drive ↔ CLARE с DANN;
+- потоковое воспроизведение, streaming worker и FastAPI;
+- детерминированные manifests, split-аудиты, protocol hashes и resume.
 
-Канонический feature parquet:
+## Исходные данные и каноническая когорта
 
-```text
-data/processed/windowed_eeg_pm_dataset_w10.parquet
-SHA-256: 26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8
-```
+Основной внутренний набор сформирован из двух исходных источников:
 
-| Представление | Выборка | Размер |
-|---|---|---:|
-| EEG+POW | все окна до фильтрации целей | 51 308 × 448 |
-| `label_q5` | 54 участника | 45 384 × 448 |
-| семь PM, complete-case | 53 участника | 43 174 × 448 |
-| raw EEG, deduplicated | `[1, 14, 2560]`, 256 Гц | 30 958 окон |
+- `gpn_data`;
+- `Old_EEG`.
 
-В 448 инженерных признаков входят 168 EEG- и 280 POW-признаков. Цели и
-служебные PM-колонки в матрицу признаков не включаются.
+Они используют ЭЭГ-устройства класса Emotiv и отличаются структурой файлов и организацией записей. Эти источники **не рассматриваются как независимые научные домены**, поскольку часть физических записей представлена в обоих источниках. Совпадающие записи отслеживаются через `record_group_id`.
 
-### Семь PM
+Основная цепочка формирования выборки:
 
-Современный основной научный контур охватывает:
+| Этап | Размер |
+|---|---:|
+| Полная обработанная таблица до фильтрации по целевой разметке | 51 308 окон |
+| Окна, пригодные для обучения с учителем | 45 384 |
+| После контроля качества raw EEG | 45 326 |
+| После устранения повторного представления логически одинаковых записей | **30 958** |
 
-```text
-Attention, Engagement, Excitement, Stress, Relaxation, Interest, Focus
-```
+После дедупликации каноническая когорта сырого ЭЭГ содержит **30 958 окон из 86 логических записей, относящихся к 54 участникам**.
 
-Непрерывные цели имеют фиксированный порядок:
+Контракт raw EEG:
 
 ```text
-target_attention
-target_engagement
-target_excitement
-target_stress
-target_relaxation
-target_interest
-target_focus
+shape: [B, 1, 14, 2560]
+channels: 14
+sample rate: 256 Hz
+window: 10 s
+dtype: float32
 ```
 
-Для классификации каждого PM используются три состояния low/medium/high.
-Пороговые значения тертилей Q3 вычисляются отдельно в каждом fold **только по
-outer-train** и затем без переоценки применяются к outer-test. Реализация
-находится в [`target_registry.py`](bench/tasks/target_registry.py) и
-[`target_transforms.py`](bench/tasks/target_transforms.py).
+Для `attention` число complete-case окон составляет **29 569**. Для остальных шести PM доступны все **30 958** окон. Целевые маски применяются внутри фиксированных внешних разбиений.
 
-`label_q5` — историческая Focus-specific benchmark-метка на основе заранее
-вычисленных глобальных квантилей. Она сохранена для сравнения с предыдущими
-экспериментами, но не описывает всё пространство целей проекта. Полный реестр:
-[`target_registry.yaml`](reports/summary/target_registry.yaml).
+## Признаковые представления
 
-### COG-BCI и внешние наборы
+В проекте используются два различных инженерных представления; они не являются последовательными стадиями отбора признаков.
 
-COG-BCI используется как отдельный диагностический и transfer-контур:
+### Унифицированное представление — 371 признак
 
-- 29 участников, 3 сеанса и 1 044 EEGLAB-записи;
-- нативные layouts с 62/63 EEG-каналами и сопоставленный 14-канальный профиль;
-- 56 903 record-safe окна 500 Гц × 5,12 с;
-- 28 910 time-aligned окон 256 Гц × 10 с;
-- N-Back, MATB-II, spectral, CNN и contrastive-transfer диагностики.
+Современный `FeaturePipeline` вычисляет признаки непосредственно из окна ЭЭГ и формирует фиксированное целенезависимое представление:
 
-Для мультимодальной проверки дополнительно используются MEFAR, CL-Drive и
-CLARE. Их единица анализа и target-контракты не смешиваются с основным Emotiv
-benchmark.
+- 182 спектральных;
+- 140 статистических;
+- 28 энтропийных;
+- 21 характеристика межканальной связности.
+
+Итого: **371 признак**.
+
+Это представление используется в основном сравнении признаковых и последовательностных моделей.
+
+### Исходное EEG+POW-представление — 448 признаков
+
+Исторический обработанный parquet содержит:
+
+- 168 EEG-признаков;
+- 280 POW-признаков.
+
+Итого: **448 признаков**.
+
+Для этого представления отдельно проверен fold-local автоматический отбор признаков: корреляционный фильтр `|r| > 0.95` и Random Forest importance сокращают размерность **448 → 50**. Это отдельный эксперимент и не является происхождением 371-признакового пространства.
 
 ## Экспериментальный протокол
 
-Основная оценка — пятифолдовый `GroupKFold` по `subject_id`. Это протокол без
-утечки информации между обучением и тестом: участники outer-train и outer-test
-не пересекаются.
+Основная оценка использует пять фиксированных внешних разбиений по `subject_id`.
 
-Дополнительные правила:
+Основные правила:
 
-- inner validation учитывает группы участников или `record_group_id`;
-- preprocessing, imputation, normalization, clipping, Q3-пороги и feature
-  selection обучаются только на текущей train-части;
+- участники outer-train и outer-test не пересекаются;
+- внутренняя валидация учитывает `record_group_id`;
+- Q3-пороги вычисляются только по outer-train;
+- нормализация, заполнение пропусков и отбор признаков обучаются только на train-части;
 - outer-test не используется для early stopping или выбора модели;
-- последовательности не пересекают `source + subject_id + record_group_id`,
-  сортируются по времени и используют стабильный `sample_id`;
-- где это задано протоколом, основной единицей итоговой агрегации является
-  участник с равным весом — participant-macro, а не число его окон;
-- random-window split допускается только для smoke/diagnostic, но не как
-  основной научный результат.
+- последовательности не пересекают границы логических записей;
+- основная итоговая агрегация в подтверждающих экспериментах — participant-macro;
+- результаты разных входных когорт не сравниваются как полностью сопоставимые без matched-протокола.
 
-## Архитектура проекта
+## Модели
 
-```text
-данные и кэши
-→ target registry и group-aware splits
-→ preprocessing и признаки
-→ model factory и общие Torch adapters
-→ метрики, predictions и manifests
-→ эксперименты, resume-аудит и сводные отчёты
-→ streaming worker и API
-```
+Поддерживаются:
 
-Основные каталоги:
+- Logistic Regression;
+- Random Forest;
+- HistGradientBoosting;
+- LightGBM;
+- XGBoost;
+- SVM;
+- sklearn MLP;
+- PyTorch MLP;
+- LSTM;
+- BiLSTM;
+- Transformer;
+- EEGNet;
+- ShallowConvNet;
+- ShallowFusion.
 
-```text
-bench/                  воспроизводимый benchmark и экспериментальные протоколы
-cogstate/               переиспользуемые preprocessing/features/streaming-компоненты
-model_zoo/               канонический factory и модели sklearn/PyTorch
-apps/streaming_worker/   прикладной потоковый worker и FastAPI
-configs/                 benchmark- и streaming-конфигурации
-experiments/             тематические конфигурации экспериментов
-scripts/                 проверенные CLI-точки запуска
-reports/                 научные отчёты и сводные таблицы
-artifacts/               небольшие manifests развёртываемых model bundles
-```
-
-Runtime-выходы, predictions, checkpoints и большие кэши находятся в
-`benchmark_results/` и не отслеживаются Git.
-
-## Реализованные модели
-
-Канонический `model_zoo` включает:
-
-- Random Forest, Logistic Regression, SVM/SVR, Ridge, HistGradientBoosting,
-  LightGBM, XGBoost и sklearn MLP;
-- Torch MLP, LSTM, BiLSTM и Transformer;
-- EEGNet и ShallowConvNet для raw EEG;
-- ShallowFusion для мультимодальных задач;
-- categorical, CORAL, CORN и auxiliary-CORN варианты Transformer;
-- общий encoder-интерфейс для transfer, DANN и contrastive-компонентов.
+Для transfer-задач реализован общий encoder-интерфейс; для доменной адаптации — DANN.
 
 ## Основные результаты
 
-### Сравнение моделей
-
-Новый предварительный model-zoo эксперимент сравнивает семь Q3-задач на
-**одном outer fold, seed 42**. Это инженерный `preliminary`-результат, а не
-замена полному пятифолдовому benchmark; raw/feature/sequence модели также
-имеют разные допустимые когорты.
-
-| Модель | Вход | Средний Macro F1 | Средняя Balanced Accuracy |
-|---|---|---:|---:|
-| LSTM | sequence | 0,4932 | 0,5048 |
-| BiLSTM | sequence | 0,4857 | 0,5003 |
-| XGBoost | feature window | 0,4848 | 0,4923 |
-| Random Forest | feature window | 0,4846 | 0,4941 |
-| Transformer | sequence | 0,4672 | 0,4799 |
-
-В однократном regression-срезе Random Forest получил средние по семи PM:
-MAE 0,1017, R² 0,2280 и Pearson 0,4854. Эти числа относятся только к outer
-fold 1. Ранее опубликованные значения около Macro F1 0,36 относятся к другой
-постановке — полному пятифолдовому `label_q5` benchmark — и поэтому не
-сравниваются с этой таблицей напрямую.
-
 ### Временная обработка PM
 
-В полном Random Forest downstream-сравнении проверены исходные PM, causal
-median, causal EMA и causal Hampel. Для `raw` средние по 7 PM × 5 folds:
+В пятифолдовой классификационной проверке всех семи PM исходные значения PM оказались лучшим вариантом:
 
-- классификация: Macro F1 0,4730, Balanced Accuracy 0,4791;
-- регрессия: MAE 0,09837, RMSE 0,12894, R² 0,18519,
-  Pearson 0,44501, Spearman 0,39083.
-
-Сглаживание уменьшало кратковременную вариативность, но не давало
-универсального downstream-улучшения: classification-метрики ухудшались, а
-снижение MAE в отдельных регрессионных вариантах сопровождалось ухудшением
-R² и корреляций. Поэтому `raw` сохранён как канонический вариант. Подробный
-аудит происхождения и временной структуры:
-[`pm_temporal_quality_v1.md`](reports/pm_quality/pm_temporal_quality_v1.md).
-
-### LightGBM и автоматический отбор признаков
-
-Завершены 140 запусков: 7 PM × classification/regression × 448/50 признаков ×
-5 folds. Корреляционный фильтр и Random Forest importance обучаются только на
-outer-train; outer-test не участвует в выборе 50 признаков.
-
-| Задача, participant-macro | 448 признаков | 50 признаков |
+| Вариант | Macro-F1 | Balanced Accuracy |
 |---|---:|---:|
-| Classification Macro F1 | 0,41869 | 0,41155 |
-| Classification Balanced Accuracy | 0,46236 | 0,45268 |
-| Classification Accuracy | 0,48263 | 0,47534 |
-| Regression MAE | 0,09843 | 0,09925 |
-| Regression Pearson | 0,47945 | 0,46708 |
-| Regression Spearman | 0,43597 | 0,42604 |
+| raw | **0.4730** | **0.4791** |
+| EMA, α=0.5 | 0.4674 | 0.4731 |
+| Hampel | 0.4572 | 0.4629 |
+| Median, w=3 | 0.4505 | 0.4568 |
 
-Размерность уменьшилась на 88,84%. Среднее время downstream-обучения
-LightGBM сократилось с 5,79 до 0,85 с — примерно в 6,78 раза; inference стал
-примерно в 1,15 раза быстрее. Отбор существенно снижает вычислительную
-стоимость, но в среднем немного ухудшает качество и не рассматривается как
-способ повышения точности. Конфигурация:
-[`lightgbm_feature_selection_v1.yaml`](experiments/feature_selection/lightgbm_feature_selection_v1.yaml).
+Причинное сглаживание не дало универсального улучшения, поэтому исходные PM сохранены как основной вариант разметки.
 
-### Предобработка и удаление артефактов
+### Факторная абляция предобработки A–H
 
-В завершённой восьмивариантной raw-EEG ablation ShallowConvNet лучшие
-описательные значения получены для band-pass + notch (Balanced Accuracy
-0,2889), band-pass (0,2873) и raw (0,2824). Варианты с CAR находились ниже;
-средний описательный эффект CAR составил −0,0285. Статистическая значимость
-различий не заявлялась.
-
-Отдельно реализован fold-safe artifact-removal протокол:
+Эксперимент `preprocessing_factorial_q3_all_pm_v1` завершён полностью:
 
 ```text
-raw
-FASTER-like
-ICA
-FASTER-like + ICA
+8 preprocessing variants × 7 PM × 5 outer folds = 280 runs
+completed_runs = 280
+unsupported_runs = 0
+protocol_hash = 7ca105e55b4ec84064f60d3a6c99d1251fdd89000a15ac1500f7ae6b3008f0a9
 ```
 
-FASTER-like означает статистическое обнаружение плохих каналов с
-mean-channel interpolation, а не полную каноническую реализацию FASTER. ICA
-калибруется только на outer-train. Протокол и smoke-проверка существуют, но
-полный сравнительный 5-fold/140-run эксперимент не выполнялся; вывод о влиянии
-FASTER-like/ICA на качество не делается.
+Во всех вариантах использовалась идентичная matched-когорта A–H.
+
+| Вариант | Band-pass 1–45 Hz | Notch 50 Hz | CAR | Participant-macro Macro-F1 | Participant-macro Balanced Accuracy |
+|---|:---:|:---:|:---:|---:|---:|
+| A | − | − | − | 0.3646 | 0.4172 |
+| B | + | − | − | **0.3702** | **0.4282** |
+| C | − | + | − | 0.3660 | 0.4196 |
+| D | − | − | + | 0.3602 | 0.4097 |
+| E | + | + | − | 0.3695 | 0.4279 |
+| F | + | − | + | 0.3630 | 0.4183 |
+| G | − | + | + | 0.3560 | 0.4054 |
+| H | + | + | + | 0.3631 | 0.4181 |
+
+Matched participant-level факторные эффекты:
+
+- CAR: ΔMacro-F1 = **−0.0072**, Holm `p = 0.2905`;
+- CAR: ΔBalanced Accuracy = **−0.0106**, Holm `p = 0.0026`;
+- band-pass: ΔMacro-F1 = `+0.0048`, Holm `p = 0.5675`;
+- band-pass: ΔBalanced Accuracy = `+0.0102`, Holm `p = 0.0604`;
+- notch: средний эффект близок к нулю для обеих основных метрик.
+
+Следовательно, отрицательный средний эффект CAR статистически подтверждается для Balanced Accuracy, но не для Macro-F1. Полосовая фильтрация показывает положительную описательную тенденцию, однако после поправки Холма она не достигает уровня `p < 0.05`. Универсального эффекта режекторного фильтра не обнаружено.
+
+Файлы эксперимента:
+
+- [`bench/experiments/preprocessing_factorial_q3_all_pm.py`](bench/experiments/preprocessing_factorial_q3_all_pm.py)
+- [`experiments/preprocessing/preprocessing_factorial_q3_all_pm_v1.json`](experiments/preprocessing/preprocessing_factorial_q3_all_pm_v1.json)
+- [`scripts/run_preprocessing_factorial_q3_all_pm.py`](scripts/run_preprocessing_factorial_q3_all_pm.py)
+
+Полные runtime-артефакты находятся в `benchmark_results/` и не отслеживаются Git.
+
+### Удаление артефактов
+
+Семиметрическая диагностическая абляция ShallowConvNet:
+
+| Вариант | Macro-F1 | Balanced Accuracy |
+|---|---:|---:|
+| raw | 0.3733 | 0.4250 |
+| ICA | 0.3722 | 0.4265 |
+| FASTER-like | 0.3719 | 0.4227 |
+| FASTER-like + ICA | 0.3540 | 0.4063 |
+
+Усложнение процедуры очистки не обеспечило устойчивого повышения качества.
+
+В отдельном matched-сравнении полного MNE-FASTER выполнены все 140 запусков для семи PM, ShallowConvNet и XGBoost. Из 30 958 окон после MNE-FASTER осталось 29 899.
+
+| Модель | Предобработка | Accuracy | Balanced Accuracy | Macro-F1 |
+|---|---|---:|---:|---:|
+| ShallowConvNet | baseline | 0.4433 | 0.4265 | 0.3768 |
+| ShallowConvNet | MNE-FASTER | 0.4214 | 0.4043 | 0.3511 |
+| XGBoost | baseline | 0.4658 | 0.4497 | 0.4137 |
+| XGBoost | MNE-FASTER | 0.4473 | 0.4357 | 0.3969 |
+
+MNE-FASTER не выбран как предобработка по умолчанию.
+
+### Предварительное сравнение моделей
+
+На первом внешнем разбиении, seed 42:
+
+| Модель | Вход | Macro-F1 | Balanced Accuracy |
+|---|---|---:|---:|
+| LSTM | sequence, 10 × 371 | **0.4932** | **0.5048** |
+| BiLSTM | sequence, 10 × 371 | 0.4857 | 0.5003 |
+| XGBoost | 371 признаков | 0.4848 | 0.4923 |
+| Random Forest | 371 признаков | 0.4846 | 0.4941 |
+| Transformer | sequence, 10 × 371 | 0.4672 | 0.4799 |
+| PyTorch MLP | 371 признаков | 0.4483 | 0.4573 |
+| Logistic Regression | 371 признаков | 0.4201 | 0.4283 |
+| ShallowConvNet | raw EEG | 0.4158 | 0.4236 |
+| EEGNet | raw EEG | 0.3975 | 0.4164 |
+
+Этот эксперимент является предварительным: sequence- и single-window модели используют разные допустимые наборы окон, поэтому таблица не трактуется как окончательный рейтинг архитектур.
+
+### Автоматический отбор признаков
+
+Для исходного 448-признакового EEG+POW-представления выполнен отдельный пятифолдовый LightGBM-эксперимент.
+
+| Режим | Macro-F1 | Balanced Accuracy | Accuracy |
+|---|---:|---:|---:|
+| 448 признаков | **0.4187** | **0.4624** | **0.4826** |
+| 50 признаков | 0.4116 | 0.4527 | 0.4753 |
+
+Размерность уменьшилась на 88.84%, а среднее время downstream-обучения LightGBM — примерно в 6.8 раза. Сокращение признакового пространства полезно прежде всего для уменьшения вычислительной стоимости, а не как способ повышения качества.
 
 ### Персонализация нового пользователя
 
-Современный confirmatory-контур использует семь непрерывных PM, три seed и
-хронологическое разделение ранней calibration-части и поздней evaluation-части
-каждого нового участника. Для `full_model` относительно `zero_shot`:
+Полный эксперимент персональной калибровки ShallowConvNet завершён для всех семи PM.
 
-- MAE уменьшился на 0,002685, 95% bootstrap CI [0,001506; 0,003980];
-- RMSE уменьшился на 0,002411, CI [0,001145; 0,003789];
-- R² вырос на 0,025116, но CI [−0,043542; 0,085802] включает ноль;
-- Spearman вырос на 0,011985, CI [0,006442; 0,018499].
+Медианный фактический объём калибровки:
 
-После адаптации participant-macro: MAE 0,102404, RMSE 0,130441 и Spearman
-0,382941. Эффект небольшой и неоднородный между участниками.
+- 5%: 28 окон, ≈ 4.67 мин;
+- 10%: 57 окон, ≈ 9.50 мин;
+- 20%: 115 окон, ≈ 19.17 мин.
 
-Формальное требование classification Accuracy ≥ 75% для исторического
-`label_q5` **не достигнуто**: среднее значение изменилось примерно с 0,2967
-до 0,3138, и 0 из 53 участников достигли 0,75. Это проверенный отрицательный
-результат, а не незавершённый подбор параметров. Сводка:
-[`colleague_metrics_summary.md`](reports/summary/colleague_metrics_summary.md).
-
-### Перенос между источниками и DANN
-
-Подтверждающий DANN-эксперимент выполнен в направлении
-`Old_EEG → gpn_data` на пяти folds и primary seeds 123/2026. Относительно
-matched source-only:
-
-- ΔMacro F1 = +0,008048;
-- ΔBalanced Accuracy = +0,008332;
-- ΔOrdinal MAE = −0,034008;
-- 23/42 участников улучшились, 19 ухудшились;
-- bootstrap 95% CI для ΔMacro F1 [−0,001672; 0,017882] включает ноль.
-
-Статус — `partially_confirmed`: наблюдается небольшой положительный эффект,
-но статистическая значимость и полная доменная инвариантность не доказаны.
-[`Отчёт DANN`](reports/integration/dann_label_q5_confirmatory_v2.md).
-
-### Мультимодальные данные
-
-Для MEFAR, CL-Drive и CLARE сопоставлены EEG-only, peripheral-only и fusion
-EEG + peripheral в одинаковых folds. Основной общий baseline — XGBoost;
-ShallowConvNet/ShallowFusion дополнительно реализованы там, где входной
-контракт это допускает.
-
-| Набор | EEG-only Macro F1 | Peripheral-only | Fusion |
+| Режим | Бюджет | Macro-F1 | Δ к zero-shot |
 |---|---:|---:|---:|
-| MEFAR | 0,3972 | 0,5776 | 0,5111 |
-| CL-Drive | 0,3805 | 0,3723 | 0,3916 |
-| CLARE | 0,3083 | 0,3016 | 0,2703 |
+| zero-shot | 0% | 0.3788 | — |
+| full-model | 5% | 0.3875 | +0.0086 |
+| full-model | 10% | 0.3898 | +0.0109 |
+| full-model | 20% | **0.3924** | **+0.0136** |
+| head-only | 5% | 0.3226 | −0.0563 |
+| head-only | 10% | 0.3344 | −0.0445 |
+| head-only | 20% | 0.3449 | −0.0339 |
 
-Эффект мультимодальности зависит от набора и модели: на MEFAR сильнее
-peripheral-only, на CL-Drive fusion даёт небольшой прирост, на CLARE fusion
-ухудшает результат. Универсальное улучшение на 5–10% не подтверждено.
+Для full-model прирост participant-macro Macro-F1 сохраняется после поправки Холма для всех трёх бюджетов. Head-only не улучшает Macro-F1 и Balanced Accuracy.
 
-- [`MEFAR`](reports/external_datasets/mefar_multimodal_xgboost_protocol.md)
-- [`CL-Drive`](reports/external_datasets/cl_drive_multimodal_protocol.md)
-- [`CLARE`](reports/external_datasets/clare_multimodal_protocol.md)
+Формальный прикладной ориентир Accuracy ≥ 0.75 на уровне системы не достигнут и не используется как критерий выбора модели.
 
-### COG-BCI, contrastive transfer и FOMAML
+### Внешняя мультимодальная проверка
 
-Расширение COG-BCI с 14 до 62 каналов не прошло заранее заданный порог: прирост
-Balanced Accuracy составил около +0,0077 при требовании +0,03. Сохранён
-14-канальный кэш. Shape-only и time-aligned contrastive transfer не дали
-устойчивого downstream-улучшения; решение — `close_transfer_track`.
+Используются MEFAR, CL-Drive и CLARE.
 
-Raw-deduplicated FOMAML проверен как ограниченный diagnostic: один fold,
-seed 42, пять участников и EEGNet. ΔMacro F1 относительно supervised
-full-model составил −0,046338; решение — `do_not_proceed`. Это отрицательный
-результат конкретного протокола, а не доказательство бесполезности
-метаобучения вообще.
+XGBoost:
 
-## Потоковая обработка
+| Набор | EEG-only Macro-F1 | Peripheral-only | Fusion |
+|---|---:|---:|---:|
+| MEFAR | 0.3972 | **0.5776** | 0.5111 |
+| CL-Drive | 0.3805 | 0.3723 | **0.3916** |
+| CLARE | **0.3083** | 0.3016 | 0.2703 |
 
-### Вычислительная задержка
+Дополнительная физиологическая модальность не даёт универсального улучшения: результат зависит от набора данных и способа объединения.
 
-Scientific replay использует 10-секундное окно с шагом обновления 1 секунда.
-Проверены два диагностических профиля:
+### Независимый cross-dataset перенос CL-Drive ↔ CLARE
 
-| Профиль | Признаков | Feature P95 | Model P95 | Total P95 | Realtime factor |
-|---|---:|---:|---:|---:|---:|
-| full | 399 | 3047,411 мс | 4,723 мс | 3052,311 мс | 0,356× |
-| lightweight | 336 | 6,573 мс | 5,624 мс | 12,215 мс | 63,825× |
+Для научной проверки domain shift используются независимые CL-Drive и CLARE. Внутренние `gpn_data`/`Old_EEG` для доказательства междоменного переноса не применяются.
 
-Полный профиль не укладывается в бюджет обновления 1 секунду; облегчённый
-профиль укладывается с большим запасом. Эти значения измеряют программную
-обработку replay и **не** являются полной задержкой
-`сенсор → передача → буфер → обработка → API/UI`. Live end-to-end тест с
-физическим EEG-устройством пока не выполнен.
-
-### Streaming worker и FastAPI
-
-[`apps/streaming_worker/`](apps/streaming_worker/) содержит:
-
-- replay- и Lab Streaming Layer (LSL) sources;
-- буферизацию окон и EEG quality checks;
-- model bundle, prediction postprocessing и latest-state sink;
-- standalone worker;
-- FastAPI transport layer.
-
-Проверенные маршруты:
+EEG-only контракт:
 
 ```text
-GET       /health
-GET       /v1/status
-POST      /v1/runtime/start
-POST      /v1/runtime/stop
-GET       /v1/predictions/latest
-WebSocket /v1/stream
+channels: TP9, AF7, AF8, TP10
+sample rate: 256 Hz
+window: 10 s
+target: subjective cognitive load, fixed 3 classes
 ```
 
-## Воспроизводимость и запуск
+Participant-macro Macro-F1:
 
-Установка зависимостей выполняется в окружении проекта. Примеры ниже
-предполагают запуск из корня репозитория и наличие локальных данных/кэшей.
+| Направление | Target-only | Source-only | DANN |
+|---|---:|---:|---:|
+| CL-Drive → CLARE | **0.2175** | 0.1890 | 0.1695 |
+| CLARE → CL-Drive | **0.2876** | 0.2202 | 0.2095 |
 
-Исторический пятифолдовый Random Forest для `label_q5`:
+Прямой перенос ухудшает качество в обоих направлениях. DANN не компенсировал межнаборный сдвиг и в среднем дал дополнительное снижение. После поправки Холма статистически подтверждённого преимущества или ухудшения DANN не получено.
 
-```powershell
-python cli.py --config configs/groupkfold_rf_label_q5.yaml --verbose
+### Потоковая обработка
+
+Scientific replay использует 10-секундное окно со сдвигом 1 секунда.
+
+| Профиль | Признаков | Feature P95 | Model P95 | Total P95 |
+|---|---:|---:|---:|---:|
+| full | 399 | 3047.411 ms | 4.723 ms | 3052.311 ms |
+| lightweight | 336 | 6.573 ms | 5.624 ms | **12.215 ms** |
+
+Полный профиль не укладывается в шаг обновления 1 с. Облегчённый профиль имеет большой вычислительный запас и позволяет после накопления первого окна формировать новое предсказание раз в секунду.
+
+Эти измерения относятся к программной обработке готового окна. Полная задержка `сенсор → транспорт → буфер → обработка → пользователь` с физическим ЭЭГ-устройством пока не измерена.
+
+## Внешние наборы
+
+### COG-BCI
+
+Используется как отдельный диагностический и transfer-контур:
+
+- 29 участников;
+- 3 сессии;
+- 1 044 EEG-записи;
+- ≈ 81.75 ч;
+- 500 Hz;
+- 62/63 EEG-канала в нативных схемах;
+- N-Back, MATB-II, PVT, Flanker и resting state.
+
+Расширение числа каналов и contrastive/meta-learning эксперименты сохранены как диагностические результаты; устойчивого downstream-улучшения в проверенных конфигурациях не получено.
+
+### CL-Drive и CLARE
+
+Для EEG-only cross-dataset эксперимента:
+
+- CL-Drive: 3 086 пригодных EEG-окон, 21 участник;
+- CLARE: 3 829 пригодных EEG-окон, 19 участников.
+
+Для мультимодального matched-контура используются более узкие общие когорты EEG + ECG + EDA; их размеры не следует смешивать с EEG-only DANN-когортой.
+
+## Структура репозитория
+
+```text
+bench/
+  datasets/          загрузчики и dataset-контракты
+  experiments/       воспроизводимые экспериментальные протоколы
+  tasks/             target registry и target transforms
+  analysis/          статистический и диагностический анализ
+
+cogstate/
+  preprocessing/     фильтрация и удаление артефактов
+  features/          унифицированное извлечение признаков
+  streaming/         потоковая обработка
+  adaptation/        компоненты адаптации
+
+model_zoo/            единая фабрика моделей
+experiments/          конфигурации экспериментов
+scripts/              CLI-точки запуска
+apps/streaming_worker/
+reports/              отчёты и сводные артефакты
+artifacts/            небольшие model-bundle manifests
 ```
 
-Канонический seven-PM feature baseline:
+Большие кэши, predictions, checkpoints, веса моделей и `benchmark_results/` не хранятся в Git.
+
+## Воспроизводимость
+
+Основной Python-окружение проекта должно содержать PyTorch, scikit-learn, pandas, NumPy, SciPy и зависимости конкретных моделей.
+
+Пример полного A–H запуска:
 
 ```powershell
-python scripts/run_pm_all_targets_feature_baseline.py `
-  --config experiments/pm_regression/pm_all_targets_feature_baseline.yaml `
+python scripts\run_preprocessing_factorial_q3_all_pm.py `
+  --config experiments\preprocessing\preprocessing_factorial_q3_all_pm_v1.json `
+  --run `
   --resume
 ```
 
-LightGBM и fold-local отбор 50 признаков — полный запуск требует явного
-подтверждающего флага и выполняет 140 ячеек:
+План без обучения:
 
 ```powershell
-python scripts/run_lightgbm_feature_selection.py `
-  --config experiments/feature_selection/lightgbm_feature_selection_v1.yaml `
-  --confirm-full
+python scripts\run_preprocessing_factorial_q3_all_pm.py `
+  --config experiments\preprocessing\preprocessing_factorial_q3_all_pm_v1.json `
+  --plan-only
+```
+
+Тест нового контура:
+
+```powershell
+python -m pytest tests\test_preprocessing_factorial_q3_all_pm.py -q
 ```
 
 Scientific lightweight replay:
 
 ```powershell
-python scripts/run_streaming_scientific.py `
-  --config configs/streaming_scientific_lightweight_v1.yaml `
+python scripts\run_streaming_scientific.py `
+  --config configs\streaming_scientific_lightweight_v1.yaml `
   --action replay
 ```
 
-FastAPI поверх streaming worker:
+FastAPI:
 
 ```powershell
 python -m apps.streaming_worker.api `
-  --config configs/streaming_scientific_lightweight_v1.yaml
+  --config configs\streaming_scientific_lightweight_v1.yaml
 ```
 
-Тесты:
+## Ограничения
 
-```powershell
-python -m pytest -q
-```
+- Основная внутренняя когорта сравнительно невелика: 54 участника.
+- PM являются проприетарными показателями устройства, а не независимой клинической разметкой.
+- Межсубъектное качество остаётся умеренным.
+- Формальный ориентир Accuracy 75% не достигнут.
+- Мультимодальность не обеспечивает универсального прироста.
+- DANN не устранил cross-dataset shift между CL-Drive и CLARE.
+- Полный MNE-FASTER и CAR не улучшили основной классификационный контур.
+- Live end-to-end задержка с физическим EEG-устройством не измерена.
+- Предварительный model-zoo срез не является окончательным пятифолдовым рейтингом архитектур.
 
-Подготовленный selected-model confirmatory seven-PM протокол находится в
-[`selected_models_5fold_v1.json`](experiments/pm_confirmatory/selected_models_5fold_v1.json),
-но полный эксперимент ещё не выполнен и не включён в завершённые результаты.
+## Итог
 
-## Итоговые материалы
-
-- [Сводный пакет результатов](reports/summary/final_project_results.md)
-- [Итоговые таблицы и рисунки](reports/summary/final_result_tables/)
-- [Итоговое состояние](reports/integration/project_final_state.md)
-- [Научные выводы](reports/integration/project_scientific_conclusions.md)
-- [Отрицательные результаты](reports/integration/project_negative_results.md)
-- [Аудит воспроизводимости](reports/integration/project_reproducibility_audit.md)
-- [Покрытие требований](reports/requirements/final_requirement_coverage.md)
-
-Сводные документы были сформированы до части августовских экспериментов;
-поэтому для LightGBM, PM-quality, streaming и мультимодальных результатов
-приоритет имеют соответствующие experiment manifests и первичные runtime
-CSV/JSON. Ссылки сохранены как общий индекс ранее консолидированных результатов.
-
-## Текущее состояние и ограничения
-
-Реализованы target infrastructure семи PM, model zoo, временной PM-аудит,
-персонализация, transfer/DANN, мультимодальные эксперименты, fold-local feature
-selection, scientific streaming replay и streaming worker/API.
-
-Остаются отдельными задачами:
-
-- физический end-to-end live тест с реальным EEG-устройством;
-- прикладная live-демонстрация с устройством;
-- полная quantitative 5-fold FASTER-like/ICA ablation, если она потребуется;
-- полный selected-model confirmatory benchmark, если будет принято решение о
-  его запуске;
-- окончательное оформление методических рекомендаций, отчёта и презентации.
-
-Недостижение Accuracy 75% в персонализации `label_q5` и отсутствие
-универсального мультимодального прироста — уже проверенные результаты, а не
-задачи, которые следует скрывать дополнительным подбором параметров. Raw
-proprietary Emotiv data, большие runtime outputs и веса моделей намеренно не
-хранятся в Git.
+Проект сформировал воспроизводимый экспериментальный контур для классификации семи когнитивных PM по носимой ЭЭГ. Основные результаты включают межсубъектную оценку, сопоставленные абляции предобработки, персональную калибровку, независимую cross-dataset проверку, мультимодальные эксперименты и потоковый программный прототип. Отрицательные результаты сохраняются как часть экспериментальных выводов и не исключаются постфактум подбором параметров.
