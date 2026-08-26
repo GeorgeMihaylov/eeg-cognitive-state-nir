@@ -1,3 +1,5 @@
+"""Application inner split contract with no outer-test access."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

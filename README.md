@@ -345,21 +345,36 @@ bench/
   datasets/          загрузчики и dataset-контракты
   experiments/       воспроизводимые экспериментальные протоколы
   tasks/             target registry и target transforms
+  validation/        канонические scientific splits и метрики
+  data_quality/      переиспользуемые inventory/QC-аудиты
+  preprocessing/     fold-local transforms, caches и orchestration
+  features/          dataset-specific feature caches/adapters
+  automl/            nested scientific optimization
   analysis/          статистический и диагностический анализ
 
 cogstate/
+  ingestion/         generic parsing и canonical records
   preprocessing/     фильтрация и удаление артефактов
-  features/          унифицированное извлечение признаков
+  features/          каноническое target-free извлечение 371 признака
   streaming/         потоковая обработка
-  adaptation/        компоненты адаптации
+  adaptation/        используемые participant-alignment компоненты
+  evaluation/        application facade над bench.validation
+  model_zoo/         compatibility facade и streaming multitask extension
 
 model_zoo/            единая фабрика моделей
+automl/               application portfolio/adaptation orchestration
 experiments/          конфигурации экспериментов
-scripts/              CLI-точки запуска
+scripts/              тонкие актуальные CLI-точки запуска
+src/                  только thin compatibility entry points старых команд
 apps/streaming_worker/
 reports/              отчёты и сводные артефакты
 artifacts/            небольшие model-bundle manifests
 ```
+
+Reusable-логика исторических `src/XX_*.py` перенесена в `bench/` и
+`cogstate/`. Старые пути оставлены только для воспроизводимости завершённых
+команд; новые запуски следует выполнять через соответствующие entry points в
+`scripts/data/` и `scripts/analysis/`.
 
 Большие кэши, predictions, checkpoints, веса моделей и `benchmark_results/` не хранятся в Git.
 

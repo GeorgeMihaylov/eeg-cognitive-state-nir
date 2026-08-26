@@ -1,3 +1,5 @@
+"""Bindings from application candidates to canonical project model APIs."""
+
 from __future__ import annotations
 
 from typing import Any, Mapping, Sequence

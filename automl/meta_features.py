@@ -1,3 +1,5 @@
+"""Target-free application metadata used for portfolio routing."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

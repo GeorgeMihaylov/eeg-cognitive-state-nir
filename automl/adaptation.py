@@ -1,3 +1,5 @@
+"""Application-only adaptation helpers for an already selected candidate."""
+
 from __future__ import annotations
 
 import copy

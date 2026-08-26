@@ -1,3 +1,5 @@
+"""Application portfolio orchestration outside scientific model selection."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Mapping, Optional, Sequence

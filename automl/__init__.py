@@ -1,5 +1,8 @@
-"""personal_automl — dataset-agnostic AutoML for per-user/per-subject
-model selection and fine-tuning-method selection.
+"""Application AutoML for per-user portfolio and adaptation orchestration.
+
+Scientific fold-local optimization belongs to ``bench.automl``. This package
+must receive an already separated application calibration/validation view and
+must never select a candidate from outer-test results.
 
 The core package (this directory) has no dependency on any specific
 dataset, sensor modality, or ML framework. To use it on a concrete

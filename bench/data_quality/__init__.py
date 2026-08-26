@@ -1,4 +1,4 @@
-"""Dataset quality audits used by reproducible benchmark experiments."""
+"""Reusable, training-free dataset quality-control and inventory tools."""
 
 from .feature_outlier_audit import (
     run_feature_outlier_audit,

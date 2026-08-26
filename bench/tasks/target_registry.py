@@ -5,18 +5,11 @@ from __future__ import annotations
 import warnings
 from typing import Any, Mapping
 
+from cogstate.protocol import PM_METRICS
+
 from .target_spec import TargetSpec
 
 
-PM_METRICS = (
-    "attention",
-    "engagement",
-    "excitement",
-    "stress",
-    "relaxation",
-    "interest",
-    "focus",
-)
 PM_TARGET_COLUMNS = tuple(f"target_{metric}" for metric in PM_METRICS)
 FEATURE_INPUTS = ("eeg", "pow", "eeg_pow")
 REGRESSION_METRICS = ("mae", "rmse", "r2", "spearman")

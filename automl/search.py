@@ -1,3 +1,5 @@
+"""Staged application search over an explicit inner split only."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

@@ -18,17 +18,10 @@ import pandas as pd
 import pyarrow.parquet as pq
 import yaml
 
+from cogstate.protocol import PM_METRICS
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PM_METRICS = (
-    "attention",
-    "engagement",
-    "excitement",
-    "stress",
-    "relaxation",
-    "interest",
-    "focus",
-)
 PM_DISPLAY_NAMES_RU = {
     "attention": "Внимание",
     "engagement": "Вовлечённость",

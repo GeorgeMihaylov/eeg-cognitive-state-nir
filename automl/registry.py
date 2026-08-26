@@ -1,3 +1,5 @@
+"""Governed application candidate registry, not a benchmark search space."""
+
 from __future__ import annotations
 
 import enum

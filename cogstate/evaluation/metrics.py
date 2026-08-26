@@ -1,6 +1,21 @@
+"""Application latency metrics.
+
+Classification and regression metrics belong exclusively to
+``bench.validation.metrics``.
+"""
+
+from __future__ import annotations
+
 import numpy as np
-from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score
-def classification_metrics(y_true, y_pred):
-    return {"accuracy": float(accuracy_score(y_true, y_pred)), "balanced_accuracy": float(balanced_accuracy_score(y_true, y_pred)), "f1_macro": float(f1_score(y_true, y_pred, average="macro", zero_division=0))}
-def latency_metrics(latencies_ms):
-    x = np.asarray(latencies_ms, float); return {"mean_ms": float(x.mean()), "p95_ms": float(np.percentile(x, 95)), "max_ms": float(x.max())}
+
+
+def latency_metrics(latencies_ms: object) -> dict[str, float]:
+    """Summarize application latency; latency is not a scientific target metric."""
+    values = np.asarray(latencies_ms, dtype=float)
+    if values.ndim != 1 or len(values) == 0 or not np.isfinite(values).all():
+        raise ValueError("latencies_ms must be a non-empty finite one-dimensional array")
+    return {
+        "mean_ms": float(values.mean()),
+        "p95_ms": float(np.percentile(values, 95)),
+        "max_ms": float(values.max()),
+    }
