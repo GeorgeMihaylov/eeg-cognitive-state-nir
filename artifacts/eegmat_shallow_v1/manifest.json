@@ -1,0 +1,16 @@
+{
+  "version": "eegmat-shallow-v1",
+  "model_type": "torch_shallow_convnet_multitask",
+  "input_mode": "raw_eeg",
+  "input_layout": "batch,1,channels,time",
+  "sample_rate": 500,
+  "channels": ["Fp1", "Fp2", "F7", "F3", "Fz", "F4", "F8", "T3", "C3", "Cz", "C4", "T4", "T5", "P3", "Pz", "P4", "T6", "O1", "O2"],
+  "window_seconds": 10,
+  "n_times": 5000,
+  "class_names": ["low", "medium", "high"],
+  "target_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
+  "preprocessing": {"bandpass_low_hz": 1, "bandpass_high_hz": 45, "notch_hz": 50, "filter_mode": "causal", "artifact_removal": "none", "artifact_bundle_version": null},
+  "diagnostic_only": false,
+  "model_file": "model.pt",
+  "description": "Neurocom EEGMAT input contract for seven PM heads; the native binary label alone cannot supervise every head."
+}

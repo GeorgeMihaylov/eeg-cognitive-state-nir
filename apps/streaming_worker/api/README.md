@@ -20,6 +20,24 @@ Endpoints:
 - `POST /v1/runtime/stop` — stop the active worker;
 - `WS /v1/stream` — prediction envelopes and idle heartbeats.
 
+Every worker start creates a new `run_id` and clears the previous latest
+prediction. Runtime status distinguishes `idle`, `starting`, `running`,
+`stopping`, `completed`, `stopped` and `failed`. It also exposes the active
+model's `model_type`, `input_mode`, `class_names` and optional multitask target
+names.
+
+WebSocket prediction messages use `type: prediction` and carry the same
+typed streaming result as `GET /v1/predictions/latest`. A finite replay or a
+stopped/failed runtime ends the stream with one of:
+
+- `runtime_completed`;
+- `runtime_stopped`;
+- `runtime_failed`.
+
+Starting an already running worker returns HTTP 409. A model, manifest or
+source initialization failure returns HTTP 503 while the API remains available
+and reports the failure through `/health` and `/v1/status`.
+
 The default host is loopback-only.  Runtime control endpoints do not implement
 authentication and must not be exposed to an untrusted network as-is.
 

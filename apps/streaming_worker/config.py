@@ -40,7 +40,9 @@ class PreprocessingConfig:
     bandpass_high_hz: float = 45.0
     notch_enabled: bool = True
     notch_hz: float = 50.0
-    faster: bool = True
+    faster: bool = False
+    mne_faster_enabled: bool = False
+    mne_faster_bundle_dir: str | None = None
 
 
 @dataclass(frozen=True)
@@ -57,8 +59,9 @@ class FeatureConfig:
 
 @dataclass(frozen=True)
 class ModelConfig:
-    artifact_dir: str = "artifacts/pm_model_v1"
+    artifact_dir: str = "artifacts/shallow_convnet_diagnostic"
     allow_bootstrap: bool = True
+    device: str = "auto"
 
 
 @dataclass(frozen=True)
@@ -113,14 +116,30 @@ class WorkerConfig:
             < nyquist
         ):
             raise ValueError("Bandpass frequencies must be inside the Nyquist range")
-        if self.preprocessing.notch_enabled and not 0 < self.preprocessing.notch_hz < nyquist:
+        if self.preprocessing.notch_enabled and not (
+            0 < self.preprocessing.notch_hz < nyquist
+        ):
             raise ValueError("notch_hz must be inside the Nyquist range")
+        if self.preprocessing.faster and self.preprocessing.mne_faster_enabled:
+            raise ValueError(
+                "Legacy online FASTER and calibrated MNE-FASTER are mutually exclusive"
+            )
+        if (
+            self.preprocessing.mne_faster_enabled
+            and not self.preprocessing.mne_faster_bundle_dir
+        ):
+            raise ValueError(
+                "preprocessing.mne_faster_bundle_dir is required when "
+                "mne_faster_enabled=true"
+            )
         if not 0 <= self.quality.max_missing_ratio < 1:
             raise ValueError("max_missing_ratio must be in [0, 1)")
         if not 0 < self.quality.minimum_finite_ratio <= 1:
             raise ValueError("minimum_finite_ratio must be in (0, 1]")
         if self.features.profile not in {"lightweight", "full"}:
             raise ValueError("features.profile must be 'lightweight' or 'full'")
+        if not self.model.device:
+            raise ValueError("model.device must not be empty")
         if not 0 < self.postprocessing.probability_ema_alpha <= 1:
             raise ValueError("probability_ema_alpha must be in (0, 1]")
         if self.postprocessing.confirmation_windows < 1:

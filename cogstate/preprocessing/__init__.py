@@ -33,6 +33,7 @@ from .full_faster import (
     interpolate_channels,
     run_faster,
 )
+from .mne_faster import MNEFasterBundle, MNEFasterCalibrator, MNEFasterConfig
 from .offline import (
     OfflinePreprocessingConfig,
     OfflinePreprocessingPipeline,
@@ -66,6 +67,9 @@ __all__ = [
     "FullFasterConfig",
     "FullFasterReport",
     "IcaConfig",
+    "MNEFasterBundle",
+    "MNEFasterCalibrator",
+    "MNEFasterConfig",
     "OfflinePreprocessingConfig",
     "OfflinePreprocessingPipeline",
     "OfflinePreprocessingReport",

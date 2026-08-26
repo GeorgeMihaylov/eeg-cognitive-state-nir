@@ -1,0 +1,16 @@
+{
+  "version": "openneuro-ds007554-shallow-v1",
+  "model_type": "torch_shallow_convnet_multitask",
+  "input_mode": "raw_eeg",
+  "input_layout": "batch,1,channels,time",
+  "sample_rate": 250,
+  "channels": ["Fp1", "Fp2", "F7", "F3", "Fz", "F4", "F8", "FC5", "FC1", "FC2", "FC6", "T7", "C3", "Cz", "C4", "T8", "CP5", "CP1", "CP2", "CP6", "P7", "P3", "Pz", "P4", "P8", "PO7", "PO3", "PO4", "PO8", "O1", "Oz", "O2"],
+  "window_seconds": 10,
+  "n_times": 2500,
+  "class_names": ["low", "medium", "high"],
+  "target_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
+  "preprocessing": {"bandpass_low_hz": 1, "bandpass_high_hz": 45, "notch_hz": 50, "filter_mode": "causal", "artifact_removal": "none", "artifact_bundle_version": null},
+  "diagnostic_only": false,
+  "model_file": "model.pt",
+  "description": "32-channel, 250 Hz ds007554 template. Replace the channel list with the exact ordered BIDS EEG channels before training."
+}

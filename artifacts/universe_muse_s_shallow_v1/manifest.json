@@ -1,0 +1,16 @@
+{
+  "version": "universe-muse-s-shallow-v1",
+  "model_type": "torch_shallow_convnet_multitask",
+  "input_mode": "raw_eeg",
+  "input_layout": "batch,1,channels,time",
+  "sample_rate": 256,
+  "channels": ["TP9", "AF7", "AF8", "TP10"],
+  "window_seconds": 10,
+  "n_times": 2560,
+  "class_names": ["low", "medium", "high"],
+  "target_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
+  "preprocessing": {"bandpass_low_hz": 1, "bandpass_high_hz": 45, "notch_hz": 50, "filter_mode": "causal", "artifact_removal": "none", "artifact_bundle_version": null},
+  "diagnostic_only": false,
+  "model_file": "model.pt",
+  "description": "Muse S four-channel workload model contract for UNIVERSE."
+}

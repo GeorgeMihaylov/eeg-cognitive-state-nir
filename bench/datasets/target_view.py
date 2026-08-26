@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
+from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
 import numpy as np
@@ -11,6 +14,89 @@ import pandas as pd
 from bench.tasks.target_spec import TargetCohort, TargetSpec, TargetView
 
 from .base_eeg_data_loader import resolve_feature_columns
+
+
+def sample_id_filter_hash(sample_ids: Iterable[object]) -> str:
+    """Return an order-independent hash for an explicit sample cohort."""
+
+    values = sorted(str(value) for value in sample_ids)
+    payload = json.dumps(
+        values, ensure_ascii=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def load_sample_id_filter(path: str | Path) -> np.ndarray:
+    """Load one unique, target-free sample-ID cohort from Parquet or CSV."""
+
+    source = Path(path)
+    if not source.is_file():
+        raise FileNotFoundError(f"Sample-ID filter not found: {source}")
+    if source.suffix.lower() in {".parquet", ".pq"}:
+        frame = pd.read_parquet(source)
+    elif source.suffix.lower() == ".csv":
+        frame = pd.read_csv(source)
+    else:
+        raise ValueError("Sample-ID filter must be a Parquet or CSV table")
+    target_like = [
+        column for column in frame.columns
+        if str(column).startswith(("target_", "label_", "PM."))
+    ]
+    if target_like:
+        raise ValueError(
+            f"Sample-ID filter must be target-free; found {target_like}"
+        )
+    column = (
+        "sample_id" if "sample_id" in frame.columns
+        else "endpoint_sample_id" if "endpoint_sample_id" in frame.columns
+        else None
+    )
+    if column is None:
+        raise ValueError(
+            "Sample-ID filter requires sample_id or endpoint_sample_id"
+        )
+    values = frame[column]
+    if values.isna().any() or values.duplicated().any():
+        raise ValueError("Sample-ID filter values must be unique and non-null")
+    return values.to_numpy(copy=True)
+
+
+def sample_id_filter_positions(
+    frame: pd.DataFrame,
+    path: str | Path,
+    *,
+    strict: bool = True,
+) -> tuple[np.ndarray, dict[str, object]]:
+    """Resolve filter IDs to source-order row positions with an identity audit."""
+
+    _require_columns(frame, ("sample_id",))
+    if frame["sample_id"].isna().any() or frame["sample_id"].duplicated().any():
+        raise ValueError("Source table sample_id values must be unique and non-null")
+    requested = load_sample_id_filter(path)
+    source_keys = frame["sample_id"].astype(str)
+    requested_keys = pd.Index(pd.Series(requested).astype(str))
+    missing = sorted(set(requested_keys) - set(source_keys))
+    if strict and missing:
+        raise ValueError(
+            "Sample-ID filter contains IDs absent from the source table: "
+            f"{missing[:20]}"
+        )
+    positions = np.flatnonzero(
+        source_keys.isin(set(requested_keys)).to_numpy()
+    )
+    selected_ids = frame.iloc[positions]["sample_id"]
+    audit: dict[str, object] = {
+        "path": str(Path(path)),
+        "requested_count": int(len(requested)),
+        "selected_count": int(len(positions)),
+        "missing_count": int(len(missing)),
+        "sample_id_filter_hash": sample_id_filter_hash(requested),
+        "selected_sample_id_hash": sample_id_filter_hash(selected_ids),
+        "exact_match": bool(not missing and len(positions) == len(requested)),
+    }
+    if strict and not audit["exact_match"]:
+        raise RuntimeError(f"Sample-ID filter identity mismatch: {audit}")
+    return positions, audit
 
 
 @dataclass(frozen=True)

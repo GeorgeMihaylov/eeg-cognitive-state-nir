@@ -405,6 +405,25 @@ python -m apps.streaming_worker.api `
   --config configs\streaming_scientific_lightweight_v1.yaml
 ```
 
+Прикладной streaming CLI и terminal dashboard:
+
+```powershell
+python -m apps.streaming_worker validate --config configs\streaming.yaml
+python -m apps.streaming_worker run --config configs\streaming.yaml --dashboard
+python -m apps.streaming_worker run --config configs\streaming.yaml --demo --dashboard
+```
+
+Docker-образ использует тот же `configs/streaming.yaml` и запускает FastAPI:
+
+```powershell
+docker build -t eeg-cogstate-streaming .
+docker run --rm -p 8000:8000 eeg-cogstate-streaming
+```
+
+Для production-запуска необходимо смонтировать совместимые replay/device data
+и model bundle; bootstrap-manifests предназначены только для диагностического
+сквозного smoke-теста.
+
 ## Ограничения
 
 - Основная внутренняя когорта сравнительно невелика: 54 участника.

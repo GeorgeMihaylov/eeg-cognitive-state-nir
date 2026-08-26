@@ -14,17 +14,18 @@ from cogstate.features.streaming import (
 )
 from cogstate.preprocessing.artifact_removal import FasterConfig, apply_faster
 from cogstate.preprocessing.filtering import FilterConfig, StreamingFilter
+from cogstate.preprocessing.mne_faster import MNEFasterBundle
 from cogstate.streaming.buffer import SignalBuffer, StreamSample, Window
 from cogstate.streaming.inference import InferenceService, PredictionResult
 from cogstate.streaming.processor import StreamProcessor
 
 from .config import WorkerConfig
-from .contracts import (
-    feature_schema_hash,
-    preprocessing_contract,
-    preprocessing_hash,
+from .contracts import feature_schema_hash, preprocessing_contract, preprocessing_hash
+from .model_bundle import (
+    FeatureModelBundle,
+    ShallowConvNetBundle,
+    load_model_bundle,
 )
-from .model_bundle import BundlePMModel, load_model_bundle
 from .postprocessing import PredictionFilter
 from .quality import EEGQualityGate, QualityReport
 from .sinks import CompositeSink, ConsoleSink, JsonlSink, LatestStateSink
@@ -39,10 +40,13 @@ class StreamingOutput:
     window_end: float
     quality: QualityReport
     prediction: PredictionResult | None
-    raw_prediction: PredictionResult | None
     stage_latencies_ms: dict[str, float]
     model_version: str
+    model_type: str
+    input_mode: str
+    class_names: tuple[str, ...]
     diagnostic_model: bool
+    raw_prediction: PredictionResult | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -50,22 +54,54 @@ class StreamingOutput:
             "window_end": self.window_end,
             "quality": self.quality.as_dict(),
             "prediction": asdict(self.prediction) if self.prediction else None,
-            "raw_prediction": asdict(self.raw_prediction) if self.raw_prediction else None,
-            "postprocessed_prediction": asdict(self.prediction) if self.prediction else None,
+            "raw_prediction": (
+                asdict(self.raw_prediction) if self.raw_prediction else None
+            ),
+            "postprocessed_prediction": (
+                asdict(self.prediction) if self.prediction else None
+            ),
             "stage_latencies_ms": self.stage_latencies_ms,
             "model_version": self.model_version,
+            "model_type": self.model_type,
+            "input_mode": self.input_mode,
+            "class_names": list(self.class_names),
             "diagnostic_model": self.diagnostic_model,
         }
 
 
 class _WindowArtifactPreprocessor:
-    def __init__(self, enabled: bool) -> None:
-        self.enabled = enabled
-        self.config = FasterConfig()
+    def __init__(
+        self,
+        bundle: MNEFasterBundle | None,
+        *,
+        legacy_faster_enabled: bool = False,
+    ) -> None:
+        self.bundle = bundle
+        self.legacy_faster_enabled = legacy_faster_enabled
+        self.legacy_config = FasterConfig()
 
     def __call__(self, window: Window) -> np.ndarray:
         signal = window.data["eeg"]
-        return apply_faster(signal, self.config) if self.enabled else signal.copy()
+        if self.bundle is not None:
+            return self.bundle.transform(signal)
+        if self.legacy_faster_enabled:
+            return apply_faster(signal, self.legacy_config)
+        return signal.copy()
+
+
+class _RawEEGWindowInput:
+    """Convert ``[time, channels]`` windows to model input ``[1, channels, time]``."""
+
+    def __init__(self, n_channels: int, n_times: int) -> None:
+        self.expected_shape = (n_times, n_channels)
+
+    def __call__(self, clean_signal: np.ndarray, window: Window) -> np.ndarray:
+        values = np.asarray(clean_signal, dtype=np.float32)
+        if values.shape != self.expected_shape:
+            raise ValueError(
+                f"Expected cleaned EEG window {self.expected_shape}, got {values.shape}"
+            )
+        return np.ascontiguousarray(values.T[None, :, :])
 
 
 class StreamingRuntime:
@@ -111,14 +147,36 @@ class StreamingRuntime:
             n_channels=len(channels),
             config=config.quality,
         )
-        self._features = (
+        feature_pipeline = (
             build_lightweight_pipeline(sample_rate)
             if config.features.profile == "lightweight"
             else build_streaming_full_pipeline(sample_rate)
         )
-        feature_names = self._features.feature_names(len(channels))
+        feature_names = feature_pipeline.feature_names(len(channels))
         feature_count = len(feature_names)
-        preprocessing_payload = preprocessing_contract(
+        filter_contract = {
+            "bandpass_low_hz": config.preprocessing.bandpass_low_hz,
+            "bandpass_high_hz": config.preprocessing.bandpass_high_hz,
+            "notch_hz": config.preprocessing.notch_hz,
+            "filter_mode": "causal",
+        }
+        artifact_bundle: MNEFasterBundle | None = None
+        if config.preprocessing.mne_faster_enabled:
+            assert config.preprocessing.mne_faster_bundle_dir is not None
+            artifact_bundle = MNEFasterBundle.load(
+                config.preprocessing.mne_faster_bundle_dir
+            )
+            artifact_bundle.validate(
+                sample_rate=sample_rate,
+                channel_names=channels,
+                preprocessing_contract=filter_contract,
+            )
+        raw_preprocessing_contract = {
+            **filter_contract,
+            "artifact_removal": "mne_faster" if artifact_bundle else "none",
+            "artifact_bundle_version": artifact_bundle.version if artifact_bundle else None,
+        }
+        feature_preprocessing_contract = preprocessing_contract(
             sample_rate=sample_rate,
             bandpass_enabled=config.preprocessing.bandpass_enabled,
             bandpass_low_hz=config.preprocessing.bandpass_low_hz,
@@ -127,21 +185,34 @@ class StreamingRuntime:
             notch_hz=config.preprocessing.notch_hz,
             faster=config.preprocessing.faster,
         )
-        self.model: BundlePMModel = load_model_bundle(
+        self.model: ShallowConvNetBundle | FeatureModelBundle = load_model_bundle(
             config.model.artifact_dir,
-            n_features=feature_count,
             sample_rate=sample_rate,
             channels=channels,
             window_seconds=config.windowing.window_seconds,
+            preprocessing=raw_preprocessing_contract,
+            allow_bootstrap=config.model.allow_bootstrap,
+            device=config.model.device,
+            n_features=feature_count,
             feature_profile=config.features.profile,
             feature_schema_hash_value=feature_schema_hash(feature_names),
-            preprocessing_hash_value=preprocessing_hash(preprocessing_payload),
-            allow_bootstrap=config.model.allow_bootstrap,
+            preprocessing_hash_value=preprocessing_hash(
+                feature_preprocessing_contract
+            ),
         )
+        if self.model.manifest.input_mode == "raw_eeg":
+            model_input = _RawEEGWindowInput(
+                len(channels), self.model.manifest.n_times
+            )
+        else:
+            model_input = feature_pipeline
         self._processor = StreamProcessor(
             buffer=self._buffer,
-            preprocessor=_WindowArtifactPreprocessor(config.preprocessing.faster),
-            feature_extractor=self._features,
+            preprocessor=_WindowArtifactPreprocessor(
+                artifact_bundle,
+                legacy_faster_enabled=config.preprocessing.faster,
+            ),
+            feature_extractor=model_input,
             inference_service=InferenceService(self.model),
         )
         self._prediction_filter = PredictionFilter(config.postprocessing)
@@ -187,10 +258,19 @@ class StreamingRuntime:
                 window_end=window.end_time,
                 quality=quality,
                 prediction=None,
-                raw_prediction=None,
                 stage_latencies_ms={},
                 model_version=self.model.version,
+                model_type=self.model.manifest.model_type,
+                input_mode=self.model.manifest.input_mode,
+                class_names=tuple(
+                    getattr(
+                        self.model.manifest,
+                        "class_names",
+                        ("low", "medium", "high"),
+                    )
+                ),
                 diagnostic_model=self.model.manifest.diagnostic_only,
+                raw_prediction=None,
             )
         )
 
@@ -232,10 +312,19 @@ class StreamingRuntime:
                         window_end=window.end_time,
                         quality=quality,
                         prediction=prediction,
-                        raw_prediction=raw_prediction,
                         stage_latencies_ms=processed.stage_latencies_ms,
                         model_version=self.model.version,
+                        model_type=self.model.manifest.model_type,
+                        input_mode=self.model.manifest.input_mode,
+                        class_names=tuple(
+                            getattr(
+                                self.model.manifest,
+                                "class_names",
+                                ("low", "medium", "high"),
+                            )
+                        ),
                         diagnostic_model=self.model.manifest.diagnostic_only,
+                        raw_prediction=raw_prediction,
                     )
                 )
 
