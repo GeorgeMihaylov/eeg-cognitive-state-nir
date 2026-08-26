@@ -1,5 +1,9 @@
 # Preprocessing ablation implementation audit
 
+Этот отчёт фиксирует исторический путь на дату аудита. Текущий cache-builder
+CLI: `scripts/data/build_raw_eeg_window_cache.py`; каталога `src` в
+актуальной архитектуре нет.
+
 Audit date: 2026-07-16  
 Branch: `feature/preprocessing-ablation`  
 Baseline tests: `80 passed, 1 warning in 5.97s`
@@ -7,7 +11,7 @@ Baseline tests: `80 passed, 1 warning in 5.97s`
 ## Current preprocessing call graph
 
 ```text
-src/10_build_raw_eeg_window_cache.py
+scripts/data/build_raw_eeg_window_cache.py
   -> YAML raw_preprocessing (or direct mapping)
   -> normalize_raw_preprocessing()
   -> build_raw_window_index()
@@ -73,7 +77,7 @@ float64.
 ## Current configuration sources
 
 - Cache builder defaults live in `DEFAULT_RAW_PREPROCESSING` and CLI defaults in
-  `src/10_build_raw_eeg_window_cache.py`.
+  `scripts/data/build_raw_eeg_window_cache.py`.
 - `--preprocessing-config` accepts either a document containing
   `raw_preprocessing` or the schema mapping directly.
 - The benchmark accepts top-level `raw_preprocessing`; `BenchmarkRunner` copies

@@ -1,5 +1,13 @@
 # Label target audit
 
+Примечание об архитектуре: упоминания `src/02`, `src/04` и `src/08`
+ниже фиксируют исторические пути на момент исходного аудита. Текущие
+реализации находятся соответственно в
+`bench/datasets/emotiv_catalog_builder.py`,
+`bench/datasets/emotiv_pm_window_builder.py` и
+`bench/features/legacy_emotiv_eeg_features.py`; актуальные CLI находятся в
+`scripts/data/`.
+
 ## Provenance
 
 The verified construction path is:

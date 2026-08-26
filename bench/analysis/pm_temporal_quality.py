@@ -1037,7 +1037,7 @@ def _render_readme(
         "",
         "## Канонический исходный контракт",
         "",
-        "`src/04_build_windowed_pm_dataset.py::read_and_aggregate_record` группирует "
+        "`bench/datasets/emotiv_pm_window_builder.py::read_and_aggregate_record` группирует "
         "каждую physical recording по `floor(Timestamp / 10 s)` и формирует "
         "`target_*` из `PM.*.Scaled__mean`. В этом пути нет PM-интерполяции, "
         "дополнительного smoothing или outlier removal.",
@@ -1173,7 +1173,7 @@ def run_analysis(
             "availability": availability,
         },
         "canonical_contract": {
-            "builder": "src/04_build_windowed_pm_dataset.py::read_and_aggregate_record",
+            "builder": "bench/datasets/emotiv_pm_window_builder.py::read_and_aggregate_record",
             "physical_record_local": True,
             "window_seconds": 10.0,
             "stride_seconds": 10.0,

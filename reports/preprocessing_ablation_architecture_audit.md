@@ -1,9 +1,13 @@
 # Preprocessing ablation architecture audit
 
+Этот отчёт фиксирует историческую архитектуру на момент аудита. Указанный ниже
+`src/13_run_preprocessing_ablation.py` впоследствии был заменён каноническим
+`scripts/run_preprocessing_ablation.py` и больше не является рабочим путём.
+
 ## Current call graph
 
 ```text
-src/13_run_preprocessing_ablation.py
+scripts/run_preprocessing_ablation.py
   -> PreprocessingAblation.plan()
      -> expand_factorial_trials()
      -> resolve_cache()
@@ -79,9 +83,8 @@ Experiment matrix
    copied summary, copied predictions, and copied benchmark metadata.
 5. Store only `resolved_trial.yaml` and `trial_reference.json` in the matrix
    reference directory.
-6. Add `--experiment-matrix` dispatch to the existing `cli.py`; retain
-   `src/13_run_preprocessing_ablation.py` only as a compatibility wrapper around
-   the same `cli.main()` implementation.
+6. Add `--experiment-matrix` dispatch to the existing `cli.py`; expose it
+   through `scripts/run_preprocessing_ablation.py`.
 
 ## Compatibility risks
 

@@ -1638,7 +1638,7 @@ normalization_plan:
       - tests/test_config_curation.py
       - tests/test_config_audit.py
     dry_load:
-      - src/16_audit_experiment_configs.py --strict
+      - scripts/analysis/audit_experiment_configs.py --strict
     rollback: Удалить только metadata patch; source experiment YAML не затрагиваются.
 
   - name: Пакет 2. Base/template consistency
@@ -1674,8 +1674,8 @@ normalization_plan:
       - tests/test_experiment_summary.py
       - tests/test_config_curation.py
     dry_load:
-      - src/15_build_experiment_summary.py --strict
-      - src/16_audit_experiment_configs.py --strict
+      - scripts/analysis/build_experiment_summary.py --strict
+      - scripts/analysis/audit_experiment_configs.py --strict
     rollback: Откатить только ссылки report/registry; experiment configs не менять.
 
   - name: Пакет 5. Физическое перемещение

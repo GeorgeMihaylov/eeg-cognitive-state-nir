@@ -48,8 +48,8 @@ EEGNet baseline:
 ## Команды
 
 ```powershell
-C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe src\09_audit_raw_eeg.py
-C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe src\10_build_raw_eeg_window_cache.py
+C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe scripts\data\audit_raw_eeg.py
+C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe scripts\data\build_raw_eeg_window_cache.py
 C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe cli.py --config configs\smoke_torch_eegnet_label_q5.yaml --verbose
 C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe cli.py --config configs\groupkfold_torch_eegnet_label_q5.yaml --verbose
 C:\Users\George\miniconda3\envs\eeg_benchmark\python.exe -m pytest -q

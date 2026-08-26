@@ -6,7 +6,7 @@ Forest выполнен как полный пятифолдовый sensitivity
 
 ## Подтверждённый исходный контракт
 
-В `src/04_build_windowed_pm_dataset.py::read_and_aggregate_record` каждый
+В `bench/datasets/emotiv_pm_window_builder.py::read_and_aggregate_record` каждый
 physical recording обрабатывается отдельно. Окна определяются как
 `floor(Timestamp / 10 s)`, поэтому размер и шаг равны 10 секундам, а overlap
 равен нулю. `target_*` копирует `PM.*.Scaled__mean`, то есть среднее PM внутри

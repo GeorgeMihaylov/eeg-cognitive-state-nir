@@ -20,7 +20,7 @@
 
 ## 5. Происхождение target_*
 
-`src/04_build_windowed_pm_dataset.py::read_and_aggregate_record` агрегирует `PM.<Metric>.Scaled` функциями mean/std/min/max/last и затем точно копирует `Scaled__mean` в `target_<metric>`. Для всех семи пар, обоих источников и масок пропусков найдено ноль расхождений; максимальная абсолютная разность равна 0.
+`bench/datasets/emotiv_pm_window_builder.py::read_and_aggregate_record` агрегирует `PM.<Metric>.Scaled` функциями mean/std/min/max/last и затем точно копирует `Scaled__mean` в `target_<metric>`. Для всех семи пар, обоих источников и масок пропусков найдено ноль расхождений; максимальная абсолютная разность равна 0.
 
 ## 6. Происхождение target_main
 

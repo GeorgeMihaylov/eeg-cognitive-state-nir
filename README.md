@@ -365,16 +365,14 @@ model_zoo/            единая фабрика моделей
 automl/               application portfolio/adaptation orchestration
 experiments/          конфигурации экспериментов
 scripts/              тонкие актуальные CLI-точки запуска
-src/                  только thin compatibility entry points старых команд
 apps/streaming_worker/
 reports/              отчёты и сводные артефакты
 artifacts/            небольшие model-bundle manifests
 ```
 
-Reusable-логика исторических `src/XX_*.py` перенесена в `bench/` и
-`cogstate/`. Старые пути оставлены только для воспроизводимости завершённых
-команд; новые запуски следует выполнять через соответствующие entry points в
-`scripts/data/` и `scripts/analysis/`.
+Reusable-логика исторических команд перенесена в `bench/` и `cogstate/`.
+Все актуальные запуски выполняются через entry points в `scripts/data/`,
+`scripts/analysis/` и `scripts/`; отдельного legacy-слоя команд нет.
 
 Большие кэши, predictions, checkpoints, веса моделей и `benchmark_results/` не хранятся в Git.
 

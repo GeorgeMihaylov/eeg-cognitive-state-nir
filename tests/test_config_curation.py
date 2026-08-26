@@ -2,24 +2,18 @@ from __future__ import annotations
 
 import csv
 import hashlib
-import importlib.util
 import io
-import sys
 from copy import deepcopy
 from pathlib import Path
 
 import pytest
 import yaml
 
+from bench.analysis import experiment_config_audit as audit
+
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "src" / "16_audit_experiment_configs.py"
 CURATION = ROOT / "reports" / "summary" / "config_curation.yaml"
-SPEC = importlib.util.spec_from_file_location("config_curation_script", SCRIPT)
-assert SPEC and SPEC.loader
-audit = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = audit
-SPEC.loader.exec_module(audit)
 
 
 def make_record(

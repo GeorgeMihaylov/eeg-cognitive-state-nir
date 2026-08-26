@@ -34,18 +34,48 @@ def test_pm_registry_uses_canonical_protocol_constant() -> None:
     assert REGISTRY_PM_METRICS is PM_METRICS
 
 
-def test_src_contains_only_thin_compatibility_entry_points() -> None:
-    tracked = sorted(Path("src").glob("*.py"))
-    assert len(tracked) == 19
-    for path in tracked:
-        source = path.read_text(encoding="utf-8")
-        assert len(source.splitlines()) <= 25, path
-        tree = ast.parse(source, filename=str(path))
-        forbidden = (
-            ast.ClassDef,
-            ast.AsyncFunctionDef,
-        )
-        assert not any(isinstance(node, forbidden) for node in ast.walk(tree)), path
+def test_legacy_src_layer_is_absent() -> None:
+    assert not Path("src").exists()
+
+
+def test_project_python_does_not_import_src() -> None:
+    roots = ("bench", "cogstate", "model_zoo", "automl", "apps", "scripts", "tests")
+    for root in roots:
+        for path in Path(root).rglob("*.py"):
+            tree = ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    imported_roots = {alias.name.split(".")[0] for alias in node.names}
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    imported_roots = {node.module.split(".")[0]}
+                else:
+                    continue
+                assert "src" not in imported_roots, path
+
+
+def test_canonical_replacement_clis_exist() -> None:
+    cli_paths = (
+        "scripts/data/inventory_data.py",
+        "scripts/data/inspect_emotiv_files.py",
+        "scripts/data/build_emotiv_catalog.py",
+        "scripts/data/validate_emotiv_catalog.py",
+        "scripts/data/build_emotiv_pm_windows.py",
+        "scripts/data/build_legacy_emotiv_features.py",
+        "scripts/data/audit_raw_eeg.py",
+        "scripts/data/build_raw_eeg_window_cache.py",
+        "scripts/data/audit_logical_recordings.py",
+        "scripts/data/audit_raw_eeg_artifacts.py",
+        "scripts/run_preprocessing_ablation.py",
+        "scripts/analysis/audit_robust_feature_scaling.py",
+        "scripts/analysis/build_experiment_summary.py",
+        "scripts/analysis/audit_experiment_configs.py",
+        "scripts/analysis/build_requirements_coverage.py",
+        "scripts/analysis/build_colleague_metrics_package.py",
+        "scripts/analysis/build_project_final_package.py",
+        "scripts/data/build_pm_union_raw_cache.py",
+        "scripts/run_preliminary_streaming_handoff.py",
+    )
+    assert not [path for path in cli_paths if not Path(path).is_file()]
 
 
 def test_historical_prototypes_and_generic_preprocessing_duplicates_are_absent() -> None:

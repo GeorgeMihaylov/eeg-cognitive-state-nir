@@ -280,7 +280,7 @@ _Не обнаружено._
 - Затрагиваемые файлы: reports/summary/config_curation.yaml, reports/summary/config_registry.yaml, reports/summary/experiment_registry.yaml
 - Риск: Низкий, если изменяется только отчётный metadata layer.
 - Тесты: tests/test_config_curation.py, tests/test_config_audit.py
-- Dry-load: src/16_audit_experiment_configs.py --strict
+- Dry-load: scripts/analysis/audit_experiment_configs.py --strict
 - Rollback: Удалить только metadata patch; source experiment YAML не затрагиваются.
 
 ### Пакет 2. Base/template consistency
@@ -304,7 +304,7 @@ _Не обнаружено._
 - Затрагиваемые файлы: reports/summary/experiment_registry.yaml, reports/**/*.md
 - Риск: Низкий для runtime, средний для provenance.
 - Тесты: tests/test_experiment_summary.py, tests/test_config_curation.py
-- Dry-load: src/15_build_experiment_summary.py --strict, src/16_audit_experiment_configs.py --strict
+- Dry-load: scripts/analysis/build_experiment_summary.py --strict, scripts/analysis/audit_experiment_configs.py --strict
 - Rollback: Откатить только ссылки report/registry; experiment configs не менять.
 
 ### Пакет 5. Физическое перемещение

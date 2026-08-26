@@ -9,19 +9,15 @@ from __future__ import annotations
 import copy
 import csv
 import hashlib
-import importlib.util
 from pathlib import Path
 
 import pytest
 import yaml
 
+from bench.analysis import colleague_metrics_package as PACKAGE
+
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "src" / "18_build_colleague_metrics_package.py"
-SPEC = importlib.util.spec_from_file_location("colleague_metrics_package", SCRIPT)
-assert SPEC and SPEC.loader
-PACKAGE = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(PACKAGE)
 
 
 @pytest.fixture(scope="module")

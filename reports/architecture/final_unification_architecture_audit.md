@@ -1,5 +1,9 @@
 # Аудит архитектуры итоговой ветки
 
+Статус документа: исторический аудит промежуточного этапа, когда `src/`
+ещё сохранялся как compatibility layer. Финальное удаление слоя описано в
+`reports/architecture/final_src_removal_audit.md`.
+
 Дата аудита: 2026-08-26  
 Ветка: `integration/final-unification-20260826`  
 Исходный HEAD: `ecce69fd26470ef685d08b5ef229521ed5daef22`
@@ -147,9 +151,10 @@ dataset contract и остаётся локальным.
   четыре generic preprocessing duplicates удалены после проверки call sites.
 - `bench.automl` и `automl` сохранены как разные слои: nested scientific
   optimization и application portfolio orchestration соответственно.
-- Все 19 исторических `src/*.py` сохранены как wrappers длиной 13–22 строки.
-  Алгоритмы размещены в указанных выше package modules, а актуальные CLI — в
-  `scripts/data`, `scripts/analysis` и `scripts/`.
+- На промежуточном этапе 19 исторических `src/*.py` были сокращены до
+  wrappers длиной 13–22 строки. После проверки заменяющих API/CLI этот
+  compatibility layer удалён полностью; алгоритмы находятся в package modules,
+  а актуальные CLI — в `scripts/data`, `scripts/analysis` и `scripts/`.
 - Список семи PM теперь импортируется registry и target audit из
   `cogstate.protocol`; статический поиск показывает одно определение.
 - Scientific configs, experiment IDs/hashes, данные, checkpoints и

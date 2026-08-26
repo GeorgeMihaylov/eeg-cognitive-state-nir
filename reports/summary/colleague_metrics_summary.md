@@ -162,5 +162,5 @@ Full-model против head-only: преимущество по MAE 0.000800, R
 Команда:
 
 ```powershell
-python src\18_build_colleague_metrics_package.py --experiment-registry reports\summary\experiment_registry.yaml --config-registry reports\summary\config_registry.yaml --output-dir reports\summary --strict
+python scripts\analysis\build_colleague_metrics_package.py --experiment-registry reports\summary\experiment_registry.yaml --config-registry reports\summary\config_registry.yaml --output-dir reports\summary --strict
 ```

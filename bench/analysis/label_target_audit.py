@@ -507,12 +507,12 @@ class LabelTargetAudit:
                 "",
                 "The verified construction path is:",
                 "",
-                "1. `src/02_build_emotiv_catalog.py` inventories exported Emotiv CSV/BZ2 "
+                "1. `bench/datasets/emotiv_catalog_builder.py` inventories exported Emotiv CSV/BZ2 "
                 "records under both `data/raw/gpn_data` and `data/raw/Old_EEG`, preserving "
                 "the acquisition source, subject, file layout, separator, and header metadata. "
                 "Both source inventories expose the vendor-provided `PM.Focus.Scaled` field; "
                 "this repository does not derive that upstream scale.",
-                "2. `src/04_build_windowed_pm_dataset.py` reads the catalog and validated "
+                "2. `bench/datasets/emotiv_pm_window_builder.py` reads the catalog and validated "
                 "common columns. `pd.to_numeric(errors='coerce')` converts invalid PM values "
                 "to missing; only rows with a missing `Timestamp` are explicitly dropped. "
                 "Records are divided into absolute 10-second timestamp bins. "
@@ -526,7 +526,7 @@ class LabelTargetAudit:
                 "normalization and no `PM.Focus.IsActive` mask are applied.",
                 "4. All record tables from both sources are concatenated. Only then is "
                 "`label_q5` calculated from `target_main` by a single global `pd.qcut` call.",
-                "5. `src/08_build_eeg_features.py` left-merges the EEG features into that "
+                "5. `bench/features/legacy_emotiv_eeg_features.py` left-merges the EEG features into that "
                 "PM/POW table. Direct comparison of the two processed Parquets showed the "
                 "same row count and exact equality of `target_focus` and `label_q5`.",
                 "6. Benchmark configs select the stored `label_q5` with `discretize: false`; "

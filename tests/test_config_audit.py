@@ -1,23 +1,17 @@
 from __future__ import annotations
 
 import csv
-import importlib.util
 import io
 import json
-import sys
 from pathlib import Path
 
 import pytest
 import yaml
 
+from bench.analysis import experiment_config_audit as audit
+
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "src" / "16_audit_experiment_configs.py"
-SPEC = importlib.util.spec_from_file_location("config_audit_script", SCRIPT)
-assert SPEC and SPEC.loader
-audit = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = audit
-SPEC.loader.exec_module(audit)
 
 
 def write_yaml(root: Path, relative: str, document: object) -> Path:

@@ -1,21 +1,15 @@
 from __future__ import annotations
 
 import copy
-import importlib.util
-import sys
 from pathlib import Path
 
 import pytest
 import yaml
 
+from bench.analysis import requirements_coverage as COVERAGE
+
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "src" / "17_build_requirements_coverage.py"
-SPEC = importlib.util.spec_from_file_location("requirements_coverage", SCRIPT)
-assert SPEC is not None and SPEC.loader is not None
-COVERAGE = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = COVERAGE
-SPEC.loader.exec_module(COVERAGE)
 
 
 def _prepare_root(root: Path) -> None:

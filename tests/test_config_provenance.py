@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
 import subprocess
-import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -11,6 +9,8 @@ import pandas as pd
 import pytest
 import yaml
 
+from bench.analysis import experiment_config_audit as audit
+from bench.analysis import experiment_summary as summary
 from bench.datasets.datasets_registry import get_dataset
 from bench.tasks.tasks_registry import get_task
 from cli import load_config, validate_config
@@ -35,20 +35,6 @@ PM_TARGETS = [
     "target_interest",
     "target_focus",
 ]
-
-
-def _load_script(name: str, relative_path: str):
-    path = ROOT / relative_path
-    spec = importlib.util.spec_from_file_location(name, path)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-audit = _load_script("config_provenance_audit", "src/16_audit_experiment_configs.py")
-summary = _load_script("config_provenance_summary", "src/15_build_experiment_summary.py")
 
 
 @pytest.fixture(scope="session")
