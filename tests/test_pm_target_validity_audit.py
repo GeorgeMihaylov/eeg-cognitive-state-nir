@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -115,7 +117,7 @@ def test_streaming_accumulator_preserves_events_across_chunk_boundary():
     result = accumulator.result(
         source="gpn_data",
         subject_id="subject-a",
-        path=pd.Path("dummy") if hasattr(pd, "Path") else __import__("pathlib").Path("dummy"),
+        path=Path("dummy"),
         rows_read=6,
     )
     assert abs(result["raw_scaled_corr"] - 1.0) < 1e-12
