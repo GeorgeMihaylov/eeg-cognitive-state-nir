@@ -1,0 +1,15 @@
+{
+  "additional_gap_losses": 66,
+  "canonical_feature_rows": 30958,
+  "cross_fold_pairs": 0,
+  "cross_record_pairs": 0,
+  "cross_subject_pairs": 0,
+  "first_window_losses": 86,
+  "lost_without_exact_previous_window": 152,
+  "matched_target_rows": 30806,
+  "matched_target_sample_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
+  "records": 86,
+  "step_seconds": 10.0,
+  "subjects": 54,
+  "time_column": "t_start"
+}

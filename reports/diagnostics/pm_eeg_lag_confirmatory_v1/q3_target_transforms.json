@@ -1,0 +1,702 @@
+{
+  "fold_01__attention": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.0436,
+      0.40640833333333337,
+      0.5057536666666667,
+      0.925407
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 22941,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 1,
+    "outer_train_sample_hash": "8d742c029eb56d60aa74cb44f213ee899a3821facbc672dfae9e16aea756d5d5",
+    "pm": "attention",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_attention",
+    "target_id": "label_attention_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "44fd1afeb5d48325b8a4cec3fd929eb146aebf9beb84cddc2e64ea2102e70de7"
+  },
+  "fold_01__engagement": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.053498,
+      0.5800476666666666,
+      0.6855443333333333,
+      0.946502
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24027,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 1,
+    "outer_train_sample_hash": "dde664ccb8d46f839409ac29a235f2fca53c9467ad43d8f578a513a599088373",
+    "pm": "engagement",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_engagement",
+    "target_id": "label_engagement_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "7298ebdd8f22de6a46bc368e3d23607e8a1b9867c256ba75d2c414c18d7119e6"
+  },
+  "fold_01__excitement": {
+    "actual_class_count": 3,
+    "boundaries": [
+      2.4e-05,
+      0.198928,
+      0.3627136666666666,
+      1.0
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24027,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 1,
+    "outer_train_sample_hash": "dde664ccb8d46f839409ac29a235f2fca53c9467ad43d8f578a513a599088373",
+    "pm": "excitement",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_excitement",
+    "target_id": "label_excitement_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "c520c5277a60ce5653a91a71dee9f6bde3aacf51be3349b9f06c9f374d63e9e6"
+  },
+  "fold_01__focus": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.004077,
+      0.368801,
+      0.4654386666666666,
+      0.991193
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24027,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 1,
+    "outer_train_sample_hash": "dde664ccb8d46f839409ac29a235f2fca53c9467ad43d8f578a513a599088373",
+    "pm": "focus",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_focus",
+    "target_id": "label_focus_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "5aa497ed2479e5ce839427120260d6e82692978212258295f7569e90e8d6a2dd"
+  },
+  "fold_01__interest": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.134833,
+      0.480751,
+      0.5305233333333333,
+      0.996604
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24027,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 1,
+    "outer_train_sample_hash": "dde664ccb8d46f839409ac29a235f2fca53c9467ad43d8f578a513a599088373",
+    "pm": "interest",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_interest",
+    "target_id": "label_interest_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "821d61ff98700818776aee046f68300837d50268b83d3974d950ac225ca20159"
+  },
+  "fold_01__relaxation": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.075858,
+      0.25662399999999996,
+      0.39230799999999993,
+      0.697059
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24027,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 1,
+    "outer_train_sample_hash": "dde664ccb8d46f839409ac29a235f2fca53c9467ad43d8f578a513a599088373",
+    "pm": "relaxation",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_relaxation",
+    "target_id": "label_relaxation_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "a28e1ff85101450340f4faf9f13a3f26f2d58e12f6d286946cba76904c4f625b"
+  },
+  "fold_01__stress": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.054506,
+      0.4029856666666667,
+      0.461275,
+      0.999447
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24027,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 1,
+    "outer_train_sample_hash": "dde664ccb8d46f839409ac29a235f2fca53c9467ad43d8f578a513a599088373",
+    "pm": "stress",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_stress",
+    "target_id": "label_stress_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "89f35d75bee6fa2a35c174f8707312084691b2ee9fd178cb7316a7e5fe9a73ec"
+  },
+  "fold_02__attention": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.028539,
+      0.409755,
+      0.5089703333333333,
+      0.916286
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 23846,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 2,
+    "outer_train_sample_hash": "537831b974032f456cc2af558cef954f1deba83f394135d08fe550d368d86dd0",
+    "pm": "attention",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_attention",
+    "target_id": "label_attention_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "8d39b80551724684797d35d0c12949df64fcd277614701fd1f82c9da90e0d854"
+  },
+  "fold_02__engagement": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.053498,
+      0.572122,
+      0.682083,
+      0.946502
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24766,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 2,
+    "outer_train_sample_hash": "4f5ba373bf1fc18e01d62e8622ac82150322f0215bd60bcc9c2be8a4179856bb",
+    "pm": "engagement",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_engagement",
+    "target_id": "label_engagement_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "478397d16c77acaa3955bd9fb3393d539fd69b4c02bf4d4b5c7121df300dae80"
+  },
+  "fold_02__excitement": {
+    "actual_class_count": 3,
+    "boundaries": [
+      2.4e-05,
+      0.194812,
+      0.357134,
+      1.0
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24766,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 2,
+    "outer_train_sample_hash": "4f5ba373bf1fc18e01d62e8622ac82150322f0215bd60bcc9c2be8a4179856bb",
+    "pm": "excitement",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_excitement",
+    "target_id": "label_excitement_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "4d503e66363af433b83c5d441596673df580dba7076175715a9134105b891fe4"
+  },
+  "fold_02__focus": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.004077,
+      0.364693,
+      0.460551,
+      0.991193
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24766,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 2,
+    "outer_train_sample_hash": "4f5ba373bf1fc18e01d62e8622ac82150322f0215bd60bcc9c2be8a4179856bb",
+    "pm": "focus",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_focus",
+    "target_id": "label_focus_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "e34938d0fa6acdd4eeafbd125d96206d2a0d54b06c87d546340115cbf26a93d2"
+  },
+  "fold_02__interest": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.134833,
+      0.47714,
+      0.52968,
+      0.996604
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24766,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 2,
+    "outer_train_sample_hash": "4f5ba373bf1fc18e01d62e8622ac82150322f0215bd60bcc9c2be8a4179856bb",
+    "pm": "interest",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_interest",
+    "target_id": "label_interest_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "46b486cf113e0cdad10b2ced6f294a2b9e1d1eb8478fc297ddf75678d4ba3519"
+  },
+  "fold_02__relaxation": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.075858,
+      0.256714,
+      0.404291,
+      0.697059
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24766,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 2,
+    "outer_train_sample_hash": "4f5ba373bf1fc18e01d62e8622ac82150322f0215bd60bcc9c2be8a4179856bb",
+    "pm": "relaxation",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_relaxation",
+    "target_id": "label_relaxation_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "fc1aa086e4f8dd94f5bb393e114516b28c29b29c009729ed84b25ec5e5f7f748"
+  },
+  "fold_02__stress": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.054506,
+      0.396448,
+      0.461981,
+      0.999447
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24766,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 2,
+    "outer_train_sample_hash": "4f5ba373bf1fc18e01d62e8622ac82150322f0215bd60bcc9c2be8a4179856bb",
+    "pm": "stress",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_stress",
+    "target_id": "label_stress_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "da959b591ff0d486172d891cf11cb199e48eb33d8edc86bea55b28bc3320514f"
+  },
+  "fold_03__attention": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.028539,
+      0.407012,
+      0.50364,
+      0.925407
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 23677,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 3,
+    "outer_train_sample_hash": "a9cfb1bbf94a0c256a86f68f1d5e8ee9aebad5cf64f1b0413c1c750cfb7acb26",
+    "pm": "attention",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_attention",
+    "target_id": "label_attention_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "1d27b92e490bba46c4464440b92b1ec3467ffbaef09e19eea074f9fb639ec2a8"
+  },
+  "fold_03__engagement": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.053498,
+      0.5875743333333333,
+      0.689116,
+      0.946502
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24921,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 3,
+    "outer_train_sample_hash": "e4c2c708699c26d23ce83cadc9a2bf7ff8158b77e6f70013e9c3b44b60872c78",
+    "pm": "engagement",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_engagement",
+    "target_id": "label_engagement_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "1f77c0997a123f3744485cb284e847c61480e380c12496fe56db03355ab15b83"
+  },
+  "fold_03__excitement": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.000116,
+      0.19379133333333332,
+      0.35695933333333324,
+      1.0
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24921,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 3,
+    "outer_train_sample_hash": "e4c2c708699c26d23ce83cadc9a2bf7ff8158b77e6f70013e9c3b44b60872c78",
+    "pm": "excitement",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_excitement",
+    "target_id": "label_excitement_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "12b4bb2ae406bc887630aacc50136bc0abc8ea589cc0845f79e5af5d34ed91f9"
+  },
+  "fold_03__focus": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.004077,
+      0.3654773333333333,
+      0.46152833333333326,
+      0.979169
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24921,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 3,
+    "outer_train_sample_hash": "e4c2c708699c26d23ce83cadc9a2bf7ff8158b77e6f70013e9c3b44b60872c78",
+    "pm": "focus",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_focus",
+    "target_id": "label_focus_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "4bfe98e8e27b0f99f718fb59d8449067ea9e7443caee338f48261949f3e3eff4"
+  },
+  "fold_03__interest": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.134833,
+      0.480798,
+      0.5285816666666666,
+      0.996604
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24921,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 3,
+    "outer_train_sample_hash": "e4c2c708699c26d23ce83cadc9a2bf7ff8158b77e6f70013e9c3b44b60872c78",
+    "pm": "interest",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_interest",
+    "target_id": "label_interest_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "89d6c4600373a62513488ec0258d3720303a2158f001135a280cf6945bad7a21"
+  },
+  "fold_03__relaxation": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.075858,
+      0.25428966666666664,
+      0.395869,
+      0.697059
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24921,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 3,
+    "outer_train_sample_hash": "e4c2c708699c26d23ce83cadc9a2bf7ff8158b77e6f70013e9c3b44b60872c78",
+    "pm": "relaxation",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_relaxation",
+    "target_id": "label_relaxation_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "bf27bb2a91463c93d3a402c81968d8067827c0f331ad00d527ffcd27ee8d2e19"
+  },
+  "fold_03__stress": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.054506,
+      0.405259,
+      0.460463,
+      0.999447
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24921,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 3,
+    "outer_train_sample_hash": "e4c2c708699c26d23ce83cadc9a2bf7ff8158b77e6f70013e9c3b44b60872c78",
+    "pm": "stress",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_stress",
+    "target_id": "label_stress_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "c05bf9ac9e1fff186742cd5dee1270e376e1bf25a6a7ab45fa528c19bb4e106a"
+  },
+  "fold_04__attention": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.028539,
+      0.410495,
+      0.5079906666666667,
+      0.925407
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24005,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 4,
+    "outer_train_sample_hash": "0a007de823daeab116e74b1ff6994f896e95c35f73affc99faafb9445c198d86",
+    "pm": "attention",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_attention",
+    "target_id": "label_attention_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "cc875d59096551ef2788e38d290aa4ae75eeba2ba2d0eb7a57178c0e60c5e37d"
+  },
+  "fold_04__engagement": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.055436,
+      0.5819393333333334,
+      0.6880023333333333,
+      0.946502
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 25182,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 4,
+    "outer_train_sample_hash": "0db474e24f1c22c91db2dc5f66466770f2985e2bd28d296fafb5287518e6f752",
+    "pm": "engagement",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_engagement",
+    "target_id": "label_engagement_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "1bafe8a207028d95e8232380ea3cf4f306e165117169a7740757258b987f4f52"
+  },
+  "fold_04__excitement": {
+    "actual_class_count": 3,
+    "boundaries": [
+      2.4e-05,
+      0.198937,
+      0.36487366666666665,
+      1.0
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 25182,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 4,
+    "outer_train_sample_hash": "0db474e24f1c22c91db2dc5f66466770f2985e2bd28d296fafb5287518e6f752",
+    "pm": "excitement",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_excitement",
+    "target_id": "label_excitement_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "4f056bdae9aa2e26e84bf9cd06d09ce109413bb8f5a740ac52fbaefbf12c8259"
+  },
+  "fold_04__focus": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.004077,
+      0.365106,
+      0.46338333333333337,
+      0.991193
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 25182,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 4,
+    "outer_train_sample_hash": "0db474e24f1c22c91db2dc5f66466770f2985e2bd28d296fafb5287518e6f752",
+    "pm": "focus",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_focus",
+    "target_id": "label_focus_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "8cebe716b74d5beaffc40f863fcbd86f24b1ea8644403f5f4c7bcab6e77c43cb"
+  },
+  "fold_04__interest": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.191162,
+      0.4793536666666667,
+      0.5286693333333333,
+      0.996604
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 25182,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 4,
+    "outer_train_sample_hash": "0db474e24f1c22c91db2dc5f66466770f2985e2bd28d296fafb5287518e6f752",
+    "pm": "interest",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_interest",
+    "target_id": "label_interest_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "5f89a202da6ab8a8e1b71d75fce8014e2a11b95ec0ec64f9398888f32bb645a2"
+  },
+  "fold_04__relaxation": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.075858,
+      0.259306,
+      0.403906,
+      0.697059
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 25182,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 4,
+    "outer_train_sample_hash": "0db474e24f1c22c91db2dc5f66466770f2985e2bd28d296fafb5287518e6f752",
+    "pm": "relaxation",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_relaxation",
+    "target_id": "label_relaxation_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "fedab2fa7e1c3a147603ca45218882eb25ebdab8b4c50ebcf66486ee340b2bcf"
+  },
+  "fold_04__stress": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.054506,
+      0.39695366666666665,
+      0.46365033333333333,
+      0.999447
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 25182,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 4,
+    "outer_train_sample_hash": "0db474e24f1c22c91db2dc5f66466770f2985e2bd28d296fafb5287518e6f752",
+    "pm": "stress",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_stress",
+    "target_id": "label_stress_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "790a744ee0deb42cc229090b118572971d759b7a5933dbe3c43643c7376d268f"
+  },
+  "fold_05__attention": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.028539,
+      0.408289,
+      0.5064886666666667,
+      0.925407
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 23807,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 5,
+    "outer_train_sample_hash": "05f261e059010acc72b67c07f948cc861f02c5916348995751c1ef0ab8fdb8c0",
+    "pm": "attention",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_attention",
+    "target_id": "label_attention_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "da555a2b5d8a4bcdbea3177792d187716a8bf6618a2ff12837680b015a652262"
+  },
+  "fold_05__engagement": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.053498,
+      0.5812246666666667,
+      0.6832976666666667,
+      0.946502
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24936,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 5,
+    "outer_train_sample_hash": "08fb40e00191c0abe31f205fee8e5aedb91eeb793b208e149bab5d923e080319",
+    "pm": "engagement",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_engagement",
+    "target_id": "label_engagement_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "18231f9f7b656e9d9c3de2f1abda23b4f8507ce82f2286aca6f145157eaa00ee"
+  },
+  "fold_05__excitement": {
+    "actual_class_count": 3,
+    "boundaries": [
+      2.4e-05,
+      0.196205,
+      0.361125,
+      1.0
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24936,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 5,
+    "outer_train_sample_hash": "08fb40e00191c0abe31f205fee8e5aedb91eeb793b208e149bab5d923e080319",
+    "pm": "excitement",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_excitement",
+    "target_id": "label_excitement_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "60ed13b442288d9703da8440b5b08ce03a0ad4359de6c9c6fc29f36ca1975817"
+  },
+  "fold_05__focus": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.033242,
+      0.367191,
+      0.4675926666666666,
+      0.991193
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24936,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 5,
+    "outer_train_sample_hash": "08fb40e00191c0abe31f205fee8e5aedb91eeb793b208e149bab5d923e080319",
+    "pm": "focus",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_focus",
+    "target_id": "label_focus_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "47ecea8fe3ca440be089153a94d85a4fe7cfed730a40e3423e914dccc581596c"
+  },
+  "fold_05__interest": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.134833,
+      0.47852433333333333,
+      0.529754,
+      0.996604
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24936,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 5,
+    "outer_train_sample_hash": "08fb40e00191c0abe31f205fee8e5aedb91eeb793b208e149bab5d923e080319",
+    "pm": "interest",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_interest",
+    "target_id": "label_interest_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "0e8f25e840285d540aca6a0fb6b1eaa19b4c7a26bcc5d55685d7531386163904"
+  },
+  "fold_05__relaxation": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.075858,
+      0.256914,
+      0.3938446666666667,
+      0.697059
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24936,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 5,
+    "outer_train_sample_hash": "08fb40e00191c0abe31f205fee8e5aedb91eeb793b208e149bab5d923e080319",
+    "pm": "relaxation",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_relaxation",
+    "target_id": "label_relaxation_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "cedb3c8134f947847f859ff3545baa90c2269398fb246b12cfe9d034a0fe266e"
+  },
+  "fold_05__stress": {
+    "actual_class_count": 3,
+    "boundaries": [
+      0.071471,
+      0.4021516666666667,
+      0.4598493333333333,
+      0.999447
+    ],
+    "duplicates": "drop",
+    "fit_sample_count": 24936,
+    "fit_scope": "outer_train_only",
+    "outer_fold": 5,
+    "outer_train_sample_hash": "08fb40e00191c0abe31f205fee8e5aedb91eeb793b208e149bab5d923e080319",
+    "pm": "stress",
+    "requested_quantiles": 3,
+    "source_continuous_target": "target_stress",
+    "target_id": "label_stress_q3_candidate",
+    "transform": "fold_local_quantile",
+    "transform_hash": "3d1e8d2e11338eb8ed30221c9f4ffb059f826d9c1fca3e72a972769ad00dfd11"
+  }
+}

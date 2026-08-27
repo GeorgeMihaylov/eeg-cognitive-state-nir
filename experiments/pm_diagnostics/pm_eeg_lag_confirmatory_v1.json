@@ -1,0 +1,77 @@
+{
+  "schema_version": "pm-eeg-lag-confirmatory-v1",
+  "experiment_id": "pm_eeg_lag_confirmatory_371_xgboost_v1",
+  "result_status": "confirmatory",
+  "preregistration_statement": "The -10 second previous-window EEG alignment was fixed for all seven PM before this confirmatory 371-feature XGBoost run; no per-target lag selection is allowed.",
+  "output_dir": "reports/diagnostics/pm_eeg_lag_confirmatory_v1",
+  "data": {
+    "processed_targets": "data/processed/windowed_eeg_pm_dataset_w10.parquet"
+  },
+  "feature_cache_identity": {
+    "cache_schema_version": "cogstate-feature-cache-v1",
+    "cache_identity_hash": "5062cac1e84a73c2e1c783f6b2c02f074e6177f2059515726e5b0433d166745f",
+    "feature_hash": "454ea5db886fce8c981dc28f8910ca07355956033b001550020a04fd4605832e",
+    "sample_id_universe_hash": "6b3b59e953e9d34116009d7cbb4924f1ab6e23f49db7cbf84fd5fbd83fa19d24",
+    "raw_preprocessing_hash": "2251ca950a467267dcccc1c5b83157f26e02768f46c6073d33f5dc16225bda84",
+    "rows": 30958,
+    "n_features": 371,
+    "dtype": "float32",
+    "target_columns_present": false
+  },
+  "pm_names": [
+    "attention",
+    "engagement",
+    "excitement",
+    "stress",
+    "relaxation",
+    "interest",
+    "focus"
+  ],
+  "conditions": [
+    {
+      "condition_id": "lag_0",
+      "lag_seconds": 0,
+      "mapping": "X(t) -> y(t)"
+    },
+    {
+      "condition_id": "lag_minus_10s",
+      "lag_seconds": -10,
+      "mapping": "X(t-10s) -> y(t)"
+    }
+  ],
+  "alignment": {
+    "time_column": "t_start",
+    "step_seconds": 10.0,
+    "require_same_record_id": true,
+    "require_exact_previous_window": true,
+    "matched_target_cohort": true
+  },
+  "target_transform": {
+    "name": "fold_local_quantile",
+    "q": 3,
+    "fit_scope": "outer_train_only",
+    "duplicates": "drop"
+  },
+  "evaluation": {
+    "protocol": "fixed_group_kfold_subject",
+    "group_column": "subject_id",
+    "precomputed_fold_column": "outer_fold",
+    "folds": [1, 2, 3, 4, 5],
+    "participant_aggregation": "equal_weight_macro",
+    "primary_metrics": [
+      "participant_macro_f1",
+      "participant_macro_balanced_accuracy"
+    ],
+    "class_labels": [0, 1, 2]
+  },
+  "model": {
+    "name": "xgboost",
+    "source_config": "experiments/pm_confirmatory/selected_models_5fold_v1.json",
+    "seed": 42,
+    "params": {
+      "n_estimators": 200,
+      "n_jobs": 4,
+      "random_state": 42
+    }
+  }
+}
