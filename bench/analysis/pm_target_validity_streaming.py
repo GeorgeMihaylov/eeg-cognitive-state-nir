@@ -11,6 +11,7 @@ import pandas as pd
 
 from bench.tasks.target_registry import PM_METRICS
 from bench.analysis.pm_target_validity_audit import (
+    NOMINAL_PM_PERIOD_SECONDS,
     PM_FIELDS,
     _find_header,
     _parse_list,
@@ -38,6 +39,10 @@ class _MetricAccumulator:
     active_sum: float = 0.0
     scaled_active_pair_n: int = 0
     scaled_inactive_n: int = 0
+    scaling_formula_n: int = 0
+    scaling_formula_abs_error_sum: float = 0.0
+    scaling_formula_sq_error_sum: float = 0.0
+    scaling_formula_match_n: int = 0
 
     def update(self, chunk: pd.DataFrame) -> None:
         timestamp = pd.to_numeric(chunk["Timestamp"], errors="coerce")
@@ -69,6 +74,33 @@ class _MetricAccumulator:
                 self.corr_sum_yy += float(np.dot(y, y))
                 self.corr_sum_xy += float(np.dot(x, y))
 
+            # Emotiv exports Raw/Min/Max alongside Scaled. Test the natural
+            # per-row normalization hypothesis without assuming it is exact:
+            # Scaled ~= clip((Raw - Min) / (Max - Min), 0, 1).
+            min_col = pm_column(self.metric, "Min")
+            max_col = pm_column(self.metric, "Max")
+            if min_col in chunk and max_col in chunk:
+                minimum = pd.to_numeric(chunk[min_col], errors="coerce")
+                maximum = pd.to_numeric(chunk[max_col], errors="coerce")
+                formula_valid = (
+                    raw.notna()
+                    & scaled.notna()
+                    & minimum.notna()
+                    & maximum.notna()
+                    & ((maximum - minimum).abs() > 1e-12)
+                )
+                if formula_valid.any():
+                    raw_v = raw.loc[formula_valid].to_numpy(dtype=np.float64)
+                    scaled_v = scaled.loc[formula_valid].to_numpy(dtype=np.float64)
+                    min_v = minimum.loc[formula_valid].to_numpy(dtype=np.float64)
+                    max_v = maximum.loc[formula_valid].to_numpy(dtype=np.float64)
+                    predicted = np.clip((raw_v - min_v) / (max_v - min_v), 0.0, 1.0)
+                    error = scaled_v - predicted
+                    self.scaling_formula_n += int(len(error))
+                    self.scaling_formula_abs_error_sum += float(np.abs(error).sum())
+                    self.scaling_formula_sq_error_sum += float(np.dot(error, error))
+                    self.scaling_formula_match_n += int(np.sum(np.abs(error) <= 1e-6))
+
         active_col = pm_column(self.metric, "IsActive")
         if active_col in chunk:
             active = normalize_is_active(chunk[active_col])
@@ -96,11 +128,47 @@ class _MetricAccumulator:
         value = float(numerator / denominator)
         return value if np.isfinite(value) else None
 
+    def affine_fit(self) -> tuple[float | None, float | None]:
+        """OLS Scaled ~= intercept + slope * Raw from streaming sufficient stats."""
+        n = self.corr_n
+        if n < 2:
+            return None, None
+        denominator = n * self.corr_sum_xx - self.corr_sum_x**2
+        if denominator <= 0:
+            return None, None
+        slope = (n * self.corr_sum_xy - self.corr_sum_x * self.corr_sum_y) / denominator
+        intercept = (self.corr_sum_y - slope * self.corr_sum_x) / n
+        if not np.isfinite(slope) or not np.isfinite(intercept):
+            return None, None
+        return float(slope), float(intercept)
+
     def result(self, *, source: str, subject_id: str, path: Path, rows_read: int) -> dict[str, Any]:
         timing = {
             **interval_summary(self.event_timestamps),
             **circular_phase_summary(self.event_timestamps),
         }
+        phase_mean = timing["phase_mean_seconds"]
+        phase_boundary_distance = (
+            min(float(phase_mean), NOMINAL_PM_PERIOD_SECONDS - float(phase_mean))
+            if phase_mean is not None
+            else None
+        )
+        slope, intercept = self.affine_fit()
+        formula_mae = (
+            self.scaling_formula_abs_error_sum / self.scaling_formula_n
+            if self.scaling_formula_n
+            else None
+        )
+        formula_rmse = (
+            float(np.sqrt(self.scaling_formula_sq_error_sum / self.scaling_formula_n))
+            if self.scaling_formula_n
+            else None
+        )
+        formula_match_fraction = (
+            self.scaling_formula_match_n / self.scaling_formula_n
+            if self.scaling_formula_n
+            else None
+        )
         return {
             "source": source,
             "subject_id": subject_id,
@@ -108,6 +176,12 @@ class _MetricAccumulator:
             "metric": self.metric,
             "rows_read": int(rows_read),
             "raw_scaled_corr": self.correlation(),
+            "raw_to_scaled_slope": slope,
+            "raw_to_scaled_intercept": intercept,
+            "raw_minmax_scaled_formula_n": int(self.scaling_formula_n),
+            "raw_minmax_scaled_formula_mae": formula_mae,
+            "raw_minmax_scaled_formula_rmse": formula_rmse,
+            "raw_minmax_scaled_formula_match_fraction": formula_match_fraction,
             "isactive_mean": (
                 self.active_sum / self.active_n if self.active_n else None
             ),
@@ -120,7 +194,8 @@ class _MetricAccumulator:
             "interval_median_seconds": timing["interval_median_seconds"],
             "interval_p90_seconds": timing["interval_p90_seconds"],
             "near_10s_fraction": timing["near_10s_fraction"],
-            "phase_mean_seconds": timing["phase_mean_seconds"],
+            "phase_mean_seconds": phase_mean,
+            "phase_boundary_distance_seconds": phase_boundary_distance,
             "phase_concentration": timing["phase_concentration"],
             "phase_std_seconds": timing["phase_std_seconds"],
         }
