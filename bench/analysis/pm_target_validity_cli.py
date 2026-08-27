@@ -24,11 +24,47 @@ from bench.analysis.pm_target_validity_streaming import audit_raw_records_stream
 AUDIT_SCHEMA_VERSION = "pm-target-validity-audit-v1"
 
 
+def canonical_target_frame(
+    processed_path: Path,
+    logical_recording_map_path: Path | None,
+) -> pd.DataFrame:
+    frame = _load_table(processed_path)
+    if logical_recording_map_path is None:
+        return frame
+    logical = _load_table(logical_recording_map_path)
+    if "selected_record_id" not in logical.columns:
+        raise ValueError(
+            "Logical recording map must contain selected_record_id"
+        )
+    if "record_group_id" in logical.columns and logical["record_group_id"].astype(str).duplicated().any():
+        raise ValueError("Logical recording map has duplicate record_group_id values")
+    selected_records = set(logical["selected_record_id"].dropna().astype(str))
+    if not selected_records:
+        raise ValueError("Logical recording map selected no records")
+    if "record_id" not in frame.columns:
+        raise ValueError("Processed target table must contain record_id")
+    selected = frame.loc[frame["record_id"].astype(str).isin(selected_records)].copy()
+    if selected.empty:
+        raise ValueError(
+            "Canonical logical-recording filter selected no processed rows"
+        )
+    missing_records = sorted(
+        selected_records - set(selected["record_id"].astype(str))
+    )
+    if missing_records:
+        raise ValueError(
+            "Selected logical records are absent from processed target table: "
+            f"{missing_records[:20]}"
+        )
+    return selected.reset_index(drop=True)
+
+
 def run_audit(
     *,
     root: Path,
     catalog_path: Path,
     processed_path: Path | None,
+    logical_recording_map_path: Path | None,
     output_dir: Path,
     chunk_size: int,
     max_records: int | None,
@@ -48,11 +84,15 @@ def run_audit(
         )
     )
     raw_summary = summarize_raw_audit(raw)
-    boundary = (
-        pd.DataFrame()
-        if processed_path is None
-        else q3_boundary_audit(_load_table(processed_path))
-    )
+
+    canonical_rows = None
+    boundary = pd.DataFrame()
+    if processed_path is not None:
+        target_frame = canonical_target_frame(
+            processed_path, logical_recording_map_path
+        )
+        canonical_rows = int(len(target_frame))
+        boundary = q3_boundary_audit(target_frame)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     inventory.to_csv(output_dir / "pm_field_inventory_records.csv", index=False)
@@ -71,15 +111,26 @@ def run_audit(
         "schema_version": AUDIT_SCHEMA_VERSION,
         "catalog_path": str(catalog_path),
         "processed_path": None if processed_path is None else str(processed_path),
+        "logical_recording_map_path": (
+            None
+            if logical_recording_map_path is None
+            else str(logical_recording_map_path)
+        ),
         "output_dir": str(output_dir),
         "catalog_records": int(len(catalog)),
         "inventory_rows": int(len(inventory)),
         "raw_audit_rows": int(len(raw)),
+        "canonical_target_rows": canonical_rows,
         "q3_boundary_rows": int(len(boundary)),
         "raw_skipped": bool(skip_raw),
         "max_records": max_records,
         "models_trained": 0,
         "raw_io_policy": "one_chunked_pass_per_record",
+        "q3_cohort_policy": (
+            "selected_logical_recordings"
+            if logical_recording_map_path is not None
+            else "processed_table_unfiltered"
+        ),
     }
     _write_json(output_dir / "pm_target_validity_audit_summary.json", summary)
     return summary
@@ -97,6 +148,11 @@ def main() -> None:
         help="Processed target table for Q3 boundary diagnostics; use 'none' to skip.",
     )
     parser.add_argument(
+        "--logical-recording-map",
+        default="data/interim/logical_recording_map.parquet",
+        help="Canonical selected logical recordings; use 'none' to disable filtering.",
+    )
+    parser.add_argument(
         "--output-dir", default="reports/diagnostics/pm_target_validity_audit"
     )
     parser.add_argument("--chunk-size", type=int, default=200_000)
@@ -112,6 +168,7 @@ def main() -> None:
     catalog = Path(args.catalog)
     if not catalog.is_absolute():
         catalog = root / catalog
+
     processed: Path | None
     if str(args.processed).strip().lower() == "none":
         processed = None
@@ -119,6 +176,15 @@ def main() -> None:
         processed = Path(args.processed)
         if not processed.is_absolute():
             processed = root / processed
+
+    logical_map: Path | None
+    if str(args.logical_recording_map).strip().lower() == "none":
+        logical_map = None
+    else:
+        logical_map = Path(args.logical_recording_map)
+        if not logical_map.is_absolute():
+            logical_map = root / logical_map
+
     output = Path(args.output_dir)
     if not output.is_absolute():
         output = root / output
@@ -127,6 +193,7 @@ def main() -> None:
         root=root,
         catalog_path=catalog,
         processed_path=processed,
+        logical_recording_map_path=logical_map,
         output_dir=output,
         chunk_size=int(args.chunk_size),
         max_records=args.max_records,
