@@ -32,11 +32,21 @@ def canonical_target_frame(
 ) -> tuple[pd.DataFrame, dict[str, int | str | None]]:
     """Reproduce the canonical raw-deduplicated/QC cohort used by confirmatory runs."""
     frame = _load_table(processed_path)
+    sample_id_source = "existing_column"
+    if "sample_id" not in frame.columns:
+        # Historical raw-eeg-window-v3 built sample_id from the original processed
+        # row index before any supervised/QC filtering.  Reproduce that contract
+        # exactly instead of inventing a new positional id after filtering.
+        frame = frame.copy()
+        frame.insert(0, "sample_id", frame.index.to_numpy(dtype="int64"))
+        sample_id_source = "reconstructed_processed_row_index"
+
     diagnostics: dict[str, int | str | None] = {
         "processed_rows": int(len(frame)),
         "selected_logical_rows": None,
         "raw_qc_index_rows": None,
         "canonical_rows": None,
+        "sample_id_source": sample_id_source,
         "policy": "processed_table_unfiltered",
     }
 
@@ -87,8 +97,6 @@ def canonical_target_frame(
             raise ValueError("Raw-QC/logical-recording filter selected no index rows")
         diagnostics["raw_qc_index_rows"] = int(len(raw_index))
         canonical_ids = set(raw_index["sample_id"].dropna().astype(str))
-        if "sample_id" not in logical_frame.columns:
-            raise ValueError("Processed target table must contain sample_id")
         selected = logical_frame.loc[
             logical_frame["sample_id"].astype(str).isin(canonical_ids)
         ].copy()
@@ -189,6 +197,7 @@ def run_audit(
         "processed_target_rows": cohort_diagnostics.get("processed_rows"),
         "selected_logical_target_rows": cohort_diagnostics.get("selected_logical_rows"),
         "raw_qc_index_rows": cohort_diagnostics.get("raw_qc_index_rows"),
+        "sample_id_source": cohort_diagnostics.get("sample_id_source"),
         "q3_boundary_rows": int(len(boundary)),
         "raw_skipped": bool(skip_raw),
         "max_records": max_records,
