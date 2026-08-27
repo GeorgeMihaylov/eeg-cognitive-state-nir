@@ -38,6 +38,36 @@ from bench.tasks.target_registry import PM_METRICS
 from bench.tasks.target_transforms import FoldLocalQuantileTargetTransform
 
 DEFAULT_LAGS = (-6, -3, -1, 0, 1, 3, 6)
+WINDOW_SECONDS = 10.0
+
+
+def _relative_grid_coordinate(
+    frame: pd.DataFrame,
+    column: str,
+) -> tuple[np.ndarray, str]:
+    """Convert a 10-second time column to an exact per-record integer grid.
+
+    The historical builder stores ``t_center`` as 0, 10, 20, ... and ``t_start``
+    as -5, 5, 15, ... relative to each recording.  Dividing ``t_start`` by ten
+    and rounding is therefore invalid because NumPy's ties-to-even rounding can
+    collapse adjacent half-integers.  Subtracting each record's own origin before
+    division preserves the true 10-second spacing and any real missing windows.
+    """
+    values = pd.to_numeric(frame[column], errors="coerce")
+    if values.isna().any():
+        raise RuntimeError(f"{column} contains non-finite values")
+
+    records = frame["record_id"].astype(str)
+    origin = values.groupby(records, sort=False).transform("min")
+    units = (values - origin) / WINDOW_SECONDS
+    rounded = np.rint(units.to_numpy(dtype=float))
+    residual = np.abs(units.to_numpy(dtype=float) - rounded)
+    max_residual = float(np.max(residual)) if len(residual) else 0.0
+    if max_residual > 1e-6:
+        raise RuntimeError(
+            f"{column} is not on a stable 10-second grid; max residual={max_residual:.6g}"
+        )
+    return rounded.astype(np.int64), f"per-record {column}/10s grid"
 
 
 def _window_coordinate(frame: pd.DataFrame) -> tuple[np.ndarray, str]:
@@ -47,15 +77,13 @@ def _window_coordinate(frame: pd.DataFrame) -> tuple[np.ndarray, str]:
         if values.notna().all() and np.allclose(values.to_numpy(), np.round(values.to_numpy())):
             return np.round(values.to_numpy()).astype(np.int64), "window_id"
 
-    if "t_start" not in frame.columns:
-        raise RuntimeError("Need either integer window_id or t_start for lag pairing")
-    values = pd.to_numeric(frame["t_start"], errors="coerce")
-    if values.isna().any():
-        raise RuntimeError("t_start contains non-finite values")
-    # Canonical windows are 10 s.  Integer 10-second coordinates avoid fragile
-    # floating-point equality on absolute timestamps.
-    coord = np.rint(values.to_numpy(dtype=float) / 10.0).astype(np.int64)
-    return coord, "round(t_start/10s)"
+    if "t_center" in frame.columns:
+        return _relative_grid_coordinate(frame, "t_center")
+    if "t_start" in frame.columns:
+        return _relative_grid_coordinate(frame, "t_start")
+    if "t_end" in frame.columns:
+        return _relative_grid_coordinate(frame, "t_end")
+    raise RuntimeError("Need window_id, t_center, t_start, or t_end for lag pairing")
 
 
 def _lag_positions(
@@ -66,7 +94,13 @@ def _lag_positions(
     record = frame["record_id"].astype(str).to_numpy()
     keys = list(zip(record.tolist(), coord.tolist()))
     if len(set(keys)) != len(keys):
-        raise RuntimeError(f"Duplicate (record_id, window) keys using {source}")
+        duplicated = pd.DataFrame({"record_id": record, "coord": coord}).loc[
+            lambda x: x.duplicated(["record_id", "coord"], keep=False)
+        ]
+        preview = duplicated.head(12).to_dict(orient="records")
+        raise RuntimeError(
+            f"Duplicate (record_id, window) keys using {source}; examples={preview}"
+        )
     lookup = {key: idx for idx, key in enumerate(keys)}
 
     positions: dict[int, np.ndarray] = {}
