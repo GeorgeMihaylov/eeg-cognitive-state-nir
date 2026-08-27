@@ -7,7 +7,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from bench.analysis.pm_target_validity_audit import main
+from bench.analysis.pm_target_validity_cli import main
 
 
 if __name__ == "__main__":
