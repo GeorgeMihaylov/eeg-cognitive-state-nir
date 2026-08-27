@@ -10,6 +10,7 @@ from bench.analysis.pm_target_validity_audit import (
     interval_summary,
     normalize_is_active,
 )
+from bench.analysis.pm_target_validity_streaming import _MetricAccumulator
 
 
 def test_discover_pm_columns_tracks_all_representations():
@@ -88,3 +89,35 @@ def test_boundary_distance_fraction_counts_near_internal_edges():
     )
     assert np.isfinite(fraction)
     assert 0.0 < fraction < 1.0
+
+
+def test_streaming_accumulator_preserves_events_across_chunk_boundary():
+    accumulator = _MetricAccumulator("focus")
+    first = pd.DataFrame(
+        {
+            "Timestamp": [2.0, 3.0, 12.0],
+            "PM.Focus.Raw": [10.0, 10.0, 20.0],
+            "PM.Focus.Scaled": [0.1, 0.1, 0.2],
+            "PM.Focus.IsActive": [1, 1, 1],
+        }
+    )
+    second = pd.DataFrame(
+        {
+            "Timestamp": [13.0, 22.0, 23.0],
+            "PM.Focus.Raw": [20.0, 30.0, 30.0],
+            "PM.Focus.Scaled": [0.2, 0.3, 0.3],
+            "PM.Focus.IsActive": [1, 0, 0],
+        }
+    )
+    accumulator.update(first)
+    accumulator.update(second)
+    assert accumulator.event_timestamps == [2.0, 12.0, 22.0]
+    result = accumulator.result(
+        source="gpn_data",
+        subject_id="subject-a",
+        path=pd.Path("dummy") if hasattr(pd, "Path") else __import__("pathlib").Path("dummy"),
+        rows_read=6,
+    )
+    assert abs(result["raw_scaled_corr"] - 1.0) < 1e-12
+    assert result["scaled_when_inactive_fraction"] == 2.0 / 6.0
+    assert result["interval_median_seconds"] == 10.0
