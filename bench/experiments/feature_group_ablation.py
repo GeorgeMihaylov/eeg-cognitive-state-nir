@@ -34,7 +34,7 @@ from bench.datasets.base_eeg_data_loader import (
     resolve_feature_columns,
 )
 from bench.validation.metrics import MetricsCalculator
-from model_zoo.DL.sequence_utils import (
+from cogstate.model_zoo.DL.sequence_utils import (
     SEQUENCE_INDEX_COLUMNS,
     build_sequences,
     sequence_index_sha256,

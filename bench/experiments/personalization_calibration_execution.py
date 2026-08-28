@@ -24,8 +24,8 @@ from bench.core.artifact_paths import portable_artifact_directory
 from bench.tasks.tasks_registry import get_task
 from bench.validation.cross_val import CrossValidator
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
-from model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
 
 from .personalization_calibration import (
     CLASSIFICATION_METRICS,
@@ -122,7 +122,7 @@ def _file_sha256(path: Path) -> str:
 
 
 def _is_xgboost_adapter(adapter: Any) -> bool:
-    from model_zoo.ML.xgboost_personalization import XGBoostMarginHeadAdapter
+    from cogstate.model_zoo.ML.xgboost_personalization import XGBoostMarginHeadAdapter
 
     return isinstance(adapter, XGBoostMarginHeadAdapter)
 
@@ -686,7 +686,7 @@ class BenchmarkPersonalizationBackend:
         )
         split = folds[f"fold_{int(base['outer_fold']):02d}"]
         if model_name == "xgboost":
-            from model_zoo.ML.xgboost_personalization import (
+            from cogstate.model_zoo.ML.xgboost_personalization import (
                 XGBoostMarginHeadAdapter,
             )
 

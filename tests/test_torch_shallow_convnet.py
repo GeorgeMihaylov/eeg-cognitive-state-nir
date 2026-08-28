@@ -1,9 +1,9 @@
 import numpy as np
 import torch
 
-from model_zoo import build_model
-from model_zoo.DL.adapter import TorchClassificationAdapter
-from model_zoo.DL.shallow_convnet import (
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo.DL.shallow_convnet import (
     SafeLog,
     SquareActivation,
     TorchShallowConvNetClassifier,

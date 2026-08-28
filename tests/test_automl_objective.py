@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bench.automl.objective import AutoMLTrialResult, NestedBenchmarkObjective
-from bench.automl.search_space import SearchSpaceSpec
-from model_zoo.factory import build_model
+from bench.automl.scientific.objective import AutoMLTrialResult, NestedBenchmarkObjective
+from bench.automl.scientific.search_space import SearchSpaceSpec
+from cogstate.model_zoo.factory import build_model
 
 
 def _space() -> SearchSpaceSpec:

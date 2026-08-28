@@ -13,7 +13,6 @@ import logging
 import time
 import traceback
 from copy import deepcopy
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
@@ -22,7 +21,6 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
-from sklearn.linear_model import Ridge
 
 from bench.bench_runner import BenchmarkRunner, benchmark_config_hash
 from bench.experiments.user_calibration import (
@@ -41,8 +39,15 @@ from bench.experiments.user_calibration import (
 from bench.tasks.tasks_registry import get_task
 from bench.validation.cross_val import CrossValidator
 from bench.validation.metrics import MetricsCalculator
-from model_zoo.DL.adapter import TorchClassificationAdapter
-from model_zoo.factory import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo.factory import build_model
+from cogstate.adaptation.regression_calibration import (
+    AffineCalibration,
+    apply_affine_calibration,
+    apply_bias_correction,
+    fit_affine_calibration,
+    fit_bias_correction,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -98,120 +103,6 @@ def _json_text(value: Any) -> str:
 
 def _ordered_hash(values: Sequence[Any]) -> str:
     return _canonical_hash([str(value) for value in values])
-
-
-def fit_bias_correction(
-    y_true: Any,
-    y_pred: Any,
-) -> np.ndarray:
-    """Fit one additive bias from adaptation-train observations per target."""
-    truth, prediction = _validated_regression_arrays(y_true, y_pred)
-    if len(truth) == 0:
-        raise ValueError("Bias correction needs at least one fit sample")
-    return np.mean(truth - prediction, axis=0, dtype=np.float64)
-
-
-def apply_bias_correction(y_pred: Any, bias: Any) -> np.ndarray:
-    prediction = np.asarray(y_pred, dtype=np.float64)
-    bias_array = np.asarray(bias, dtype=np.float64)
-    if prediction.ndim != 2 or bias_array.shape != (prediction.shape[1],):
-        raise ValueError(
-            "Bias application expects [samples, targets] predictions and "
-            f"one bias per target, got {prediction.shape} and {bias_array.shape}"
-        )
-    result = prediction + bias_array
-    if not np.isfinite(result).all():
-        raise ValueError("Bias correction produced non-finite predictions")
-    return result
-
-
-@dataclass(frozen=True)
-class AffineCalibration:
-    coefficients: np.ndarray
-    intercepts: np.ndarray
-    parameters: tuple[dict[str, Any], ...]
-
-
-def fit_affine_calibration(
-    y_true: Any,
-    y_pred: Any,
-    *,
-    alpha: float = 1.0,
-    variance_epsilon: float = 1e-12,
-    target_names: Sequence[str] = CANONICAL_TARGETS,
-) -> AffineCalibration:
-    """Fit seven independent Ridge mappings, with deterministic bias fallback."""
-    truth, prediction = _validated_regression_arrays(y_true, y_pred)
-    if alpha < 0 or variance_epsilon < 0:
-        raise ValueError("alpha and variance_epsilon must be non-negative")
-    if len(target_names) != truth.shape[1]:
-        raise ValueError("target_names must match the regression output width")
-    biases = fit_bias_correction(truth, prediction)
-    coefficients: list[float] = []
-    intercepts: list[float] = []
-    parameters: list[dict[str, Any]] = []
-    for index, target_name in enumerate(target_names):
-        pred = prediction[:, index]
-        target = truth[:, index]
-        prediction_variance = float(np.var(pred))
-        target_variance = float(np.var(target))
-        fallback_reason: Optional[str] = None
-        if len(pred) < 2:
-            fallback_reason = "insufficient_samples"
-        elif prediction_variance <= variance_epsilon:
-            fallback_reason = "constant_prediction"
-        elif target_variance <= variance_epsilon:
-            fallback_reason = "constant_target"
-        if fallback_reason is None:
-            try:
-                regressor = Ridge(alpha=float(alpha))
-                regressor.fit(pred.reshape(-1, 1), target)
-                coefficient = float(regressor.coef_[0])
-                intercept = float(regressor.intercept_)
-                if not np.isfinite([coefficient, intercept]).all():
-                    fallback_reason = "non_finite_coefficients"
-            except (ValueError, FloatingPointError):
-                fallback_reason = "ridge_fit_failed"
-        if fallback_reason is not None:
-            coefficient = 1.0
-            intercept = float(biases[index])
-        coefficients.append(coefficient)
-        intercepts.append(intercept)
-        parameters.append({
-            "target_name": str(target_name),
-            "coefficient": coefficient,
-            "intercept": intercept,
-            "n_fit_samples": int(len(pred)),
-            "prediction_variance": prediction_variance,
-            "target_variance": target_variance,
-            "fallback_used": fallback_reason is not None,
-            "fallback_reason": fallback_reason,
-        })
-    return AffineCalibration(
-        coefficients=np.asarray(coefficients, dtype=np.float64),
-        intercepts=np.asarray(intercepts, dtype=np.float64),
-        parameters=tuple(parameters),
-    )
-
-
-def apply_affine_calibration(
-    y_pred: Any,
-    calibration: AffineCalibration,
-) -> np.ndarray:
-    prediction = np.asarray(y_pred, dtype=np.float64)
-    if prediction.ndim != 2:
-        raise ValueError(
-            f"Affine predictions must be two-dimensional, got {prediction.shape}"
-        )
-    if calibration.coefficients.shape != (prediction.shape[1],):
-        raise ValueError("Affine coefficients do not match prediction width")
-    result = (
-        prediction * calibration.coefficients[None, :]
-        + calibration.intercepts[None, :]
-    )
-    if not np.isfinite(result).all():
-        raise ValueError("Affine calibration produced non-finite predictions")
-    return result
 
 
 def _validated_regression_arrays(

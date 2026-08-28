@@ -50,8 +50,8 @@ from bench.experiments.cog_bci_contrastive_transfer import (
     load_unlabelled_cog_windows,
     validate_encoder_manifest_for_downstream,
 )
-from model_zoo.DL.adapter import seed_torch
-from model_zoo.DL.contrastive import load_encoder_checkpoint
+from cogstate.model_zoo.DL.adapter import seed_torch
+from cogstate.model_zoo.DL.contrastive import load_encoder_checkpoint
 
 
 RESULT_STATUS = "diagnostic"

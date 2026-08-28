@@ -5,10 +5,10 @@ import pytest
 import torch
 from torch.nn import functional as F
 
-from model_zoo import build_model
-from model_zoo.DL.adapter import _aggregate_loss_component_values
-from model_zoo.DL.ordinal import ClassificationObjectiveHandler
-from model_zoo.DL.regression import RegressionObjectiveHandler
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.adapter import _aggregate_loss_component_values
+from cogstate.model_zoo.DL.ordinal import ClassificationObjectiveHandler
+from cogstate.model_zoo.DL.regression import RegressionObjectiveHandler
 
 
 def _aggregate_batches(

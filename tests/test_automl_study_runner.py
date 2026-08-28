@@ -5,9 +5,9 @@ from pathlib import Path
 import yaml
 
 import cli
-from bench.automl.objective import AutoMLTrialResult
-from bench.automl.search_space import stable_hash
-from bench.automl.study_runner import AutoMLStudyRunner
+from bench.automl.scientific.objective import AutoMLTrialResult
+from bench.automl.scientific.search_space import stable_hash
+from bench.automl.scientific.study_runner import AutoMLStudyRunner
 
 
 def _write_specs(tmp_path: Path, *, seed: int = 42) -> Path:
@@ -199,7 +199,7 @@ def test_cli_plan_only_uses_main_study_runner(monkeypatch, capsys) -> None:
             return f"plan={plan['ok']}"
 
     monkeypatch.setattr(
-        "bench.automl.study_runner.AutoMLStudyRunner", _CLIStudy
+        "bench.automl.scientific.study_runner.AutoMLStudyRunner", _CLIStudy
     )
     cli.main([
         "--automl-study",

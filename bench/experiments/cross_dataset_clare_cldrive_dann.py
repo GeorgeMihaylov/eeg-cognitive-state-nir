@@ -37,9 +37,9 @@ from bench.experiments.external_multimodal_protocol import (
     _signal_data,
     file_sha256,
 )
-from model_zoo.DL.adapter import TorchClassificationAdapter, seed_torch
-from model_zoo.DL.dann import DANNFoldData, DANNModule, DANNObjective, DANNPartition
-from model_zoo.factory import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter, seed_torch
+from cogstate.model_zoo.DL.dann import DANNFoldData, DANNModule, DANNObjective, DANNPartition
+from cogstate.model_zoo.factory import build_model
 
 
 SCHEMA_VERSION = "cross-dataset-clare-cldrive-dann-v1"

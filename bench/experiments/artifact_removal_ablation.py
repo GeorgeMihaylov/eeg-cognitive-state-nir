@@ -24,7 +24,7 @@ from bench.preprocessing.fold_artifact_transform import (
 )
 from bench.tasks.target_registry import PM_METRICS
 from cogstate.preprocessing.artifact_removal import FasterConfig, IcaConfig
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

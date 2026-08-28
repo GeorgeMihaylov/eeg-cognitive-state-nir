@@ -14,7 +14,7 @@ from bench.analysis import experiment_summary as summary
 from bench.datasets.datasets_registry import get_dataset
 from bench.tasks.tasks_registry import get_task
 from cli import load_config, validate_config
-from model_zoo.factory import build_model
+from cogstate.model_zoo.factory import build_model
 
 
 ROOT = Path(__file__).resolve().parents[1]

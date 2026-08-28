@@ -10,8 +10,8 @@ from bench.bench_runner import BenchmarkRunner
 from bench.core.abstract_dataset import EEGData
 from bench.tasks.cognitive_load import CognitiveLoadTask
 from bench.validation.cross_val import CrossValidator
-from model_zoo import build_model
-from model_zoo.DL import TorchClassificationAdapter
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL import TorchClassificationAdapter
 
 
 @pytest.fixture

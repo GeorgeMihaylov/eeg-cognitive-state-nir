@@ -3,8 +3,8 @@ import pytest
 import torch
 from sklearn.datasets import make_classification
 
-from model_zoo import build_model
-from model_zoo.DL import TorchClassificationAdapter, TorchMLP
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL import TorchClassificationAdapter, TorchMLP
 
 
 @pytest.fixture(scope="module")

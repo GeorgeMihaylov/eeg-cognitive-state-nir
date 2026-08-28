@@ -6,8 +6,8 @@ import pandas as pd
 import pytest
 
 from bench.bench_runner import BenchmarkRunner
-from model_zoo.DL.feature_preprocessing import FeaturePreprocessor
-from model_zoo.factory import build_model
+from cogstate.model_zoo.DL.feature_preprocessing import FeaturePreprocessor
+from cogstate.model_zoo.factory import build_model
 
 
 FEATURE_NAMES = ("EEG.AF3__mean", "POW.T8.Alpha__min", "POW.T8.BetaL__min")

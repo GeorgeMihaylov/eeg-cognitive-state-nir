@@ -29,7 +29,7 @@ from bench.analysis.paired_statistics import (
     apply_holm_by_family,
     paired_subject_statistics,
 )
-from model_zoo.DL.sequence_utils import sequence_index_sha256
+from cogstate.model_zoo.DL.sequence_utils import sequence_index_sha256
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

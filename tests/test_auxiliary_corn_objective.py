@@ -4,7 +4,7 @@ import pytest
 import torch
 from torch.nn import functional as F
 
-from model_zoo.DL.ordinal import (
+from cogstate.model_zoo.DL.ordinal import (
     CategoricalCornObjectiveHandler,
     CategoricalCornOutput,
     corn_loss,

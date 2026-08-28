@@ -70,9 +70,24 @@ def tensor_mapping_hash(values: Mapping[str, Tensor]) -> str:
     return digest.hexdigest()
 
 
+def stable_model_class_path(model: nn.Module) -> str:
+    """Return the pre-relocation logical identity used by protocol hashes.
+
+    Historical protocol manifests hashed classes below ``model_zoo``.  The
+    implementation now lives below ``cogstate.model_zoo``; normalizing only
+    this approved relocation preserves architecture identity without exposing
+    an import shim at the old package path.
+    """
+    path = f"{model.__class__.__module__}.{model.__class__.__name__}"
+    prefix = "cogstate.model_zoo."
+    if path.startswith(prefix):
+        return path.removeprefix("cogstate.")
+    return path
+
+
 def architecture_schema_signature(model: nn.Module) -> str:
     payload = {
-        "class": f"{model.__class__.__module__}.{model.__class__.__name__}",
+        "class": stable_model_class_path(model),
         "parameters": [
             [name, list(value.shape), str(value.dtype)]
             for name, value in model.named_parameters()

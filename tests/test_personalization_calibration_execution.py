@@ -38,11 +38,11 @@ from bench.experiments.personalization_calibration_execution import (
     validate_participant_resume_result,
 )
 from bench.experiments.personalization_calibration import stable_hash
-from model_zoo.ML.xgboost_personalization import (
+from cogstate.model_zoo.ML.xgboost_personalization import (
     XGBoostMarginHeadAdapter,
     xgboost_state_sha256,
 )
-from model_zoo.factory import build_model
+from cogstate.model_zoo.factory import build_model
 
 
 CONFIG = Path("experiments/calibration/personalization_calibration_v1.json")

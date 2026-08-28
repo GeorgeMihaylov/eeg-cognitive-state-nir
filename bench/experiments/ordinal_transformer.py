@@ -28,8 +28,8 @@ from bench.datasets.base_eeg_data_loader import (
 )
 from bench.tasks.tasks_registry import get_task
 from bench.validation.cross_val import CrossValidator
-from model_zoo import build_model
-from model_zoo.DL.sequence_utils import build_sequences, sequence_index_sha256
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.sequence_utils import build_sequences, sequence_index_sha256
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

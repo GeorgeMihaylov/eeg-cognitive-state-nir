@@ -41,7 +41,7 @@ from cogstate.adaptation import (
     FeatureAlignmentConfig,
     apply_alignment_shrinkage,
 )
-from model_zoo.ML.xgboost_personalization import xgboost_state_sha256
+from cogstate.model_zoo.ML.xgboost_personalization import xgboost_state_sha256
 
 
 SCHEMA_VERSION = "xgboost-feature-alignment-diagnostics-v1"

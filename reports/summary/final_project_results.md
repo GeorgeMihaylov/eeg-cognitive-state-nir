@@ -1,123 +1,128 @@
 # Итоговый пакет результатов EEG-бенчмарка
 
-Дата актуализации: 2026-08-17. Документ синхронизирован с кодом, tracked
-конфигурациями и доступными runtime CSV/JSON. В ходе синхронизации обучение и
-перестроение кэшей не выполнялись.
+Дата консолидации: 2026-08-04. Этот документ агрегирует только уже
+существующие runtime-артефакты. Обучение, перестроение кэшей и изменение
+научных decision rules не выполнялись. Работа не объявляется полностью
+завершённой.
 
-## Научный и программный контур
+## 1. Цель проекта
 
-Основной benchmark использует `gpn_data` и `Old_EEG`, явные target contracts и
-outer `GroupKFold` по `subject_id`. Любые обучаемые преобразования —
-нормализация, clipping, Q3-пороги и feature selection — fitted только на
-train-части. Канонический feature parquet содержит 51 308 окон и 448 EEG+POW
-признаков; `label_q5` доступен для 45 384 окон и 54 участников, complete-case
-когорта семи PM — для 43 174 окон и 53 участников. Raw-deduplicated контур
-содержит 30 958 окон формы `[1, 14, 2560]`.
+Единая воспроизводимая платформа для EEG/POW задач, subject-disjoint оценки,
+персонализации, transfer/meta-learning и унифицированных артефактов.
 
-Современная основная цель проекта — семь PM: Attention, Engagement,
-Excitement, Stress, Relaxation, Interest и Focus. `label_q5` сохраняется как
-исторический Focus-specific benchmark.
+## 2. Наборы данных
 
-## Результаты
+Основной benchmark объединяет `gpn_data` и `Old_EEG`; COG-BCI используется
+как отдельный внешний диагностический трек. Источники Emotiv считаются
+provenance-доменами, а не автоматически разными устройствами.
 
-### PM и временная обработка
+## 3. Каноническая выборка
 
-Полный Random Forest sensitivity-анализ охватывает 7 PM × 4 target variants ×
-classification/regression × 5 folds = 280 запусков. Для raw PM средние по 35
-PM×fold: classification Macro F1 0.473036 и Balanced Accuracy 0.479122;
-regression MAE 0.098373, R² 0.185193, Pearson 0.445013. Causal median, EMA и
-Hampel не дали универсального улучшения: classification ухудшилась, а снижение
-MAE отдельных сглаженных целей сопровождалось снижением R² и корреляций. Raw PM
-остаётся каноническим вариантом. Подробности:
-[`pm_temporal_quality_v1.md`](../pm_quality/pm_temporal_quality_v1.md).
+Классификационная supervised-выборка содержит 45 384 окна, 54 участника и
+пять классов `label_q5`. Raw-deduplicated DANN universe содержит 30 958 окон,
+54 участника и 86 logical records с формой `[1, 14, 2560]`.
 
-### Признаки и LightGBM
+## 4. Схема валидации
 
-Реализованы спектральные, статистические, entropy и connectivity признаки;
-канонический EEG+POW baseline использует 448 исходных колонок. Fold-local
-selector и LightGBM завершили 140/140 запусков без ошибок:
-7 PM × 2 tasks × 2 feature regimes × 5 folds. Переход 448 → 50 уменьшает
-размерность на 88.84% и ускоряет downstream fit примерно в 6.78 раза, но
-немного ухудшает participant-macro качество: classification Macro F1
-0.418690 → 0.411554; regression MAE 0.098432 → 0.099252. Это полезный
-вычислительный профиль, а не способ повысить точность.
+Основной outer protocol — subject-disjoint GroupKFold. Inner validation,
+персонализация, meta-episodes и DANN source validation используют отдельные
+group-aware partitions; target-test не участвует в выборе модели.
 
-### Модели
+## 5. Базовые модели
 
-Model zoo содержит Random Forest, LightGBM, XGBoost, MLP, LSTM, BiLSTM,
-Transformer, EEGNet, ShallowConvNet и ordinal heads. Исторические полноценные
-`label_q5` benchmarks дают Macro F1 0.3570 для BiLSTM, 0.3568 для Transformer,
-0.3555 для LSTM, 0.2955 для RF, 0.2647 для ShallowConvNet и 0.2236 для EEGNet.
-Preliminary seven-PM model comparison выполнен только на fold 1; его нельзя
-называть confirmatory. Полный selected-model seven-PM protocol подготовлен,
-но не выполнен: 245 поддерживаемых training units, из них 224 требуют нового
-обучения. Его формальная обязательность не устанавливается без исходного ТЗ.
+Random Forest и MLP остаются воспроизводимыми feature-window baselines.
 
-### Предобработка EEG
+## 6. Глубокие модели
 
-Полная A–H ablation band-pass/notch/CAR выполнена для seed 42; raw,
-band-pass и band-pass+notch дополнительно проверены на seeds 7/42/123. Средний
-CAR-контраст по Balanced Accuracy отрицателен (−0.0285); универсального
-преимущества фильтрации нет, raw остаётся reference.
+LSTM, BiLSTM и Transformer используют временной контекст; EEGNet и
+ShallowConvNet работают с raw окнами через общий adapter/encoder contract.
 
-Fold-safe FASTER-like/ICA инфраструктура интегрирована с outer-train-only ICA,
-mean-channel interpolation и train-only normalization. Четырёхвариантный
-smoke (`raw`, `faster`, `ica`, `faster_ica`) завершён. Полная 7 PM × 4
-variants × 5 folds = 140 run quantitative ablation не выполнялась, поэтому
-вывод о влиянии FASTER-like/ICA на качество отсутствует.
+## 7. Preprocessing ablation
 
-### Персонализация и перенос
+Factorial raw-EEG ablation не поддержала CAR как default для
+ShallowConvNet; исходные численные решения не пересматривались.
 
-Трёхсидовая chronological 20% personalization семи PM даёт небольшой, но
-воспроизводимый full-model эффект относительно zero-shot: MAE −0.002685,
-RMSE −0.002411 и Spearman +0.011985. Для исторической `label_q5` средняя
-Accuracy изменилась примерно с 0.2967 до 0.3138; максимум 0.634921, и 0/53
-участников достигли 0.75. Порог Accuracy ≥75% проверен и не достигнут.
+## 8. Персонализация
 
-Confirmatory DANN `Old_EEG → gpn_data` на folds 1–5 и seeds 123/2026 дал
-ΔMacro F1 +0.008048 и ΔBalanced Accuracy +0.008332; participant bootstrap CI
-для ΔMacro F1 [−0.001672; 0.017882] включает ноль. Статус —
-`partially_confirmed`. Contrastive transfer не дал устойчивого downstream
-улучшения; FOMAML получил `do_not_proceed` (ΔMacro F1 −0.046338 против
-supervised full-model).
+Leakage-safe calibration отделяет calibration от final evaluation. Эффект
+зависит от участника; full-model tuning не объявляется универсально лучшим.
 
-### Мультимодальность
+## 9. Контрастивное обучение
 
-MEFAR, CL-Drive и CLARE проверены в participant-disjoint folds. XGBoost
-fusion − EEG-only по Macro F1: +0.113961, +0.011120 и −0.037978
-соответственно. Shallow fusion: −0.070163 на CL-Drive и −0.112538 на CLARE.
-На MEFAR wearable-only (0.577597) лучше fusion (0.511133). Универсальное
-улучшение 5–10% не подтверждено; эффект dataset- и model-specific.
+Shape-only и time-aligned screening не улучшили downstream macro F1;
+решение `close_transfer_track` сохраняется.
 
-### Streaming и demo
+## 10. COG-BCI
 
-Scientific replay использует 10-секундное окно и обновление раз в 1 секунду.
-Full 399-feature profile имеет Total P95 3052.311 ms и не укладывается в
-1-секундный бюджет. Lightweight 336-feature profile имеет Feature P95
-6.573 ms, Model P95 5.624 ms и Total P95 12.215 ms (realtime factor 63.825×).
-Streaming worker, replay, LSL source, quality checks, postprocessing, FastAPI
-endpoints и WebSocket реализованы. Это подтверждает software/computational
-real-time, но не физическую задержку `сенсор → API/UI`; live EEG-устройство не
-проверялось.
+14-channel cache сохранён; 62-channel expansion отклонён по заранее заданному
+правилу. CNN и spectral результаты остаются diagnostic/negative evidence.
 
-## Статус требований
+## 11. FOMAML
 
-Каноническая матрица находится в
-[`final_requirement_coverage.md`](../requirements/final_requirement_coverage.md).
-Главные незакрытые пункты: физический end-to-end тест; решение руководителей о
-нормативной обязательности selected-model и FASTER-like/ICA full benchmarks;
-финальная презентация/текст. Отрицательные результаты не считаются TODO.
+Participant-level outer-test: zero-shot macro F1
+0.210094, supervised
+full-model 0.198521, selected
+FOMAML 0.152184. FOMAML против
+supervised full-model: Δmacro F1
+-0.046338,
+Δbalanced accuracy
++0.039053,
+Δordinal MAE
++0.449093;
+W/L/T 1/4/0. Решение `do_not_proceed`. Это один fold, seed 42, пять
+участников и EEGNet; инфраструктурная готовность не означает успех метода.
 
-## Источники ключевых чисел
+## 12. DANN
 
-- `benchmark_results/lightgbm_feature_selection_v1/execution_manifest.json` и
-  `pm_macro_summary.csv`;
-- `benchmark_results/streaming_scientific_v1/run_summary.json` и
-  `benchmark_results/streaming_scientific_lightweight_v1/run_summary.json`;
-- `benchmark_results/mefar_multimodal_xgboost_v1/summary_xgboost.csv`;
-- `benchmark_results/cl_drive_multimodal_v1/summary_*.csv`;
-- `benchmark_results/clare_multimodal_v1/summary_*.csv`;
-- [`personalization_multiseed_20pct.md`](../integration/personalization_multiseed_20pct.md);
-- [`pm_regression_personalization_multiseed_20pct.md`](../integration/pm_regression_personalization_multiseed_20pct.md);
-- [`dann_label_q5_confirmatory_v2.md`](../integration/dann_label_q5_confirmatory_v2.md);
-- [`preprocessing_selected_trials_multiseed.md`](../preprocessing_selected_trials_multiseed.md).
+Диагностический fold 1 / seed 42: Δmacro F1 +0.013364, Δbalanced accuracy
++0.019079, Δordinal MAE −0.069330, W/L/T 6/2/0. Его bootstrap interval
+включает ноль, поэтому статус — diagnostic `proceed`, не подтверждение.
+
+## 13. Подтверждающий анализ
+
+Primary analysis использует folds 1–5 и seeds 123/2026. DANN против
+source-only: Δmacro F1
++0.008048,
+Δbalanced accuracy
++0.008332,
+Δordinal MAE
+-0.034008.
+Четыре из пяти folds и оба primary seeds положительны; 54.76% участников
+улучшились, bootstrap 95% CI включает ноль. Решение `partially_confirmed`.
+Seed 42 — sensitivity-only; fold 1 / seed 42 не переобучался и не входил в
+primary decision. Всего выполнено 28 новых trainings.
+
+## 14. Отрицательные результаты
+
+Канонический список находится в `final_result_tables/negative_result_summary.csv`.
+FOMAML `do_not_proceed` отделён от успешной episodic infrastructure.
+
+## 15. Ограничения
+
+Абсолютный macro F1 низок; source-validation содержит мало участников;
+domain head значительно больше EEGNet; проверено только направление
+`Old_EEG → gpn_data`; reverse direction и target-supervised upper bound не
+выполнялись; эффекты неоднородны между участниками и seeds.
+
+## 16. Требования проекта
+
+Покрытие находится в `final_result_tables/requirement_coverage.csv` и
+различает implementation, scientific evidence и незакрытые deliverables.
+
+## 17. Воспроизводимость
+
+Protocol/preregistration hashes, immutable unlock manifests, subject-level
+splits и target-label firewall сохранены в runtime. Checkpoints,
+predictions и кэши намеренно не отслеживаются Git.
+
+## 18. Научные выводы
+
+Проверенный FOMAML не поддержан. DANN показывает небольшой, но неоднородный
+положительный эффект со статусом `partially_confirmed`; статистическая
+значимость и полная доменная инвариантность не установлены.
+
+## 19. Открытые направления
+
+Нужны финальная публикационная интерпретация, presentation/demo scope и,
+только при новой утверждённой гипотезе, reverse DANN или target-supervised
+upper bound. Автоматические DANN/FOMAML sweeps не планируются.

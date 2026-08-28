@@ -21,8 +21,8 @@ from bench.datasets.base_eeg_data_loader import (
 from bench.datasets.logical_recordings import ensure_record_group_ids
 from bench.tasks.target_registry import PM_METRICS, get_target_spec
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
-from model_zoo.DL.feature_preprocessing import FeaturePreprocessor
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.feature_preprocessing import FeaturePreprocessor
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -903,7 +903,7 @@ def execute_run(context: ProtocolContext, spec: RunSpec) -> dict[str, Any]:
         *metadata.keys(), "subject_id", "target_name", "metric", "reason"
     ]))
     training_manifest = {
-        "model_factory": "model_zoo.build_model",
+        "model_factory": "cogstate.model_zoo.build_model",
         "model": spec.model,
         "params": params,
         "seed": spec.seed,

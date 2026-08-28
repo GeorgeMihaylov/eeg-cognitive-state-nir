@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 import torch
 
-from model_zoo.DL.shallow_fusion import (
+from cogstate.model_zoo.DL.shallow_fusion import (
     TorchShallowFusionAdapter,
     TorchShallowFusionClassifier,
 )
-from model_zoo.factory import build_model
+from cogstate.model_zoo.factory import build_model
 
 
 def test_shallow_fusion_branch_shapes_and_output() -> None:

@@ -41,7 +41,7 @@ from bench.experiments.ordinal_transformer_full import (
     OrdinalTransformerFullExperiment,
 )
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 OUTER_ALIGNMENT_COLUMNS = (

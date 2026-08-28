@@ -23,7 +23,7 @@ from bench.experiments.lightgbm_feature_selection import (
     protocol_plan,
     stable_hash,
 )
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 ROOT = Path(__file__).resolve().parents[1]

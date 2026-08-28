@@ -24,7 +24,7 @@ from bench.features.cogstate_feature_cache import (
     target_columns,
 )
 from bench.tasks.target_transforms import FoldLocalQuantileTargetTransform
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 SCHEMA_VERSION = "pm-eeg-lag-confirmatory-v1"

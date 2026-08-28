@@ -1,24 +1,5 @@
-"""Nested AutoML orchestration over the canonical benchmark pipeline."""
+"""AutoML namespaces with explicit scientific and application boundaries."""
 
-from .objective import AutoMLTrialResult, NestedBenchmarkObjective
-from .search_space import (
-    AutoMLStudySpec,
-    SearchParameterSpec,
-    SearchSpaceSpec,
-)
-__all__ = [
-    "AutoMLStudyRunner",
-    "AutoMLStudySpec",
-    "AutoMLTrialResult",
-    "NestedBenchmarkObjective",
-    "SearchParameterSpec",
-    "SearchSpaceSpec",
-]
+from . import personalized, scientific
 
-
-def __getattr__(name: str):
-    if name == "AutoMLStudyRunner":
-        from .study_runner import AutoMLStudyRunner
-
-        return AutoMLStudyRunner
-    raise AttributeError(name)
+__all__ = ["personalized", "scientific"]

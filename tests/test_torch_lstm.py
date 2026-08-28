@@ -2,8 +2,8 @@ import numpy as np
 import torch
 from sklearn.model_selection import train_test_split
 
-from model_zoo import build_model
-from model_zoo.DL import TorchClassificationAdapter, TorchLSTMClassifier
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL import TorchClassificationAdapter, TorchLSTMClassifier
 
 
 def _classification_sequences() -> tuple[np.ndarray, np.ndarray]:

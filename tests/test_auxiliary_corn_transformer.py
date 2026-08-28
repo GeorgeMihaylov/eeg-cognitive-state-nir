@@ -6,8 +6,8 @@ import pytest
 import torch
 
 from bench.bench_runner import benchmark_config_hash
-from model_zoo import build_model
-from model_zoo.DL.ordinal import CategoricalCornOutput
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.ordinal import CategoricalCornOutput
 
 
 def _adapter(weight: float = 0.5):

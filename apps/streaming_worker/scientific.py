@@ -21,7 +21,7 @@ from cogstate.features.streaming import (
     build_lightweight_pipeline,
     build_streaming_full_pipeline,
 )
-from model_zoo.ML.multitask import PMMultiTaskClassifier
+from cogstate.model_zoo.ML.multitask import PMMultiTaskClassifier
 from cogstate.protocol import EEG_CHANNELS, PM_METRICS, SAMPLE_RATE, WINDOW_SECONDS
 from cogstate.streaming.buffer import Window
 

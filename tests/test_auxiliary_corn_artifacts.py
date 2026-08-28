@@ -9,7 +9,7 @@ import pandas as pd
 from bench.bench_runner import BenchmarkRunner
 from bench.core.abstract_task import TaskSplit
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 def _data() -> tuple[np.ndarray, np.ndarray]:

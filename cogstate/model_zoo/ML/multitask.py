@@ -6,7 +6,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from cogstate.protocol import N_PM_CLASSES, PM_METRICS
-from model_zoo.factory import build_model
+from ..factory import build_model
 
 
 class PMMultiTaskClassifier:

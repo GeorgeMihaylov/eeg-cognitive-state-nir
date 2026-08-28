@@ -6,7 +6,7 @@ import pytest
 import torch
 from torch.nn import functional as F
 
-from model_zoo.DL.ordinal import (
+from cogstate.model_zoo.DL.ordinal import (
     build_corn_targets_and_masks,
     build_cumulative_targets,
     coral_loss,

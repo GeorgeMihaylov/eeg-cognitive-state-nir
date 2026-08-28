@@ -19,7 +19,7 @@ from bench.bench_runner import BenchmarkRunner
 from bench.datasets.raw_eeg_window_dataset import RawEEGWindowDataset
 from bench.tasks.tasks_registry import get_task
 from bench.validation.cross_val import CrossValidator
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 HANDOFF_SCHEMA_VERSION = "preliminary-streaming-handoff-v1"
@@ -588,13 +588,13 @@ Status: **preliminary**. These are single-outer-fold engineering results, not a 
 
 ## Loading a checkpoint
 
-Build the same `torch_shallow_convnet` through `model_zoo.build_model`, using `input_shape=(1, 14, 2560)`, `num_outputs=1` for regression or `3` for Q3, then call `adapter.load(checkpoint_path)`. Pass one external window as `window[np.newaxis, np.newaxis, :, :]`. The checkpoint restores train-only channel normalization automatically.
+Build the same `torch_shallow_convnet` through `cogstate.model_zoo.build_model`, using `input_shape=(1, 14, 2560)`, `num_outputs=1` for regression or `3` for Q3, then call `adapter.load(checkpoint_path)`. Pass one external window as `window[np.newaxis, np.newaxis, :, :]`. The checkpoint restores train-only channel normalization automatically.
 
 ```python
 from pathlib import Path
 import numpy as np
 import yaml
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 config = yaml.safe_load(Path("experiments/targets/preliminary_streaming_handoff_shallow_fold1.yaml").read_text())
 adapter = build_model(

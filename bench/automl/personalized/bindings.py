@@ -7,18 +7,18 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 import torch
 
-from personal_automl import (
+from .registry import (
     AdaptationMethod,
     CandidateRegistry,
     CandidateSpec,
     CandidateStatus,
 )
 
-from ..model_factory import build_sklearn_model
-from ..torch_lstm import build_torch_lstm
-from ..torch_mlp import build_torch_mlp
-from ..torch_transformer import build_torch_transformer
-from ..dann import DANNFoldData, DANNModule, DANNObjective
+from cogstate.model_zoo.DL.dann import DANNFoldData, DANNModule, DANNObjective
+from cogstate.model_zoo.DL.lstm import build_torch_lstm
+from cogstate.model_zoo.DL.mlp import build_torch_mlp
+from cogstate.model_zoo.DL.transformer import build_torch_transformer
+from cogstate.model_zoo.ML.sklearn_models import build_sklearn_model
 
 
 REQUIRED_CHANNEL_LAYOUT = "emotiv_common_14"

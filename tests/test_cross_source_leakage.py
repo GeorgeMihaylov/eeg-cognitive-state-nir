@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from bench.bench_runner import BenchmarkRunner
-from model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
 from tests.test_cross_source_split import make_cross_source_data
 
 

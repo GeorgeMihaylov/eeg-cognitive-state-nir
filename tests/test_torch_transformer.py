@@ -13,13 +13,13 @@ from bench.bench_runner import BenchmarkRunner, benchmark_config_hash
 from bench.core.abstract_dataset import EEGData
 from bench.datasets.emotiv_loader import EmotivDataset
 from cli import override_config_with_args
-from model_zoo import build_model
-from model_zoo.DL import (
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL import (
     TorchClassificationAdapter,
     TorchFeatureTransformerClassifier,
 )
-from model_zoo.DL.adapter import seed_torch
-from model_zoo.DL.sequence_utils import build_sequences
+from cogstate.model_zoo.DL.adapter import seed_torch
+from cogstate.model_zoo.DL.sequence_utils import build_sequences
 
 
 def _module(pooling: str = "last") -> TorchFeatureTransformerClassifier:

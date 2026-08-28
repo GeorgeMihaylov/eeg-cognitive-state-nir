@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import torch
 
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 def _data() -> tuple[np.ndarray, np.ndarray]:

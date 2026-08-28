@@ -45,10 +45,10 @@ from bench.experiments.fomaml_label_q5_diagnostic import (
     resolve_device,
 )
 from bench.meta.production import audit_architectures
-from model_zoo.DL.adapter import TorchClassificationAdapter, seed_torch
-from model_zoo.DL.dann import DANNModule, DANNObjective
-from model_zoo.DL.encoder import require_encoder_model
-from model_zoo.factory import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter, seed_torch
+from cogstate.model_zoo.DL.dann import DANNModule, DANNObjective
+from cogstate.model_zoo.DL.encoder import require_encoder_model
+from cogstate.model_zoo.factory import build_model
 
 
 SCHEMA_VERSION = "dann-label-q5-raw-diagnostic-v1"

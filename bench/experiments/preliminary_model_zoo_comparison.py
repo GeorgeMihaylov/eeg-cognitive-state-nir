@@ -18,9 +18,9 @@ from bench.bench_runner import BenchmarkRunner
 from bench.datasets.raw_eeg_window_dataset import RawEEGWindowArrayView
 from bench.features.cogstate_feature_cache import load_feature_cache, load_feature_profile
 from bench.features.cogstate_feature_cache import build_canonical_feature_index
-from model_zoo import build_model
-from model_zoo.factory import SEQUENCE_MODEL_NAMES, TORCH_MODEL_NAMES, model_requires_sequences
-from model_zoo.ML.sklearn_models import (
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.factory import SEQUENCE_MODEL_NAMES, TORCH_MODEL_NAMES, model_requires_sequences
+from cogstate.model_zoo.ML.sklearn_models import (
     CLASSIFICATION_MODEL_NAMES,
     REGRESSION_MODEL_NAMES,
     SKLEARN_MODEL_NAMES,
@@ -139,7 +139,7 @@ def build_run_status_matrix() -> pd.DataFrame:
                         "status": "blocked" if supported else "unsupported",
                         "stage": "awaiting_execution" if supported else "factory_compatibility",
                         "error_type": "",
-                        "error_message": "" if supported else f"{task_type} is not exposed by model_zoo.factory",
+                        "error_message": "" if supported else f"{task_type} is not exposed by cogstate.model_zoo.factory",
                     }
                 )
     return pd.DataFrame(rows)

@@ -27,7 +27,7 @@ from bench.tasks.target_transforms import (
     build_target_transform_manifest,
 )
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 SCHEMA_VERSION = "pm-confirmatory-selected-models-v1"

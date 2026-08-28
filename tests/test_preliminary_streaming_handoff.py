@@ -14,7 +14,7 @@ from bench.experiments.preliminary_streaming_handoff import (
     _target_slug,
     measure_single_window_latency,
 )
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 def test_preliminary_config_is_fold_one_raw_and_has_fourteen_targets() -> None:

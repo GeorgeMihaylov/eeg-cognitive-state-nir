@@ -10,12 +10,12 @@ from .episodes import (
     MetaEpisodeSpec,
     materialize_meta_learning_smoke,
 )
-from .protocol import (
+from cogstate.adaptation.meta_learning.protocol import (
     MetaLearnerProtocol,
     clone_model_for_episode,
     validate_model_clone,
 )
-from .fomaml import (
+from cogstate.adaptation.meta_learning.fomaml import (
     FOMAMLBatchResult,
     FOMAMLConfig,
     FOMAMLEpisodeResult,
@@ -26,7 +26,7 @@ from .fomaml import (
     model_state_hash,
     validate_parameter_mapping,
 )
-from .buffers import (
+from cogstate.adaptation.meta_learning.buffers import (
     BufferAuditResult,
     BufferPolicy,
     FunctionalModelState,

@@ -50,7 +50,7 @@ families:
       как отдельно загружаемый base и остаётся диагностическим pilot.
     evidence:
       - reports/automl_transformer_pilot.md
-      - bench/automl/study_runner.py
+      - bench/automl/scientific/study_runner.py
 
   classification:
     canonical_config: configs/groupkfold_rf_label_q5.yaml
@@ -314,7 +314,7 @@ families:
       have distinct deployment roles and must not be mixed in result summaries.
     evidence:
       - configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
-      - model_zoo/factory.py
+      - cogstate/model_zoo/factory.py
 
   artifact_removal:
     canonical_config: experiments/preprocessing/artifact_removal_ablation_v1.yaml
@@ -343,7 +343,7 @@ families:
       Prespecified LightGBM all-feature versus fold-local top-50 protocol;
       execution is blocked until the optional dependency is installed explicitly.
     evidence:
-      - model_zoo/factory.py
+      - cogstate/model_zoo/factory.py
       - bench/experiments/pm_all_targets_feature_baseline.py
 
 configs:
@@ -1418,7 +1418,7 @@ configs:
     result_status: diagnostic
     config_role: diagnostic
     linked_experiments: [streaming_scientific_v1]
-    evidence: [configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml, model_zoo/factory.py]
+    evidence: [configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml, cogstate/model_zoo/factory.py]
     linked_runtime: benchmark_results/streaming_scientific_v1
     notes: [Full feature extraction does not currently sustain a one-second live step.]
     <<: *protected
@@ -1431,7 +1431,7 @@ configs:
     result_status: diagnostic
     config_role: diagnostic
     linked_experiments: [streaming_scientific_lightweight_v1]
-    evidence: [configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml, model_zoo/factory.py]
+    evidence: [configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml, cogstate/model_zoo/factory.py]
     linked_runtime: benchmark_results/streaming_scientific_lightweight_v1
     notes: [Only the feature profile differs from the full scientific streaming diagnostic.]
     <<: *protected
@@ -1461,7 +1461,7 @@ configs:
     provenance_status: documented
     config_role: full
     linked_experiments: [lightgbm_feature_selection_v1]
-    evidence: [model_zoo/factory.py, bench/experiments/pm_all_targets_feature_baseline.py]
+    evidence: [cogstate/model_zoo/factory.py, bench/experiments/pm_all_targets_feature_baseline.py]
     linked_runtime: benchmark_results/lightgbm_feature_selection_v1
     notes: [Execution is blocked until LightGBM is installed explicitly; no hyperparameter tuning is permitted.]
     <<: *protected

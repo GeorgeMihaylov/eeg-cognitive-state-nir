@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from bench.automl.search_space import SearchSpaceSpec
+from bench.automl.scientific.search_space import SearchSpaceSpec
 
 
 def _space() -> SearchSpaceSpec:

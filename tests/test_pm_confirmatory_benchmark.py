@@ -21,8 +21,8 @@ from bench.experiments.pm_confirmatory_benchmark import (
     validate_feature_cache_identity,
     write_plan,
 )
-from model_zoo import build_model
-from model_zoo.DL.sequence_utils import build_sequences
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.sequence_utils import build_sequences
 
 
 def _config() -> dict:

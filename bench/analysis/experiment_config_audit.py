@@ -556,7 +556,10 @@ def classify_loader(path: str, document: Any) -> tuple[str, str]:
 
 
 LOADER_FUNCTIONS: dict[str, tuple[str, str]] = {
-    "automl_study": ("bench.automl.study_runner", "load_automl_study_spec"),
+    "automl_study": (
+        "bench.automl.scientific.study_runner",
+        "load_automl_study_spec",
+    ),
     "preprocessing_ablation": (
         "bench.experiments.preprocessing_ablation",
         "load_experiment_spec",

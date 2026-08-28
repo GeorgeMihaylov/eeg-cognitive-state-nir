@@ -28,7 +28,7 @@ from bench.experiments.pm_eeg_lag_confirmatory import (
 )
 from bench.features.cogstate_feature_cache import load_feature_cache
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 SCHEMA_VERSION = "pm-eeg-lag-regression-confirmatory-v1"

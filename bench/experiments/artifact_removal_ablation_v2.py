@@ -37,7 +37,7 @@ from bench.preprocessing.artifact_removal_cache_v2 import (
 from bench.preprocessing.fold_artifact_transform import stable_hash
 from bench.tasks.target_registry import PM_METRICS
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

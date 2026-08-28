@@ -5,8 +5,8 @@ import pytest
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.svm import SVC
 
-from model_zoo import BaseModelAdapter, ModelLike, build_model
-from model_zoo.DL import TorchClassificationAdapter
+from cogstate.model_zoo import BaseModelAdapter, ModelLike, build_model
+from cogstate.model_zoo.DL import TorchClassificationAdapter
 
 
 def test_build_random_forest_classifier() -> None:

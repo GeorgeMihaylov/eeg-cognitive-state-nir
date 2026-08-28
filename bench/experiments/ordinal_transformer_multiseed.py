@@ -29,7 +29,7 @@ from bench.experiments.ordinal_transformer_full import (
     full_prediction_alignment,
 )
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 HEAD_TYPES = ("categorical", "coral", "corn")

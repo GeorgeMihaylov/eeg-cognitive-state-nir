@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from model_zoo.DL.sequence_utils import build_sequences
+from cogstate.model_zoo.DL.sequence_utils import build_sequences
 
 
 def _metadata_for_records(record_lengths: list[int]) -> pd.DataFrame:

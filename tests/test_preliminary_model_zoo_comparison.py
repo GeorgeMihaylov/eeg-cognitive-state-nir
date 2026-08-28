@@ -24,9 +24,9 @@ from bench.experiments.preliminary_model_zoo_comparison import (
 from bench.bench_runner import BenchmarkRunner
 from bench.core.abstract_task import TaskSplit
 from bench.features.cogstate_feature_cache import sample_id_universe_hash
-from model_zoo import build_model
-from model_zoo.factory import TORCH_MODEL_NAMES
-from model_zoo.ML.sklearn_models import SKLEARN_MODEL_NAMES
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.factory import TORCH_MODEL_NAMES
+from cogstate.model_zoo.ML.sklearn_models import SKLEARN_MODEL_NAMES
 
 
 def _config() -> dict:

@@ -19,8 +19,8 @@ from bench.meta import (
     model_state_hash,
     validate_functional_state,
 )
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
-from model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
 
 
 class TinyBatchNormClassifier(nn.Module):
