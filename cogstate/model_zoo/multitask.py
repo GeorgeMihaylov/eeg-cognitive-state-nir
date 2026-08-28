@@ -1,5 +1,5 @@
-"""Application import compatibility for the canonical multitask classifier."""
+"""Public import for the canonical multitask classifier."""
 
-from model_zoo.ML.multitask import PMMultiTaskClassifier
+from .ML.multitask import PMMultiTaskClassifier
 
 __all__ = ["PMMultiTaskClassifier"]

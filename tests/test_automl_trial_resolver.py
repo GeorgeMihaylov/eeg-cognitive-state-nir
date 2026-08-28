@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from bench.automl.search_space import SearchSpaceSpec
-from bench.automl.trial_resolver import resolve_automl_trial_config
+from bench.automl.scientific.search_space import SearchSpaceSpec
+from bench.automl.scientific.trial_resolver import resolve_automl_trial_config
 from bench.datasets.emotiv_loader import EmotivDataset
 from bench.experiments.preprocessing_ablation import resolve_trial_config
 

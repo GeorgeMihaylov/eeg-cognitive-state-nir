@@ -21,8 +21,8 @@ from bench.datasets.datasets_registry import get_dataset
 from bench.tasks.tasks_registry import get_task
 from bench.validation.cross_val import CrossValidator
 from bench.validation.metrics import MetricsCalculator
-from model_zoo.DL.sequence_utils import build_sequences
-from model_zoo.factory import model_requires_sequences
+from cogstate.model_zoo.DL.sequence_utils import build_sequences
+from cogstate.model_zoo.factory import model_requires_sequences
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

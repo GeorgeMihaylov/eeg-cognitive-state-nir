@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from model_zoo.DL.ordinal import (
+from cogstate.model_zoo.DL.ordinal import (
     ClassificationObjectiveHandler,
     cumulative_to_class_probabilities,
     decode_ordinal_prediction,

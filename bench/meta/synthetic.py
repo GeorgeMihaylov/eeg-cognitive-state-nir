@@ -13,8 +13,8 @@ import pandas as pd
 import torch
 from torch import Tensor, nn
 
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
-from model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
 
 from .episodes import (
     MetaEpisode,
@@ -22,7 +22,7 @@ from .episodes import (
     MetaEpisodeManifest,
     MetaEpisodeSpec,
 )
-from .fomaml import (
+from cogstate.adaptation.meta_learning.fomaml import (
     FOMAMLConfig,
     FirstOrderMAML,
     audit_production_model_compatibility,

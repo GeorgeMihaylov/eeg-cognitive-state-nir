@@ -6,9 +6,9 @@ import pytest
 import torch
 
 from bench.bench_runner import benchmark_config_hash
-from model_zoo import build_model
-from model_zoo.DL import TorchFeatureTransformerClassifier
-from model_zoo.DL.ordinal import CoralOrdinalHead, CornOrdinalHead
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL import TorchFeatureTransformerClassifier
+from cogstate.model_zoo.DL.ordinal import CoralOrdinalHead, CornOrdinalHead
 
 
 def _model(head_type: str = "categorical") -> TorchFeatureTransformerClassifier:

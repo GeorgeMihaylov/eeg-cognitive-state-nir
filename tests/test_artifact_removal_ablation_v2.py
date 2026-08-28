@@ -35,7 +35,7 @@ from bench.preprocessing.artifact_removal_cache_v2 import (
     variant_config_hash,
 )
 from bench.tasks.target_registry import PM_METRICS
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 ROOT = Path(__file__).resolve().parents[1]

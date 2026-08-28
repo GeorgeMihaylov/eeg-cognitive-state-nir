@@ -25,7 +25,7 @@ from bench.experiments.auxiliary_corn_lambda_selection import (
     validation_metrics_from_frame,
 )
 from bench.experiments.ordinal_transformer import build_ordinal_transformer_experiment
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 SPEC = Path("experiments/auxiliary_corn_lambda_selection_setup.yaml")

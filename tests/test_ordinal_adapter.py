@@ -12,7 +12,7 @@ from bench.bench_runner import BenchmarkRunner
 from bench.core.abstract_task import TaskSplit
 from bench.experiments.user_calibration import UserCalibrationExperiment
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 def _synthetic_sequences() -> tuple[np.ndarray, np.ndarray]:

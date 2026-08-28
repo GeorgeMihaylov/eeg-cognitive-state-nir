@@ -12,6 +12,13 @@ from .feature_alignment import (
     SUPPORTED_ALIGNMENT_METHODS,
     apply_alignment_shrinkage,
 )
+from .regression_calibration import (
+    AffineCalibration,
+    apply_affine_calibration,
+    apply_bias_correction,
+    fit_affine_calibration,
+    fit_bias_correction,
+)
 
 __all__ = [
     "FeatureAligner",
@@ -19,4 +26,9 @@ __all__ = [
     "FeatureAlignmentStats",
     "SUPPORTED_ALIGNMENT_METHODS",
     "apply_alignment_shrinkage",
+    "AffineCalibration",
+    "apply_affine_calibration",
+    "apply_bias_correction",
+    "fit_affine_calibration",
+    "fit_bias_correction",
 ]

@@ -18,9 +18,9 @@ from bench.experiments.feature_group_ablation import (
     resolve_trial_config,
     sequence_prediction_alignment,
 )
-from model_zoo import build_model
-from model_zoo.DL.adapter import TorchClassificationAdapter
-from model_zoo.DL.sequence_utils import build_sequences, sequence_index_sha256
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo.DL.sequence_utils import build_sequences, sequence_index_sha256
 
 
 SPEC = Path("experiments/feature_group_transformer_ablation.yaml")

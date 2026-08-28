@@ -9,7 +9,7 @@ import pytest
 import torch
 from torch import nn
 
-from model_zoo.DL.contrastive import (
+from cogstate.model_zoo.DL.contrastive import (
     AmplitudeScaling,
     ChannelMasking,
     ContrastiveFoldData,
@@ -25,8 +25,8 @@ from model_zoo.DL.contrastive import (
     load_encoder_checkpoint,
     nt_xent_logits,
 )
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
-from model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
 
 
 def _eegnet(*, num_classes: int = 5) -> TorchEEGNetClassifier:

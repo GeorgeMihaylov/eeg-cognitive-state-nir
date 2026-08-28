@@ -28,7 +28,7 @@ from bench.analysis.ordinal_transformer_statistics import (
     require_six_way_alignment,
     select_decision,
 )
-from model_zoo.DL.sequence_utils import sequence_index_sha256
+from cogstate.model_zoo.DL.sequence_utils import sequence_index_sha256
 
 
 def _predictions(subjects: int = 53) -> dict[str, pd.DataFrame]:

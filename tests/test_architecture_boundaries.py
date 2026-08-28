@@ -1,31 +1,156 @@
-"""Regression guards for the post-unification package boundaries."""
+"""Regression guards for the final package-unification boundaries."""
 
 from __future__ import annotations
 
 import ast
+import hashlib
+import json
+import re
 from pathlib import Path
 
-from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter as AppAdapter
-from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier as AppEEGNet
-from cogstate.model_zoo.DL.lstm import TorchLSTMClassifier as AppLSTM
-from cogstate.model_zoo.DL.mlp import TorchMLP as AppMLP
-from cogstate.model_zoo.DL.shallow_convnet import (
-    TorchShallowConvNetClassifier as AppShallowConvNet,
+from cogstate.adaptation.meta_learning.buffers import (
+    architecture_schema_signature,
+    stable_model_class_path,
+)
+from cogstate.model_zoo.DL.mlp import TorchMLP
+from cogstate.model_zoo.factory import (
+    SKLEARN_MODEL_NAMES,
+    TORCH_MODEL_NAMES,
+    build_model,
 )
 from cogstate.protocol import PM_METRICS
-from model_zoo.DL.adapter import TorchClassificationAdapter
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
-from model_zoo.DL.lstm import TorchLSTMClassifier
-from model_zoo.DL.mlp import TorchMLP
-from model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
 
 
-def test_application_model_zoo_reexports_canonical_models() -> None:
-    assert AppAdapter is TorchClassificationAdapter
-    assert AppEEGNet is TorchEEGNetClassifier
-    assert AppLSTM is TorchLSTMClassifier
-    assert AppMLP is TorchMLP
-    assert AppShallowConvNet is TorchShallowConvNetClassifier
+REPO_ROOT = Path(__file__).resolve().parents[1]
+PYTHON_ROOTS = ("apps", "bench", "cogstate", "scripts", "tests")
+
+
+def _python_paths(root: str) -> list[Path]:
+    return sorted((REPO_ROOT / root).rglob("*.py"))
+
+
+def _absolute_import_roots(path: Path) -> set[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
+    roots: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            roots.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            roots.add(node.module.split(".")[0])
+    return roots
+
+
+def test_legacy_root_python_packages_are_absent() -> None:
+    for name in ("model_zoo", "automl", "src"):
+        assert not (REPO_ROOT / name).exists(), name
+
+
+def test_project_python_does_not_import_legacy_roots() -> None:
+    for root in PYTHON_ROOTS:
+        for path in _python_paths(root):
+            assert not ({"model_zoo", "automl", "src"} & _absolute_import_roots(path)), path
+
+
+def test_cogstate_never_imports_bench() -> None:
+    for path in _python_paths("cogstate"):
+        assert "bench" not in _absolute_import_roots(path), path
+
+
+def test_apps_depend_on_cogstate_not_bench() -> None:
+    for path in _python_paths("apps"):
+        assert "bench" not in _absolute_import_roots(path), path
+
+
+def test_scripts_delegate_to_bench_or_apps_not_cogstate() -> None:
+    for path in _python_paths("scripts"):
+        assert "cogstate" not in _absolute_import_roots(path), path
+
+
+def test_python_dynamic_paths_do_not_reference_legacy_packages() -> None:
+    patterns = (
+        re.compile(r"(?<!cogstate\.)\bmodel_zoo\."),
+        re.compile(r"(?<!bench\.)\bautoml\."),
+    )
+    for root in PYTHON_ROOTS:
+        for path in _python_paths(root):
+            text = path.read_text(encoding="utf-8-sig")
+            assert not [pattern.pattern for pattern in patterns if pattern.search(text)], path
+
+
+def test_active_configs_and_manifests_do_not_use_legacy_module_paths() -> None:
+    roots = ("configs", "experiments", "artifacts")
+    suffixes = {".json", ".yaml", ".yml", ".toml"}
+    patterns = (
+        re.compile(r"(?<!cogstate\.)\bmodel_zoo\."),
+        re.compile(r"(?<!bench\.)\bautoml\."),
+    )
+    for root in roots:
+        base = REPO_ROOT / root
+        if not base.exists():
+            continue
+        for path in base.rglob("*"):
+            if path.is_file() and path.suffix.casefold() in suffixes:
+                text = path.read_text(encoding="utf-8-sig")
+                assert not [pattern.pattern for pattern in patterns if pattern.search(text)], path
+    for relative in (
+        "reports/summary/config_curation.yaml",
+        "reports/summary/requirements_registry.yaml",
+    ):
+        path = REPO_ROOT / relative
+        text = path.read_text(encoding="utf-8-sig")
+        assert not [pattern.pattern for pattern in patterns if pattern.search(text)], path
+
+
+def test_cogstate_model_zoo_has_the_only_model_factory() -> None:
+    factories = sorted(
+        path.relative_to(REPO_ROOT).as_posix()
+        for path in REPO_ROOT.rglob("factory.py")
+        if "model_zoo" in path.parts
+    )
+    assert factories == ["cogstate/model_zoo/factory.py"]
+    assert build_model.__module__ == "cogstate.model_zoo.factory"
+
+
+def test_canonical_model_names_are_preserved() -> None:
+    required = {
+        "torch_mlp",
+        "torch_lstm",
+        "torch_bilstm",
+        "torch_eegnet",
+        "torch_shallow_convnet",
+        "torch_shallow_convnet_multitask",
+        "torch_shallow_fusion",
+        "torch_transformer",
+    }
+    assert required <= TORCH_MODEL_NAMES
+    assert SKLEARN_MODEL_NAMES
+
+
+def test_model_metadata_uses_the_historical_logical_class_identity() -> None:
+    model = TorchMLP(input_dim=4, num_classes=3, hidden_dims=(8,))
+    assert model.__class__.__module__ == "cogstate.model_zoo.DL.mlp"
+    historical_path = "model" + "_zoo.DL.mlp.TorchMLP"
+    assert stable_model_class_path(model) == historical_path
+    legacy_payload = {
+        "class": historical_path,
+        "parameters": [
+            [name, list(value.shape), str(value.dtype)]
+            for name, value in model.named_parameters()
+        ],
+        "buffers": [
+            [name, list(value.shape), str(value.dtype)]
+            for name, value in model.named_buffers()
+        ],
+        "latent_dim": int(getattr(model, "latent_dim", 0)),
+    }
+    legacy_signature = hashlib.sha256(
+        json.dumps(
+            legacy_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    assert architecture_schema_signature(model) == legacy_signature
 
 
 def test_pm_registry_uses_canonical_protocol_constant() -> None:
@@ -34,23 +159,19 @@ def test_pm_registry_uses_canonical_protocol_constant() -> None:
     assert REGISTRY_PM_METRICS is PM_METRICS
 
 
-def test_legacy_src_layer_is_absent() -> None:
-    assert not Path("src").exists()
+def test_scripts_are_thin_cli_modules() -> None:
+    for path in _python_paths("scripts"):
+        source = path.read_text(encoding="utf-8-sig")
+        tree = ast.parse(source, filename=str(path))
+        assert len(source.splitlines()) <= 100, path
+        assert not any(isinstance(node, ast.ClassDef) for node in ast.walk(tree)), path
 
 
-def test_project_python_does_not_import_src() -> None:
-    roots = ("bench", "cogstate", "model_zoo", "automl", "apps", "scripts", "tests")
-    for root in roots:
-        for path in Path(root).rglob("*.py"):
-            tree = ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    imported_roots = {alias.name.split(".")[0] for alias in node.names}
-                elif isinstance(node, ast.ImportFrom) and node.module:
-                    imported_roots = {node.module.split(".")[0]}
-                else:
-                    continue
-                assert "src" not in imported_roots, path
+def test_streaming_worker_uses_canonical_model_zoo() -> None:
+    paths = _python_paths("apps")
+    source = "\n".join(path.read_text(encoding="utf-8-sig") for path in paths)
+    assert "from cogstate.model_zoo" in source
+    assert not re.search(r"(?<!cogstate\.)\bmodel_zoo\.", source)
 
 
 def test_canonical_replacement_clis_exist() -> None:

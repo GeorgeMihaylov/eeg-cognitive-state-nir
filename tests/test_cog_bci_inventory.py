@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.data import cog_bci_inventory as inventory
+from bench.data_quality import cog_bci_inventory as inventory
 
 
 def make_zip(path: Path, members: dict[str, bytes] | None = None) -> Path:

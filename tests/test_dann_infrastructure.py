@@ -8,7 +8,7 @@ import pytest
 import torch
 from torch import nn
 
-from model_zoo.DL.dann import (
+from cogstate.model_zoo.DL.dann import (
     DANNFoldData,
     DANNModule,
     DANNObjective,
@@ -17,8 +17,8 @@ from model_zoo.DL.dann import (
     GradientReversal,
     aggregate_dann_loss_results,
 )
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
-from model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
 
 
 def _eegnet() -> TorchEEGNetClassifier:

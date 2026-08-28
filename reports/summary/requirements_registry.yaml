@@ -444,7 +444,7 @@ requirements:
         supports: Детерминированные EEG/POW feature groups.
         level: primary
       - type: code
-        path: model_zoo/DL/sequence_utils.py
+        path: cogstate/model_zoo/DL/sequence_utils.py
         supports: Record-safe sequences.
         level: primary
       - type: test
@@ -538,7 +538,7 @@ requirements:
     overall_status: partial
     evidence:
       - type: code
-        path: model_zoo/factory.py
+        path: cogstate/model_zoo/factory.py
         supports: Общую модельную точку подключения.
         level: primary
       - type: report
@@ -582,7 +582,7 @@ requirements:
     overall_status: complete
     evidence:
       - type: code
-        path: model_zoo/factory.py
+        path: cogstate/model_zoo/factory.py
         supports: sklearn и Torch factory.
         level: primary
       - type: test
@@ -699,7 +699,7 @@ requirements:
     overall_status: partial
     evidence:
       - type: code
-        path: bench/automl/study_runner.py
+        path: bench/automl/scientific/study_runner.py
         supports: Integrated study orchestration.
         level: primary
       - type: config
@@ -753,7 +753,7 @@ requirements:
         supports: Group-aware outer protocols.
         level: primary
       - type: code
-        path: model_zoo/DL/adapter.py
+        path: cogstate/model_zoo/DL/adapter.py
         supports: Group-aware inner validation.
         level: primary
       - type: report
@@ -1197,7 +1197,7 @@ requirements:
         supports: Task registry.
         level: primary
       - type: code
-        path: model_zoo/factory.py
+        path: cogstate/model_zoo/factory.py
         supports: Model factory.
         level: primary
       - type: report

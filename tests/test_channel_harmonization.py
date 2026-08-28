@@ -20,7 +20,7 @@ from bench.datasets.channel_contracts import (
 )
 from bench.datasets.cog_bci_dataset import COGBCIDataset
 from bench.datasets.raw_eeg_window_dataset import CANONICAL_EEG_CHANNELS
-from scripts.data.cog_bci_channel_audit import _project_contract_audit
+from bench.data_quality.cog_bci_channel_audit import _project_contract_audit
 
 
 def _layout(

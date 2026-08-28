@@ -6,7 +6,7 @@ import pytest
 import torch
 import yaml
 
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 LEGACY_RUN = Path(

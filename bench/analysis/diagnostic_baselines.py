@@ -22,7 +22,7 @@ from bench.analysis.temporal_target_structure import (
     _selected_metrics,
     metrics_by_group,
 )
-from model_zoo.ML.sklearn_models import build_sklearn_model
+from cogstate.model_zoo.ML.sklearn_models import build_sklearn_model
 
 
 POSITION_COLUMNS = [

@@ -167,12 +167,12 @@ def test_audit_is_deterministic_and_does_not_modify_input(tmp_path: Path) -> Non
 
 def test_audit_never_constructs_a_model(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     paths = _write_case(tmp_path)
-    import model_zoo.factory
+    import cogstate.model_zoo.factory
 
     def forbidden(*args: object, **kwargs: object) -> None:
         raise AssertionError("model construction is forbidden in label audit")
 
-    monkeypatch.setattr(model_zoo.factory, "build_model", forbidden)
+    monkeypatch.setattr(cogstate.model_zoo.factory, "build_model", forbidden)
     result = LabelTargetAudit(paths["spec"]).execute()
     assert result["analysis_only"] is True
     assert result["models_trained"] == 0

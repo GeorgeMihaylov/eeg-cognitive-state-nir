@@ -73,7 +73,7 @@ def test_synthetic_smoke_writes_deterministic_safe_artifacts(tmp_path: Path) -> 
 
 
 def test_historical_mixin_and_optional_packages_are_not_runtime_dependencies() -> None:
-    import bench.meta.fomaml as module
+    import cogstate.adaptation.meta_learning.fomaml as module
 
     source = Path(module.__file__).read_text(encoding="utf-8")
     assert "learn2learn" not in source

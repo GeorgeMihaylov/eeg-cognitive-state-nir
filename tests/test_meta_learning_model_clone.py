@@ -3,8 +3,8 @@ from __future__ import annotations
 import torch
 
 from bench.meta import clone_model_for_episode, validate_model_clone
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
-from model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
 
 
 def _models():

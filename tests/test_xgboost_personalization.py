@@ -7,7 +7,7 @@ from bench.experiments.personalization_calibration_execution import (
     load_xgboost_checkpoint,
     save_xgboost_checkpoint,
 )
-from model_zoo.ML.xgboost_personalization import (
+from cogstate.model_zoo.ML.xgboost_personalization import (
     XGBoostMarginHeadAdapter,
     xgboost_state_sha256,
 )

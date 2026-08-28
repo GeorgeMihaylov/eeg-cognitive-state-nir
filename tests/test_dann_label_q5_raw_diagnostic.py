@@ -19,8 +19,8 @@ from bench.experiments.dann_label_q5_raw_diagnostic import (
     validate_dann_diagnostic_config,
 )
 from bench.experiments.fomaml_label_q5_diagnostic import _sha256_file
-from model_zoo.DL.dann import DANNModule, DANNObjective
-from model_zoo.factory import build_model
+from cogstate.model_zoo.DL.dann import DANNModule, DANNObjective
+from cogstate.model_zoo.factory import build_model
 
 
 ROOT = Path(__file__).resolve().parents[1]

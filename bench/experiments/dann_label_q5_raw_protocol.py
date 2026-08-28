@@ -23,9 +23,9 @@ import torch
 
 from bench.datasets.logical_recordings import ensure_record_group_ids
 from bench.meta.episodes import stable_hash
-from bench.meta.fomaml import model_state_hash
+from cogstate.adaptation.meta_learning.fomaml import model_state_hash
 from bench.meta.production import audit_architectures
-from model_zoo.DL.dann import (
+from cogstate.model_zoo.DL.dann import (
     DANNFoldData,
     DANNModule,
     DANNObjective,
@@ -623,7 +623,7 @@ def run_cpu_forward_audit(
 
     import yaml
 
-    from model_zoo.factory import build_model
+    from cogstate.model_zoo.factory import build_model
 
     model_document = yaml.safe_load(
         (repository_root / str(config["architecture"]["model_config"]))
@@ -976,10 +976,10 @@ def build_dann_label_q5_raw_protocol(
             "minimum_loader_length_epoch",
         ],
         "current_reuse": [
-            "model_zoo.DL.encoder",
-            "model_zoo.DL.eegnet",
-            "model_zoo.DL.dann",
-            "model_zoo.DL.adapter",
+            "cogstate.model_zoo.DL.encoder",
+            "cogstate.model_zoo.DL.eegnet",
+            "cogstate.model_zoo.DL.dann",
+            "cogstate.model_zoo.DL.adapter",
             "canonical_raw_deduplicated_universe",
             "existing_outer_fold_1",
         ],

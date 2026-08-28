@@ -21,7 +21,7 @@ from apps.streaming_worker.runtime import StreamingRuntime
 from apps.streaming_worker.scientific import plan_experiment, select_training_rows
 from apps.streaming_worker.api.app import create_app
 from cogstate.features.streaming import build_lightweight_pipeline
-from model_zoo.ML.multitask import PMMultiTaskClassifier
+from cogstate.model_zoo.ML.multitask import PMMultiTaskClassifier
 from cogstate.preprocessing.filtering import FilterConfig, StreamingFilter
 from cogstate.protocol import EEG_CHANNELS, PM_METRICS
 

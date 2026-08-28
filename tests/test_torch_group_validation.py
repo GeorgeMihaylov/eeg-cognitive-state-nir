@@ -10,7 +10,7 @@ import yaml
 from bench.bench_runner import BenchmarkRunner
 from bench.core.abstract_task import TaskSplit
 from cli import validate_config
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 def _classification_data() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:

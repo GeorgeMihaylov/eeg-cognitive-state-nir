@@ -1,4 +1,4 @@
-﻿import numpy as np
+import numpy as np
 import pytest
 from xgboost import XGBClassifier
 
@@ -6,7 +6,7 @@ from cogstate.adaptation import (
     FeatureAligner,
     FeatureAlignmentConfig,
 )
-from model_zoo.ML.xgboost_personalization import (
+from cogstate.model_zoo.ML.xgboost_personalization import (
     xgboost_state_sha256,
 )
 

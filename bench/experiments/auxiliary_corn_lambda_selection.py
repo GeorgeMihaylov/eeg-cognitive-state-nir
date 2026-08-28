@@ -26,8 +26,8 @@ from bench.experiments.ordinal_transformer_full import (
     OrdinalTransformerFullExperiment,
 )
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
-from model_zoo.base import BaseModelAdapter
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.base import BaseModelAdapter
 
 
 AUXILIARY_WEIGHTS = (0.25, 0.5, 1.0)

@@ -17,8 +17,8 @@ from bench.experiments.user_calibration_multiseed import (
     resolve_seed_base_config,
     resolve_seed_calibration_config,
 )
-from model_zoo.DL.adapter import TorchClassificationAdapter
-from model_zoo.factory import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo.factory import build_model
 
 
 ROOT = Path(__file__).resolve().parents[1]

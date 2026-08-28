@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from bench.experiments import cross_dataset_clare_cldrive_dann as protocol
-from model_zoo.DL.dann import DANNFoldData, DANNPartition
+from cogstate.model_zoo.DL.dann import DANNFoldData, DANNPartition
 
 
 ROOT = Path(__file__).resolve().parents[1]

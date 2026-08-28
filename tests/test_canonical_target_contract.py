@@ -29,7 +29,7 @@ from bench.tasks.target_registry import (
 from bench.tasks.target_spec import TargetSpec
 from bench.tasks.target_transforms import FoldLocalQuantileTargetTransform
 from bench.tasks.tasks_registry import TASK_REGISTRY, get_task
-from scripts.build_target_contract import build_contract
+from bench.tasks.target_contract_builder import build_contract
 
 
 EXECUTABLE_IDS = {

@@ -24,7 +24,7 @@ from bench.analysis.pm_temporal_quality import (
     prepare_pm_frame,
     stable_hash,
 )
-from scripts.migrate_pm_quality_result_status import migrate_result_status
+from bench.analysis.pm_quality_result_status_migration import migrate_result_status
 
 
 ROOT = Path(__file__).resolve().parents[1]

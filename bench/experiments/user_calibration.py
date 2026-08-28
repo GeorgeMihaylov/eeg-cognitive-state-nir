@@ -25,13 +25,13 @@ from bench.bench_runner import BenchmarkRunner, benchmark_config_hash
 from bench.tasks.tasks_registry import get_task
 from bench.validation.cross_val import CrossValidator
 from bench.validation.metrics import MetricsCalculator
-from model_zoo.DL.adapter import TorchClassificationAdapter
-from model_zoo.DL.sequence_utils import (
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo.DL.sequence_utils import (
     TIME_COLUMN_PRIORITY,
     SequenceBuildResult,
     build_sequences,
 )
-from model_zoo.factory import build_model, model_requires_sequences
+from cogstate.model_zoo.factory import build_model, model_requires_sequences
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

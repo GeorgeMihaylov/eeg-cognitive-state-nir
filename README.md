@@ -349,23 +349,21 @@ bench/
   data_quality/      переиспользуемые inventory/QC-аудиты
   preprocessing/     fold-local transforms, caches и orchestration
   features/          dataset-specific feature caches/adapters
-  automl/            nested scientific optimization
+  automl/            scientific/ и personalized/ orchestration
   analysis/          статистический и диагностический анализ
 
 cogstate/
   ingestion/         generic parsing и canonical records
   preprocessing/     фильтрация и удаление артефактов
   features/          каноническое target-free извлечение 371 признака
+  model_zoo/         единственные реализации и единая фабрика моделей
+  adaptation/        FOMAML core и reusable calibration primitives
   streaming/         потоковая обработка
-  adaptation/        используемые participant-alignment компоненты
-  evaluation/        application facade над bench.validation
-  model_zoo/         compatibility facade и streaming multitask extension
+  evaluation/        application-level evaluation components
 
-model_zoo/            единая фабрика моделей
-automl/               application portfolio/adaptation orchestration
 experiments/          конфигурации экспериментов
 scripts/              тонкие актуальные CLI-точки запуска
-apps/streaming_worker/
+apps/streaming_worker/ application inference через cogstate
 reports/              отчёты и сводные артефакты
 artifacts/            небольшие model-bundle manifests
 ```

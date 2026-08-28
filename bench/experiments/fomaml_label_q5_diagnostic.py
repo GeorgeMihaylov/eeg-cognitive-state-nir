@@ -27,8 +27,8 @@ from bench.datasets.datasets_registry import get_dataset
 from bench.meta import FOMAMLConfig, FirstOrderMAML, model_state_hash
 from bench.meta.production import audit_architectures
 from bench.validation.metrics import MetricsCalculator
-from model_zoo.DL.adapter import TorchClassificationAdapter, seed_torch
-from model_zoo.factory import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter, seed_torch
+from cogstate.model_zoo.factory import build_model
 
 
 SCHEMA_VERSION = "fomaml-label-q5-diagnostic-v1"

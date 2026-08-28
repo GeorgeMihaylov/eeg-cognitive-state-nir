@@ -13,7 +13,7 @@ from bench.bench_runner import BenchmarkRunner
 from bench.datasets.emotiv_loader import EmotivDataset
 from bench.tasks.tasks_registry import get_task
 from cli import validate_config
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 TARGET_NAMES = [

@@ -15,18 +15,22 @@ import torch
 import yaml
 from torch import nn
 
-from model_zoo.factory import build_model
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
-from model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
+from cogstate.model_zoo.factory import build_model
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
 
-from .buffers import (
+from cogstate.adaptation.meta_learning.buffers import (
     BufferPolicy,
     architecture_schema_signature,
     batchnorm_inventory,
     create_functional_state,
     tensor_mapping_hash,
 )
-from .fomaml import FOMAMLConfig, FirstOrderMAML, model_state_hash
+from cogstate.adaptation.meta_learning.fomaml import (
+    FOMAMLConfig,
+    FirstOrderMAML,
+    model_state_hash,
+)
 from .meta_validation import build_meta_validation_protocol
 
 

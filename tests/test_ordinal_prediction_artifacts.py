@@ -10,7 +10,7 @@ from bench.experiments.ordinal_transformer import (
     audit_prediction_probabilities,
     prediction_alignment,
 )
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 def _ordinal_predictions() -> pd.DataFrame:

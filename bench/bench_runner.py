@@ -20,14 +20,14 @@ from .tasks.target_transforms import validate_target_transform_manifest
 from .validation.cross_val import CrossValidator
 from .validation.metrics import MetricsCalculator
 from .core.artifact_paths import portable_artifact_directory
-from model_zoo import (
+from cogstate.model_zoo import (
     BaseModelAdapter,
     ModelLike,
     build_model,
     model_requires_data_shape,
     model_requires_sequences,
 )
-from model_zoo.DL.sequence_utils import (
+from cogstate.model_zoo.DL.sequence_utils import (
     SEQUENCE_INDEX_COLUMNS,
     build_sequences,
     sequence_index_sha256,

@@ -38,8 +38,8 @@ from cogstate.features import (
     RegionalFeatureConfig,
     RegionalFeaturePipeline,
 )
-from model_zoo import build_model
-from model_zoo.ML.xgboost_personalization import xgboost_state_sha256
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.ML.xgboost_personalization import xgboost_state_sha256
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

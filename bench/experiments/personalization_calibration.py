@@ -24,8 +24,8 @@ from bench.tasks.target_transforms import (
     build_target_transform_manifest,
     validate_target_transform_manifest,
 )
-from model_zoo.DL.adapter import TorchClassificationAdapter
-from model_zoo.factory import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo.factory import build_model
 
 from .user_calibration import (
     CalibrationSpec,

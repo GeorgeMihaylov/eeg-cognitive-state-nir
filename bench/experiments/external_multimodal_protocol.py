@@ -28,7 +28,7 @@ from bench.features.cog_bci_spectral_features import (
     extract_spectral_feature_bundle,
 )
 from bench.validation.metrics import MetricsCalculator
-from model_zoo.factory import build_model
+from cogstate.model_zoo.factory import build_model
 
 
 SCHEMA_VERSION = "external-cognitive-load-multimodal-v1"

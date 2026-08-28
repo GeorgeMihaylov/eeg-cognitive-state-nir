@@ -33,7 +33,7 @@ from bench.experiments.pm_all_targets_feature_baseline import (
 )
 from bench.tasks.target_registry import PM_METRICS
 from cogstate.features.selection import FeatureSelector, SelectionConfig
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

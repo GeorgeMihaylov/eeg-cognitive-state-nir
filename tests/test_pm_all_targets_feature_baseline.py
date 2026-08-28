@@ -22,7 +22,7 @@ from bench.experiments.pm_all_targets_feature_baseline import (
     run_baseline,
 )
 from bench.tasks.target_registry import PM_METRICS, get_target_spec
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 CONFIG_PATH = Path("experiments/pm_regression/pm_all_targets_feature_baseline.yaml")

@@ -5,8 +5,8 @@ import pandas as pd
 import torch
 
 from bench.bench_runner import BenchmarkRunner
-from model_zoo import build_model
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
 
 
 def _small_eegnet() -> TorchEEGNetClassifier:

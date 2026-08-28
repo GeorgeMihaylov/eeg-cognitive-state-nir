@@ -33,11 +33,11 @@ from bench.experiments.cog_bci_time_aligned_transfer import (
     estimate_time_aligned_cache,
     time_alignment_transfer_decision,
 )
-from model_zoo.DL.contrastive import (
+from cogstate.model_zoo.DL.contrastive import (
     export_encoder_checkpoint,
     load_encoder_checkpoint,
 )
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]

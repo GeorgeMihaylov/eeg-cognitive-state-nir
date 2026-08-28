@@ -17,7 +17,7 @@ from bench.experiments.external_multimodal_protocol import (
     load_config,
     plan_experiment,
 )
-from model_zoo.factory import build_model
+from cogstate.model_zoo.factory import build_model
 
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -35,8 +35,8 @@ from bench.datasets.cog_bci_window_cache import _shard_stem
 from bench.datasets.datasets_registry import get_dataset
 from bench.datasets.raw_eeg_window_dataset import RawEEGWindowArrayView
 from bench.validation.metrics import MetricsCalculator
-from model_zoo.DL.adapter import seed_torch
-from model_zoo.DL.contrastive import (
+from cogstate.model_zoo.DL.adapter import seed_torch
+from cogstate.model_zoo.DL.contrastive import (
     ContrastiveFoldData,
     ContrastiveModule,
     ContrastiveObjective,
@@ -45,7 +45,7 @@ from model_zoo.DL.contrastive import (
     export_encoder_checkpoint,
     load_encoder_checkpoint,
 )
-from model_zoo.factory import build_model
+from cogstate.model_zoo.factory import build_model
 
 
 RESULT_STATUS = "diagnostic"

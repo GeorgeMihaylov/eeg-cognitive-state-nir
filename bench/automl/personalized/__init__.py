@@ -1,6 +1,6 @@
 """Application AutoML for per-user portfolio and adaptation orchestration.
 
-Scientific fold-local optimization belongs to ``bench.automl``. This package
+Scientific fold-local optimization belongs to ``bench.automl.scientific``. This package
 must receive an already separated application calibration/validation view and
 must never select a candidate from outer-test results.
 
@@ -21,8 +21,8 @@ project:
    function, and (optionally) shadow diagnostic runners for methods
    still under confirmatory review.
 
-See `examples/eeg_project_bindings.py` for a full worked example wiring
-this package to a Transformer/LSTM/RF/DANN EEG project.
+The optional :mod:`bench.automl.personalized.bindings` module connects these
+framework-independent contracts to the canonical project model APIs.
 """
 
 from .adaptation import adapt_candidate, score_candidate

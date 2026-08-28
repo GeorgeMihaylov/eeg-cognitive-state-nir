@@ -26,7 +26,7 @@ from sklearn.metrics import (
 
 from bench.datasets.datasets_registry import get_dataset
 from bench.validation.metrics import MetricsCalculator
-from model_zoo.factory import build_model
+from cogstate.model_zoo.factory import build_model
 
 
 CLASS_NAMES = ("zero_back", "one_back", "two_back")

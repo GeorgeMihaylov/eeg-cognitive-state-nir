@@ -38,8 +38,8 @@ from bench.experiments.ordinal_transformer import (
 from bench.tasks.tasks_registry import get_task
 from bench.validation.cross_val import CrossValidator
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
-from model_zoo.DL.sequence_utils import build_sequences, sequence_index_sha256
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.sequence_utils import build_sequences, sequence_index_sha256
 
 
 FULL_HEAD_TYPES = ("coral", "corn")

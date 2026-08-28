@@ -21,7 +21,7 @@ from bench.experiments.cog_bci_nback_baseline import (
     calculate_record_subject_metrics,
     classification_metrics,
 )
-from model_zoo.factory import build_model
+from cogstate.model_zoo.factory import build_model
 
 
 CACHE_HASH = "cache-hash"

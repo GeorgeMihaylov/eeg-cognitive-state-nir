@@ -20,7 +20,7 @@ from bench.bench_runner import (
     CompletedBenchmarkRun,
     benchmark_config_hash,
 )
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 from .ordinal_transformer import (
     SMOKE_ALIGNMENT_COLUMNS,

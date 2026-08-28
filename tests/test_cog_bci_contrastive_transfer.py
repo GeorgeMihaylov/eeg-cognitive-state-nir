@@ -22,8 +22,8 @@ from bench.experiments.cog_bci_contrastive_transfer import (
     validate_encoder_manifest_for_downstream,
     validate_unlabelled_pretraining_columns,
 )
-from model_zoo.DL.adapter import seed_torch
-from model_zoo.DL.contrastive import (
+from cogstate.model_zoo.DL.adapter import seed_torch
+from cogstate.model_zoo.DL.contrastive import (
     ContrastiveFoldData,
     ContrastiveModule,
     ContrastiveObjective,
@@ -31,7 +31,7 @@ from model_zoo.DL.contrastive import (
     export_encoder_checkpoint,
     load_encoder_checkpoint,
 )
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
 
 
 def _frame() -> pd.DataFrame:

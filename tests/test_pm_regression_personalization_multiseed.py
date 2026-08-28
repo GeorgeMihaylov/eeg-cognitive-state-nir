@@ -27,8 +27,8 @@ from bench.experiments.pm_regression_personalization_multiseed import (
     resolve_seed_personalization_config,
 )
 from bench.experiments.user_calibration import _state_digest
-from model_zoo.DL.adapter import TorchClassificationAdapter
-from model_zoo.factory import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo.factory import build_model
 
 
 ROOT = Path(__file__).resolve().parents[1]

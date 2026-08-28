@@ -14,7 +14,7 @@ from sklearn.impute import SimpleImputer
 
 from bench.experiments import mefar_multimodal as mefar
 from bench.validation.metrics import MetricsCalculator
-from model_zoo.factory import build_model
+from cogstate.model_zoo.factory import build_model
 
 
 SCHEMA_VERSION = "external-mefar-xgboost-v1"

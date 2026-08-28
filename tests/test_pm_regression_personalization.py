@@ -29,8 +29,8 @@ from bench.experiments.user_calibration import (
     chronological_window_partition,
 )
 from bench.validation.metrics import MetricsCalculator
-from model_zoo.DL.adapter import TorchClassificationAdapter
-from model_zoo.factory import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo.factory import build_model
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

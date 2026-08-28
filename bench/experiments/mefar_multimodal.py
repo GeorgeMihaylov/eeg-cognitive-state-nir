@@ -20,7 +20,7 @@ from sklearn.impute import SimpleImputer
 from bench.datasets.mefar_dataset import MEFARDataset
 from bench.validation.cross_val import deterministic_group_kfold_indices
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 SCHEMA_VERSION = "mefar-multimodal-v1"

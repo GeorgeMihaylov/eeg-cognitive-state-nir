@@ -9,12 +9,12 @@ import pytest
 import torch
 from torch import nn
 
-from model_zoo import build_model
-from model_zoo.DL.adapter import TorchClassificationAdapter
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
-from model_zoo.DL.encoder import ENCODER_API_VERSION, require_encoder_model
-from model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
-from model_zoo.DL.transformer import TorchFeatureTransformerClassifier
+from cogstate.model_zoo import build_model
+from cogstate.model_zoo.DL.adapter import TorchClassificationAdapter
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo.DL.encoder import ENCODER_API_VERSION, require_encoder_model
+from cogstate.model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
+from cogstate.model_zoo.DL.transformer import TorchFeatureTransformerClassifier
 
 
 def _eegnet(*, n_times: int = 64) -> TorchEEGNetClassifier:

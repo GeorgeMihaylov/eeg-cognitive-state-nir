@@ -17,8 +17,8 @@ from bench.meta import (
     model_state_hash,
     validate_parameter_mapping,
 )
-from model_zoo.DL.eegnet import TorchEEGNetClassifier
-from model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
+from cogstate.model_zoo.DL.eegnet import TorchEEGNetClassifier
+from cogstate.model_zoo.DL.shallow_convnet import TorchShallowConvNetClassifier
 
 
 def _generator_config() -> dict[str, int]:

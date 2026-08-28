@@ -11,10 +11,10 @@ from typing import Dict, Any, Optional
 from bench.bench_runner import BenchmarkRunner
 from bench.tasks.tasks_registry import TASK_REGISTRY
 from bench.tasks.target_registry import get_target_spec
-from model_zoo.DL.feature_preprocessing import (
+from cogstate.model_zoo.DL.feature_preprocessing import (
     SUPPORTED_FEATURE_SCALING_STRATEGIES,
 )
-from model_zoo.factory import SKLEARN_MODEL_NAMES, TORCH_MODEL_NAMES
+from cogstate.model_zoo.factory import SKLEARN_MODEL_NAMES, TORCH_MODEL_NAMES
 
 logging.basicConfig(
     level=logging.INFO,
@@ -1196,7 +1196,7 @@ Examples:
                 '--automl-study cannot be combined with --config, --test, '
                 '--experiment-matrix, or --calibration-experiment'
             )
-        from bench.automl.study_runner import AutoMLStudyRunner
+        from bench.automl.scientific.study_runner import AutoMLStudyRunner
 
         study = AutoMLStudyRunner(
             args.automl_study,

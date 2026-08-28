@@ -17,7 +17,7 @@ from bench.experiments.feature_group_ablation import (
 )
 from bench.tasks.tasks_registry import get_task
 from bench.validation.metrics import MetricsCalculator
-from model_zoo import build_model
+from cogstate.model_zoo import build_model
 
 
 def test_factory_builds_random_forest_regressor() -> None:
