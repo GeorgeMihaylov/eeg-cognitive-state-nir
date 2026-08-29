@@ -21,6 +21,7 @@
   },
   "cohort_equivalence_mismatches": 0,
   "cohort_equivalence_rows": 35,
+  "completed_new_fits": 70,
   "evaluation": {
     "primary_metric": "participant_macro_balanced_accuracy",
     "probability_source": "predict_proba_high",
@@ -106,7 +107,7 @@
     "target_columns_present": false
   },
   "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
-  "git_commit": "0c026d658fbd5a627363f70386b90fb0b0d4e4dc",
+  "git_commit": "6e3ef78ef119cfb5249363bd4ef5fa1289be58d9",
   "model_selection_for_personalization": {
     "fixed_model_order": [
       "xgboost",
@@ -123,12 +124,24 @@
       "fixed_model_order"
     ]
   },
+  "model_selection_for_personalization_result": {
+    "advanced_models": [
+      "lightgbm",
+      "xgboost"
+    ],
+    "best_balanced_accuracy": 0.7527800012550088,
+    "best_minus_second_balanced_accuracy": 0.002701438424189573,
+    "best_model": "lightgbm",
+    "practical_equivalence_margin": 0.01,
+    "second_balanced_accuracy": 0.7500785628308192,
+    "second_model": "xgboost"
+  },
   "planned_new_fits": 70,
   "protocol_hash": "a2c51deb4d94e33d71863f1f1c7927470266b7352647664f3a411fb5db819b4e",
   "reference_experiment_id": "pm_low_high_q3_extremes_confirmatory_371_xgboost_v1",
   "reference_model": "xgboost",
   "reference_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
-  "result_status": "preregistered_candidate",
+  "result_status": "confirmatory_complete",
   "schema_version": "pm-low-high-model-robustness-v1",
   "scientific_contract": {
     "alignment": "EEG(t-10s) -> PM(t)",
@@ -193,5 +206,5 @@
     "fold_05__relaxation": "a638d2bb20962ed825b35f176b1a4005a8304bfc01370b1636d6ce403b817a6a",
     "fold_05__stress": "f830184ed4091f7c1893003e91eb518737ed15e8b5f007bf46bf30fa7cf23cdb"
   },
-  "training_executed": false
+  "training_executed": true
 }

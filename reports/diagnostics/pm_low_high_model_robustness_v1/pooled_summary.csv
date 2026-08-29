@@ -1,0 +1,2 @@
+n_models,n_pm,n_folds,n_combined_fold_pm_rows,reference_model,best_model,second_model,best_balanced_accuracy,second_balanced_accuracy,best_minus_second_balanced_accuracy,practical_equivalence_margin,advanced_models
+3,7,5,105,xgboost,lightgbm,xgboost,0.7527800012550088,0.7500785628308192,0.002701438424189573,0.01,"['lightgbm', 'xgboost']"

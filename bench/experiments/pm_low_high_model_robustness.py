@@ -325,27 +325,107 @@ def _participant_paired_delta(context: RobustnessContext) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _cluster_bootstrap(deltas: pd.DataFrame) -> pd.DataFrame:
+def _cluster_bootstrap(participant_deltas: pd.DataFrame) -> pd.DataFrame:
+    """Clustered subject-level bootstrap preserving all available PM rows."""
+
     rng = np.random.default_rng(BOOTSTRAP_SEED)
-    subjects = np.asarray(sorted(deltas["subject_id"].astype(str).unique()))
+
+    subjects = np.asarray(
+        sorted(participant_deltas["subject_id"].astype(str).unique())
+    )
+    n_subjects = len(subjects)
+
+    if n_subjects == 0:
+        raise ValueError("Cluster bootstrap requires at least one subject")
+
     rows = []
-    for model in CANDIDATE_MODEL_ORDER:
-        frame = deltas[deltas["model"].eq(model)]
+
+    for model_name in CANDIDATE_MODEL_ORDER:
+        model_frame = participant_deltas[
+            participant_deltas["model"].eq(model_name)
+        ].copy()
+
+        model_frame["subject_id"] = model_frame["subject_id"].astype(str)
+
         for metric in BOOTSTRAP_METRICS:
-            column = f"delta_{metric}_vs_xgboost"; observed = float(np.nanmean(frame[column].to_numpy(dtype=float)))
-            samples = np.empty(BOOTSTRAP_REPLICATES, dtype=float)
-            for i in range(BOOTSTRAP_REPLICATES):
-                drawn = rng.choice(subjects, size=len(subjects), replace=True); parts = []
-                for subject in drawn:
-                    values = frame.loc[frame["subject_id"].astype(str).eq(str(subject)), column].to_numpy(dtype=float)
-                    values = values[np.isfinite(values)]
-                    if len(values): parts.append(values)
-                samples[i] = float(np.mean(np.concatenate(parts))) if parts else np.nan
-            samples = samples[np.isfinite(samples)]
-            rows.append({"model": model, "metric": metric, "observed_mean_delta": observed,
-                         "bootstrap_ci_low": float(np.quantile(samples, 0.025)), "bootstrap_ci_high": float(np.quantile(samples, 0.975)),
-                         "bootstrap_replicates": BOOTSTRAP_REPLICATES, "bootstrap_seed": BOOTSTRAP_SEED,
-                         "resampling_unit": "subject_id_cluster", "n_unique_subjects": len(subjects)})
+            column = f"delta_{metric}_vs_xgboost"
+
+            observed_values = model_frame[column].to_numpy(dtype=float)
+            finite_observed = observed_values[np.isfinite(observed_values)]
+
+            observed = (
+                float(np.mean(finite_observed))
+                if len(finite_observed)
+                else float("nan")
+            )
+
+            # For every subject, store the sum and number of finite PM-level
+            # deltas. Resampling a subject therefore carries all of that
+            # subject's available PM observations together.
+            subject_sums = np.zeros(n_subjects, dtype=np.float64)
+            subject_counts = np.zeros(n_subjects, dtype=np.int64)
+
+            for subject_index, subject_id in enumerate(subjects):
+                values = model_frame.loc[
+                    model_frame["subject_id"].eq(subject_id),
+                    column,
+                ].to_numpy(dtype=float)
+
+                finite = values[np.isfinite(values)]
+
+                if len(finite):
+                    subject_sums[subject_index] = float(np.sum(finite))
+                    subject_counts[subject_index] = int(len(finite))
+
+            samples = np.full(
+                BOOTSTRAP_REPLICATES,
+                np.nan,
+                dtype=np.float64,
+            )
+
+            for bootstrap_index in range(BOOTSTRAP_REPLICATES):
+                drawn_indices = rng.choice(
+                    n_subjects,
+                    size=n_subjects,
+                    replace=True,
+                )
+
+                total_count = int(
+                    np.sum(subject_counts[drawn_indices])
+                )
+
+                if total_count:
+                    samples[bootstrap_index] = float(
+                        np.sum(subject_sums[drawn_indices])
+                        / total_count
+                    )
+
+            finite_samples = samples[np.isfinite(samples)]
+
+            if not len(finite_samples):
+                raise RuntimeError(
+                    f"No valid bootstrap replicates for "
+                    f"{model_name}/{metric}"
+                )
+
+            rows.append(
+                {
+                    "model": model_name,
+                    "metric": metric,
+                    "observed_mean_delta": observed,
+                    "bootstrap_ci_low": float(
+                        np.quantile(finite_samples, 0.025)
+                    ),
+                    "bootstrap_ci_high": float(
+                        np.quantile(finite_samples, 0.975)
+                    ),
+                    "bootstrap_replicates": BOOTSTRAP_REPLICATES,
+                    "bootstrap_seed": BOOTSTRAP_SEED,
+                    "resampling_unit": "subject_id_cluster",
+                    "n_unique_subjects": int(n_subjects),
+                }
+            )
+
     return pd.DataFrame(rows)
 
 
