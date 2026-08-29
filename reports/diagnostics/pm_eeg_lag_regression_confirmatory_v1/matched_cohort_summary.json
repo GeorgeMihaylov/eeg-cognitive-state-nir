@@ -1,0 +1,110 @@
+{
+  "by_pm": {
+    "attention": {
+      "canonical_complete_case_rows": 29569,
+      "canonical_missing_target_rows": 1389,
+      "identical_fold_membership_between_conditions": true,
+      "identical_subject_ids_between_conditions": true,
+      "identical_target_ids_between_conditions": true,
+      "lost_complete_cases_without_exact_previous_window": 125,
+      "matched_rows": 29444,
+      "records": 85,
+      "subjects": 53,
+      "target_id": "target_attention",
+      "target_sample_hash": "8f0effbe6e21bb783e8a2a320305bd69e1f60a57d53cb1abbdc12f306a852be6"
+    },
+    "engagement": {
+      "canonical_complete_case_rows": 30958,
+      "canonical_missing_target_rows": 0,
+      "identical_fold_membership_between_conditions": true,
+      "identical_subject_ids_between_conditions": true,
+      "identical_target_ids_between_conditions": true,
+      "lost_complete_cases_without_exact_previous_window": 152,
+      "matched_rows": 30806,
+      "records": 86,
+      "subjects": 54,
+      "target_id": "target_engagement",
+      "target_sample_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba"
+    },
+    "excitement": {
+      "canonical_complete_case_rows": 30958,
+      "canonical_missing_target_rows": 0,
+      "identical_fold_membership_between_conditions": true,
+      "identical_subject_ids_between_conditions": true,
+      "identical_target_ids_between_conditions": true,
+      "lost_complete_cases_without_exact_previous_window": 152,
+      "matched_rows": 30806,
+      "records": 86,
+      "subjects": 54,
+      "target_id": "target_excitement",
+      "target_sample_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba"
+    },
+    "focus": {
+      "canonical_complete_case_rows": 30958,
+      "canonical_missing_target_rows": 0,
+      "identical_fold_membership_between_conditions": true,
+      "identical_subject_ids_between_conditions": true,
+      "identical_target_ids_between_conditions": true,
+      "lost_complete_cases_without_exact_previous_window": 152,
+      "matched_rows": 30806,
+      "records": 86,
+      "subjects": 54,
+      "target_id": "target_focus",
+      "target_sample_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba"
+    },
+    "interest": {
+      "canonical_complete_case_rows": 30958,
+      "canonical_missing_target_rows": 0,
+      "identical_fold_membership_between_conditions": true,
+      "identical_subject_ids_between_conditions": true,
+      "identical_target_ids_between_conditions": true,
+      "lost_complete_cases_without_exact_previous_window": 152,
+      "matched_rows": 30806,
+      "records": 86,
+      "subjects": 54,
+      "target_id": "target_interest",
+      "target_sample_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba"
+    },
+    "relaxation": {
+      "canonical_complete_case_rows": 30958,
+      "canonical_missing_target_rows": 0,
+      "identical_fold_membership_between_conditions": true,
+      "identical_subject_ids_between_conditions": true,
+      "identical_target_ids_between_conditions": true,
+      "lost_complete_cases_without_exact_previous_window": 152,
+      "matched_rows": 30806,
+      "records": 86,
+      "subjects": 54,
+      "target_id": "target_relaxation",
+      "target_sample_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba"
+    },
+    "stress": {
+      "canonical_complete_case_rows": 30958,
+      "canonical_missing_target_rows": 0,
+      "identical_fold_membership_between_conditions": true,
+      "identical_subject_ids_between_conditions": true,
+      "identical_target_ids_between_conditions": true,
+      "lost_complete_cases_without_exact_previous_window": 152,
+      "matched_rows": 30806,
+      "records": 86,
+      "subjects": 54,
+      "target_id": "target_stress",
+      "target_sample_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba"
+    }
+  },
+  "temporal_pairing": {
+    "additional_gap_losses": 66,
+    "canonical_feature_rows": 30958,
+    "cross_fold_pairs": 0,
+    "cross_record_pairs": 0,
+    "cross_subject_pairs": 0,
+    "first_window_losses": 86,
+    "lost_without_exact_previous_window": 152,
+    "matched_target_rows": 30806,
+    "matched_target_sample_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
+    "records": 86,
+    "step_seconds": 10.0,
+    "subjects": 54,
+    "time_column": "t_start"
+  }
+}

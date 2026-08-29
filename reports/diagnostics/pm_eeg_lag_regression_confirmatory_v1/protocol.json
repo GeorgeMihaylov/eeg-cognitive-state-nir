@@ -1,0 +1,140 @@
+{
+  "candidate_lags_seconds": [
+    0,
+    -10
+  ],
+  "experiment_id": "pm_eeg_lag_regression_confirmatory_371_xgboost_v1",
+  "feature_cache_identity": {
+    "cache_identity_hash": "5062cac1e84a73c2e1c783f6b2c02f074e6177f2059515726e5b0433d166745f",
+    "cache_schema_version": "cogstate-feature-cache-v1",
+    "channel_order": [
+      "AF3",
+      "F7",
+      "F3",
+      "FC5",
+      "T7",
+      "P7",
+      "O1",
+      "O2",
+      "P8",
+      "T8",
+      "FC6",
+      "F4",
+      "F8",
+      "AF4"
+    ],
+    "dtype": "float32",
+    "feature_hash": "454ea5db886fce8c981dc28f8910ca07355956033b001550020a04fd4605832e",
+    "feature_index_columns": [
+      "sample_id",
+      "source",
+      "subject_id",
+      "record_id",
+      "record_group_id",
+      "raw_file_path",
+      "t_start",
+      "t_end",
+      "absolute_t_start",
+      "absolute_t_end",
+      "sfreq_original",
+      "sfreq_target",
+      "n_channels",
+      "n_samples_expected",
+      "raw_n_rows",
+      "raw_file_size_bytes",
+      "raw_timestamp_min",
+      "raw_timestamp_max",
+      "raw_duration_seconds",
+      "raw_gap_count",
+      "outer_fold",
+      "status",
+      "rejection_reason",
+      "main_path",
+      "main_rel_path",
+      "header_row",
+      "separator",
+      "time_columns",
+      "eeg_columns",
+      "cache_file",
+      "cache_offset",
+      "missing_fraction",
+      "max_abs_amplitude",
+      "max_flat_fraction",
+      "preprocessing_hash",
+      "preprocessing_variant"
+    ],
+    "feature_schema": "cogstate-features-v1",
+    "n_features": 371,
+    "raw_preprocessing_hash": "2251ca950a467267dcccc1c5b83157f26e02768f46c6073d33f5dc16225bda84",
+    "raw_window_shape": [
+      2560,
+      14
+    ],
+    "rows": 30958,
+    "sample_id_universe_hash": "6b3b59e953e9d34116009d7cbb4924f1ab6e23f49db7cbf84fd5fbd83fa19d24",
+    "target_columns_present": false
+  },
+  "feature_count": 371,
+  "fixed_candidate_statement": "The -10 second previous-window EEG alignment was fixed from the preceding classification lag analysis before inspecting any regression results; no regression-specific lag selection is allowed.",
+  "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
+  "fold_ids": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "git_commit": "156ef5e833062caa00c87e44ae2c7fa467233927",
+  "interpretation": "fixed causal temporal alignment candidate; not a proven physiological delay",
+  "matched_cohort_policy": {
+    "same_subjects_and_outer_folds_between_conditions": true,
+    "same_target_sample_ids_between_conditions": true,
+    "scope": "per_pm_complete_case_after_exact_temporal_pairing"
+  },
+  "matched_target_sample_hashes": {
+    "attention": "8f0effbe6e21bb783e8a2a320305bd69e1f60a57d53cb1abbdc12f306a852be6",
+    "engagement": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
+    "excitement": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
+    "focus": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
+    "interest": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
+    "relaxation": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
+    "stress": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba"
+  },
+  "metrics": [
+    "participant_macro_mae",
+    "participant_macro_r2",
+    "participant_macro_pearson"
+  ],
+  "model": {
+    "estimator": "XGBRegressor",
+    "name": "xgboost",
+    "params": {
+      "n_estimators": 200,
+      "n_jobs": 4,
+      "random_state": 42
+    },
+    "seed": 42,
+    "source_config": "experiments/pm_confirmatory/selected_models_5fold_v1.json",
+    "task_type": "regression"
+  },
+  "model_family": "XGBRegressor",
+  "protocol_hash": "96b99b28533af365aa15b1a0464ce151ddbc34a51bac45645e4103acecfeb026",
+  "result_status": "confirmatory_complete",
+  "schema_version": "pm-eeg-lag-regression-confirmatory-v1",
+  "seed": 42,
+  "target_ids": [
+    "target_attention",
+    "target_engagement",
+    "target_excitement",
+    "target_stress",
+    "target_relaxation",
+    "target_interest",
+    "target_focus"
+  ],
+  "target_transform": {
+    "name": "none",
+    "reason": "continuous_pm"
+  },
+  "task": "regression",
+  "training_executed": true
+}
