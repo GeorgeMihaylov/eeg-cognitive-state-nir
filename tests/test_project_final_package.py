@@ -112,6 +112,8 @@ NEW_EXPERIMENT_IDS = {
     "dann_label_q5_confirmatory_v1_protocol",
     "dann_label_q5_confirmatory_v2_protocol",
     "dann_label_q5_old_eeg_to_gpn_confirmatory_v2_execution",
+    "pm_eeg_lag_confirmatory_371_xgboost_v1",
+    "pm_eeg_lag_regression_confirmatory_371_xgboost_v1",
 }
 
 
@@ -206,6 +208,7 @@ def test_final_csv_generation_is_byte_identical() -> None:
     )
     listed = set(result_inventory["artifact_path"])
     assert {
+        "reports/diagnostics/pm_eeg_lag_final_conclusion.md",
         "reports/summary/final_project_results.md",
         "reports/summary/final_result_tables/final_meta_learning_results.csv",
         "reports/summary/final_result_tables/final_domain_adaptation_results.csv",
@@ -218,3 +221,44 @@ def test_final_tables_preserve_participant_analysis_level() -> None:
     meta = pd.DataFrame(package.build_meta_learning_results(ROOT))
     assert set(domain["analysis_level"]) == {"participant"}
     assert set(meta["analysis_level"]) == {"participant"}
+
+
+def test_fixed_pm_lag_confirmations_are_consolidated() -> None:
+    lag = package.build_lag_alignment_summary(ROOT)
+    assert lag["classification"]["protocol_hash"] == package.LAG_CLASSIFICATION_PROTOCOL_HASH
+    assert lag["regression"]["protocol_hash"] == package.LAG_REGRESSION_PROTOCOL_HASH
+    assert lag["classification"]["delta_macro_f1"] == pytest.approx(0.05300340847046983)
+    assert lag["classification"]["delta_balanced_accuracy"] == pytest.approx(0.05627339902785858)
+    assert lag["classification"]["favorable_fold_pm_macro_f1"] == 35
+    assert lag["regression"]["lag0_mae"] == pytest.approx(0.10473098944929458)
+    assert lag["regression"]["lag_minus_10s_mae"] == pytest.approx(0.09223845613445344)
+    assert lag["regression"]["delta_pearson"] == pytest.approx(0.20879253256745492)
+    assert lag["regression"]["favorable_fold_pm_mae"] == 32
+    assert lag["regression"]["favorable_fold_pm_pearson"] == 35
+    assert lag["regression"]["positive_pm_median_r2"] == 7
+    assert [row["target_id"] for row in lag["per_pm"]] == list(package.PM_TARGET_ORDER)
+    assert [row["mae_favorable_folds"] for row in lag["per_pm"]] == [4, 4, 5, 5, 5, 4, 5]
+
+
+def test_fixed_pm_lag_rows_extend_existing_final_table_schemas() -> None:
+    classification = package.build_classification_results(ROOT)
+    selected = [
+        row for row in classification
+        if row["experiment_id"] == "pm_eeg_lag_confirmatory_371_xgboost_v1"
+    ]
+    assert len(selected) == 1
+    assert selected[0]["primary_metric"] == "participant_macro_f1_delta"
+    assert selected[0]["primary_value"] == pytest.approx(0.05300340847046983)
+
+    regression = package.build_regression_results(ROOT)
+    lag_rows = [row for row in regression if str(row["model"]).startswith("XGBRegressor")]
+    assert len(lag_rows) == 14
+    assert {row["analysis_unit"] for row in lag_rows} == {"participant_macro"}
+    assert {row["target"] for row in lag_rows} == set(package.PM_TARGET_ORDER)
+
+
+def test_pm_lag_r2_and_interpretation_limitations_are_explicit() -> None:
+    limitations = package.build_reproducibility_limitations()
+    by_area = {row["area"]: row for row in limitations}
+    assert "physiological delay" in by_area["PM temporal alignment"]["limitation"]
+    assert "pooled arithmetic mean R2" in by_area["PM lag regression R2"]["mitigation"]

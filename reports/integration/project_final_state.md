@@ -1,16 +1,16 @@
 # Итоговое состояние проекта
 
-Дата консолидации: 2026-08-04. Пакет построен только из существующих
+Дата консолидации: 2026-08-29. Пакет построен только из существующих
 артефактов; обучение, новые folds/seeds и перестроение кэшей не выполнялись.
 
 ## Масштаб
 
-- Экспериментов и инфраструктурных этапов: **45**.
-- Completed: **16**.
+- Экспериментов и инфраструктурных этапов: **47**.
+- Completed: **18**.
 - Diagnostic: **4**.
 - Closed negative: **7**.
 - Infrastructure only: **16**.
-- Полный provenance по автоматической проверке: **39/45**.
+- Полный provenance по автоматической проверке: **41/47**.
 
 Основные таблицы находятся в `reports/summary/final_result_tables/`, рисунки —
 в `reports/summary/final_result_tables/figures/`, а канонический индекс —
@@ -25,14 +25,22 @@
    критерий качества.
 3. Семь PM targets оцениваются отдельно и macro-агрегируются только внутри
    одной регрессионной задачи.
-4. COG-BCI нативный и transfer screening завершены как diagnostic/negative
+4. Для всех семи PM принят фиксированный контракт
+   `EEG(t−10s) → PM(t)`: в continuous regression participant-macro MAE
+   снизилась с 0.104731 до
+   0.092238 (11.93%),
+   а Pearson вырос с 0.394526 до
+   0.603319; классификационное
+   подтверждение независимо дало ΔMacro-F1
+   +0.053003.
+5. COG-BCI нативный и transfer screening завершены как diagnostic/negative
    evidence.
-5. Решения `retain_14_channel_cache` и `close_transfer_track` закрывают
+6. Решения `retain_14_channel_cache` и `close_transfer_track` закрывают
    расширение 62-channel cache и contrastive transfer без новой гипотезы.
-6. Raw-deduplicated FOMAML diagnostic получил `do_not_proceed`: Δmacro F1
+7. Raw-deduplicated FOMAML diagnostic получил `do_not_proceed`: Δmacro F1
    −0.046338 против supervised full-model при одном fold, одном seed и пяти
    участниках.
-7. Confirmatory DANN дал небольшой положительный participant-level эффект
+8. Confirmatory DANN дал небольшой положительный participant-level эффект
    (Δmacro F1 +0.008048; Δbalanced accuracy +0.008332; Δordinal MAE −0.034008),
    но имеет статус `partially_confirmed`, не `confirmed`.
 

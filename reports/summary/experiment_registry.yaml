@@ -1815,6 +1815,88 @@ experiments:
     limitations: [Small absolute effect; participant bootstrap includes zero; reverse direction and target-supervised upper bound untested.]
     tags: [dann, confirmatory, multiseed, multifold]
 
+  - experiment_id: pm_eeg_lag_confirmatory_371_xgboost_v1
+    title: Confirmatory fixed previous-window EEG alignment for PM classification
+    category: model
+    status: final
+    consolidation_status: completed
+    task: pm_fold_local_q3_alignment_classification
+    target: seven fold-local PM Q3 targets
+    model: xgboost
+    dataset: gpn_data + Old_EEG
+    feature_set: canonical_cogstate_371
+    preprocessing: none; fixed temporal alignment contract
+    evaluation_protocol: fixed five-fold subject-disjoint matched lag 0 versus -10 s
+    inner_protocol: fold-local Q3 fitted on outer-train only; lag fixed before confirmation
+    folds: [1, 2, 3, 4, 5]
+    seeds: [42]
+    n_subjects: 54
+    protocol_hash: 064fe752a541e753f53a1463d2749823b37c16045d559316ceaa05a0d5ab283e
+    primary_metric:
+      name: participant_macro_f1_delta
+      direction: higher_is_better
+      value_source: {type: report_only}
+    primary_result: 0.05300340847046983
+    result_summary: >
+      All 35 fold-by-PM Macro-F1 and balanced-accuracy deltas favored the
+      fixed -10 s previous-window condition; pooled paired delta Macro-F1 was
+      +0.053003 and delta balanced accuracy was +0.056273, with 7/7 favorable
+      PM means for both metrics.
+    report_path: reports/diagnostics/pm_eeg_lag_final_conclusion.md
+    runtime_path: reports/diagnostics/pm_eeg_lag_confirmatory_v1
+    config_path: experiments/pm_diagnostics/pm_eeg_lag_confirmatory_v1.json
+    commit: f1c6e2dc209ba769a6dc3eb793aadd9d5aa6ece2
+    scientific_decision: Use fixed EEG(t-10s)->PM(t) alignment for all seven PM.
+    limitations:
+      - Classification uses fold-local Q3 proxies rather than continuous PM values.
+      - The alignment effect does not prove a physiological or proprietary-algorithm delay.
+    tags: [classification, pm, temporal_alignment, confirmatory, participant_macro]
+
+  - experiment_id: pm_eeg_lag_regression_confirmatory_371_xgboost_v1
+    title: Confirmatory fixed previous-window EEG alignment for continuous PM regression
+    category: regression
+    status: final
+    consolidation_status: completed
+    task: pm_eeg_lag_regression_confirmatory
+    target: seven continuous PM targets
+    target_order:
+      - target_attention
+      - target_engagement
+      - target_excitement
+      - target_stress
+      - target_relaxation
+      - target_interest
+      - target_focus
+    model: XGBRegressor
+    dataset: gpn_data + Old_EEG
+    feature_set: canonical_cogstate_371
+    preprocessing: none; fixed temporal alignment contract
+    evaluation_protocol: fixed five-fold subject-disjoint matched lag 0 versus -10 s
+    inner_protocol: not applicable; lag fixed by preceding classification evidence
+    folds: [1, 2, 3, 4, 5]
+    seeds: [42]
+    n_subjects: 54
+    protocol_hash: 96b99b28533af365aa15b1a0464ce151ddbc34a51bac45645e4103acecfeb026
+    primary_metric:
+      name: participant_macro_mae_delta
+      direction: lower_is_better
+      value_source: {type: report_only}
+    primary_result: -0.012492533314841164
+    result_summary: >
+      Across 35 fold-by-PM pairs, participant-macro MAE improved from 0.104731
+      to 0.092238 (delta -0.012493; 11.93%; 32/35 favorable) and Pearson
+      improved from 0.394526 to 0.603319 (delta +0.208793; 35/35 favorable).
+      All 7/7 PM means favored -10 s for MAE and Pearson.
+    report_path: reports/diagnostics/pm_eeg_lag_final_conclusion.md
+    runtime_path: reports/diagnostics/pm_eeg_lag_regression_confirmatory_v1
+    config_path: experiments/pm_diagnostics/pm_eeg_lag_regression_confirmatory_v1.json
+    commit: 156ef5e833062caa00c87e44ae2c7fa467233927
+    scientific_decision: Use fixed EEG(t-10s)->PM(t) alignment for all seven PM.
+    limitations:
+      - Participant-level R2 is heterogeneous and unstable for short or near-constant target series.
+      - The alignment effect does not prove a physiological or proprietary-algorithm delay.
+    tags: [regression, pm, temporal_alignment, confirmatory, participant_macro]
+
   - experiment_id: pm_all_targets_feature_baseline_v1
     title: Canonical seven-PM engineered-feature baseline
     category: regression

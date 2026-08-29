@@ -24,7 +24,22 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa: E402
 
 
-PACKAGE_DATE = "2026-08-04"
+PACKAGE_DATE = "2026-08-29"
+LAG_CLASSIFICATION_PROTOCOL_HASH = (
+    "064fe752a541e753f53a1463d2749823b37c16045d559316ceaa05a0d5ab283e"
+)
+LAG_REGRESSION_PROTOCOL_HASH = (
+    "96b99b28533af365aa15b1a0464ce151ddbc34a51bac45645e4103acecfeb026"
+)
+PM_TARGET_ORDER = (
+    "target_attention",
+    "target_engagement",
+    "target_excitement",
+    "target_stress",
+    "target_relaxation",
+    "target_interest",
+    "target_focus",
+)
 FINAL_STATUSES = {
     "completed",
     "diagnostic",
@@ -381,6 +396,8 @@ def build_provenance_audit(
                 for token in (
                     "split hash",
                     "split_hash",
+                    "fixed-fold hash",
+                    "fixed_fold_hash",
                     "sequence_index_sha256",
                     "subject_assignment_hash",
                     "window_bounds_hash",
@@ -608,6 +625,212 @@ def build_benchmark_models() -> list[dict[str, Any]]:
     ]
 
 
+def build_lag_alignment_summary(repo_root: Path) -> dict[str, Any]:
+    """Load and validate the fixed previous-window confirmatory evidence."""
+    classification_dir = repo_root / "reports/diagnostics/pm_eeg_lag_confirmatory_v1"
+    regression_dir = (
+        repo_root / "reports/diagnostics/pm_eeg_lag_regression_confirmatory_v1"
+    )
+    classification_protocol = _load_json(classification_dir / "protocol.json")
+    regression_protocol = _load_json(regression_dir / "protocol.json")
+    classification_dry_run = _load_json(classification_dir / "dry_run_summary.json")
+    regression_dry_run = _load_json(regression_dir / "dry_run_summary.json")
+
+    expected_protocols = (
+        (
+            classification_protocol,
+            "pm_eeg_lag_confirmatory_371_xgboost_v1",
+            LAG_CLASSIFICATION_PROTOCOL_HASH,
+        ),
+        (
+            regression_protocol,
+            "pm_eeg_lag_regression_confirmatory_371_xgboost_v1",
+            LAG_REGRESSION_PROTOCOL_HASH,
+        ),
+    )
+    for protocol, experiment_id, protocol_hash in expected_protocols:
+        if protocol.get("experiment_id") != experiment_id:
+            raise FinalPackageError(f"Unexpected lag experiment ID: {protocol.get('experiment_id')}")
+        if protocol.get("protocol_hash") != protocol_hash:
+            raise FinalPackageError(f"Unexpected protocol hash for {experiment_id}")
+        if protocol.get("result_status") != "confirmatory_complete":
+            raise FinalPackageError(f"Lag result is not complete: {experiment_id}")
+        if protocol.get("candidate_lags_seconds") != [0, -10]:
+            raise FinalPackageError(f"Unexpected lag candidates for {experiment_id}")
+        if protocol.get("feature_count") != 371 or protocol.get("seed") != 42:
+            raise FinalPackageError(f"Unexpected feature/seed contract for {experiment_id}")
+
+    if classification_protocol.get("fixed_fold_hash") != regression_protocol.get(
+        "fixed_fold_hash"
+    ):
+        raise FinalPackageError("Classification and regression lag folds differ")
+    if tuple(regression_protocol.get("target_ids", ())) != PM_TARGET_ORDER:
+        raise FinalPackageError("Regression lag target order differs from canonical PM order")
+
+    invariant_fields = (
+        "identical_fold_membership_between_conditions",
+        "identical_subject_ids_between_conditions",
+        "identical_target_ids_between_conditions",
+    )
+    for dry_run in (classification_dry_run, regression_dry_run):
+        if any(dry_run.get(field) is not True for field in invariant_fields):
+            raise FinalPackageError("Lag comparison cohort invariants failed")
+        if any(dry_run.get(field) != 0 for field in (
+            "cross_fold_pairs", "cross_record_pairs", "cross_subject_pairs"
+        )):
+            raise FinalPackageError("Lag comparison contains cross-boundary pairs")
+    if regression_dry_run.get("identical_train_test_counts_between_conditions") is not True:
+        raise FinalPackageError("Regression train/test counts differ between lag conditions")
+
+    classification_pooled = pd.read_csv(
+        classification_dir / "pooled_summary.csv"
+    ).iloc[0]
+    regression_pooled = pd.read_csv(regression_dir / "pooled_summary.csv").iloc[0]
+    regression_by_pm = pd.read_csv(regression_dir / "summary_by_pm.csv")
+    regression_paired = pd.read_csv(regression_dir / "paired_delta_by_fold.csv")
+    if len(regression_paired) != 35 or int(regression_pooled["n_fold_pm_pairs"]) != 35:
+        raise FinalPackageError("Expected 35 paired fold-by-PM regression comparisons")
+
+    lag0_mae = float(regression_paired["participant_macro_mae_lag0"].mean())
+    lag10_mae = float(
+        regression_paired["participant_macro_mae_lag_minus_10s"].mean()
+    )
+    lag0_pearson = float(
+        regression_paired["participant_macro_pearson_lag0"].mean()
+    )
+    lag10_pearson = float(
+        regression_paired["participant_macro_pearson_lag_minus_10s"].mean()
+    )
+
+    per_pm: list[dict[str, Any]] = []
+    for target_id in PM_TARGET_ORDER:
+        selected = regression_by_pm[regression_by_pm["target_id"] == target_id]
+        if len(selected) != 1:
+            raise FinalPackageError(f"Expected one lag summary row for {target_id}")
+        row = selected.iloc[0]
+        paired = regression_paired[regression_paired["target_id"] == target_id]
+        per_pm.append(
+            {
+                "pm": str(row["pm"]),
+                "target_id": target_id,
+                "mae_relative_reduction_percent": (
+                    -float(row["delta_mae_mean"]) / float(row["lag0_mae_mean"]) * 100
+                ),
+                "delta_pearson": float(row["delta_pearson_mean"]),
+                "mae_favorable_folds": int((paired["delta_mae"] < 0).sum()),
+                "pearson_favorable_folds": int((paired["delta_pearson"] > 0).sum()),
+                "median_delta_r2": float(paired["delta_r2"].median()),
+            }
+        )
+
+    return {
+        "fixed_fold_hash": str(regression_protocol["fixed_fold_hash"]),
+        "feature_count": 371,
+        "seed": 42,
+        "classification": {
+            "experiment_id": classification_protocol["experiment_id"],
+            "protocol_hash": classification_protocol["protocol_hash"],
+            "execution_commit": classification_protocol["git_commit"],
+            "matched_rows": int(classification_protocol["matched_cohort_count"]),
+            "subjects": int(classification_dry_run["subjects"]),
+            "delta_macro_f1": float(classification_pooled["mean_delta_macro_f1"]),
+            "delta_balanced_accuracy": float(
+                classification_pooled["mean_delta_balanced_accuracy"]
+            ),
+            "favorable_fold_pm_macro_f1": int(
+                classification_pooled["positive_fold_pm_macro_f1"]
+            ),
+            "favorable_fold_pm_balanced_accuracy": int(
+                classification_pooled["positive_fold_pm_balanced_accuracy"]
+            ),
+            "favorable_pm_macro_f1": int(
+                classification_pooled["positive_pm_mean_macro_f1"]
+            ),
+            "favorable_pm_balanced_accuracy": int(
+                classification_pooled["positive_pm_mean_balanced_accuracy"]
+            ),
+        },
+        "regression": {
+            "experiment_id": regression_protocol["experiment_id"],
+            "protocol_hash": regression_protocol["protocol_hash"],
+            "execution_commit": regression_protocol["git_commit"],
+            "lag0_mae": lag0_mae,
+            "lag_minus_10s_mae": lag10_mae,
+            "delta_mae": float(regression_pooled["mean_delta_mae"]),
+            "relative_mae_reduction_percent": (lag0_mae - lag10_mae) / lag0_mae * 100,
+            "favorable_fold_pm_mae": int(regression_pooled["favorable_fold_pm_mae"]),
+            "favorable_pm_mean_mae": int(regression_pooled["favorable_pm_mean_mae"]),
+            "lag0_pearson": lag0_pearson,
+            "lag_minus_10s_pearson": lag10_pearson,
+            "delta_pearson": float(regression_pooled["mean_delta_pearson"]),
+            "favorable_fold_pm_pearson": int(
+                regression_pooled["favorable_fold_pm_pearson"]
+            ),
+            "favorable_pm_mean_pearson": int(
+                regression_pooled["favorable_pm_mean_pearson"]
+            ),
+            "median_delta_r2": float(regression_pooled["median_delta_r2"]),
+            "favorable_fold_pm_r2": int(regression_pooled["favorable_fold_pm_r2"]),
+            "positive_pm_median_r2": sum(row["median_delta_r2"] > 0 for row in per_pm),
+        },
+        "per_pm": per_pm,
+        "pairing": {
+            "matched_rows": int(regression_dry_run["temporal_pairing"]["matched_target_rows"]),
+            "subjects": int(regression_dry_run["temporal_pairing"]["subjects"]),
+            "records": int(regression_dry_run["temporal_pairing"]["records"]),
+            "first_window_losses": int(
+                regression_dry_run["temporal_pairing"]["first_window_losses"]
+            ),
+            "gap_losses": int(
+                regression_dry_run["temporal_pairing"]["additional_gap_losses"]
+            ),
+        },
+    }
+
+
+def build_classification_results(repo_root: Path) -> list[dict[str, Any]]:
+    """Add the fixed lag comparison to the canonical classification table."""
+    path = repo_root / "reports/summary/classification_metrics_unified.csv"
+    rows = pd.read_csv(path).to_dict("records")
+    experiment_id = "pm_eeg_lag_confirmatory_371_xgboost_v1"
+    rows = [row for row in rows if row["experiment_id"] != experiment_id]
+    lag = build_lag_alignment_summary(repo_root)["classification"]
+    row = {column: "" for column in rows[0]}
+    row.update(
+        {
+            "experiment_id": experiment_id,
+            "result_status": "final",
+            "model": "XGBoost lag comparison",
+            "model_family": "classical_ml",
+            "input_type": "feature_window",
+            "feature_set": "canonical_cogstate_371",
+            "preprocessing": "none; fixed temporal alignment contract",
+            "evaluation_protocol": "fixed 5-fold subject-disjoint matched lag 0 vs -10 s",
+            "n_folds": 5,
+            "seeds": "42",
+            "n_subjects": 54,
+            "n_samples": lag["matched_rows"],
+            "primary_metric": "participant_macro_f1_delta",
+            "primary_value": lag["delta_macro_f1"],
+            "report_path": "reports/diagnostics/pm_eeg_lag_final_conclusion.md",
+            "config_path": "experiments/pm_diagnostics/pm_eeg_lag_confirmatory_v1.json",
+            "commit": lag["execution_commit"],
+            "metric_source": (
+                "structured_csv:reports/diagnostics/pm_eeg_lag_confirmatory_v1/"
+                "pooled_summary.csv"
+            ),
+            "notes": (
+                "Confirmatory fixed previous-window comparison; 35/35 fold-PM "
+                f"Macro-F1 and balanced-accuracy deltas positive; delta balanced accuracy "
+                f"{lag['delta_balanced_accuracy']:+.12f}; supports EEG(t-10s)->PM(t) "
+                "as an experimental alignment contract."
+            ),
+        }
+    )
+    rows.append(row)
+    return rows
+
+
 def build_regression_results(repo_root: Path) -> list[dict[str, Any]]:
     path = (
         repo_root
@@ -633,6 +856,27 @@ def build_regression_results(repo_root: Path) -> list[dict[str, Any]]:
                 "pearson_std": group["pearson"].std(ddof=0),
             }
         )
+    lag_frame = pd.read_csv(
+        repo_root
+        / "reports/diagnostics/pm_eeg_lag_regression_confirmatory_v1/summary_by_pm.csv"
+    )
+    for _, source in lag_frame.iterrows():
+        for condition, label in (("lag0", "lag=0 s"), ("lag_minus_10s", "lag=-10 s")):
+            rows.append(
+                {
+                    "model": f"XGBRegressor [{label}]",
+                    "target": source["target_id"],
+                    "analysis_unit": "participant_macro",
+                    "folds": int(source["n_folds"]),
+                    "seed": 42,
+                    "mae_mean": source[f"{condition}_mae_mean"],
+                    "mae_std": source[f"{condition}_mae_std"],
+                    "r2_mean": source[f"{condition}_r2_mean"],
+                    "r2_std": source[f"{condition}_r2_std"],
+                    "pearson_mean": source[f"{condition}_pearson_mean"],
+                    "pearson_std": source[f"{condition}_pearson_std"],
+                }
+            )
     return rows
 
 
@@ -1088,6 +1332,8 @@ def build_reproducibility_limitations() -> list[dict[str, Any]]:
         {"area": "label definition", "limitation": "Canonical label_q5 uses global quantile thresholds computed before subject splitting.", "mitigation": "Cross-fitted label sensitivity analysis shows 2.6816% changed windows."},
         {"area": "external transfer", "limitation": "Transfer screening uses one protected downstream fold.", "mitigation": "Result is explicitly diagnostic and the track is closed rather than generalized."},
         {"area": "COG-BCI preprocessing history", "limitation": "Upstream EEGLAB processing history is incompletely known.", "mitigation": "Metadata records unknown history and requires explicit opt-in for additional filters."},
+        {"area": "PM temporal alignment", "limitation": "The fixed -10 s previous-window advantage does not identify a physiological delay or the proprietary Emotiv aggregation/timestamp mechanism.", "mitigation": "Treat EEG(t-10s)->PM(t) only as a dataset-level alignment contract; algorithmic latency, internal history and timestamp semantics remain hypotheses."},
+        {"area": "PM lag regression R2", "limitation": "Participant-level R2 is heterogeneous and unstable for very small or near-constant target series; participant 9192c107 has only two relevant windows for some PM and produces extreme negative values.", "mitigation": "Prioritize participant-macro MAE and Pearson; report paired median R2 and favorable counts without zeroing NaN, dropping participants post hoc or using pooled arithmetic mean R2."},
         {"area": "formal specification", "limitation": "No authoritative tracked legal/acceptance specification was found.", "mitigation": "Requirement map distinguishes project-plan evidence from formal acceptance."},
     ]
 
@@ -1407,10 +1653,23 @@ def _render_reports(
     meta_learning: Sequence[Mapping[str, Any]],
     domain_adaptation: Sequence[Mapping[str, Any]],
     experiment_statuses: Sequence[Mapping[str, Any]],
+    lag_alignment: Mapping[str, Any],
 ) -> dict[Path, str]:
     counts = Counter(str(row["status"]) for row in inventory)
     complete = sum(row["complete"] == "true" for row in provenance)
     incomplete = [row for row in provenance if row["complete"] != "true"]
+    lag_classification = lag_alignment["classification"]
+    lag_regression = lag_alignment["regression"]
+    lag_pm_rows = [
+        {
+            "PM": str(row["pm"]).capitalize(),
+            "MAE reduction": f"{float(row['mae_relative_reduction_percent']):.2f}%",
+            "delta Pearson": f"{float(row['delta_pearson']):+.4f}",
+            "MAE favorable folds": f"{int(row['mae_favorable_folds'])}/5",
+            "Pearson favorable folds": f"{int(row['pearson_favorable_folds'])}/5",
+        }
+        for row in lag_alignment["per_pm"]
+    ]
     final_state = f"""# Итоговое состояние проекта
 
 Дата консолидации: {PACKAGE_DATE}. Пакет построен только из существующих
@@ -1438,14 +1697,22 @@ def _render_reports(
    критерий качества.
 3. Семь PM targets оцениваются отдельно и macro-агрегируются только внутри
    одной регрессионной задачи.
-4. COG-BCI нативный и transfer screening завершены как diagnostic/negative
+4. Для всех семи PM принят фиксированный контракт
+   `EEG(t−10s) → PM(t)`: в continuous regression participant-macro MAE
+   снизилась с {float(lag_regression['lag0_mae']):.6f} до
+   {float(lag_regression['lag_minus_10s_mae']):.6f} ({float(lag_regression['relative_mae_reduction_percent']):.2f}%),
+   а Pearson вырос с {float(lag_regression['lag0_pearson']):.6f} до
+   {float(lag_regression['lag_minus_10s_pearson']):.6f}; классификационное
+   подтверждение независимо дало ΔMacro-F1
+   {float(lag_classification['delta_macro_f1']):+.6f}.
+5. COG-BCI нативный и transfer screening завершены как diagnostic/negative
    evidence.
-5. Решения `retain_14_channel_cache` и `close_transfer_track` закрывают
+6. Решения `retain_14_channel_cache` и `close_transfer_track` закрывают
    расширение 62-channel cache и contrastive transfer без новой гипотезы.
-6. Raw-deduplicated FOMAML diagnostic получил `do_not_proceed`: Δmacro F1
+7. Raw-deduplicated FOMAML diagnostic получил `do_not_proceed`: Δmacro F1
    −0.046338 против supervised full-model при одном fold, одном seed и пяти
    участниках.
-7. Confirmatory DANN дал небольшой положительный participant-level эффект
+8. Confirmatory DANN дал небольшой положительный participant-level эффект
    (Δmacro F1 +0.008048; Δbalanced accuracy +0.008332; Δordinal MAE −0.034008),
    но имеет статус `partially_confirmed`, не `confirmed`.
 
@@ -1456,7 +1723,7 @@ def _render_reports(
 
 {_markdown_table(incomplete, ['experiment_id', 'status', 'missing', 'evidence_role'])}
 """
-    conclusions = """# Научные выводы проекта
+    conclusions = f"""# Научные выводы проекта
 
 ## Основная классификация
 
@@ -1491,6 +1758,28 @@ full-model PM fine-tuning даёт небольшой устойчивый macro
 Для статьи показывать эффект и межсубъектную вариативность, не утверждать
 универсальное превосходство полной настройки. **Ограничение.** Один бюджет
 20%. **Статус:** основной результат с осторожной интерпретацией.
+
+## Временное согласование EEG и PM
+
+**Гипотеза.** Для PM-меток корректнее фиксированное причинное согласование
+предыдущего окна `EEG(t−10s) → PM(t)`, чем `EEG(t) → PM(t)`. **Протокол.**
+Сначала отдельный exploratory sweep сформировал единственную общую гипотезу
+`−10 s`; затем её независимо проверили классификацией fold-local Q3 и
+регрессией всех семи continuous PM на тех же пяти subject-disjoint folds,
+371 признаке и XGBoost seed 42. **Результат.** Классификация дала положительные
+ΔMacro-F1 и Δbalanced accuracy во всех 35/35 fold×PM сравнениях
+({float(lag_classification['delta_macro_f1']):+.6f} и
+{float(lag_classification['delta_balanced_accuracy']):+.6f}). В регрессии
+participant-macro MAE уменьшилась на
+{float(lag_regression['relative_mae_reduction_percent']):.2f}%
+({int(lag_regression['favorable_fold_pm_mae'])}/35 сравнений), Pearson вырос
+на {float(lag_regression['delta_pearson']):+.6f} (35/35); средние эффекты
+благоприятны для 7/7 PM. **Решение.** Использовать фиксированное
+`EEG(t−10s) → PM(t)` для всех семи PM в будущих core-экспериментах без
+target-specific lag selection. **Ограничение.** Это коррекция временного
+согласования данных, а не доказанный физиологический лаг или известное
+описание внутреннего алгоритма Emotiv; R2 поддерживает вывод только как
+неоднородная и нестабильная дополнительная метрика.
 
 ## COG-BCI
 
@@ -1544,6 +1833,25 @@ participant bootstrap interval включает ноль. Статистичес
 
 {_markdown_table(incomplete, ['experiment_id', 'missing', 'evidence_role'])}
 
+## Аудит временного согласования EEG→PM
+
+- Оба confirmatory протокола используют общий fixed-fold hash
+  `{lag_alignment['fixed_fold_hash']}`, 371 признаков и seed 42.
+- Classification protocol hash:
+  `{lag_classification['protocol_hash']}`; regression protocol hash:
+  `{lag_regression['protocol_hash']}`.
+- Между `lag=0` и `lag=−10 s` сохранены одинаковые target sample IDs,
+  участники, folds и train/test counts; cross-subject, cross-record и
+  cross-fold pairs равны нулю.
+- Пары строятся строго внутри logical record по точному шагу 10 s. Потеряны
+  {int(lag_alignment['pairing']['first_window_losses'])} первых окон и
+  {int(lag_alignment['pairing']['gap_losses'])} окон после разрывов; разрыв
+  никогда не заменяется предыдущим доступным окном.
+- R2 не сворачивается в pooled arithmetic mean: используются paired median
+  ΔR2 {float(lag_regression['median_delta_r2']):+.6f}, favorable count
+  {int(lag_regression['favorable_fold_pm_r2'])}/35 и знак per-PM median
+  ({int(lag_regression['positive_pm_median_r2'])}/7 положительных).
+
 Известные ограничения перечислены в
 `reports/summary/final_result_tables/reproducibility_limitations.csv`.
 """
@@ -1583,6 +1891,114 @@ reproducibility section, финальный отчёт, таблицы/рису�
 новый contrastive search, полный 62-канальный cache, дополнительные COG-BCI
 CNN seeds, AutoML и новые внешние наборы. Уже выполненный confirmatory DANN
 сохраняется как `partially_confirmed` evidence.
+"""
+    lag_report = f"""# Финальный вывод по временному согласованию EEG и PM
+
+Дата консолидации: {PACKAGE_DATE}. Новое обучение для этого документа не
+выполнялось: он объединяет завершённый exploratory sweep и два независимых
+confirmatory сравнения.
+
+## Финальное решение
+
+Для всех семи continuous PM в будущих core-экспериментах использовать
+фиксированное согласование **`EEG(t−10s) → PM(t)`** — EEG, предшествующее
+timestamp PM на одно 10-секундное окно. Это экспериментальный контракт
+согласования данных, а не preprocessing filter.
+
+Не выполнять target-specific lag selection, не использовать отдельный
+`Focus −20 s` и не запускать дополнительный lag search без новой заранее
+утверждённой гипотезы.
+
+## Цепочка доказательств
+
+### 1. Exploratory sweep
+
+Отдельный гипотезообразующий sweep сравнил `0, −10, −20, −30, −40 s`.
+`−10 s` был широким лучшим кандидатом для шести из семи PM; у Focus локальный
+максимум был при `−20 s` (ΔMacro-F1 +0.05255 относительно lag 0). Чтобы не
+вносить target-specific post-hoc selection, до confirmatory regression был
+зафиксирован единый кандидат `−10 s` для всех PM.
+
+### 2. Независимое классификационное подтверждение
+
+- Experiment: `{lag_classification['experiment_id']}`.
+- Protocol hash: `{lag_classification['protocol_hash']}`.
+- Execution commit: `{lag_classification['execution_commit']}`.
+- Fold-local Q3 fit только на outer-train; 5 fixed subject-disjoint folds,
+  371 признак, XGBoost seed 42; matched cohort
+  {int(lag_classification['matched_rows'])} окон и
+  {int(lag_classification['subjects'])} участника.
+- 35/35 fold×PM сравнений положительны по Macro-F1 и balanced accuracy;
+  7/7 PM имеют благоприятный средний эффект.
+- Pooled paired ΔMacro-F1
+  {float(lag_classification['delta_macro_f1']):+.6f}; Δbalanced accuracy
+  {float(lag_classification['delta_balanced_accuracy']):+.6f}.
+
+### 3. Continuous-regression подтверждение
+
+- Experiment: `{lag_regression['experiment_id']}`.
+- Protocol hash: `{lag_regression['protocol_hash']}`.
+- Execution-code HEAD: `{lag_regression['execution_commit']}`.
+- Все семь continuous PM, 5 fixed subject-disjoint folds, 371 признак,
+  XGBRegressor seed 42; основная единица анализа — participant macro.
+- В 35 fold×PM сравнениях MAE уменьшилась с
+  {float(lag_regression['lag0_mae']):.6f} до
+  {float(lag_regression['lag_minus_10s_mae']):.6f}: ΔMAE
+  {float(lag_regression['delta_mae']):+.6f}, относительное снижение
+  {float(lag_regression['relative_mae_reduction_percent']):.2f}%.
+  Благоприятны {int(lag_regression['favorable_fold_pm_mae'])}/35 сравнений и
+  7/7 PM means.
+- Pearson вырос с {float(lag_regression['lag0_pearson']):.6f} до
+  {float(lag_regression['lag_minus_10s_pearson']):.6f}: ΔPearson
+  {float(lag_regression['delta_pearson']):+.6f}; благоприятны 35/35 сравнений
+  и 7/7 PM means.
+
+{_markdown_table(
+    lag_pm_rows,
+    ['PM', 'MAE reduction', 'delta Pearson',
+     'MAE favorable folds', 'Pearson favorable folds'],
+)}
+
+## Инварианты и отсутствие leakage
+
+- Общий fixed-fold hash:
+  `{lag_alignment['fixed_fold_hash']}`.
+- Условия используют одинаковые target sample IDs, subject IDs, fold
+  membership и train/test counts.
+- Cross-subject, cross-record и cross-fold pairs: 0.
+- Pairing строго record-local по точному `t_start` с шагом 10 s: первое окно
+  каждого record теряется; окно после gap также исключается. Предыдущее
+  доступное окно никогда не подставляется вместо отсутствующего точного
+  predecessor.
+- Target labels test-участников не используются для fitting или выбора lag;
+  regression не выполняет target-specific lag selection.
+
+## R2 и ограничения
+
+R2 благоприятен в {int(lag_regression['favorable_fold_pm_r2'])}/35 paired
+сравнений; median paired ΔR2
+{float(lag_regression['median_delta_r2']):+.6f}, а per-PM median положителен
+для {int(lag_regression['positive_pm_median_r2'])}/7 PM. Pooled arithmetic
+mean R2 не используется: participant-level R2 неустойчив при малом числе
+окон и почти постоянной цели. В частности, у participant `9192c107` для
+некоторых PM остаются только два релевантных окна, что порождает экстремально
+отрицательные значения. NaN не заменялись нулями, участники post hoc не
+исключались.
+
+Результат сильно подтверждён MAE и Pearson; R2 даёт поддерживающее, но
+неоднородное и нестабильное свидетельство.
+
+## Допустимая интерпретация
+
+Корректная формулировка: **фиксированное причинное согласование предыдущего
+окна EEG**, или **temporal alignment correction**, где EEG предшествует PM
+timestamp на одно 10-секундное окно.
+
+Нельзя заключать, что доказан физиологический лаг, что Emotiv всегда
+использует ровно предыдущие 10 секунд, что известен внутренний proprietary
+algorithm или что найден универсальный физиологический delay. Algorithmic
+latency, proprietary aggregation, internal history и timestamp semantics
+остаются только возможными объяснениями наблюдаемого dataset-level эффекта.
 """
     meta_rows = {str(row["method"]): row for row in meta_learning}
     dann_rows = {
@@ -1638,17 +2054,34 @@ ShallowConvNet; исходные численные решения не пере
 Leakage-safe calibration отделяет calibration от final evaluation. Эффект
 зависит от участника; full-model tuning не объявляется универсально лучшим.
 
-## 9. Контрастивное обучение
+## 9. Временное согласование EEG и PM
+
+Единый фиксированный контракт `EEG(t−10s) → PM(t)` независимо поддержан
+классификацией (35/35 положительных fold×PM ΔMacro-F1, pooled delta
+{float(lag_classification['delta_macro_f1']):+.6f}) и continuous regression.
+В регрессии participant-macro MAE снизилась с
+{float(lag_regression['lag0_mae']):.6f} до
+{float(lag_regression['lag_minus_10s_mae']):.6f}
+({float(lag_regression['relative_mae_reduction_percent']):.2f}%; 32/35
+сравнений), а Pearson вырос с
+{float(lag_regression['lag0_pearson']):.6f} до
+{float(lag_regression['lag_minus_10s_pearson']):.6f} (35/35). Все 7/7 PM
+имеют благоприятные средние MAE и Pearson эффекты. Это temporal alignment
+correction на уровне набора данных, не доказательство физиологического или
+proprietary-algorithm delay. Подробности:
+`reports/diagnostics/pm_eeg_lag_final_conclusion.md`.
+
+## 10. Контрастивное обучение
 
 Shape-only и time-aligned screening не улучшили downstream macro F1;
 решение `close_transfer_track` сохраняется.
 
-## 10. COG-BCI
+## 11. COG-BCI
 
 14-channel cache сохранён; 62-channel expansion отклонён по заранее заданному
 правилу. CNN и spectral результаты остаются diagnostic/negative evidence.
 
-## 11. FOMAML
+## 12. FOMAML
 
 Participant-level outer-test: zero-shot macro F1
 {float(meta_rows['zero_shot_supervised']['macro_f1']):.6f}, supervised
@@ -1663,13 +2096,13 @@ supervised full-model: Δmacro F1
 W/L/T 1/4/0. Решение `do_not_proceed`. Это один fold, seed 42, пять
 участников и EEGNet; инфраструктурная готовность не означает успех метода.
 
-## 12. DANN
+## 13. DANN
 
 Диагностический fold 1 / seed 42: Δmacro F1 +0.013364, Δbalanced accuracy
 +0.019079, Δordinal MAE −0.069330, W/L/T 6/2/0. Его bootstrap interval
 включает ноль, поэтому статус — diagnostic `proceed`, не подтверждение.
 
-## 13. Подтверждающий анализ
+## 14. Подтверждающий анализ
 
 Primary analysis использует folds 1–5 и seeds 123/2026. DANN против
 source-only: Δmacro F1
@@ -1683,40 +2116,48 @@ source-only: Δmacro F1
 Seed 42 — sensitivity-only; fold 1 / seed 42 не переобучался и не входил в
 primary decision. Всего выполнено 28 новых trainings.
 
-## 14. Отрицательные результаты
+## 15. Отрицательные результаты
 
 Канонический список находится в `final_result_tables/negative_result_summary.csv`.
 FOMAML `do_not_proceed` отделён от успешной episodic infrastructure.
 
-## 15. Ограничения
+## 16. Ограничения
 
 Абсолютный macro F1 низок; source-validation содержит мало участников;
 domain head значительно больше EEGNet; проверено только направление
 `Old_EEG → gpn_data`; reverse direction и target-supervised upper bound не
 выполнялись; эффекты неоднородны между участниками и seeds.
 
-## 16. Требования проекта
+Для EEG→PM lag participant-level R2 неоднороден и неустойчив у коротких или
+почти постоянных рядов; pooled arithmetic mean R2 не используется. Основной
+вывод опирается на participant-macro MAE и Pearson, а R2 представлен paired
+median и favorable counts без post-hoc исключений.
+
+## 17. Требования проекта
 
 Покрытие находится в `final_result_tables/requirement_coverage.csv` и
 различает implementation, scientific evidence и незакрытые deliverables.
 
-## 17. Воспроизводимость
+## 18. Воспроизводимость
 
 Protocol/preregistration hashes, immutable unlock manifests, subject-level
 splits и target-label firewall сохранены в runtime. Checkpoints,
 predictions и кэши намеренно не отслеживаются Git.
 
-## 18. Научные выводы
+## 19. Научные выводы
 
 Проверенный FOMAML не поддержан. DANN показывает небольшой, но неоднородный
 положительный эффект со статусом `partially_confirmed`; статистическая
-значимость и полная доменная инвариантность не установлены.
+значимость и полная доменная инвариантность не установлены. Фиксированное
+согласование предыдущего EEG-окна независимо поддержано классификацией и
+регрессией всех семи PM и принято как core data-alignment contract.
 
-## 19. Открытые направления
+## 20. Открытые направления
 
 Нужны финальная публикационная интерпретация, presentation/demo scope и,
 только при новой утверждённой гипотезе, reverse DANN или target-supervised
-upper bound. Автоматические DANN/FOMAML sweeps не планируются.
+upper bound. Автоматические DANN/FOMAML sweeps и дополнительный PM lag search
+не планируются; target-specific `Focus −20 s` не используется.
 """
     return {
         repo_root / "reports/integration/project_final_state.md": final_state,
@@ -1726,6 +2167,8 @@ upper bound. Автоматические DANN/FOMAML sweeps не планиру
         / "reports/integration/project_negative_results.md": negative_report,
         repo_root
         / "reports/integration/project_reproducibility_audit.md": repro,
+        repo_root
+        / "reports/diagnostics/pm_eeg_lag_final_conclusion.md": lag_report,
         repo_root
         / "reports/requirements/final_requirement_coverage.md": req_report,
         repo_root / "reports/summary/final_project_results.md": final_report,
@@ -1754,9 +2197,8 @@ def generate(repo_root: Path) -> dict[str, Any]:
     provenance = build_provenance_audit(root, inventory)
     datasets = build_dataset_characteristics()
     models = build_benchmark_models()
-    classification = pd.read_csv(
-        summary / "classification_metrics_unified.csv"
-    ).to_dict("records")
+    lag_alignment = build_lag_alignment_summary(root)
+    classification = build_classification_results(root)
     regression = build_regression_results(root)
     personalization = pd.read_csv(
         summary / "personalization_metrics_unified.csv"
@@ -1819,7 +2261,7 @@ def generate(repo_root: Path) -> dict[str, Any]:
     outputs.extend(sorted((tables / "figures").glob("*.svg")))
     for path, text in _render_reports(
         root, inventory, provenance, requirements, negative,
-        meta_learning, domain_adaptation, experiment_statuses,
+        meta_learning, domain_adaptation, experiment_statuses, lag_alignment,
     ).items():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text.strip() + "\n", encoding="utf-8", newline="")

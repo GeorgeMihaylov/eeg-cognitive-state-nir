@@ -1,4 +1,5 @@
 ﻿artifact_path,artifact_type,generated_by,tracked_intent
+reports/diagnostics/pm_eeg_lag_final_conclusion.md,markdown_report,bench.analysis.project_final_package.generate,yes
 reports/integration/project_final_state.md,markdown_report,bench.analysis.project_final_package.generate,yes
 reports/integration/project_negative_results.md,markdown_report,bench.analysis.project_final_package.generate,yes
 reports/integration/project_reproducibility_audit.md,markdown_report,bench.analysis.project_final_package.generate,yes
