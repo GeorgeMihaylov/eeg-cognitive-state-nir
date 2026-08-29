@@ -1,0 +1,30 @@
+{
+  "candidate_models": [
+    "random_forest",
+    "lightgbm"
+  ],
+  "cohort_equivalence_mismatches": 0,
+  "cohort_equivalence_rows": 35,
+  "experiment_id": "pm_low_high_model_robustness_371_v1",
+  "factory_audit": [
+    {
+      "actual_estimator": "RandomForestClassifier",
+      "expected_estimator": "RandomForestClassifier",
+      "matches": true,
+      "model": "random_forest"
+    },
+    {
+      "actual_estimator": "LGBMClassifier",
+      "expected_estimator": "LGBMClassifier",
+      "matches": true,
+      "model": "lightgbm"
+    }
+  ],
+  "feature_count": 371,
+  "fixed_lag_seconds": -10,
+  "planned_new_fits": 70,
+  "protocol_hash": "a2c51deb4d94e33d71863f1f1c7927470266b7352647664f3a411fb5db819b4e",
+  "reference_model": "xgboost",
+  "reference_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
+  "training_executed": false
+}
