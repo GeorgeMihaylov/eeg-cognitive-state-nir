@@ -1,0 +1,68 @@
+{
+  "schema_version": "pm-low-high-model-robustness-v1",
+  "experiment_id": "pm_low_high_model_robustness_371_v1",
+  "result_status": "preregistered_candidate",
+  "reference": {
+    "config": "experiments/pm_diagnostics/pm_low_high_q3_extremes_confirmatory_v1.json",
+    "output_dir": "reports/diagnostics/pm_low_high_q3_extremes_confirmatory_v1",
+    "experiment_id": "pm_low_high_q3_extremes_confirmatory_371_xgboost_v1",
+    "protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
+    "model": "xgboost"
+  },
+  "scientific_contract": {
+    "pm_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
+    "alignment": "EEG(t-10s) -> PM(t)",
+    "lag_seconds": -10,
+    "feature_count": 371,
+    "target_transform": "outer_train_q33_q67_extremes",
+    "middle_policy": "exclude",
+    "outer_group": "subject_id",
+    "folds": [1, 2, 3, 4, 5],
+    "seed": 42
+  },
+  "candidate_models": {
+    "random_forest": {
+      "task_type": "classification",
+      "estimator": "RandomForestClassifier",
+      "params": {"n_estimators": 200, "n_jobs": -1, "random_state": 42}
+    },
+    "lightgbm": {
+      "task_type": "classification",
+      "estimator": "LGBMClassifier",
+      "params": {"n_estimators": 200, "n_jobs": 4, "random_state": 42}
+    }
+  },
+  "evaluation": {
+    "primary_metric": "participant_macro_balanced_accuracy",
+    "secondary_metrics": [
+      "participant_macro_f1",
+      "participant_macro_roc_auc",
+      "participant_macro_pr_auc",
+      "participant_macro_low_recall",
+      "participant_macro_high_recall",
+      "participant_macro_accuracy"
+    ],
+    "probability_source": "predict_proba_high",
+    "single_class_auc_policy": "undefined_exclude_metric_only"
+  },
+  "model_selection_for_personalization": {
+    "ranking_metric": "participant_macro_balanced_accuracy",
+    "practical_equivalence_margin": 0.01,
+    "maximum_models_advanced": 2,
+    "rule": "advance_best_only_unless_second_best_is_within_0.01_balanced_accuracy",
+    "tie_breakers": ["participant_macro_roc_auc", "lower_balanced_accuracy_std", "fixed_model_order"],
+    "fixed_model_order": ["xgboost", "lightgbm", "random_forest"]
+  },
+  "forbidden": {
+    "hyperparameter_search": true,
+    "lag_search": true,
+    "target_specific_models": true,
+    "focus_specific_logic": true,
+    "feature_selection": true,
+    "class_reweighting": true,
+    "oversampling": true,
+    "test_threshold_fitting": true
+  },
+  "planned_new_fits": 70,
+  "output_dir": "reports/diagnostics/pm_low_high_model_robustness_v1"
+}
