@@ -1,4 +1,5 @@
 {
+  "completed_fits": 105,
   "evaluation": {
     "direct_cross_architecture_ranking_forbidden": true,
     "matched_cohort_followup_if_sequence_competitive": true,
@@ -86,7 +87,7 @@
     "target_columns_present": false
   },
   "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
-  "git_commit": "3c86783cac8d13c5a3c303439088f2fd0106d61d",
+  "git_commit": "4e91ddfc64d226132536628a0cd9ee906f819dc8",
   "history_endpoint_counts": {
     "torch_lstm": 29784,
     "torch_transformer": 30020
@@ -189,7 +190,7 @@
     "required_unique_sample_ids": 30806
   },
   "reference_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
-  "result_status": "preregistered_candidate",
+  "result_status": "confirmatory_screening_complete",
   "schema_version": "pm-low-high-neural-robustness-v1",
   "temporal_pairing_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
   "threshold_hashes": {
@@ -229,7 +230,7 @@
     "fold_05__relaxation": "a638d2bb20962ed825b35f176b1a4005a8304bfc01370b1636d6ce403b817a6a",
     "fold_05__stress": "f830184ed4091f7c1893003e91eb518737ed15e8b5f007bf46bf30fa7cf23cdb"
   },
-  "training_executed": false,
+  "training_executed": true,
   "validation": {
     "group_column": "record_group_id",
     "random_state": 42,
