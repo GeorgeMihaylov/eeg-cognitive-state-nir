@@ -1,0 +1,25 @@
+scope,pm,metric,resampling_unit,repeated_measures_note,observed_mean,ci95_low,ci95_high,seed,n_replicates,n_valid_rows,n_valid_clusters
+per_pm,attention,balanced_accuracy,participant,one PM row per participant,0.717457492004,0.69371691754,0.740964584028,42,10000,53,53
+per_pm,attention,macro_f1,participant,one PM row per participant,0.685116409067,0.650190321522,0.718279150583,42,10000,53,53
+per_pm,attention,roc_auc,participant,one PM row per participant,0.858910887995,0.840522020143,0.875441606087,42,10000,53,53
+per_pm,engagement,balanced_accuracy,participant,one PM row per participant,0.728727147924,0.702007592562,0.754510439393,42,10000,53,53
+per_pm,engagement,macro_f1,participant,one PM row per participant,0.70645999611,0.672109244786,0.738655781586,42,10000,53,53
+per_pm,engagement,roc_auc,participant,one PM row per participant,0.853855242253,0.82893858504,0.876656854533,42,10000,53,53
+per_pm,excitement,balanced_accuracy,participant,one PM row per participant,0.840453910467,0.820855615406,0.858882320389,42,10000,54,54
+per_pm,excitement,macro_f1,participant,one PM row per participant,0.811286490607,0.784235163097,0.836436573537,42,10000,54,54
+per_pm,excitement,roc_auc,participant,one PM row per participant,0.942392201412,0.932866712078,0.951149620341,42,10000,53,53
+per_pm,stress,balanced_accuracy,participant,one PM row per participant,0.735303625613,0.703060628402,0.76573798921,42,10000,54,54
+per_pm,stress,macro_f1,participant,one PM row per participant,0.688314328065,0.643430491455,0.730598964945,42,10000,54,54
+per_pm,stress,roc_auc,participant,one PM row per participant,0.86378038562,0.836825023736,0.886823545927,42,10000,53,53
+per_pm,relaxation,balanced_accuracy,participant,one PM row per participant,0.791055381733,0.76123989097,0.819945022772,42,10000,54,54
+per_pm,relaxation,macro_f1,participant,one PM row per participant,0.769968679367,0.735077928711,0.803199237905,42,10000,54,54
+per_pm,relaxation,roc_auc,participant,one PM row per participant,0.927020636038,0.915253299234,0.938251991608,42,10000,53,53
+per_pm,interest,balanced_accuracy,participant,one PM row per participant,0.735979949763,0.70517549686,0.765473936732,42,10000,54,54
+per_pm,interest,macro_f1,participant,one PM row per participant,0.679342439649,0.631917580914,0.721874843768,42,10000,54,54
+per_pm,interest,roc_auc,participant,one PM row per participant,0.848746386128,0.81801932581,0.876047084249,42,10000,53,53
+per_pm,focus,balanced_accuracy,participant,one PM row per participant,0.701002462289,0.676257857368,0.725467098926,42,10000,54,54
+per_pm,focus,macro_f1,participant,one PM row per participant,0.663121693802,0.624559592809,0.699351850336,42,10000,54,54
+per_pm,focus,roc_auc,participant,one PM row per participant,0.815159337327,0.79138975213,0.838390725207,42,10000,53,53
+pooled_clustered,pooled,balanced_accuracy,unique_subject_id_cluster,all available PM rows travel with each sampled participant,0.750140249279,0.734186694129,0.766057435488,42,10000,376,54
+pooled_clustered,pooled,macro_f1,unique_subject_id_cluster,all available PM rows travel with each sampled participant,0.714902568018,0.692753632446,0.736486271977,42,10000,376,54
+pooled_clustered,pooled,roc_auc,unique_subject_id_cluster,all available PM rows travel with each sampled participant,0.87283786811,0.860695897083,0.884585014211,42,10000,371,53

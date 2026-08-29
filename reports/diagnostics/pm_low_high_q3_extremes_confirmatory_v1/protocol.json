@@ -92,7 +92,7 @@
     4,
     5
   ],
-  "git_commit": "2e6eb36c1c0ba614cd1ceff9fd2a70534c7f73bb",
+  "git_commit": "1e28fdae3b2ce2d75a4d90489960492299600a46",
   "lag_search_performed": false,
   "matched_target_sample_hashes": {
     "attention": "8f0effbe6e21bb783e8a2a320305bd69e1f60a57d53cb1abbdc12f306a852be6",
@@ -142,7 +142,7 @@
   },
   "preregistration_statement": "The EEG(t-10 s) to PM(t) temporal alignment, lower/upper outer-train tertile thresholds, seven targets, five fixed folds, XGBoost configuration, seed and participant-macro metrics are fixed before model fitting. No lag comparison, lag search, target-specific lag selection or hyperparameter tuning is allowed.",
   "protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
-  "result_status": "confirmatory_preregistered_candidate",
+  "result_status": "confirmatory_complete",
   "schema_version": "pm-low-high-q3-extremes-confirmatory-v1",
   "target_ids": [
     "target_attention",
@@ -206,5 +206,5 @@
     "fold_05__relaxation": "a638d2bb20962ed825b35f176b1a4005a8304bfc01370b1636d6ce403b817a6a",
     "fold_05__stress": "f830184ed4091f7c1893003e91eb518737ed15e8b5f007bf46bf30fa7cf23cdb"
   },
-  "training_executed": false
+  "training_executed": true
 }

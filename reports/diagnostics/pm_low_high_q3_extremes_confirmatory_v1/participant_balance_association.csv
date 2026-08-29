@@ -1,0 +1,33 @@
+scope,pm,predictor,outcome,n_observations,n_unique_participants,spearman_rho,descriptive_p_value,interpretation_limit
+per_pm,attention,absolute_class_imbalance,balanced_accuracy,53,53,-0.144014837032,0.30356485098,descriptive/exploratory; not a causal test
+per_pm,attention,absolute_class_imbalance,macro_f1,53,53,-0.229004556087,0.0990606372297,descriptive/exploratory; not a causal test
+per_pm,attention,minority_class_fraction,balanced_accuracy,53,53,0.144014837032,0.30356485098,descriptive/exploratory; not a causal test
+per_pm,attention,n_test,balanced_accuracy,53,53,-0.321607837669,0.0188606311742,descriptive/exploratory; not a causal test
+per_pm,engagement,absolute_class_imbalance,balanced_accuracy,53,53,-0.171343331721,0.219916500307,descriptive/exploratory; not a causal test
+per_pm,engagement,absolute_class_imbalance,macro_f1,53,53,-0.220287050476,0.112963543268,descriptive/exploratory; not a causal test
+per_pm,engagement,minority_class_fraction,balanced_accuracy,53,53,0.171343331721,0.219916500307,descriptive/exploratory; not a causal test
+per_pm,engagement,n_test,balanced_accuracy,53,53,0.0785776201099,0.575971403621,descriptive/exploratory; not a causal test
+per_pm,excitement,absolute_class_imbalance,balanced_accuracy,54,54,0.0566800076234,0.683939718423,descriptive/exploratory; not a causal test
+per_pm,excitement,absolute_class_imbalance,macro_f1,54,54,-0.208538212312,0.130210728525,descriptive/exploratory; not a causal test
+per_pm,excitement,minority_class_fraction,balanced_accuracy,54,54,-0.0566800076234,0.683939718423,descriptive/exploratory; not a causal test
+per_pm,excitement,n_test,balanced_accuracy,54,54,-0.22090917855,0.10843619108,descriptive/exploratory; not a causal test
+per_pm,stress,absolute_class_imbalance,balanced_accuracy,54,54,-0.15738517248,0.255714330064,descriptive/exploratory; not a causal test
+per_pm,stress,absolute_class_imbalance,macro_f1,54,54,-0.236134934248,0.0856086977886,descriptive/exploratory; not a causal test
+per_pm,stress,minority_class_fraction,balanced_accuracy,54,54,0.15738517248,0.255714330064,descriptive/exploratory; not a causal test
+per_pm,stress,n_test,balanced_accuracy,54,54,0.0404055805737,0.77174733185,descriptive/exploratory; not a causal test
+per_pm,relaxation,absolute_class_imbalance,balanced_accuracy,54,54,-0.0163143951696,0.906790023272,descriptive/exploratory; not a causal test
+per_pm,relaxation,absolute_class_imbalance,macro_f1,54,54,-0.107985515533,0.437018741652,descriptive/exploratory; not a causal test
+per_pm,relaxation,minority_class_fraction,balanced_accuracy,54,54,0.0163143951696,0.906790023272,descriptive/exploratory; not a causal test
+per_pm,relaxation,n_test,balanced_accuracy,54,54,-0.0974763650287,0.483169468389,descriptive/exploratory; not a causal test
+per_pm,interest,absolute_class_imbalance,balanced_accuracy,54,54,-0.18574777491,0.178702873199,descriptive/exploratory; not a causal test
+per_pm,interest,absolute_class_imbalance,macro_f1,54,54,-0.417236844689,0.00169633196446,descriptive/exploratory; not a causal test
+per_pm,interest,minority_class_fraction,balanced_accuracy,54,54,0.18574777491,0.178702873199,descriptive/exploratory; not a causal test
+per_pm,interest,n_test,balanced_accuracy,54,54,-0.0546629310745,0.694627080766,descriptive/exploratory; not a causal test
+per_pm,focus,absolute_class_imbalance,balanced_accuracy,54,54,-0.126739089003,0.361118400388,descriptive/exploratory; not a causal test
+per_pm,focus,absolute_class_imbalance,macro_f1,54,54,-0.284162378502,0.0373023137038,descriptive/exploratory; not a causal test
+per_pm,focus,minority_class_fraction,balanced_accuracy,54,54,0.126739089003,0.361118400388,descriptive/exploratory; not a causal test
+per_pm,focus,n_test,balanced_accuracy,54,54,0.305780556193,0.0245380160412,descriptive/exploratory; not a causal test
+pooled_repeated_measures,pooled,absolute_class_imbalance,balanced_accuracy,376,54,-0.106729865266,0.0385845695341,descriptive; PM rows repeat participants; p-value is not confirmatory
+pooled_repeated_measures,pooled,absolute_class_imbalance,macro_f1,376,54,-0.229363813078,7.03073440211e-06,descriptive; PM rows repeat participants; p-value is not confirmatory
+pooled_repeated_measures,pooled,minority_class_fraction,balanced_accuracy,376,54,0.106729865266,0.0385845695341,descriptive; PM rows repeat participants; p-value is not confirmatory
+pooled_repeated_measures,pooled,n_test,balanced_accuracy,376,54,-0.0282311060836,0.58526697269,descriptive; PM rows repeat participants; p-value is not confirmatory
