@@ -1,0 +1,23 @@
+{
+  "base_model_inference_executed": false,
+  "base_model_training_executed": false,
+  "budgets_seconds": [
+    60,
+    120,
+    300
+  ],
+  "experiment_id": "pm_low_high_personalized_threshold_v1",
+  "feasibility_rows": 1890,
+  "models": [
+    "xgboost",
+    "lightgbm"
+  ],
+  "prediction_source_audit_mismatches": 0,
+  "prediction_source_rows": 70,
+  "protocol_hash": "578c359c6c56115aff8ccea29af18bf755989641464dc6672e22753349018af0",
+  "strategies": [
+    "median_midpoint",
+    "empirical_balanced_accuracy"
+  ],
+  "threshold_calibration_executed": false
+}
