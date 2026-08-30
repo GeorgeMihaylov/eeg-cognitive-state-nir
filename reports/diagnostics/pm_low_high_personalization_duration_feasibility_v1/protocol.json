@@ -1,10 +1,11 @@
 {
-  "audit_executed": false,
+  "audit_executed": true,
   "budgets_seconds": [
     300,
     600,
     900
   ],
+  "detail_hash": "ff65d8bfe2edee40458d7c625e231ddeb729118d2641b6cbe530ad1bddcb93bd",
   "experiment_id": "pm_low_high_personalization_duration_feasibility_v1",
   "feasibility_criteria": {
     "criteria_role": "descriptive_prerun_gate_for_duration_dose_response",
@@ -91,13 +92,14 @@
     "target_columns_present": false
   },
   "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
-  "git_commit": "608da10a3a71524bd0ed31b73565ab55710cda38",
+  "git_commit": "14c6016c62ce0882cd2f2e69fa8e8de45b03c8d9",
   "max_budget_seconds": 900,
   "model_inference_executed": false,
   "model_training_executed": false,
   "n_logical_records": 86,
   "n_subjects": 54,
   "paired_target_rows_before_subject_overlap_trim": 30806,
+  "participant_pm_budget_rows": 1134,
   "performance_evaluation_executed": false,
   "planned_duration_comparison": {
     "common_evaluation_boundary_seconds": 900,
@@ -108,10 +110,11 @@
     "primary_contrast": "900s_minus_300s",
     "secondary_contrast": "600s_minus_300s"
   },
+  "pm_summary_rows": 21,
   "protocol_hash": "6bd91b39eef1869125e3f2c57125cfbef017f3b0c0a5538b135b4e32563075bb",
   "record_chronology_hash": "7503fdfd84d9aecaa8d8cbfb9d22394fb47110d068290da9c90fc3f0b6d2a7a0",
   "reference_feasibility_protocol_hash": "94c568d7e41344478c0550f573b0abf8893783831f6c7241b92c8e4fdd25c9cd",
-  "result_status": "preregistered_candidate",
+  "result_status": "feasibility_audit_complete",
   "schema_version": "pm-low-high-personalization-duration-feasibility-v1",
   "scientific_contract": {
     "alignment": "EEG(t-10s) -> PM(t)",
@@ -162,6 +165,7 @@
   },
   "subject_chronology_hash": "17db2f031b7fd27f1885b700ef62be134e4619752bc5135ba19aaea036e338b4",
   "subject_duration_availability_hash": "73ca64d48ca8fd1341a3c89130db61ad105a26bb48611bb6b6808bb2e3861bbe",
+  "summary_rows": 3,
   "temporal_pairing_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
   "threshold_hashes": {
     "fold_01__attention": "40889ed77c7a49254028614aa69c424c2355cbd1baaed50dc47082b1864510f7",
@@ -199,5 +203,6 @@
     "fold_05__interest": "df1d4a9a8a978ee0e3bcd8ba820067c8fc420fd3f5f02f8d6b88fa7e63bbaac1",
     "fold_05__relaxation": "a638d2bb20962ed825b35f176b1a4005a8304bfc01370b1636d6ce403b817a6a",
     "fold_05__stress": "f830184ed4091f7c1893003e91eb518737ed15e8b5f007bf46bf30fa7cf23cdb"
-  }
+  },
+  "timeline_hash_audit_hash": "571b919f9f679b2c72c8cabe1b4bc4d6cda942bd54e93614d6aafe48da95c5cd"
 }
