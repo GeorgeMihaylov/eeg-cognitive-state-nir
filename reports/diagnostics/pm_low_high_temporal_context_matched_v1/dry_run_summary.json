@@ -1,0 +1,60 @@
+{
+  "cohort": {
+    "fold_pm_rows": 35,
+    "max_test_rows": 4670,
+    "min_test_rows": 2832,
+    "test_rows_sum": 137256,
+    "train_rows_sum": 549109
+  },
+  "common_history_endpoint_count": 29784,
+  "experiment_id": "pm_low_high_temporal_context_matched_v1",
+  "factory_audit": [
+    {
+      "device": "cpu_or_estimator_native",
+      "estimator_or_adapter": "LGBMClassifier",
+      "execution_source": "new_training",
+      "input_shape": [
+        371
+      ],
+      "model": "lightgbm"
+    },
+    {
+      "device": "cpu_or_estimator_native",
+      "estimator_or_adapter": "XGBClassifier",
+      "execution_source": "new_training",
+      "input_shape": [
+        371
+      ],
+      "model": "xgboost"
+    },
+    {
+      "device": "cuda",
+      "estimator_or_adapter": "TorchClassificationAdapter",
+      "execution_source": "reference_neural_robustness",
+      "input_shape": [
+        10,
+        371
+      ],
+      "model": "torch_lstm"
+    },
+    {
+      "device": "cuda",
+      "estimator_or_adapter": "TorchClassificationAdapter",
+      "execution_source": "new_training",
+      "input_shape": [
+        8,
+        371
+      ],
+      "model": "torch_transformer"
+    }
+  ],
+  "low_high_reference_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
+  "lstm_reuse_audit_rows": 35,
+  "lstm_reuse_mismatches": 0,
+  "matrix_cells": 140,
+  "neural_robustness_reference_protocol_hash": "e902f4dbe8f317be4ac6ed5061104cf5a3399eea5125414a675add88f4105a8d",
+  "planned_new_fits": 105,
+  "planned_reused_reference_fits": 35,
+  "protocol_hash": "e09f28dab2b37321dd665cc55653cfc08a5a29afc38927ee26bc2d2c6cc988e7",
+  "training_executed": false
+}
