@@ -1,10 +1,11 @@
 {
-  "audit_executed": false,
+  "audit_executed": true,
   "budgets_seconds": [
     900,
     1200,
     1800
   ],
+  "detail_hash": "abe37950df50c76cae38e85678d1018d7d19d03fd46a0447bfebcf61d69d6e39",
   "experiment_id": "pm_low_high_personalization_long_duration_feasibility_v1",
   "feasibility_criteria": {
     "criteria_role": "descriptive_prerun_gate_for_15_20_30min_duration_response",
@@ -22,13 +23,14 @@
     ]
   },
   "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
-  "git_commit": "38acb259eb7d366dffb49293e38718c2fd1bc3eb",
+  "git_commit": "69ce71c017b05bbe4122156b5c1ae413590665ce",
   "max_budget_seconds": 1800,
   "model_inference_executed": false,
   "model_training_executed": false,
   "n_logical_records": 86,
   "n_subjects": 54,
   "paired_target_rows_before_subject_overlap_trim": 30806,
+  "participant_pm_budget_rows": 1134,
   "performance_evaluation_executed": false,
   "planned_duration_comparison": {
     "common_evaluation_boundary_seconds": 1800,
@@ -53,7 +55,7 @@
       "protocol_hash": "14f6fb28ebd748a1f897df0df6d8e7e5a03302733cddde8c33017524d6335035"
     }
   },
-  "result_status": "preregistered_candidate",
+  "result_status": "feasibility_audit_complete",
   "schema_version": "pm-low-high-personalization-long-duration-feasibility-v1",
   "scientific_contract": {
     "alignment": "EEG(t-10s) -> PM(t)",
@@ -142,5 +144,6 @@
     "fold_05__interest": "df1d4a9a8a978ee0e3bcd8ba820067c8fc420fd3f5f02f8d6b88fa7e63bbaac1",
     "fold_05__relaxation": "a638d2bb20962ed825b35f176b1a4005a8304bfc01370b1636d6ce403b817a6a",
     "fold_05__stress": "f830184ed4091f7c1893003e91eb518737ed15e8b5f007bf46bf30fa7cf23cdb"
-  }
+  },
+  "timeline_hash_audit_hash": "e4ed6396526bc287efea25fb5ea80c4952c0881d39fa8ca4d73c5523990297d9"
 }
