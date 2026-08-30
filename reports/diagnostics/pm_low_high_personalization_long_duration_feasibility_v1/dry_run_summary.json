@@ -1,0 +1,31 @@
+{
+  "audit_executed": false,
+  "budgets_seconds": [
+    900,
+    1200,
+    1800
+  ],
+  "common_evaluation_boundary_seconds": 1800,
+  "experiment_id": "pm_low_high_personalization_long_duration_feasibility_v1",
+  "fixed_lag_seconds": -10,
+  "future_models": [
+    "xgboost",
+    "lightgbm"
+  ],
+  "future_threshold_strategy": "median_midpoint",
+  "logical_records": 86,
+  "model_inference_executed": false,
+  "model_training_executed": false,
+  "performance_evaluation_executed": false,
+  "protocol_hash": "34e0aa3350f84198383cd0e6a1d213711983132dcc30aa14fcc9edaafbc1095f",
+  "subjects": 54,
+  "subjects_feature_grid_full_1200s": 52,
+  "subjects_feature_grid_full_1800s": 49,
+  "subjects_feature_grid_full_900s": 52,
+  "subjects_full_1200s": 52,
+  "subjects_full_1800s": 49,
+  "subjects_full_900s": 52,
+  "subjects_source_full_1200s": 53,
+  "subjects_source_full_1800s": 51,
+  "subjects_source_full_900s": 53
+}
