@@ -27,9 +27,11 @@
   "expected_fixed_evaluation_ready_participant_pm": 364,
   "expected_result_rows": 2184,
   "experiment_id": "pm_low_high_personalization_duration_response_v1",
+  "fixed_evaluation_ready_participant_pm": 364,
   "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
-  "git_commit": "9226d9d02652ad21972014612dfb3a6af4c3db83",
-  "performance_evaluation_executed": false,
+  "git_commit": "be1743ee2ef4a3499d3c4ba5e5103ea1bbde314a",
+  "participant_pm_result_rows": 2184,
+  "performance_evaluation_executed": true,
   "prediction_source_audit_mismatches": 0,
   "prediction_source_rows": 70,
   "protocol_hash": "14f6fb28ebd748a1f897df0df6d8e7e5a03302733cddde8c33017524d6335035",
@@ -53,7 +55,8 @@
       "protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431"
     }
   },
-  "result_status": "preregistered_candidate",
+  "result_hash": "43a5ded5e9fec5b4d5b56016b167adac6c5c38ea458241104c439bd1167da1a0",
+  "result_status": "confirmatory_complete",
   "schema_version": "pm-low-high-personalization-duration-response-v1",
   "scientific_contract": {
     "alignment": "EEG(t-10s) -> PM(t)",
@@ -94,7 +97,7 @@
     "threshold_fit_scope": "outer_train_continuous_complete_cases",
     "threshold_strategy": "median_midpoint"
   },
-  "threshold_calibration_executed": false,
+  "threshold_calibration_executed": true,
   "threshold_hashes": {
     "fold_01__attention": "40889ed77c7a49254028614aa69c424c2355cbd1baaed50dc47082b1864510f7",
     "fold_01__engagement": "7d374ea6928381e1ee56d96473fa6567757f8df43407f81bbd24c398d82e419e",

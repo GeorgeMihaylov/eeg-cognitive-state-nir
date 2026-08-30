@@ -1,0 +1,13 @@
+model,budget_seconds,contrast,metric,observed_mean_delta,bootstrap_ci_low,bootstrap_ci_high,bootstrap_replicates,bootstrap_seed,resampling_unit,n_subjects
+lightgbm,300,personalized_minus_zero_shot,balanced_accuracy,0.007255128231827673,0.0006892023651211836,0.01357736470561443,10000,42,subject_id,53
+lightgbm,300,personalized_minus_zero_shot,macro_f1,0.0098836306824082,0.0016530011810999056,0.018006226147882113,10000,42,subject_id,53
+lightgbm,600,personalized_minus_zero_shot,balanced_accuracy,0.01256036418389132,0.005413158251845142,0.019898370080775128,10000,42,subject_id,53
+lightgbm,600,personalized_minus_zero_shot,macro_f1,0.02106154693773571,0.010099219437407245,0.0328186151793209,10000,42,subject_id,53
+lightgbm,900,personalized_minus_zero_shot,balanced_accuracy,0.018087582097561332,0.010870484961411875,0.02578240988328014,10000,42,subject_id,53
+lightgbm,900,personalized_minus_zero_shot,macro_f1,0.02812348293040562,0.017092822596084325,0.04021868367717677,10000,42,subject_id,53
+xgboost,300,personalized_minus_zero_shot,balanced_accuracy,0.006206530916902228,0.0010823062529389754,0.011016650019234143,10000,42,subject_id,53
+xgboost,300,personalized_minus_zero_shot,macro_f1,0.008967628666010564,0.0026411944233621525,0.015286186216994355,10000,42,subject_id,53
+xgboost,600,personalized_minus_zero_shot,balanced_accuracy,0.012736985593433933,0.006532341245824982,0.019139638844254295,10000,42,subject_id,53
+xgboost,600,personalized_minus_zero_shot,macro_f1,0.02119279359706304,0.011558900221914083,0.03154591406474224,10000,42,subject_id,53
+xgboost,900,personalized_minus_zero_shot,balanced_accuracy,0.015700844315827422,0.008830698730965035,0.023220080368170158,10000,42,subject_id,53
+xgboost,900,personalized_minus_zero_shot,macro_f1,0.024672027235927655,0.014731348758796359,0.03529709228910562,10000,42,subject_id,53

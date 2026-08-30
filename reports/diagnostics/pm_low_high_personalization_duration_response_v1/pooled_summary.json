@@ -1,0 +1,23 @@
+{
+  "base_model_inference_executed": false,
+  "base_model_training_executed": false,
+  "budgets_seconds": [
+    300,
+    600,
+    900
+  ],
+  "common_evaluation_boundary_seconds": 900,
+  "experiment_id": "pm_low_high_personalization_duration_response_v1",
+  "fixed_evaluation_ready_participant_pm": 364,
+  "models": [
+    "xgboost",
+    "lightgbm"
+  ],
+  "participant_pm_result_rows": 2184,
+  "performance_evaluation_executed": true,
+  "primary_duration_contrast": "900s_minus_300s",
+  "protocol_hash": "14f6fb28ebd748a1f897df0df6d8e7e5a03302733cddde8c33017524d6335035",
+  "result_status": "confirmatory_complete",
+  "secondary_duration_contrast": "600s_minus_300s",
+  "threshold_calibration_executed": true
+}
