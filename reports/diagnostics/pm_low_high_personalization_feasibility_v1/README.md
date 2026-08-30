@@ -5,6 +5,8 @@ No model training or inference is performed.
 Chronology:
 - calibration record: earliest logical recording by actual selected-record UTC start
 - calibration never crosses a logical-record boundary
+- overlapping later logical-record prefixes are excluded by UTC feature-grid coverage;
+  earlier logical records have deterministic precedence
 - budgets: 0, 30, 60, 120, 300 seconds of elapsed recording time
 - no scanning forward until LOW/HIGH labels appear
 - fixed evaluation: exact-lag targets strictly after +300 s UTC boundary
@@ -16,5 +18,5 @@ References:
 - matched model-selection protocol: `e09f28dab2b37321dd665cc55653cfc08a5a29afc38927ee26bc2d2c6cc988e7`
 - future personalization candidates: `xgboost`, `lightgbm`
 
-Protocol hash: `f3961235894a7c3a931bac21b482641b1b8b753c7ef00f6d6d2184b4d304762b`
+Protocol hash: `94c568d7e41344478c0550f573b0abf8893783831f6c7241b92c8e4fdd25c9cd`
 Audit executed by dry-run: `false`

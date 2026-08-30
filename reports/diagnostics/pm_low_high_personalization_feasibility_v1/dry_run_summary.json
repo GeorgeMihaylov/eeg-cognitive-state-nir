@@ -19,7 +19,7 @@
   "model_inference_executed": false,
   "model_training_executed": false,
   "paired_target_rows": 30806,
-  "protocol_hash": "f3961235894a7c3a931bac21b482641b1b8b753c7ef00f6d6d2184b4d304762b",
+  "protocol_hash": "94c568d7e41344478c0550f573b0abf8893783831f6c7241b92c8e4fdd25c9cd",
   "subjects": 54,
   "subjects_with_full_300s_calibration_record": 53
 }
