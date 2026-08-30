@@ -12,6 +12,7 @@ from bench.experiments.pm_low_high_personalization_feasibility import (
     _as_list,
     _categorize,
     _frame_hash,
+    _trim_cross_record_overlap,
     load_config,
 )
 
@@ -67,6 +68,8 @@ def _config():
             "missing_pm_policy": "count_as_missing_not_middle",
             "outer_group": "subject_id",
             "folds": [1,2,3,4,5],
+            "cross_record_overlap_policy":
+                "earlier_record_precedence_trim_later_overlapping_prefix_by_feature_grid_utc",
         },
         "feasibility_criteria": {
             "report_any_extreme": True,
@@ -148,3 +151,52 @@ def test_frame_hash_is_nan_safe_and_deterministic():
     second = _frame_hash(frame)
     assert first == second
     assert len(first) == 64
+
+
+def test_cross_record_overlap_trims_only_later_prefix():
+    from types import SimpleNamespace
+
+    chronology = pd.DataFrame({
+        "subject_id": ["s1", "s1"],
+        "record_group_id": ["r1", "r2"],
+        "record_start_epoch_seconds": [0.0, 60.0],
+        "feature_grid_duration_seconds": [100.0, 80.0],
+    })
+
+    rows = pd.DataFrame({
+        "record_group_id": ["r1", "r1", "r2", "r2", "r2"],
+        "absolute_target_epoch_seconds": [
+            10.0,
+            90.0,
+            70.0,
+            110.0,
+            130.0,
+        ],
+    })
+
+    context = SimpleNamespace(record_chronology=chronology)
+
+    result = _trim_cross_record_overlap(
+        context,
+        rows,
+        subject_id="s1",
+    )
+
+    assert result["absolute_target_epoch_seconds"].tolist() == [
+        10.0,
+        90.0,
+        110.0,
+        130.0,
+    ]
+
+
+def test_config_rejects_cross_record_overlap_policy_change(tmp_path):
+    config = _config()
+    config["scientific_contract"]["cross_record_overlap_policy"] = (
+        "allow_overlap"
+    )
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Scientific contract"):
+        load_config(path)

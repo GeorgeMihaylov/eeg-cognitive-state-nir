@@ -59,7 +59,8 @@
       3,
       4,
       5
-    ]
+    ],
+    "cross_record_overlap_policy": "earlier_record_precedence_trim_later_overlapping_prefix_by_feature_grid_utc"
   },
   "feasibility_criteria": {
     "report_any_extreme": true,

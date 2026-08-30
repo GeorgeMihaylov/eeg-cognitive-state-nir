@@ -156,6 +156,8 @@ def load_config(path: str | Path) -> dict[str, Any]:
         "missing_pm_policy": "count_as_missing_not_middle",
         "outer_group": "subject_id",
         "folds": [1, 2, 3, 4, 5],
+        "cross_record_overlap_policy":
+            "earlier_record_precedence_trim_later_overlapping_prefix_by_feature_grid_utc",
     }
     for key, expected in expected_contract.items():
         if contract.get(key) != expected:
@@ -602,6 +604,76 @@ def _categorize(values: np.ndarray, q_low: float, q_high: float) -> np.ndarray:
     return result
 
 
+def _trim_cross_record_overlap(
+    context: FeasibilityContext,
+    rows: pd.DataFrame,
+    *,
+    subject_id: str,
+) -> pd.DataFrame:
+    """Remove later-record target rows already covered by earlier UTC data."""
+    records = context.record_chronology.loc[
+        context.record_chronology["subject_id"].astype(str).eq(str(subject_id))
+    ].copy()
+
+    records = records.sort_values(
+        ["record_start_epoch_seconds", "record_group_id"],
+        kind="stable",
+    ).reset_index(drop=True)
+
+    if records.empty:
+        raise RuntimeError(
+            f"No record chronology for subject {subject_id}"
+        )
+
+    cutoff_by_group: dict[str, float] = {}
+    maximum_prior_feature_end: float | None = None
+
+    for record in records.itertuples(index=False):
+        group_id = str(record.record_group_id)
+        start = float(record.record_start_epoch_seconds)
+        end = start + float(record.feature_grid_duration_seconds)
+
+        cutoff_by_group[group_id] = (
+            float("-inf")
+            if maximum_prior_feature_end is None
+            else maximum_prior_feature_end
+        )
+
+        maximum_prior_feature_end = (
+            end
+            if maximum_prior_feature_end is None
+            else max(maximum_prior_feature_end, end)
+        )
+
+    result = rows.copy()
+
+    unknown = sorted(
+        set(result["record_group_id"].astype(str))
+        - set(cutoff_by_group)
+    )
+    if unknown:
+        raise RuntimeError(
+            f"Unknown logical records in subject timeline: {unknown}"
+        )
+
+    prior_end = np.asarray(
+        [
+            cutoff_by_group[str(value)]
+            for value in result["record_group_id"]
+        ],
+        dtype=float,
+    )
+    absolute = result[
+        "absolute_target_epoch_seconds"
+    ].to_numpy(dtype=float)
+
+    excluded = np.isfinite(prior_end) & (absolute < prior_end)
+
+    result["chronology_overlap_excluded"] = excluded
+
+    return result.loc[~excluded].reset_index(drop=True)
+
+
 def _subject_pm_timeline(
     context: FeasibilityContext,
     *,
@@ -619,6 +691,12 @@ def _subject_pm_timeline(
     rows = context.paired_timeline.loc[
         context.paired_timeline["subject_id"].astype(str).eq(str(subject_id))
     ].copy()
+
+    rows = _trim_cross_record_overlap(
+        context,
+        rows,
+        subject_id=str(subject_id),
+    )
     target_lookup = context.low_high.full.set_index("sample_id")
     target_column = f"target_{pm}"
     values = pd.to_numeric(
