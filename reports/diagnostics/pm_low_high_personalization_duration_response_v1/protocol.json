@@ -1,0 +1,135 @@
+{
+  "base_model_inference_executed": false,
+  "base_model_training_executed": false,
+  "duration_feasibility_detail_hash": "e8d51cacf6668b575598b1fd9cb6a36dd4aae3d5851c075dc23d8c7655773952",
+  "evaluation": {
+    "aggregation": "mean_pm_within_participant_then_mean_participants",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 42,
+    "bootstrap_unit": "subject_id",
+    "primary_duration_contrast": "900s_minus_300s",
+    "primary_estimand": "operational_all_post900_eval_ready_with_zero_shot_fallback",
+    "primary_metric": "balanced_accuracy",
+    "secondary_duration_contrast": "600s_minus_300s",
+    "secondary_estimand": "adaptation_applied_only_participant_first",
+    "secondary_metrics": [
+      "macro_f1",
+      "low_recall",
+      "high_recall",
+      "precision",
+      "accuracy"
+    ],
+    "unchanged_ranking_metrics": [
+      "roc_auc",
+      "pr_auc"
+    ]
+  },
+  "expected_fixed_evaluation_ready_participant_pm": 364,
+  "expected_result_rows": 2184,
+  "experiment_id": "pm_low_high_personalization_duration_response_v1",
+  "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
+  "git_commit": "9226d9d02652ad21972014612dfb3a6af4c3db83",
+  "performance_evaluation_executed": false,
+  "prediction_source_audit_mismatches": 0,
+  "prediction_source_rows": 70,
+  "protocol_hash": "14f6fb28ebd748a1f897df0df6d8e7e5a03302733cddde8c33017524d6335035",
+  "references": {
+    "duration_feasibility": {
+      "config": "experiments/pm_diagnostics/pm_low_high_personalization_duration_feasibility_v1.json",
+      "output_dir": "reports/diagnostics/pm_low_high_personalization_duration_feasibility_v1",
+      "protocol_hash": "6bd91b39eef1869125e3f2c57125cfbef017f3b0c0a5538b135b4e32563075bb"
+    },
+    "lightgbm": {
+      "model": "lightgbm",
+      "output_dir": "reports/diagnostics/pm_low_high_model_robustness_v1",
+      "protocol_hash": "a2c51deb4d94e33d71863f1f1c7927470266b7352647664f3a411fb5db819b4e"
+    },
+    "personalized_threshold_5min": {
+      "output_dir": "reports/diagnostics/pm_low_high_personalized_threshold_v1",
+      "protocol_hash": "578c359c6c56115aff8ccea29af18bf755989641464dc6672e22753349018af0"
+    },
+    "xgboost": {
+      "output_dir": "reports/diagnostics/pm_low_high_q3_extremes_confirmatory_v1",
+      "protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431"
+    }
+  },
+  "result_status": "preregistered_candidate",
+  "schema_version": "pm-low-high-personalization-duration-response-v1",
+  "scientific_contract": {
+    "alignment": "EEG(t-10s) -> PM(t)",
+    "base_decision_threshold": 0.5,
+    "calibration_budgets_seconds": [
+      300,
+      600,
+      900
+    ],
+    "calibration_cross_record_policy": "forbidden",
+    "calibration_interval_rule": "0 < target_relative_seconds <= budget_seconds",
+    "calibration_record_policy": "earliest_logical_record_by_selected_record_start_utc",
+    "common_evaluation_boundary_seconds": 900,
+    "cross_record_overlap_policy": "earlier_record_precedence_trim_later_overlapping_prefix_by_feature_grid_utc",
+    "fixed_evaluation_policy": "absolute_target_utc > earliest_record_start_utc + 900s",
+    "ineligible_policy": "zero_shot_fallback_no_budget_extension",
+    "lag_seconds": -10,
+    "middle_policy": "exclude",
+    "minimum_calibration_per_class": 2,
+    "minimum_fixed_evaluation_extremes": 20,
+    "models": [
+      "xgboost",
+      "lightgbm"
+    ],
+    "nonseparated_medians_policy": "zero_shot_fallback",
+    "pm_names": [
+      "attention",
+      "engagement",
+      "excitement",
+      "stress",
+      "relaxation",
+      "interest",
+      "focus"
+    ],
+    "probability_source": "stored_predict_proba_high",
+    "require_both_evaluation_classes": true,
+    "target_transform": "outer_train_q33_q67_extremes",
+    "threshold_fit_scope": "outer_train_continuous_complete_cases",
+    "threshold_strategy": "median_midpoint"
+  },
+  "threshold_calibration_executed": false,
+  "threshold_hashes": {
+    "fold_01__attention": "40889ed77c7a49254028614aa69c424c2355cbd1baaed50dc47082b1864510f7",
+    "fold_01__engagement": "7d374ea6928381e1ee56d96473fa6567757f8df43407f81bbd24c398d82e419e",
+    "fold_01__excitement": "f13db677a8358b59d7e0528258ba7ff9bf95b5314741ce39a724cf74d183ddaa",
+    "fold_01__focus": "7d71bb99b3a559d0df0aa3bf8b195bafc98a0dd046a82039a430a2fa4892b0d0",
+    "fold_01__interest": "bd39db4c19d9f742cb059d0566f550cf160821412eeb67d3cc0780042dbd7317",
+    "fold_01__relaxation": "38b0c29f91cf04074516bcbbf6cf6e9362b22718f7ac54fdbe5adf6de43d5d14",
+    "fold_01__stress": "bc3be14a13e7a39ebeab010389e1c408e3b117b37aecad2317d7955676362ffa",
+    "fold_02__attention": "05b80bfaecd22890a7e360375d08013c2763762bc191dded6a0bbd75f29be07f",
+    "fold_02__engagement": "96921223f37aee74e8576505e04d8d93656b6d22365a8c1e79d1aadc606e3780",
+    "fold_02__excitement": "8cf290447cc76b4db2bf7811a784e38768237f66e910c108ea9bd99fce1b2673",
+    "fold_02__focus": "74e34c54e7221dc6ee613f5b9c86caff220ef215c764f9f3f1457db68a376147",
+    "fold_02__interest": "a6f226a94e84838366c4cf62d5dbcdfa343d2e4317631dc9cd843403760f8fb3",
+    "fold_02__relaxation": "7656df549309178054e578a36ceed79ea658632f163e5e508467b9011bdaa756",
+    "fold_02__stress": "f31c8981acf165f01f66cc01c4f2b2d6927c370f1a035493f12dece19b93ba49",
+    "fold_03__attention": "d9fe93c98329da3f22770036d5d5bcc1723fbbfb61707901d1eaef4a7001f95d",
+    "fold_03__engagement": "a74a573473ef95d46567294f0aa220d0bd8b428d9a9120f4a96756b0c84d9f51",
+    "fold_03__excitement": "fa418d56645cfa9ab67032bef122ddca9f2bf2af811172bdbe6b172d6197f493",
+    "fold_03__focus": "0c7365a9f52cdea7f5ff5bd02009df8f23994345c83ad7446745f49568834711",
+    "fold_03__interest": "3bcb6d908dca29ca782906a4f9f4eb0ea8493afdf7dc53a3c5de50526bd55ffb",
+    "fold_03__relaxation": "e60bf995e60c88b6af88b34c7d1f44be24f60c5b4257ba68426a2504b9aa025a",
+    "fold_03__stress": "bcd3007f8b807817734d67f5fb79247d682169631186c1b04d4f2cedd74be7de",
+    "fold_04__attention": "4404f50166a53629f16deb855b5dbdefb3de95149a3eec0eec91689ced0aaf96",
+    "fold_04__engagement": "4efdbb963e4328ea609ced0c43ea79ec54863afcf8b6dc3b54e36caff30afe16",
+    "fold_04__excitement": "01a9a36af7fd4938668057f58a4af0d4815b36985a13f61e071f1297e75e14d1",
+    "fold_04__focus": "bcbf7453b6c3768b7f4446c03f027f80397a24d1f0f54a82146b8fe6d4a67bdf",
+    "fold_04__interest": "c4110c8ecd8ea7c835b8ea571bfeb6ad10ec8d02d986bd0e2c5b9a70c03e3241",
+    "fold_04__relaxation": "a5f608b86ee9061617d36b1743ad601431f955dde27218d8d7829829dc257d43",
+    "fold_04__stress": "27d0b6e27ea4a69159776babe88351288b3e08a8b6a0e0a437af967ad54f9cf0",
+    "fold_05__attention": "2f86d0e8c455b4f21168d0123e21d085836ed48610878f7e823e2e4fab91a878",
+    "fold_05__engagement": "fd819c1414dbc4a71c004ee2f223fde45d23c5e1a929dfb308519bdd81be5cc8",
+    "fold_05__excitement": "e83502bfb241187a15bbe01f2a2df8a2dcfd119976c2c47635b1515b95a004a5",
+    "fold_05__focus": "d1251c35ecfb7ccdf7b0d7e26663f103bb7b943f31fc83ad844ddbed424760ce",
+    "fold_05__interest": "df1d4a9a8a978ee0e3bcd8ba820067c8fc420fd3f5f02f8d6b88fa7e63bbaac1",
+    "fold_05__relaxation": "a638d2bb20962ed825b35f176b1a4005a8304bfc01370b1636d6ce403b817a6a",
+    "fold_05__stress": "f830184ed4091f7c1893003e91eb518737ed15e8b5f007bf46bf30fa7cf23cdb"
+  }
+}
