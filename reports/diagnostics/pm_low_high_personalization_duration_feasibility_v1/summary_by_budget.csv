@@ -1,0 +1,4 @@
+budget_seconds,budget_minutes,participant_pm_rows,subjects,fully_available_rows,fully_available_subjects,has_any_extreme_rows,has_both_classes_rows,min2_each_rows,min3_each_rows,min5_each_rows,operational_calibration_eligible_min2_each_rows,fixed_evaluation_ready_min20_both_classes_rows,joint_min2_calibration_and_fixed_evaluation_ready_rows,median_calibration_extremes,median_calibration_low,median_calibration_high,median_calibration_middle,median_calibration_missing_pm,median_post_900s_evaluation_extremes
+300,5.0,378,54,371,53,375,259,215,165,110,209,364,208,20.0,9.0,6.0,9.0,0.0,314.0
+600,10.0,378,54,371,53,375,320,295,264,211,289,364,288,39.0,17.0,11.5,19.0,0.0,314.0
+900,15.0,378,54,371,53,375,343,321,298,264,315,364,312,54.0,24.0,17.5,31.5,0.0,314.0
