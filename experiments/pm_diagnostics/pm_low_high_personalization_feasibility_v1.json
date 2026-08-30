@@ -1,0 +1,88 @@
+{
+  "schema_version": "pm-low-high-personalization-feasibility-v1",
+  "experiment_id": "pm_low_high_personalization_feasibility_v1",
+  "result_status": "preregistered_candidate",
+  "references": {
+    "low_high": {
+      "config": "experiments/pm_diagnostics/pm_low_high_q3_extremes_confirmatory_v1.json",
+      "output_dir": "reports/diagnostics/pm_low_high_q3_extremes_confirmatory_v1",
+      "protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431"
+    },
+    "matched_model_selection": {
+      "output_dir": "reports/diagnostics/pm_low_high_temporal_context_matched_v1",
+      "protocol_hash": "e09f28dab2b37321dd665cc55653cfc08a5a29afc38927ee26bc2d2c6cc988e7",
+      "advanced_models": [
+        "xgboost",
+        "lightgbm"
+      ]
+    }
+  },
+  "data": {
+    "logical_recording_map": "data/interim/logical_recording_map.parquet"
+  },
+  "scientific_contract": {
+    "pm_names": [
+      "attention",
+      "engagement",
+      "excitement",
+      "stress",
+      "relaxation",
+      "interest",
+      "focus"
+    ],
+    "alignment": "EEG(t-10s) -> PM(t)",
+    "lag_seconds": -10,
+    "calibration_budgets_seconds": [
+      0,
+      30,
+      60,
+      120,
+      300
+    ],
+    "maximum_calibration_budget_seconds": 300,
+    "calibration_record_policy": "earliest_logical_record_by_selected_record_start_utc",
+    "calibration_cross_record_policy": "forbidden",
+    "calibration_time_origin": "start_of_earliest_logical_record",
+    "calibration_interval_rule": "0 < target_relative_seconds <= budget_seconds",
+    "budget_measurement": "elapsed_recording_time_not_extreme_sample_count",
+    "fixed_evaluation_policy": "all_exact_lag_targets_strictly_after_max_budget_utc_boundary",
+    "fixed_evaluation_boundary_rule": "absolute_target_utc > earliest_record_start_utc + 300s",
+    "reserved_interval_policy": "targets_after_current_budget_and_not_after_300s_are_unused",
+    "target_transform": "outer_train_q33_q67_extremes",
+    "threshold_fit_scope": "outer_train_continuous_complete_cases",
+    "middle_policy": "exclude_from_binary_training_and_evaluation_but_count_in_feasibility",
+    "missing_pm_policy": "count_as_missing_not_middle",
+    "outer_group": "subject_id",
+    "folds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "feasibility_criteria": {
+    "report_any_extreme": true,
+    "report_both_extreme_classes": true,
+    "report_minimum_per_class": [
+      1,
+      2,
+      3
+    ],
+    "minimum_fixed_evaluation_extremes_descriptive": 20,
+    "minimum_fixed_evaluation_both_classes": true,
+    "criteria_role": "descriptive_only_final_personalization_rules_frozen_after_feasibility_audit"
+  },
+  "forbidden": {
+    "model_training": true,
+    "model_inference": true,
+    "performance_metric_use": true,
+    "threshold_refitting_on_test_subject": true,
+    "search_until_both_classes_observed": true,
+    "extend_budget_to_collect_extremes": true,
+    "cross_record_calibration_stitching": true,
+    "target_specific_budget_change": true,
+    "focus_specific_budget_change": true
+  },
+  "output_dir": "reports/diagnostics/pm_low_high_personalization_feasibility_v1"
+}
