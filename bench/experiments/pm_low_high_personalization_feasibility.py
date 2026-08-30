@@ -577,6 +577,8 @@ No model training or inference is performed.
 Chronology:
 - calibration record: earliest logical recording by actual selected-record UTC start
 - calibration never crosses a logical-record boundary
+- overlapping later logical-record prefixes are excluded by UTC feature-grid coverage;
+  earlier logical records have deterministic precedence
 - budgets: 0, 30, 60, 120, 300 seconds of elapsed recording time
 - no scanning forward until LOW/HIGH labels appear
 - fixed evaluation: exact-lag targets strictly after +300 s UTC boundary
