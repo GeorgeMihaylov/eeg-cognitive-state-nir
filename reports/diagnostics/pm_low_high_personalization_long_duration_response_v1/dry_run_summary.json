@@ -1,0 +1,25 @@
+{
+  "base_model_inference_executed": false,
+  "base_model_training_executed": false,
+  "budget_fully_available_rule": "source_duration_and_feature_grid_span_cover_budget",
+  "budgets_seconds": [
+    900,
+    1200,
+    1800
+  ],
+  "common_evaluation_boundary_seconds": 1800,
+  "expected_fixed_evaluation_ready_participant_pm": 345,
+  "expected_result_rows": 2070,
+  "experiment_id": "pm_low_high_personalization_long_duration_response_v1",
+  "long_feasibility_rows": 1134,
+  "models": [
+    "xgboost",
+    "lightgbm"
+  ],
+  "performance_evaluation_executed": false,
+  "prediction_source_audit_mismatches": 0,
+  "prediction_source_rows": 70,
+  "protocol_hash": "7fdc10bccad792c1f2d113ee063469230f229bd3dabf0cf0cb21e4f9b88e5caf",
+  "threshold_calibration_executed": false,
+  "threshold_strategy": "median_midpoint"
+}
