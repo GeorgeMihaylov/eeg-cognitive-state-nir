@@ -1,0 +1,25 @@
+{
+  "base_model_inference_executed": false,
+  "base_model_training_executed": false,
+  "budgets_seconds": [
+    60,
+    120,
+    300
+  ],
+  "experiment_id": "pm_low_high_personalized_threshold_v1",
+  "fixed_evaluation_ready_participant_pm": 368,
+  "models": [
+    "xgboost",
+    "lightgbm"
+  ],
+  "participant_pm_result_rows": 4416,
+  "primary_budget_seconds": 300,
+  "primary_strategy": "median_midpoint",
+  "protocol_hash": "578c359c6c56115aff8ccea29af18bf755989641464dc6672e22753349018af0",
+  "result_status": "confirmatory_complete",
+  "strategies": [
+    "median_midpoint",
+    "empirical_balanced_accuracy"
+  ],
+  "threshold_calibration_executed": true
+}
