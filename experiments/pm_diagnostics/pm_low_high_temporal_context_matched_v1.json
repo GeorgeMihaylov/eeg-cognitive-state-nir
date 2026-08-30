@@ -1,0 +1,207 @@
+{
+  "schema_version": "pm-low-high-temporal-context-matched-v1",
+  "experiment_id": "pm_low_high_temporal_context_matched_v1",
+  "result_status": "preregistered_candidate",
+  "references": {
+    "low_high": {
+      "config": "experiments/pm_diagnostics/pm_low_high_q3_extremes_confirmatory_v1.json",
+      "output_dir": "reports/diagnostics/pm_low_high_q3_extremes_confirmatory_v1",
+      "protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431"
+    },
+    "neural_robustness": {
+      "output_dir": "reports/diagnostics/pm_low_high_neural_robustness_v1",
+      "protocol_hash": "e902f4dbe8f317be4ac6ed5061104cf5a3399eea5125414a675add88f4105a8d",
+      "reused_model": "torch_lstm"
+    }
+  },
+  "scientific_contract": {
+    "pm_names": [
+      "attention",
+      "engagement",
+      "excitement",
+      "stress",
+      "relaxation",
+      "interest",
+      "focus"
+    ],
+    "alignment": "causal EEG history ending at t-10s -> PM(t)",
+    "lag_seconds": -10,
+    "common_cohort": "10_contiguous_feature_windows_ending_at_t_minus_10s",
+    "target_transform": "outer_train_q33_q67_extremes",
+    "middle_policy": "exclude",
+    "outer_group": "subject_id",
+    "folds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "seed": 42
+  },
+  "models": {
+    "lightgbm": {
+      "input_family": "single_window_features",
+      "context_windows": 1,
+      "input_rule": "371 features at EEG(t-10s)",
+      "params": {
+        "n_estimators": 200,
+        "n_jobs": 4,
+        "random_state": 42
+      }
+    },
+    "xgboost": {
+      "input_family": "single_window_features",
+      "context_windows": 1,
+      "input_rule": "371 features at EEG(t-10s)",
+      "params": {
+        "n_estimators": 200,
+        "n_jobs": 4,
+        "random_state": 42
+      }
+    },
+    "torch_lstm": {
+      "input_family": "sequence_features",
+      "context_windows": 10,
+      "input_rule": "371-feature windows EEG(t-100s)..EEG(t-10s)",
+      "execution": "reuse_exact_neural_robustness_reference",
+      "sequence": {
+        "length": 10,
+        "stride": 1,
+        "target_position": "last",
+        "expected_step_seconds": 10.0,
+        "max_gap_seconds": 10.01
+      },
+      "params": {
+        "hidden_size": 128,
+        "num_layers": 1,
+        "bidirectional": false,
+        "dropout": 0.2,
+        "classifier_hidden": 64,
+        "batch_size": 256,
+        "max_epochs": 5,
+        "learning_rate": 0.001,
+        "weight_decay": 0.0001,
+        "validation_size": 0.15,
+        "early_stopping_patience": 2,
+        "device": "auto",
+        "random_state": 42,
+        "standardize": true,
+        "num_workers": 0
+      }
+    },
+    "torch_transformer": {
+      "input_family": "sequence_features",
+      "context_windows": 8,
+      "input_rule": "last 8 of common history: EEG(t-80s)..EEG(t-10s)",
+      "execution": "new_training_on_common_10_window_eligible_cohort",
+      "sequence": {
+        "length": 8,
+        "stride": 1,
+        "target_position": "last",
+        "expected_step_seconds": 10.0,
+        "max_gap_seconds": 10.01
+      },
+      "params": {
+        "sequence_length": 8,
+        "d_model": 128,
+        "nhead": 4,
+        "num_layers": 2,
+        "dim_feedforward": 256,
+        "dropout": 0.1,
+        "activation": "gelu",
+        "pooling": "last",
+        "positional_encoding": "learned",
+        "batch_size": 128,
+        "max_epochs": 15,
+        "learning_rate": 0.001,
+        "weight_decay": 0.0001,
+        "validation_size": 0.15,
+        "early_stopping_patience": 4,
+        "device": "auto",
+        "random_state": 42,
+        "standardize": true,
+        "num_workers": 0
+      }
+    }
+  },
+  "validation": {
+    "strategy": "group_record",
+    "group_column": "record_group_id",
+    "validation_size": 0.15,
+    "random_state": 42
+  },
+  "evaluation": {
+    "primary_metric": "participant_macro_balanced_accuracy",
+    "secondary_metrics": [
+      "participant_macro_f1",
+      "participant_macro_roc_auc",
+      "participant_macro_pr_auc",
+      "participant_macro_low_recall",
+      "participant_macro_high_recall",
+      "participant_macro_precision",
+      "participant_macro_accuracy"
+    ],
+    "paired_temporal_vs_tabular": [
+      [
+        "torch_lstm",
+        "lightgbm"
+      ],
+      [
+        "torch_lstm",
+        "xgboost"
+      ],
+      [
+        "torch_transformer",
+        "lightgbm"
+      ],
+      [
+        "torch_transformer",
+        "xgboost"
+      ]
+    ],
+    "participant_cluster_bootstrap": {
+      "replicates": 10000,
+      "seed": 42,
+      "cluster": "subject_id",
+      "metrics": [
+        "balanced_accuracy",
+        "f1",
+        "roc_auc"
+      ]
+    }
+  },
+  "model_selection_for_personalization": {
+    "ranking_metric": "participant_macro_balanced_accuracy",
+    "practical_equivalence_margin": 0.01,
+    "maximum_models_advanced": 2,
+    "rule": "advance_best_only_unless_second_best_is_within_0.01_balanced_accuracy",
+    "tie_breakers": [
+      "participant_macro_roc_auc",
+      "lower_balanced_accuracy_std",
+      "fixed_model_order"
+    ],
+    "fixed_model_order": [
+      "lightgbm",
+      "xgboost",
+      "torch_lstm",
+      "torch_transformer"
+    ]
+  },
+  "forbidden": {
+    "hyperparameter_search": true,
+    "lag_search": true,
+    "sequence_length_search": true,
+    "target_specific_models": true,
+    "focus_specific_logic": true,
+    "feature_selection": true,
+    "class_reweighting": true,
+    "oversampling": true,
+    "test_threshold_fitting": true,
+    "random_window_validation": true
+  },
+  "matrix_cells": 140,
+  "planned_new_fits": 105,
+  "planned_reused_reference_fits": 35,
+  "output_dir": "reports/diagnostics/pm_low_high_temporal_context_matched_v1"
+}
