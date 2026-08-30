@@ -75,6 +75,16 @@ def _sample_hash(values: Sequence[Any]) -> str:
     return stable_hash([str(value) for value in values])
 
 
+def _frame_hash(frame: pd.DataFrame) -> str:
+    """Return a deterministic JSON-safe hash for a result DataFrame."""
+    payload = frame.to_csv(
+        index=False,
+        lineterminator="\n",
+        na_rep="<NA>",
+    )
+    return stable_hash(payload)
+
+
 def _as_list(value: Any) -> list[Any]:
     if value is None:
         return []
@@ -866,9 +876,7 @@ def run_audit(context: FeasibilityContext) -> dict[str, Any]:
         "participant_pm_budget_rows": int(len(detail)),
         "summary_rows": int(len(summary)),
         "pm_summary_rows": int(len(pm_summary)),
-        "detail_hash": stable_hash(
-            detail.astype(str).to_dict("records")
-        ),
+        "detail_hash": _frame_hash(detail),
     })
     _atomic_json(context.output_dir / "protocol.json", protocol)
 

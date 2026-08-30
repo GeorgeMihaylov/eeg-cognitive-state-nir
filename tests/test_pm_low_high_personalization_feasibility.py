@@ -11,6 +11,7 @@ from bench.experiments.pm_low_high_personalization_feasibility import (
     BUDGETS_SECONDS,
     _as_list,
     _categorize,
+    _frame_hash,
     load_config,
 )
 
@@ -136,3 +137,14 @@ def test_boundary_semantics_are_three_windows_at_30s():
     relative = np.asarray([10.0, 20.0, 30.0, 40.0])
     selected = relative[(relative > 0.0) & (relative <= 30.0)]
     assert selected.tolist() == [10.0, 20.0, 30.0]
+
+
+def test_frame_hash_is_nan_safe_and_deterministic():
+    frame = pd.DataFrame({
+        "value": [1.0, np.nan, 3.0],
+        "label": ["a", "b", "c"],
+    })
+    first = _frame_hash(frame)
+    second = _frame_hash(frame)
+    assert first == second
+    assert len(first) == 64
