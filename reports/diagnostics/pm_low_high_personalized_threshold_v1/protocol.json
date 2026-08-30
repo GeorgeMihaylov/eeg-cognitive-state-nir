@@ -24,7 +24,7 @@
   "experiment_id": "pm_low_high_personalized_threshold_v1",
   "feasibility_detail_hash": "bb0facdfa0f0176f60961fc65746452a9432a4e38f78bd5dc13d07bb695c5ed1",
   "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
-  "git_commit": "ea97f7d1dc74823d2269af1119b1c82d73cb4f52",
+  "git_commit": "d63658cb0011495f02627ba25495658433044489",
   "prediction_source_audit_mismatches": 0,
   "prediction_source_rows": 70,
   "protocol_hash": "578c359c6c56115aff8ccea29af18bf755989641464dc6672e22753349018af0",
