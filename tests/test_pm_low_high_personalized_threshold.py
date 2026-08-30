@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from bench.experiments.pm_low_high_personalized_threshold import (
+    _aggregate_applied_only,
     _empirical_ba_threshold,
     _median_midpoint,
     load_config,
@@ -85,3 +86,46 @@ def test_config_rejects_30_second_execution(tmp_path):
     path.write_text(json.dumps(cfg), encoding="utf-8")
     with pytest.raises(ValueError, match="Scientific contract"):
         load_config(path)
+
+
+def test_applied_only_uses_participant_first_aggregation():
+    import pandas as pd
+
+    rows = []
+    for subject_id, pm, delta in [
+        ("s1", "attention", 1.0),
+        ("s1", "stress", 1.0),
+        ("s2", "focus", -1.0),
+    ]:
+        row = {
+            "model": "xgboost",
+            "budget_seconds": 300,
+            "budget_role": "primary",
+            "strategy": "median_midpoint",
+            "strategy_role": "primary",
+            "subject_id": subject_id,
+            "pm": pm,
+            "adaptation_applied": True,
+        }
+        for metric in (
+            "balanced_accuracy", "macro_f1",
+            "low_recall", "high_recall",
+            "precision", "accuracy",
+        ):
+            row[f"delta_{metric}"] = delta
+        rows.append(row)
+
+    participant, summary = _aggregate_applied_only(
+        pd.DataFrame(rows)
+    )
+
+    assert len(participant) == 2
+    assert len(summary) == 1
+    assert summary.iloc[0]["participant_pm_rows"] == 3
+    assert summary.iloc[0]["participants"] == 2
+
+    # s1 first averages its two PMs -> +1;
+    # s2 -> -1; participant-level mean -> 0.
+    assert summary.iloc[0][
+        "delta_balanced_accuracy_mean"
+    ] == pytest.approx(0.0)

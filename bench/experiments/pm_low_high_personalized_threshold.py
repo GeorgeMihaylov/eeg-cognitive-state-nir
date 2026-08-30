@@ -587,6 +587,66 @@ def _timeline_extremes(context: ThresholdContext, subject_id: str, pm: str) -> t
     return timeline, subject.iloc[0]
 
 
+def _aggregate_applied_only(
+    results: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Aggregate adaptation-applied rows PM-within-participant first."""
+    applied = results.loc[results["adaptation_applied"]].copy()
+
+    participant_columns = [
+        "model", "budget_seconds", "budget_role",
+        "strategy", "strategy_role", "subject_id",
+    ]
+    summary_columns = [
+        "model", "budget_seconds", "budget_role",
+        "strategy", "strategy_role",
+    ]
+
+    participant_rows: list[dict[str, Any]] = []
+    for keys, group in applied.groupby(participant_columns, sort=True):
+        row = dict(zip(participant_columns, keys))
+        row["n_adapted_pm"] = int(group["pm"].nunique())
+        for metric in METRICS:
+            row[f"delta_{metric}"] = float(
+                group[f"delta_{metric}"].mean()
+            )
+        participant_rows.append(row)
+
+    participant = pd.DataFrame(participant_rows)
+
+    summary_rows: list[dict[str, Any]] = []
+    if not participant.empty:
+        for keys, group in participant.groupby(
+            summary_columns, sort=True
+        ):
+            row = dict(zip(summary_columns, keys))
+            raw_mask = (
+                applied["model"].eq(keys[0])
+                & applied["budget_seconds"].eq(keys[1])
+                & applied["strategy"].eq(keys[3])
+            )
+            row["participant_pm_rows"] = int(raw_mask.sum())
+            row["participants"] = int(
+                group["subject_id"].nunique()
+            )
+            row["adapted_pm_per_participant_mean"] = float(
+                group["n_adapted_pm"].mean()
+            )
+            row["adapted_pm_per_participant_min"] = int(
+                group["n_adapted_pm"].min()
+            )
+            row["adapted_pm_per_participant_max"] = int(
+                group["n_adapted_pm"].max()
+            )
+            for metric in METRICS:
+                values = group[f"delta_{metric}"]
+                row[f"delta_{metric}_mean"] = float(values.mean())
+                row[f"delta_{metric}_median"] = float(values.median())
+            summary_rows.append(row)
+
+    return participant, pd.DataFrame(summary_rows)
+
+
 def run_experiment(context: ThresholdContext) -> dict[str, Any]:
     predictions = _load_prediction_lookup(context)
     detail = context.feasibility_detail.copy()
@@ -780,23 +840,17 @@ def run_experiment(context: ThresholdContext) -> dict[str, Any]:
     summary = pd.DataFrame(summaries)
     _write_csv(context.output_dir / "summary_operational.csv", summary)
 
-    # Applied-only secondary estimand at participant-PM level.
-    applied = results.loc[results["adaptation_applied"]].copy()
-    applied_summary = []
-    for keys, group in applied.groupby(
-        ["model","budget_seconds","budget_role","strategy","strategy_role"], sort=True
-    ):
-        row = dict(zip(
-            ["model","budget_seconds","budget_role","strategy","strategy_role"], keys
-        ))
-        row["participant_pm_rows"] = int(len(group))
-        row["participants"] = int(group["subject_id"].nunique())
-        for metric in METRICS:
-            row[f"delta_{metric}_mean"] = float(group[f"delta_{metric}"].mean())
-            row[f"delta_{metric}_median"] = float(group[f"delta_{metric}"].median())
-        applied_summary.append(row)
-    applied_summary = pd.DataFrame(applied_summary)
-    _write_csv(context.output_dir / "summary_adaptation_applied_only.csv", applied_summary)
+    # Applied-only secondary estimand follows the same participant-first
+    # aggregation contract as the primary operational estimand.
+    applied_participant, applied_summary = _aggregate_applied_only(results)
+    _write_csv(
+        context.output_dir / "participant_aggregate_applied_only.csv",
+        applied_participant,
+    )
+    _write_csv(
+        context.output_dir / "summary_adaptation_applied_only.csv",
+        applied_summary,
+    )
 
     # PM-specific operational summary.
     pm_rows = []
