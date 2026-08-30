@@ -22,10 +22,12 @@
   "expected_fixed_evaluation_ready_participant_pm": 345,
   "expected_result_rows": 2070,
   "experiment_id": "pm_low_high_personalization_long_duration_response_v1",
+  "fixed_evaluation_ready_participant_pm": 345,
   "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
-  "git_commit": "85d2b4eb8927e1b7d4d2b573445332aa39a3a80a",
+  "git_commit": "722f2d0992b4c98259139d63edebcb8b1d26ac67",
   "long_feasibility_detail_hash": "5607b5683c9d422d04febbf901fe4cf50937d8da25d5442c020dfc030acee7e6",
-  "performance_evaluation_executed": false,
+  "participant_pm_result_rows": 2070,
+  "performance_evaluation_executed": true,
   "prediction_source_audit_mismatches": 0,
   "prediction_source_rows": 70,
   "protocol_hash": "7fdc10bccad792c1f2d113ee063469230f229bd3dabf0cf0cb21e4f9b88e5caf",
@@ -49,7 +51,8 @@
       "protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431"
     }
   },
-  "result_status": "preregistered_candidate",
+  "result_hash": "bd6a43a3220ef54ba3303f33c1f461d8eafdbb3717fdadf833f7da379bf7af6e",
+  "result_status": "confirmatory_complete",
   "schema_version": "pm-low-high-personalization-long-duration-response-v1",
   "scientific_contract": {
     "alignment": "EEG(t-10s) -> PM(t)",
@@ -95,7 +98,7 @@
     "no_budget_search_inside_experiment": true,
     "reason": "exploratory_posthoc_900s_minus_600s_positive_for_both_models_and_metrics"
   },
-  "threshold_calibration_executed": false,
+  "threshold_calibration_executed": true,
   "threshold_hashes": {
     "fold_01__attention": "40889ed77c7a49254028614aa69c424c2355cbd1baaed50dc47082b1864510f7",
     "fold_01__engagement": "7d374ea6928381e1ee56d96473fa6567757f8df43407f81bbd24c398d82e419e",

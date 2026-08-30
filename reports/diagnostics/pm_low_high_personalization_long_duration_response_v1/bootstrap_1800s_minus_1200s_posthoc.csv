@@ -1,0 +1,5 @@
+model,contrast,metric,observed_mean_delta,bootstrap_ci_low,bootstrap_ci_high,n_subjects,bootstrap_replicates,bootstrap_seed,resampling_unit,analysis_role
+lightgbm,1800s_minus_1200s_POSTHOC,balanced_accuracy,0.005958467083548849,0.0032287949673548513,0.00888325903676082,50,10000,42,subject_id,exploratory_posthoc
+lightgbm,1800s_minus_1200s_POSTHOC,macro_f1,0.00978208293830453,0.00496571979111105,0.015041346125612715,50,10000,1042,subject_id,exploratory_posthoc
+xgboost,1800s_minus_1200s_POSTHOC,balanced_accuracy,0.005781022866140846,0.0029439644028314213,0.008849188051896535,50,10000,10042,subject_id,exploratory_posthoc
+xgboost,1800s_minus_1200s_POSTHOC,macro_f1,0.008637321860609169,0.003782264377149099,0.014195649936790103,50,10000,11042,subject_id,exploratory_posthoc
