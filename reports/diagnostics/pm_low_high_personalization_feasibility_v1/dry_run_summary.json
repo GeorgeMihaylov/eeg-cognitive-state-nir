@@ -1,0 +1,25 @@
+{
+  "audit_executed": false,
+  "budgets_seconds": [
+    0,
+    30,
+    60,
+    120,
+    300
+  ],
+  "candidate_models": [
+    "xgboost",
+    "lightgbm"
+  ],
+  "chronology_overlap_subjects": 1,
+  "experiment_id": "pm_low_high_personalization_feasibility_v1",
+  "fixed_lag_seconds": -10,
+  "logical_records": 86,
+  "max_budget_seconds": 300,
+  "model_inference_executed": false,
+  "model_training_executed": false,
+  "paired_target_rows": 30806,
+  "protocol_hash": "f3961235894a7c3a931bac21b482641b1b8b753c7ef00f6d6d2184b4d304762b",
+  "subjects": 54,
+  "subjects_with_full_300s_calibration_record": 53
+}
