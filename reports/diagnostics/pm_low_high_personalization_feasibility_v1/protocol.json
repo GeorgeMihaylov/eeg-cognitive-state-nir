@@ -1,5 +1,5 @@
 {
-  "audit_executed": false,
+  "audit_executed": true,
   "budgets_seconds": [
     0,
     30,
@@ -8,6 +8,7 @@
     300
   ],
   "chronology_overlap_subjects": 1,
+  "detail_hash": "888e2cf07ce0dffca9f97ff00ff8875a7635f8541eb6f3793ef0f8e193a46518",
   "experiment_id": "pm_low_high_personalization_feasibility_v1",
   "feature_cache_identity": {
     "cache_identity_hash": "5062cac1e84a73c2e1c783f6b2c02f074e6177f2059515726e5b0433d166745f",
@@ -80,7 +81,7 @@
     "target_columns_present": false
   },
   "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
-  "git_commit": "e39afd5a9f7725b8b326a3e0175a1ea4ce99afb6",
+  "git_commit": "7e261fb5b6be42246a14e07c9cc7eb82f207f910",
   "low_high_reference_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
   "matched_model_selection_reference_protocol_hash": "e09f28dab2b37321dd665cc55653cfc08a5a29afc38927ee26bc2d2c6cc988e7",
   "max_budget_seconds": 300,
@@ -88,15 +89,18 @@
   "model_training_executed": false,
   "n_logical_records": 86,
   "n_subjects": 54,
+  "participant_pm_budget_rows": 1890,
   "personalization_candidate_models": [
     "xgboost",
     "lightgbm"
   ],
+  "pm_summary_rows": 35,
   "protocol_hash": "94c568d7e41344478c0550f573b0abf8893783831f6c7241b92c8e4fdd25c9cd",
   "record_chronology_hash": "7503fdfd84d9aecaa8d8cbfb9d22394fb47110d068290da9c90fc3f0b6d2a7a0",
-  "result_status": "preregistered_candidate",
+  "result_status": "feasibility_audit_complete",
   "schema_version": "pm-low-high-personalization-feasibility-v1",
   "subject_chronology_hash": "17db2f031b7fd27f1885b700ef62be134e4619752bc5135ba19aaea036e338b4",
+  "summary_rows": 5,
   "temporal_pairing_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
   "threshold_hashes": {
     "fold_01__attention": "40889ed77c7a49254028614aa69c424c2355cbd1baaed50dc47082b1864510f7",
