@@ -1,6 +1,8 @@
 {
   "common_history_endpoint_count": 29784,
   "common_history_endpoint_hash": "ef6a4eb1d2c54a9c0a64a3dde0932fe0bb1dc253d4bb536f46198da0bc84c118",
+  "completed_new_fits": 105,
+  "completed_reused_reference_fits": 35,
   "evaluation": {
     "paired_temporal_vs_tabular": [
       [
@@ -113,7 +115,7 @@
     "target_columns_present": false
   },
   "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
-  "git_commit": "85fcf81672c7d5fab55a4cbdcb790fb8d7db2a78",
+  "git_commit": "18a71fa87817442c5f007ee90351938e5e0f2c69",
   "low_high_reference_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
   "lstm_reuse_audit_rows": 35,
   "lstm_reuse_mismatches": 0,
@@ -134,6 +136,18 @@
       "lower_balanced_accuracy_std",
       "fixed_model_order"
     ]
+  },
+  "model_selection_for_personalization_result": {
+    "advanced_models": [
+      "xgboost",
+      "lightgbm"
+    ],
+    "best_balanced_accuracy": 0.7502241937255136,
+    "best_minus_second_balanced_accuracy": 0.00026914129288069244,
+    "best_model": "xgboost",
+    "practical_equivalence_margin": 0.01,
+    "second_balanced_accuracy": 0.7499550524326329,
+    "second_model": "lightgbm"
   },
   "models": {
     "lightgbm": {
@@ -225,7 +239,7 @@
   "planned_new_fits": 105,
   "planned_reused_reference_fits": 35,
   "protocol_hash": "e09f28dab2b37321dd665cc55653cfc08a5a29afc38927ee26bc2d2c6cc988e7",
-  "result_status": "preregistered_candidate",
+  "result_status": "confirmatory_complete",
   "schema_version": "pm-low-high-temporal-context-matched-v1",
   "temporal_pairing_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
   "threshold_hashes": {
@@ -265,7 +279,7 @@
     "fold_05__relaxation": "a638d2bb20962ed825b35f176b1a4005a8304bfc01370b1636d6ce403b817a6a",
     "fold_05__stress": "f830184ed4091f7c1893003e91eb518737ed15e8b5f007bf46bf30fa7cf23cdb"
   },
-  "training_executed": false,
+  "training_executed": true,
   "validation": {
     "group_column": "record_group_id",
     "random_state": 42,
