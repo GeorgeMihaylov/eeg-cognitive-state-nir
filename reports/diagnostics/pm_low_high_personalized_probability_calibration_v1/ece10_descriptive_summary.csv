@@ -1,0 +1,3 @@
+model,participants,zero_shot_ece10,personalized_ece10,ece10_improvement,analysis_role
+lightgbm,50,0.179700750947297,0.16341038267840863,0.016290368268888376,descriptive_only
+xgboost,50,0.19718030889665375,0.17015430532681258,0.027026003569841164,descriptive_only

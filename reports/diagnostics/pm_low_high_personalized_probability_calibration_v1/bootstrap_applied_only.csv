@@ -1,0 +1,9 @@
+model,metric,contrast,observed_mean_delta,bootstrap_ci_low,bootstrap_ci_high,bootstrap_replicates,bootstrap_seed,resampling_unit,n_subjects,estimand
+xgboost,brier_score,zero_shot_minus_logit_offset,0.02501438841644492,0.011322943308386844,0.039208623562366166,10000,42,subject_id,48,applied_only
+xgboost,log_loss,zero_shot_minus_logit_offset,0.14245025494861452,0.059145072332034844,0.23813871909490042,10000,1042,subject_id,48,applied_only
+xgboost,balanced_accuracy_vs_median,logit_offset_policy_minus_frozen_median_midpoint,-0.015059384212285086,-0.02342006008781042,-0.007017227375957707,10000,2042,subject_id,48,applied_only
+xgboost,macro_f1_vs_median,logit_offset_policy_minus_frozen_median_midpoint,-0.014646334061031307,-0.02526585196288763,-0.0044327115800269256,10000,3042,subject_id,48,applied_only
+lightgbm,brier_score,zero_shot_minus_logit_offset,0.01670666568255643,0.004159378565152828,0.02964878459502783,10000,10042,subject_id,48,applied_only
+lightgbm,log_loss,zero_shot_minus_logit_offset,0.05749818394095876,0.008923448432511324,0.11112460523009969,10000,11042,subject_id,48,applied_only
+lightgbm,balanced_accuracy_vs_median,logit_offset_policy_minus_frozen_median_midpoint,-0.028054999244628228,-0.03700511017224171,-0.01931913243770978,10000,12042,subject_id,48,applied_only
+lightgbm,macro_f1_vs_median,logit_offset_policy_minus_frozen_median_midpoint,-0.03414117304449541,-0.046168565319237,-0.02295783088290431,10000,13042,subject_id,48,applied_only

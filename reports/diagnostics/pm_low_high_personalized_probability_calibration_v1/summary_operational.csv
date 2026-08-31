@@ -1,0 +1,3 @@
+model,participants,participant_pm_rows,logit_eligible,logit_applied,mean_brier_improvement,mean_log_loss_improvement,mean_delta_balanced_accuracy_vs_median,mean_delta_macro_f1_vs_median,mean_delta_balanced_accuracy_vs_zero,mean_delta_macro_f1_vs_zero
+lightgbm,50,345,285,285,0.013906074823756547,0.0466687935660416,-0.02207640405562888,-0.026845997680093003,0.0008467983680066593,0.009930728610610638
+xgboost,50,345,285,285,0.02110864709010255,0.11486602951479774,-0.011274006421897652,-0.010816837945049586,0.00891345969634633,0.021307987820337382

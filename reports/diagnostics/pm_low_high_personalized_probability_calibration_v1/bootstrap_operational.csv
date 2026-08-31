@@ -1,0 +1,9 @@
+model,metric,contrast,observed_mean_delta,bootstrap_ci_low,bootstrap_ci_high,bootstrap_replicates,bootstrap_seed,resampling_unit,n_subjects
+xgboost,brier_score,zero_shot_minus_logit_offset,0.02110864709010255,0.01010435647124377,0.032660911110148426,10000,42,subject_id,50
+xgboost,log_loss,zero_shot_minus_logit_offset,0.11486602951479774,0.05009360289294055,0.1858013810209886,10000,1042,subject_id,50
+xgboost,balanced_accuracy_vs_median,logit_offset_policy_minus_frozen_median_midpoint,-0.011274006421897652,-0.017572534595457306,-0.0049506601823116995,10000,2042,subject_id,50
+xgboost,macro_f1_vs_median,logit_offset_policy_minus_frozen_median_midpoint,-0.010816837945049586,-0.01898246880773722,-0.0030355867787266863,10000,3042,subject_id,50
+lightgbm,brier_score,zero_shot_minus_logit_offset,0.013906074823756547,0.004341152393036429,0.0240411885445326,10000,10042,subject_id,50
+lightgbm,log_loss,zero_shot_minus_logit_offset,0.0466687935660416,0.010260778023696977,0.08685285321377494,10000,11042,subject_id,50
+lightgbm,balanced_accuracy_vs_median,logit_offset_policy_minus_frozen_median_midpoint,-0.02207640405562888,-0.028602682182432598,-0.015566856443137406,10000,12042,subject_id,50
+lightgbm,macro_f1_vs_median,logit_offset_policy_minus_frozen_median_midpoint,-0.026845997680093003,-0.035933240386237485,-0.01839737094645495,10000,13042,subject_id,50
