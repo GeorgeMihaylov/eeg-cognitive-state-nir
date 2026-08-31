@@ -1,0 +1,103 @@
+{
+  "schema_version": "pm-low-high-personalized-probability-calibration-v1",
+  "experiment_id": "pm_low_high_personalized_probability_calibration_v1",
+  "references": {
+    "long_duration_feasibility": {
+      "config": "experiments/pm_diagnostics/pm_low_high_personalization_long_duration_feasibility_v1.json",
+      "output_dir": "reports/diagnostics/pm_low_high_personalization_long_duration_feasibility_v1",
+      "protocol_hash": "34e0aa3350f84198383cd0e6a1d213711983132dcc30aa14fcc9edaafbc1095f"
+    },
+    "long_duration_response": {
+      "output_dir": "reports/diagnostics/pm_low_high_personalization_long_duration_response_v1",
+      "protocol_hash": "7fdc10bccad792c1f2d113ee063469230f229bd3dabf0cf0cb21e4f9b88e5caf"
+    },
+    "xgboost": {
+      "output_dir": "reports/diagnostics/pm_low_high_q3_extremes_confirmatory_v1",
+      "protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431"
+    },
+    "lightgbm": {
+      "output_dir": "reports/diagnostics/pm_low_high_model_robustness_v1",
+      "protocol_hash": "a2c51deb4d94e33d71863f1f1c7927470266b7352647664f3a411fb5db819b4e",
+      "model": "lightgbm"
+    }
+  },
+  "scientific_contract": {
+    "pm_names": [
+      "attention",
+      "engagement",
+      "excitement",
+      "stress",
+      "relaxation",
+      "interest",
+      "focus"
+    ],
+    "models": [
+      "xgboost",
+      "lightgbm"
+    ],
+    "alignment": "EEG(t-10s) -> PM(t)",
+    "lag_seconds": -10,
+    "target_transform": "outer_train_q33_q67_extremes",
+    "calibration_budget_seconds": 1800,
+    "common_evaluation_boundary_seconds": 1800,
+    "calibration_record_policy": "earliest_logical_record_by_selected_record_start_utc",
+    "calibration_cross_record_policy": "forbidden",
+    "budget_fully_available_rule": "source_duration_and_feature_grid_span_cover_budget",
+    "minimum_calibration_low": 10,
+    "minimum_calibration_high": 10,
+    "probability_calibrator": "logit_offset_intercept_only",
+    "logit_slope": 1.0,
+    "probability_clip_epsilon": 1e-06,
+    "offset_solver": "deterministic_bisection_score_root",
+    "offset_solver_bounds": [
+      -40.0,
+      40.0
+    ],
+    "offset_solver_iterations": 80,
+    "classification_threshold_after_calibration": 0.5,
+    "classification_reference_policy": "frozen_1800s_median_midpoint",
+    "classification_ineligible_fallback": "frozen_1800s_median_midpoint_policy",
+    "probability_ineligible_fallback": "zero_shot_probability",
+    "probability_source": "stored_predict_proba_high"
+  },
+  "evaluation": {
+    "primary_metric": "brier_score",
+    "primary_probability_contrast": "zero_shot_minus_personalized_logit_offset",
+    "secondary_probability_metric": "log_loss",
+    "secondary_probability_contrast": "zero_shot_minus_personalized_logit_offset",
+    "classification_metric": "balanced_accuracy",
+    "classification_secondary_metric": "macro_f1",
+    "classification_contrast": "logit_offset_policy_minus_frozen_median_midpoint_policy",
+    "aggregation": "mean_pm_within_participant_then_mean_participants",
+    "primary_estimand": "operational_all_post1800_eval_ready",
+    "secondary_estimand": "logit_calibration_applied_only_participant_first",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 42,
+    "bootstrap_unit": "subject_id",
+    "ece_role": "descriptive_only",
+    "ece_bins": 10
+  },
+  "feasibility_lock": {
+    "post1800_eval_ready_participant_pm": 345,
+    "full1800_and_min10_each_participant_pm": 285,
+    "full1800_and_min10_each_fraction": 0.8260869565217391,
+    "eligibility_selected_without_performance_evaluation": true
+  },
+  "forbidden": {
+    "base_model_training": true,
+    "base_model_inference": true,
+    "feature_refitting": true,
+    "lag_search": true,
+    "calibration_budget_search": true,
+    "minimum_support_search_after_performance": true,
+    "calibrator_family_search": true,
+    "logit_slope_fitting": true,
+    "regularization_search": true,
+    "threshold_search": true,
+    "use_evaluation_labels_for_calibration": true,
+    "cross_record_stitching": true,
+    "target_specific_logic": true,
+    "focus_specific_logic": true
+  },
+  "output_dir": "reports/diagnostics/pm_low_high_personalized_probability_calibration_v1"
+}
