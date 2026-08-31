@@ -1,0 +1,183 @@
+{
+  "schema_version": "pm-low-high-nested-automl-v1",
+  "experiment_id": "pm_low_high_nested_automl_v1",
+  "status": "preregistered_design",
+  "scientific_contract": {
+    "pm_names": [
+      "attention",
+      "engagement",
+      "excitement",
+      "stress",
+      "relaxation",
+      "interest",
+      "focus"
+    ],
+    "alignment": "EEG(t-10s) -> PM(t)",
+    "lag_seconds": -10,
+    "feature_count": 371,
+    "target_transform": "nested_train_q33_q67_extremes",
+    "middle_policy": "exclude",
+    "outer_group": "subject_id",
+    "outer_folds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "inner_group": "subject_id",
+    "inner_folds": 3
+  },
+  "nested_target_contract": {
+    "inner_threshold_source": "inner_train_only",
+    "inner_validation_threshold_reuse": "unchanged_inner_train_q33_q67",
+    "outer_threshold_source": "full_outer_train_only",
+    "outer_test_threshold_reuse": "unchanged_outer_train_q33_q67",
+    "threshold_selection_leakage_allowed": false
+  },
+  "candidate_generation": {
+    "strategy": "deterministic_cartesian_random_sample_without_replacement",
+    "sampler_seed": 42,
+    "same_candidate_portfolio_for_all_outer_folds": true,
+    "sampled_candidates_per_model": 12,
+    "frozen_anchor_candidates_per_model": 1,
+    "total_candidates_per_model": 13,
+    "total_candidates_per_outer_fold": 26,
+    "deduplicate_anchor_from_sampled_candidates": true
+  },
+  "models": {
+    "xgboost": {
+      "reference_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
+      "anchor": "exact_frozen_reference_hyperparameters",
+      "fixed_parameters": {
+        "n_jobs": 4,
+        "random_state": 42
+      },
+      "search_space": {
+        "n_estimators": [
+          100,
+          200,
+          400
+        ],
+        "learning_rate": [
+          0.03,
+          0.05,
+          0.1
+        ],
+        "max_depth": [
+          3,
+          5,
+          7
+        ],
+        "min_child_weight": [
+          1.0,
+          3.0,
+          6.0
+        ],
+        "subsample": [
+          0.7,
+          0.85,
+          1.0
+        ]
+      }
+    },
+    "lightgbm": {
+      "reference_protocol_hash": "a2c51deb4d94e33d71863f1f1c7927470266b7352647664f3a411fb5db819b4e",
+      "anchor": "exact_frozen_reference_hyperparameters",
+      "fixed_parameters": {
+        "n_jobs": 4,
+        "random_state": 42
+      },
+      "search_space": {
+        "n_estimators": [
+          100,
+          200,
+          400
+        ],
+        "learning_rate": [
+          0.03,
+          0.05,
+          0.1
+        ],
+        "max_depth": [
+          -1,
+          4,
+          6,
+          8
+        ],
+        "num_leaves": [
+          15,
+          31,
+          63
+        ],
+        "min_child_samples": [
+          10,
+          20,
+          40,
+          80
+        ]
+      }
+    }
+  },
+  "inner_selection": {
+    "expected_inner_fold_pm_cells": 105,
+    "expected_inner_fits": 2730,
+    "objective_metric": "participant_first_balanced_accuracy_all_7_pm",
+    "aggregation": [
+      "collect_out_of_fold_predictions_across_3_inner_folds",
+      "compute_metric_per_participant_pm",
+      "mean_pm_within_participant",
+      "mean_participants"
+    ],
+    "secondary_selection_metric": "participant_first_macro_f1_all_7_pm",
+    "tie_breaking": [
+      "higher_primary_balanced_accuracy",
+      "higher_secondary_macro_f1",
+      "lexicographically_lower_candidate_id"
+    ],
+    "model_family_selection": "best_candidate_across_xgboost_and_lightgbm",
+    "one_shared_candidate_for_all_pm_within_outer_fold": true
+  },
+  "final_outer_training": {
+    "selected_candidates": 5,
+    "fits_per_selected_candidate": 7,
+    "expected_final_outer_fits": 35,
+    "retrain_on_full_outer_train": true,
+    "outer_test_used_once_after_selection": true
+  },
+  "evaluation": {
+    "primary_metric": "participant_first_balanced_accuracy",
+    "primary_reference": "frozen_lightgbm",
+    "primary_contrast": "automl_minus_frozen_lightgbm",
+    "secondary_reference": "frozen_xgboost",
+    "secondary_metrics": [
+      "macro_f1",
+      "roc_auc",
+      "pr_auc"
+    ],
+    "aggregation": "mean_pm_within_participant_then_mean_participants",
+    "bootstrap_unit": "subject_id",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 42,
+    "pm_specific_results": "posthoc_heterogeneity_only"
+  },
+  "identities": {
+    "feature_hash": "454ea5db886fce8c981dc28f8910ca07355956033b001550020a04fd4605832e",
+    "cache_identity_hash": "5062cac1e84a73c2e1c783f6b2c02f074e6177f2059515726e5b0433d166745f",
+    "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd"
+  },
+  "forbidden": {
+    "outer_test_use_during_candidate_generation": true,
+    "outer_test_use_during_inner_selection": true,
+    "outer_test_threshold_use_inside_inner_cv": true,
+    "outer_train_threshold_reuse_inside_inner_cv": true,
+    "target_specific_hyperparameters": true,
+    "target_specific_model_family": true,
+    "focus_specific_logic": true,
+    "posthoc_candidate_addition": true,
+    "search_space_expansion_after_results": true,
+    "threshold_optimization": true,
+    "personalization": true,
+    "calibration": true
+  }
+}
