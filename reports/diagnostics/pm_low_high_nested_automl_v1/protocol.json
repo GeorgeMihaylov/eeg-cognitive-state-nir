@@ -1,0 +1,192 @@
+{
+  "candidate_generation": {
+    "deduplicate_anchor_from_sampled_candidates": true,
+    "frozen_anchor_candidates_per_model": 1,
+    "same_candidate_portfolio_for_all_outer_folds": true,
+    "sampled_candidates_per_model": 12,
+    "sampler_seed": 42,
+    "strategy": "deterministic_cartesian_random_sample_without_replacement",
+    "total_candidates_per_model": 13,
+    "total_candidates_per_outer_fold": 26
+  },
+  "candidate_matrix_hash": "4a0b9d390670c6121775c578a96171bea46329df070ae1fd33a455e6bf688e3b",
+  "candidate_model_inference_executed": false,
+  "candidate_model_training_executed": false,
+  "evaluation": {
+    "aggregation": "mean_pm_within_participant_then_mean_participants",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 42,
+    "bootstrap_unit": "subject_id",
+    "pm_specific_results": "posthoc_heterogeneity_only",
+    "primary_contrast": "automl_minus_frozen_lightgbm",
+    "primary_metric": "participant_first_balanced_accuracy",
+    "primary_reference": "frozen_lightgbm",
+    "secondary_metrics": [
+      "macro_f1",
+      "roc_auc",
+      "pr_auc"
+    ],
+    "secondary_reference": "frozen_xgboost"
+  },
+  "experiment_id": "pm_low_high_nested_automl_v1",
+  "feature_cache_identity": {
+    "cache_identity_hash": "5062cac1e84a73c2e1c783f6b2c02f074e6177f2059515726e5b0433d166745f",
+    "cache_schema_version": "cogstate-feature-cache-v1",
+    "channel_order": [
+      "AF3",
+      "F7",
+      "F3",
+      "FC5",
+      "T7",
+      "P7",
+      "O1",
+      "O2",
+      "P8",
+      "T8",
+      "FC6",
+      "F4",
+      "F8",
+      "AF4"
+    ],
+    "dtype": "float32",
+    "feature_hash": "454ea5db886fce8c981dc28f8910ca07355956033b001550020a04fd4605832e",
+    "feature_index_columns": [
+      "sample_id",
+      "source",
+      "subject_id",
+      "record_id",
+      "record_group_id",
+      "raw_file_path",
+      "t_start",
+      "t_end",
+      "absolute_t_start",
+      "absolute_t_end",
+      "sfreq_original",
+      "sfreq_target",
+      "n_channels",
+      "n_samples_expected",
+      "raw_n_rows",
+      "raw_file_size_bytes",
+      "raw_timestamp_min",
+      "raw_timestamp_max",
+      "raw_duration_seconds",
+      "raw_gap_count",
+      "outer_fold",
+      "status",
+      "rejection_reason",
+      "main_path",
+      "main_rel_path",
+      "header_row",
+      "separator",
+      "time_columns",
+      "eeg_columns",
+      "cache_file",
+      "cache_offset",
+      "missing_fraction",
+      "max_abs_amplitude",
+      "max_flat_fraction",
+      "preprocessing_hash",
+      "preprocessing_variant"
+    ],
+    "feature_schema": "cogstate-features-v1",
+    "n_features": 371,
+    "raw_preprocessing_hash": "2251ca950a467267dcccc1c5b83157f26e02768f46c6073d33f5dc16225bda84",
+    "raw_window_shape": [
+      2560,
+      14
+    ],
+    "rows": 30958,
+    "sample_id_universe_hash": "6b3b59e953e9d34116009d7cbb4924f1ab6e23f49db7cbf84fd5fbd83fa19d24",
+    "target_columns_present": false
+  },
+  "final_outer_training": {
+    "expected_final_outer_fits": 35,
+    "fits_per_selected_candidate": 7,
+    "outer_test_used_once_after_selection": true,
+    "retrain_on_full_outer_train": true,
+    "selected_candidates": 5
+  },
+  "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
+  "forbidden": {
+    "calibration": true,
+    "focus_specific_logic": true,
+    "outer_test_threshold_use_inside_inner_cv": true,
+    "outer_test_use_during_candidate_generation": true,
+    "outer_test_use_during_inner_selection": true,
+    "outer_train_threshold_reuse_inside_inner_cv": true,
+    "personalization": true,
+    "posthoc_candidate_addition": true,
+    "search_space_expansion_after_results": true,
+    "target_specific_hyperparameters": true,
+    "target_specific_model_family": true,
+    "threshold_optimization": true
+  },
+  "frozen_config_hash": "b038ada95e7d65235891f05440687f2ed9f5fa035c1485e2960912aa01fe02ad",
+  "git_commit": "171544c59d631b3f5d1139b3d2de2ebdfbc2a6ed",
+  "inner_run_matrix_hash": "2b0ec253fc1b19e516338673608a3182f9622d48cc92a83c2b1ece60ce921b13",
+  "inner_selection": {
+    "aggregation": [
+      "collect_out_of_fold_predictions_across_3_inner_folds",
+      "compute_metric_per_participant_pm",
+      "mean_pm_within_participant",
+      "mean_participants"
+    ],
+    "expected_inner_fits": 2730,
+    "expected_inner_fold_pm_cells": 105,
+    "model_family_selection": "best_candidate_across_xgboost_and_lightgbm",
+    "objective_metric": "participant_first_balanced_accuracy_all_7_pm",
+    "one_shared_candidate_for_all_pm_within_outer_fold": true,
+    "secondary_selection_metric": "participant_first_macro_f1_all_7_pm",
+    "tie_breaking": [
+      "higher_primary_balanced_accuracy",
+      "higher_secondary_macro_f1",
+      "lexicographically_lower_candidate_id"
+    ]
+  },
+  "inner_split_hash": "c05b6636cd47a1e17d56533846eabc05cc98948f4ace7c2373874c046f6a7d2b",
+  "nested_target_contract": {
+    "inner_threshold_source": "inner_train_only",
+    "inner_validation_threshold_reuse": "unchanged_inner_train_q33_q67",
+    "outer_test_threshold_reuse": "unchanged_outer_train_q33_q67",
+    "outer_threshold_source": "full_outer_train_only",
+    "threshold_selection_leakage_allowed": false
+  },
+  "outer_model_inference_executed": false,
+  "outer_model_training_executed": false,
+  "performance_evaluation_executed": false,
+  "protocol_hash": "0fc645050599906196d0dd31f8b44947444ac95291e361352b18f207c83acab0",
+  "reference_protocol_hashes": {
+    "lightgbm": "a2c51deb4d94e33d71863f1f1c7927470266b7352647664f3a411fb5db819b4e",
+    "xgboost": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431"
+  },
+  "result_status": "preregistered_dry_run",
+  "schema_version": "pm-low-high-nested-automl-v1",
+  "scientific_contract": {
+    "alignment": "EEG(t-10s) -> PM(t)",
+    "feature_count": 371,
+    "inner_folds": 3,
+    "inner_group": "subject_id",
+    "lag_seconds": -10,
+    "middle_policy": "exclude",
+    "outer_folds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "outer_group": "subject_id",
+    "pm_names": [
+      "attention",
+      "engagement",
+      "excitement",
+      "stress",
+      "relaxation",
+      "interest",
+      "focus"
+    ],
+    "target_transform": "nested_train_q33_q67_extremes"
+  },
+  "temporal_pairing_hash": "cd195d73f65e7c3cb3ffac99c4e572a8f0fc8420d39963be5a42e9f99b2bb3ba",
+  "threshold_provenance_hash": "92b2a69187b1148e4ad42a77542e859364fe310c8dda995dde1eed74f323c8cb"
+}
