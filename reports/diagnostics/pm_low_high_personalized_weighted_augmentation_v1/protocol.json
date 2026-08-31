@@ -30,6 +30,7 @@
     "minimum_low": 10,
     "record_stitching": false
   },
+  "completed_personalized_fits": 570,
   "eligibility_audit_hash": "185141c59c037888cab9d18447f4379532d9643bcd3f67c2434ad7f45309d03b",
   "eligible_participant_pm": 285,
   "eligible_participants": 48,
@@ -140,7 +141,7 @@
     "weight_multiplier_search": true
   },
   "frozen_median_midpoint_lock_hash": "4f80fb65c2c65ee262e6469023f2cb1eacb2ed9694916ac72d4bb4aaba7062de",
-  "git_commit": "15b4e93c458d9edabb10fc7629a2eb63db34e76b",
+  "git_commit": "b48c15386af314d1bbf6d6a4ff348932b173c879",
   "model_contracts": {
     "lightgbm": {
       "estimator": "LGBMClassifier",
@@ -163,9 +164,10 @@
       "task_type": "classification"
     }
   },
-  "performance_evaluation_executed": false,
-  "personalized_inference_executed": false,
-  "personalized_training_executed": false,
+  "operational_participant_pm_model_rows": 690,
+  "performance_evaluation_executed": true,
+  "personalized_inference_executed": true,
+  "personalized_training_executed": true,
   "planned_personalized_fits": 570,
   "prediction_policy": {
     "eligible_classification_threshold": 0.5,
@@ -181,7 +183,8 @@
     "probability_calibration": "d0a2e21e333a1ec70c9d1f5ca28604961d184ac8254f7f5fc93a8af62c70ba58",
     "xgboost": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431"
   },
-  "result_status": "preregistered_candidate",
+  "result_hash": "bb0469d6ecd59cabe7d2fe1d4e248e8d79bca142dffcd87fea64d1760f5adf94",
+  "result_status": "confirmatory_complete",
   "schema_version": "pm-low-high-personalized-weighted-augmentation-v1",
   "scientific_contract": {
     "alignment": "EEG(t-10s) -> PM(t)",

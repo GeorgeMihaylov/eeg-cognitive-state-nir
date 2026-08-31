@@ -1,0 +1,15 @@
+{
+  "base_model_inference_executed": false,
+  "base_model_training_executed": false,
+  "completed_personalized_fits": 570,
+  "eligible_participant_pm": 285,
+  "eligible_participants": 48,
+  "eval_ready_participant_pm": 345,
+  "experiment_id": "pm_low_high_personalized_weighted_augmentation_v1",
+  "operational_participant_pm_model_rows": 690,
+  "performance_evaluation_executed": true,
+  "personalized_inference_executed": true,
+  "personalized_training_executed": true,
+  "protocol_hash": "26a4d73a9c40aabffff8b1424e130331757add53bbf2c91513beb80f99dc6e69",
+  "result_status": "confirmatory_complete"
+}
