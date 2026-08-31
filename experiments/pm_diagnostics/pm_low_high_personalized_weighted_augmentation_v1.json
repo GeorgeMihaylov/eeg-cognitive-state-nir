@@ -1,0 +1,111 @@
+﻿{
+  "schema_version": "pm-low-high-personalized-weighted-augmentation-v1",
+  "experiment_id": "pm_low_high_personalized_weighted_augmentation_v1",
+  "status": "preregistered_design",
+
+  "scientific_contract": {
+    "pm_names": [
+      "attention",
+      "engagement",
+      "excitement",
+      "stress",
+      "relaxation",
+      "interest",
+      "focus"
+    ],
+    "alignment": "EEG(t-10s) -> PM(t)",
+    "lag_seconds": -10,
+    "feature_count": 371,
+    "target_transform": "outer_train_q33_q67_extremes",
+    "middle_policy": "exclude",
+    "outer_group": "subject_id",
+    "folds": [1, 2, 3, 4, 5]
+  },
+
+  "models": {
+    "xgboost": {
+      "reference_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
+      "reuse_exact_frozen_hyperparameters": true
+    },
+    "lightgbm": {
+      "reference_protocol_hash": "a2c51deb4d94e33d71863f1f1c7927470266b7352647664f3a411fb5db819b4e",
+      "reuse_exact_frozen_hyperparameters": true
+    }
+  },
+
+  "calibration": {
+    "budget_seconds": 1800,
+    "minimum_low": 10,
+    "minimum_high": 10,
+    "budget_extension": false,
+    "record_stitching": false,
+    "middle_consumes_time": true,
+    "middle_used_for_training": false,
+    "eligibility_source": "feasibility_only",
+    "expected_post1800_eval_ready_participant_pm": 345,
+    "expected_eligible_participant_pm": 285,
+    "expected_eligible_participants": 48
+  },
+
+  "adaptation": {
+    "method": "subject_equivalent_class_balanced_weighted_augmentation",
+    "training_mode": "fresh_fit_from_frozen_base_hyperparameters",
+    "base_outer_train_sample_weight": 1.0,
+    "personal_total_mass_formula": "n_outer_train / n_outer_train_subjects",
+    "personal_low_mass_fraction": 0.5,
+    "personal_high_mass_fraction": 0.5,
+    "personal_low_sample_weight_formula": "personal_total_mass / (2 * n_calibration_low)",
+    "personal_high_sample_weight_formula": "personal_total_mass / (2 * n_calibration_high)",
+    "weight_cap": null,
+    "weight_multiplier": null,
+    "hyperparameter_search": false,
+    "expected_new_fits": 570
+  },
+
+  "prediction_policy": {
+    "eligible_probability_source": "personalized_model_predict_proba_high",
+    "eligible_classification_threshold": 0.5,
+    "ineligible_probability_fallback": "frozen_zero_shot_probability",
+    "ineligible_classification_fallback": "frozen_1800s_median_midpoint_policy"
+  },
+
+  "evaluation": {
+    "primary_metric": "participant_first_roc_auc",
+    "primary_contrast": "personalized_minus_zero_shot",
+    "secondary_metrics": [
+      "pr_auc",
+      "brier_score",
+      "log_loss",
+      "balanced_accuracy",
+      "macro_f1"
+    ],
+    "classification_reference": "frozen_1800s_median_midpoint",
+    "probability_reference": "frozen_zero_shot",
+    "ranking_reference": "frozen_zero_shot",
+    "aggregation": "mean_pm_within_participant_then_mean_participants",
+    "bootstrap_unit": "subject_id",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 42,
+    "operational_estimand": "all_post1800_eval_ready_with_fallback",
+    "applied_only_secondary": true
+  },
+
+  "references": {
+    "long_duration_feasibility_protocol_hash": "34e0aa3350f84198383cd0e6a1d213711983132dcc30aa14fcc9edaafbc1095f",
+    "long_duration_response_protocol_hash": "7fdc10bccad792c1f2d113ee063469230f229bd3dabf0cf0cb21e4f9b88e5caf",
+    "probability_calibration_protocol_hash": "d0a2e21e333a1ec70c9d1f5ca28604961d184ac8254f7f5fc93a8af62c70ba58"
+  },
+
+  "forbidden": {
+    "evaluation_label_use_during_training": true,
+    "evaluation_probability_use_for_selection": true,
+    "target_specific_hyperparameters": true,
+    "focus_specific_logic": true,
+    "weight_multiplier_search": true,
+    "weight_cap_search": true,
+    "model_hyperparameter_search": true,
+    "post_adaptation_threshold_search": true,
+    "additional_probability_calibration": true,
+    "calibration_budget_search": true
+  }
+}
