@@ -1,0 +1,20 @@
+{
+  "base_model_inference_executed": false,
+  "base_model_training_executed": false,
+  "calibration_budget_seconds": 1800,
+  "classification_reference": "frozen_1800s_median_midpoint",
+  "eligible_participant_pm_per_model": 285,
+  "eval_ready_participant_pm": 345,
+  "experiment_id": "pm_low_high_personalized_probability_calibration_v1",
+  "minimum_calibration_each_class": 10,
+  "models": [
+    "xgboost",
+    "lightgbm"
+  ],
+  "participant_pm_result_rows": 690,
+  "performance_evaluation_executed": true,
+  "primary_metric": "brier_score",
+  "probability_calibration_executed": true,
+  "protocol_hash": "d0a2e21e333a1ec70c9d1f5ca28604961d184ac8254f7f5fc93a8af62c70ba58",
+  "result_status": "confirmatory_complete"
+}
