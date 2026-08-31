@@ -1,0 +1,76 @@
+{
+  "adaptation_matrix_hash": "dbd76ecc3ea2fc99b0f24c8d1b8088853618d4d973069c04cac9a4cf0cfbb05e",
+  "base_model_inference_executed": false,
+  "base_model_training_executed": false,
+  "base_reconstruction_exact_fits": 70,
+  "calibration_budget_seconds": 1800,
+  "calibration_evaluation_overlap_count": 0,
+  "counts_by_pm": {
+    "attention": {
+      "eligible_participant_pm": 42,
+      "eval_ready_participant_pm": 50,
+      "planned_personalized_fits": 84
+    },
+    "engagement": {
+      "eligible_participant_pm": 41,
+      "eval_ready_participant_pm": 50,
+      "planned_personalized_fits": 82
+    },
+    "excitement": {
+      "eligible_participant_pm": 44,
+      "eval_ready_participant_pm": 50,
+      "planned_personalized_fits": 88
+    },
+    "focus": {
+      "eligible_participant_pm": 35,
+      "eval_ready_participant_pm": 50,
+      "planned_personalized_fits": 70
+    },
+    "interest": {
+      "eligible_participant_pm": 41,
+      "eval_ready_participant_pm": 49,
+      "planned_personalized_fits": 82
+    },
+    "relaxation": {
+      "eligible_participant_pm": 42,
+      "eval_ready_participant_pm": 50,
+      "planned_personalized_fits": 84
+    },
+    "stress": {
+      "eligible_participant_pm": 40,
+      "eval_ready_participant_pm": 46,
+      "planned_personalized_fits": 80
+    }
+  },
+  "eligible_participant_pm": 285,
+  "eligible_participants": 48,
+  "eval_ready_participant_pm": 345,
+  "experiment_id": "pm_low_high_personalized_weighted_augmentation_v1",
+  "feature_count": 371,
+  "fixed_evaluation_cohort_hash": "783a963ae9611be6031a1e932e855ac91b0326dafaec5f3ad7f8636895a6f3a5",
+  "fixed_lag_seconds": -10,
+  "minimum_calibration_high": 10,
+  "minimum_calibration_low": 10,
+  "models": [
+    "xgboost",
+    "lightgbm"
+  ],
+  "performance_evaluation_executed": false,
+  "personal_low_high_mass_balanced": true,
+  "personalized_inference_executed": false,
+  "personalized_training_executed": false,
+  "planned_personalized_fits": 570,
+  "pm_names": [
+    "attention",
+    "engagement",
+    "excitement",
+    "stress",
+    "relaxation",
+    "interest",
+    "focus"
+  ],
+  "protocol_hash": "26a4d73a9c40aabffff8b1424e130331757add53bbf2c91513beb80f99dc6e69",
+  "record_stitching_count": 0,
+  "reference_hashes_valid": true,
+  "weight_formula_valid": true
+}
