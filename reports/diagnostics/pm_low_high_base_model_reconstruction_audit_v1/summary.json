@@ -1,0 +1,42 @@
+{
+  "all_exact": true,
+  "all_sample_ids_exact": true,
+  "all_y_true_exact": true,
+  "audit_id": "pm_low_high_base_model_reconstruction_audit_v1",
+  "audit_seconds": 273.4372000999865,
+  "base_models_saved_as_checkpoints": false,
+  "close_1e8_fits": 0,
+  "completed_fits": 70,
+  "exact_fits": 70,
+  "expected_fits": 70,
+  "folds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "maximum_probability_difference": 0.0,
+  "mismatch_fits": 0,
+  "model_robustness_protocol_hash": "a2c51deb4d94e33d71863f1f1c7927470266b7352647664f3a411fb5db819b4e",
+  "models": [
+    "xgboost",
+    "lightgbm"
+  ],
+  "numeric_equivalent_1e12_fits": 0,
+  "pm_names": [
+    "attention",
+    "engagement",
+    "excitement",
+    "stress",
+    "relaxation",
+    "interest",
+    "focus"
+  ],
+  "purpose": "Verify deterministic reconstruction before model-level personalization",
+  "status_counts": {
+    "EXACT": 70
+  },
+  "total_prediction_mismatches": 0,
+  "xgboost_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431"
+}
