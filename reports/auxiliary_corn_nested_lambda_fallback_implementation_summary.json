@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "task": "7G-3",
+  "status": "implemented",
+  "experiment_type": "auxiliary_corn_nested_lambda_finalize",
+  "source_selection_units": 30,
+  "expected_joint_units": 25,
+  "expected_categorical_fallback_units": 5,
+  "candidate_fold_fits_audited": 90,
+  "model_training_performed": false,
+  "outer_test_used_for_selection": false,
+  "source_incomplete_report_preserved": true,
+  "outputs": [
+    "reports/auxiliary_corn_nested_lambda_finalized_results.md",
+    "reports/auxiliary_corn_nested_lambda_finalized_results.json",
+    "benchmark_results/auxiliary_corn_nested_lambda_finalized/selection_policy.csv",
+    "benchmark_results/auxiliary_corn_nested_lambda_finalized/subject_level_analysis_input.parquet"
+  ],
+  "tests": {
+    "targeted": "53 passed, 1 warning",
+    "expanded": "156 passed, 3 skipped; 4 expected environment failures caused by absent canonical parquet and published benchmark_results in the isolated archive"
+  },
+  "outer_identity_audit": {
+    "mode": "semantic_columnwise",
+    "canonical_hash": true,
+    "target_sample_id_dtype_normalization": true,
+    "target_time_tolerance": {
+      "rtol": 1e-09,
+      "atol": 1e-08
+    },
+    "failure_diagnostics": "benchmark_results/auxiliary_corn_nested_lambda_finalized/cross_policy_outer_alignment_failure.json"
+  }
+}

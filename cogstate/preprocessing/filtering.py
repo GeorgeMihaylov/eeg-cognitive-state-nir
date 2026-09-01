@@ -1,0 +1,174 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+from scipy.signal import butter, filtfilt, iirnotch, lfilter, lfilter_zi
+
+
+@dataclass
+class FilterConfig:
+    sample_rate: float
+    bandpass_enabled: bool = True
+    bandpass_low_hz: float = 1.0
+    bandpass_high_hz: float = 45.0
+    bandpass_order: int = 4
+    notch_freq_hz: float = 50.0
+    notch_quality_factor: float = 30.0
+    notch_enabled: bool = True
+
+
+    def __post_init__(self) -> None:
+        values = [
+            self.sample_rate,
+            self.bandpass_low_hz,
+            self.bandpass_high_hz,
+            self.notch_freq_hz,
+            self.notch_quality_factor,
+        ]
+        if not all(np.isfinite(value) for value in values):
+            raise ValueError("FilterConfig values must be finite")
+        if self.sample_rate <= 0:
+            raise ValueError("sample_rate must be positive")
+
+        nyquist = self.sample_rate / 2.0
+        if not (0 < self.bandpass_low_hz < self.bandpass_high_hz < nyquist):
+            raise ValueError(
+                "band-pass frequencies must satisfy "
+                "0 < low < high < Nyquist"
+            )
+        if int(self.bandpass_order) != self.bandpass_order or self.bandpass_order <= 0:
+            raise ValueError("bandpass_order must be a positive integer")
+        if not (0 < self.notch_freq_hz < nyquist):
+            raise ValueError("notch_freq_hz must satisfy 0 < notch < Nyquist")
+        if self.notch_quality_factor <= 0:
+            raise ValueError("notch_quality_factor must be positive")
+
+
+def design_bandpass(config: FilterConfig):
+    nyquist = config.sample_rate / 2.0
+    low = config.bandpass_low_hz / nyquist
+    high = config.bandpass_high_hz / nyquist
+    b, a = butter(config.bandpass_order, [low, high], btype="band")
+    return b, a
+
+
+def design_notch(config: FilterConfig):
+    b, a = iirnotch(config.notch_freq_hz, config.notch_quality_factor, config.sample_rate)
+    return b, a
+
+
+def apply_offline(signal: np.ndarray, config: FilterConfig) -> np.ndarray:
+    filtered = np.asarray(signal, dtype=float)
+    if filtered.ndim != 2:
+        raise ValueError("apply_offline expects [n_samples, n_channels]")
+    if filtered.shape[0] == 0 or filtered.shape[1] == 0:
+        raise ValueError("apply_offline received an empty dimension")
+    if not np.isfinite(filtered).all():
+        raise ValueError("apply_offline input contains NaN or Inf")
+    filtered = filtered.copy()
+    if config.bandpass_enabled:
+        b_band, a_band = design_bandpass(config)
+        filtered = filtfilt(b_band, a_band, filtered, axis=0)
+    if config.notch_enabled:
+        b_notch, a_notch = design_notch(config)
+        filtered = filtfilt(b_notch, a_notch, filtered, axis=0)
+    return filtered
+
+
+def apply_causal(signal: np.ndarray, config: FilterConfig) -> np.ndarray:
+    """Filter one complete record with the causal streaming semantics.
+
+    This convenience function deliberately delegates to ``StreamingFilter`` so
+    that whole-record offline diagnostics and chunked production processing use
+    identical state initialization and filter ordering.
+    """
+    values = np.asarray(signal, dtype=float)
+    if values.ndim != 2:
+        raise ValueError("apply_causal expects [n_samples, n_channels]")
+    if values.shape[0] == 0 or values.shape[1] == 0:
+        raise ValueError("apply_causal received an empty dimension")
+    if not np.isfinite(values).all():
+        raise ValueError("apply_causal input contains NaN or Inf")
+    return StreamingFilter(config, n_channels=values.shape[1]).process(values)
+
+
+class StreamingFilter:
+
+    def __init__(self, config: FilterConfig, n_channels: int):
+        if int(n_channels) != n_channels or n_channels <= 0:
+            raise ValueError("n_channels must be a positive integer")
+
+        self.config = config
+        self._n_channels = int(n_channels)
+        self._b_band, self._a_band = (
+            design_bandpass(config) if config.bandpass_enabled else (None, None)
+        )
+        self._b_notch, self._a_notch = (
+            design_notch(config) if config.notch_enabled else (None, None)
+        )
+
+        self._zi_band_template = (
+            lfilter_zi(self._b_band, self._a_band)
+            if self._b_band is not None else None
+        )
+        self._zi_notch_template = (
+            lfilter_zi(self._b_notch, self._a_notch)
+            if self._b_notch is not None else None
+        )
+
+        self._zi_band = None
+        self._zi_notch = None
+
+    def process(self, chunk: np.ndarray) -> np.ndarray:
+        chunk = np.asarray(chunk, dtype=float)
+        if chunk.ndim != 2:
+            raise ValueError(
+                "StreamingFilter.process expects [n_samples, n_channels]"
+            )
+        if chunk.shape[0] == 0:
+            raise ValueError("StreamingFilter.process received zero samples")
+        if chunk.shape[1] != self._n_channels:
+            raise ValueError(
+                f"StreamingFilter was configured for {self._n_channels} channels, "
+                f"got {chunk.shape[1]}"
+            )
+        if not np.isfinite(chunk).all():
+            raise ValueError("StreamingFilter input contains NaN or Inf")
+
+        if self._b_band is not None and self._zi_band is None:
+            self._zi_band = (
+                self._zi_band_template[:, None]
+                * chunk[0][None, :]
+            )
+
+        filtered = chunk
+        if self._b_band is not None:
+            filtered, self._zi_band = lfilter(
+                self._b_band,
+                self._a_band,
+                filtered,
+                axis=0,
+                zi=self._zi_band,
+            )
+
+        if self._b_notch is not None and self._zi_notch is None:
+            self._zi_notch = (
+                self._zi_notch_template[:, None]
+                * filtered[0][None, :]
+            )
+
+        if self._b_notch is not None:
+            filtered, self._zi_notch = lfilter(
+                self._b_notch,
+                self._a_notch,
+                filtered,
+                axis=0,
+                zi=self._zi_notch,
+            )
+
+        return filtered
+
+    def reset(self) -> None:
+        self._zi_band = None
+        self._zi_notch = None

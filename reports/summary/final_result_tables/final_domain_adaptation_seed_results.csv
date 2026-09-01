@@ -1,0 +1,4 @@
+﻿seed,participants,mean_delta_macro_f1,median_delta_macro_f1,mean_delta_balanced_accuracy,mean_delta_ordinal_mae,wins,losses,ties,analysis_group,included_in_primary_decision,diagnostic_fold_1_reused
+123,42,0.0098947308736209,0.0089287839749758,0.0097665391206596,-0.0323545348610657,25,16,1,primary_confirmatory,True,False
+2026,42,0.0062021074292362,0.0026817654489359,0.006897212029938,-0.0356623818903469,22,20,0,primary_confirmatory,True,False
+42,42,0.0143158780756368,0.009187592405148,0.0210810561862027,-0.0520351001266501,27,15,0,sensitivity,False,True

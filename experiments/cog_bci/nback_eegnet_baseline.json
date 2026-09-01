@@ -1,0 +1,59 @@
+{
+  "dataset": "cog_bci_nback_raw",
+  "window_cache": "benchmark_results/cog_bci_windows/emotiv_common_full",
+  "task_protocol": "benchmark_results/cog_bci_protocols/nback_3class",
+  "model": {
+    "type": "torch_eegnet",
+    "params": {
+      "temporal_kernel_seconds": 0.5,
+      "separable_kernel_seconds": 0.125,
+      "f1": 8,
+      "depth_multiplier": 2,
+      "f2": 16,
+      "pool1": 4,
+      "pool2": 8,
+      "dropout": 0.5
+    }
+  },
+  "seed": 42,
+  "device": "auto",
+  "epochs": 30,
+  "batch_size": 128,
+  "num_workers": 0,
+  "optimizer": {
+    "type": "adamw",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001
+  },
+  "early_stopping": {
+    "monitor": "validation_record_macro_f1",
+    "mode": "max",
+    "patience": 8
+  },
+  "input_scale": {
+    "input_unit_before": "volt_after_mne_reader",
+    "source_physical_unit_status": "not_exposed_by_reader",
+    "scale_factor": 1.0,
+    "normalization": "inner_train_channel_standardization",
+    "input_unit_after": "standardized_dimensionless"
+  },
+  "metrics": {
+    "levels": ["window", "record", "subject_record_summary"],
+    "primary": [
+      "record_balanced_accuracy",
+      "record_macro_f1",
+      "record_ordinal_mae"
+    ]
+  },
+  "smoke": {
+    "max_train_batches_per_epoch": 4
+  },
+  "hashes": {
+    "window_cache_config_hash": "4f60a6c7cd9d0dd6613a9338834691d9ee289a749a08551045502aef4da80d72",
+    "task_protocol_hash": "5f7e01bc2dc2967737c6704819d7ef13ac2ba2919b1d4d9a46b36560cea63598",
+    "outer_split_hash": "5874a0a93bff6f8a504cbc75e15c48588bf12cd51f460eb0f9d16ff94809ac01",
+    "inner_split_hash": "d84f3853e244f2be47f6ad4431b533a1ec8d6e0b8d41687991d6b2fc32922ef9",
+    "channel_mapping_hash": "5735b5e22f3344b12bf0058b83da83bd00231905274a88ce1d221eeb09774a4d"
+  },
+  "output_dir": "benchmark_results/cog_bci_baselines/nback_3class/eegnet_seed42"
+}

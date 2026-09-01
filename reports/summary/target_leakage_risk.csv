@@ -1,0 +1,8 @@
+risk_id,target_ids,severity,finding,required_control
+global_label_q5_quantiles,label_q5,methodological_sensitivity,class boundaries were computed on all subjects before outer split,retain as legacy benchmark and report cross-fitted sensitivity
+implicit_target_main_fallback,target_main,high,EmotivDataset defaults to target_main and can search fallback targets when target_col is omitted,all canonical configs must set target_col or target_cols explicitly
+target_feature_contamination,all,controlled,resolved EEG/POW feature lists contain no target_* or PM.* columns,preserve loader exclusion and hash checks
+candidate_quantile_fit_scope,label_*_q3/q5_candidate,high,candidate thresholds do not yet exist,fit boundaries on outer-train only
+activity_proxy_semantics,activity_*,semantic,window aggregates are 0/1 but raw device-flag semantics are not independently validated,validate device meaning before declaring classification tasks
+raw_loader_target_lock,all_except_label_q5,compatibility,RawEEGWindowDataset rejects every target_col except label_q5,generalize manifest and loader only after target approval
+logical_record_duplicates,all,controlled,source records can represent the same logical recording,preserve record_group_id deduplication and group-disjoint splits

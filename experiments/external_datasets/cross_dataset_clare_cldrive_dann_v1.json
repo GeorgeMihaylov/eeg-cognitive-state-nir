@@ -1,0 +1,97 @@
+{
+  "schema_version": "cross-dataset-clare-cldrive-dann-v1",
+  "experiment_id": "cross_dataset_clare_cldrive_dann_v1",
+  "result_status": "diagnostic",
+  "datasets": {
+    "cl_drive": {
+      "archive": "data/raw/cl_drive/archives/doi-10.5683-sp3-jj2yzz.zip",
+      "expected_sha256": "83862102235105dfb600e36706b36406094c6c7887e9d133a90042f54736aac0",
+      "extracted_root": "data/raw/cl_drive/extracted"
+    },
+    "clare": {
+      "archive": "data/raw/clare/archives/doi-10.5683-sp3-h0aelt.zip",
+      "expected_sha256": "4146f8afcd475b9bdcfaacf0e82e286bd3d1c005102783d4cde0eab254235cba",
+      "extracted_root": "data/raw/clare/extracted"
+    }
+  },
+  "directions": [
+    "cl_drive_to_clare",
+    "clare_to_cl_drive"
+  ],
+  "modes": [
+    "target_only",
+    "source_only",
+    "dann"
+  ],
+  "target": {
+    "target_id": "subjective_cognitive_load_3class_fixed",
+    "raw_scale": [1, 9],
+    "fixed_bins": {
+      "0": [1, 3],
+      "1": [4, 6],
+      "2": [7, 9]
+    },
+    "class_names": ["low", "medium", "high"]
+  },
+  "windowing": {
+    "channels": ["TP9", "AF7", "AF8", "TP10"],
+    "sampling_rate_hz": 256,
+    "window_seconds": 10.0,
+    "samples": 2560,
+    "input_shape": [1, 4, 2560],
+    "dtype": "float32"
+  },
+  "evaluation": {
+    "target_folds": 5,
+    "outer_group_column": "dataset_participant_id",
+    "cross_dataset_leakage_column": "cross_dataset_person_key",
+    "inner_validation_group_column": "dataset_participant_id",
+    "random_state": 42,
+    "participant_macro_primary": true,
+    "oversampling": false
+  },
+  "model": {
+    "name": "torch_shallow_convnet",
+    "num_outputs": 3,
+    "params": {
+      "n_filters": 40,
+      "temporal_kernel_samples": 25,
+      "pool_size": 75,
+      "pool_stride": 15,
+      "dropout": 0.5
+    }
+  },
+  "training": {
+    "batch_size": 64,
+    "max_epochs": 15,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "early_stopping_patience": 4,
+    "checkpoint_primary": "labelled_domain_validation_macro_f1",
+    "checkpoint_secondary": "labelled_domain_validation_balanced_accuracy",
+    "optimizer": "AdamW",
+    "gradient_clip_norm": 5.0,
+    "device": "auto",
+    "num_workers": 0
+  },
+  "dann": {
+    "n_domains": 2,
+    "domain_hidden_dims": [128, 64],
+    "domain_dropout": 0.2,
+    "domain_loss_lambda": 1.0,
+    "gradient_reversal_schedule": "alpha(p)=2/(1+exp(-10*p))-1",
+    "progress_formula": "global_step/max(total_steps-1,1)",
+    "learning_rate_schedule": "constant",
+    "target_adaptation_task_labels_accessible": false,
+    "target_test_accessible_during_fit": false
+  },
+  "normalization": {
+    "strategy": "channel_zscore",
+    "target_only_fit_partition": "target_inner_train",
+    "source_only_fit_partition": "source_inner_train",
+    "dann_fit_partition": "source_inner_train",
+    "dann_target_adaptation_statistics_used": false,
+    "target_test_statistics_used": false
+  },
+  "output_dir": "benchmark_results/cross_dataset_clare_cldrive_dann_v1"
+}

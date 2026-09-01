@@ -1,0 +1,40 @@
+output_dir: "./benchmark_results/smoke_torch_mlp_label_q5"
+
+datasets:
+  emotiv_cognitive:
+    data_path: "./data/processed/windowed_eeg_pm_dataset_w10.parquet"
+    feature_set: "pow_plus_eeg"
+    target_col: "label_q5"
+    subject_col: "subject_id"
+    n_classes: 5
+    discretize: false
+    max_features: 448
+
+tasks:
+  - cognitive_load_5class
+
+models:
+  torch_mlp:
+    type: "torch_mlp"
+    task_type: "classification"
+    params:
+      hidden_dims: [256, 128]
+      dropout: 0.3
+      activation: "relu"
+      batch_size: 256
+      max_epochs: 10
+      learning_rate: 0.001
+      weight_decay: 0.0001
+      validation_size: 0.15
+      early_stopping_patience: 3
+      device: "auto"
+      random_state: 42
+      standardize: true
+
+task_config:
+  test_size: 0.15
+  random_state: 42
+  n_splits: 5
+
+run_within_subject: true
+run_loso: false

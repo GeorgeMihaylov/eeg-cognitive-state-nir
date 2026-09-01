@@ -1,0 +1,1297 @@
+schema_version: 1
+audit_status: target_registry_ready
+dataset:
+  path: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  sha256: 26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8
+  rows: 51308
+  columns: 508
+canonical_pm_order:
+- attention
+- engagement
+- excitement
+- stress
+- relaxation
+- interest
+- focus
+feature_contract:
+  dataset_columns: 508
+  eeg_feature_count: 168
+  pow_feature_count: 280
+  eeg_pow_feature_count: 448
+  eeg_feature_list_sha256: 6e822ee172422e7138945b47b2b27c947393b828b72d96b7a8e22850aded8aca
+  pow_feature_list_sha256: c3106631e4ad3eff1694c874a9ff5c4e26470aa587c7294cc5c3047c53d832dd
+  eeg_pow_feature_list_sha256: 8cd5d70faa8ff30fb4290dd9d9a2dde0e81f50e7682d05668b5fb47df511fd51
+  target_or_pm_feature_count: 0
+raw_input_contract:
+  shape:
+  - 1
+  - 14
+  - 2560
+  sampling_rate_hz: 256
+  window_seconds: 10
+  current_target_limitation: RawEEGWindowDataset supports label_q5 only
+targets:
+- target_id: target_attention
+  display_name_ru: Внимание
+  device_metric: PM.Attention.Scaled
+  target_family: continuous_pm
+  target_type: continuous_regression
+  source_columns:
+  - PM.Attention.Raw
+  - PM.Attention.Scaled
+  - PM.Attention.Min
+  - PM.Attention.Max
+  - PM.Attention.IsActive
+  processed_column: target_attention
+  aggregation: mean(PM.Attention.Scaled) within 10-second window
+  units_or_scale: device-provided dimensionless scaled score
+  value_range:
+  - 0.028539
+  - 0.925407
+  higher_value_interpretation: higher device Attention score; not independently clinically validated
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived window aggregate of a native device metric
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: non-numeric values become NaN; target remains missing when the window mean is
+    missing
+  recommended_metrics:
+  - mae
+  - rmse
+  - r2
+  - spearman
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids:
+  - performance_metrics_regression
+  current_experiment_ids:
+  - pm_regression
+  - pm_regression_personalization
+  leakage_risk: low if all preprocessing and selection are fit on outer-train only
+  status: canonical
+  limitations: device metric semantics and scale are vendor-defined; no causal interpretation
+- target_id: target_engagement
+  display_name_ru: Вовлечённость
+  device_metric: PM.Engagement.Scaled
+  target_family: continuous_pm
+  target_type: continuous_regression
+  source_columns:
+  - PM.Engagement.Raw
+  - PM.Engagement.Scaled
+  - PM.Engagement.Min
+  - PM.Engagement.Max
+  - PM.Engagement.IsActive
+  processed_column: target_engagement
+  aggregation: mean(PM.Engagement.Scaled) within 10-second window
+  units_or_scale: device-provided dimensionless scaled score
+  value_range:
+  - 0.053498
+  - 0.946502
+  higher_value_interpretation: higher device Engagement score; not independently clinically validated
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived window aggregate of a native device metric
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: non-numeric values become NaN; target remains missing when the window mean is
+    missing
+  recommended_metrics:
+  - mae
+  - rmse
+  - r2
+  - spearman
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids:
+  - performance_metrics_regression
+  current_experiment_ids:
+  - pm_regression
+  - pm_regression_personalization
+  leakage_risk: low if all preprocessing and selection are fit on outer-train only
+  status: canonical
+  limitations: device metric semantics and scale are vendor-defined; no causal interpretation
+- target_id: target_excitement
+  display_name_ru: Возбуждение
+  device_metric: PM.Excitement.Scaled
+  target_family: continuous_pm
+  target_type: continuous_regression
+  source_columns:
+  - PM.Excitement.Raw
+  - PM.Excitement.Scaled
+  - PM.Excitement.Min
+  - PM.Excitement.Max
+  - PM.Excitement.IsActive
+  processed_column: target_excitement
+  aggregation: mean(PM.Excitement.Scaled) within 10-second window
+  units_or_scale: device-provided dimensionless scaled score
+  value_range:
+  - 2.4e-05
+  - 1.0
+  higher_value_interpretation: higher device Excitement score; not independently clinically validated
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived window aggregate of a native device metric
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: non-numeric values become NaN; target remains missing when the window mean is
+    missing
+  recommended_metrics:
+  - mae
+  - rmse
+  - r2
+  - spearman
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids:
+  - performance_metrics_regression
+  current_experiment_ids:
+  - pm_regression
+  - pm_regression_personalization
+  leakage_risk: low if all preprocessing and selection are fit on outer-train only
+  status: canonical
+  limitations: device metric semantics and scale are vendor-defined; no causal interpretation
+- target_id: target_stress
+  display_name_ru: Стресс
+  device_metric: PM.Stress.Scaled
+  target_family: continuous_pm
+  target_type: continuous_regression
+  source_columns:
+  - PM.Stress.Raw
+  - PM.Stress.Scaled
+  - PM.Stress.Min
+  - PM.Stress.Max
+  - PM.Stress.IsActive
+  processed_column: target_stress
+  aggregation: mean(PM.Stress.Scaled) within 10-second window
+  units_or_scale: device-provided dimensionless scaled score
+  value_range:
+  - 0.054506
+  - 0.999447
+  higher_value_interpretation: higher device Stress score; not independently clinically validated
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived window aggregate of a native device metric
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: non-numeric values become NaN; target remains missing when the window mean is
+    missing
+  recommended_metrics:
+  - mae
+  - rmse
+  - r2
+  - spearman
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids:
+  - performance_metrics_regression
+  current_experiment_ids:
+  - pm_regression
+  - pm_regression_personalization
+  leakage_risk: low if all preprocessing and selection are fit on outer-train only
+  status: canonical
+  limitations: device metric semantics and scale are vendor-defined; no causal interpretation
+- target_id: target_relaxation
+  display_name_ru: Расслабление
+  device_metric: PM.Relaxation.Scaled
+  target_family: continuous_pm
+  target_type: continuous_regression
+  source_columns:
+  - PM.Relaxation.Raw
+  - PM.Relaxation.Scaled
+  - PM.Relaxation.Min
+  - PM.Relaxation.Max
+  - PM.Relaxation.IsActive
+  processed_column: target_relaxation
+  aggregation: mean(PM.Relaxation.Scaled) within 10-second window
+  units_or_scale: device-provided dimensionless scaled score
+  value_range:
+  - 0.075858
+  - 0.697059
+  higher_value_interpretation: higher device Relaxation score; not independently clinically validated
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived window aggregate of a native device metric
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: non-numeric values become NaN; target remains missing when the window mean is
+    missing
+  recommended_metrics:
+  - mae
+  - rmse
+  - r2
+  - spearman
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids:
+  - performance_metrics_regression
+  current_experiment_ids:
+  - pm_regression
+  - pm_regression_personalization
+  leakage_risk: low if all preprocessing and selection are fit on outer-train only
+  status: canonical
+  limitations: device metric semantics and scale are vendor-defined; no causal interpretation
+- target_id: target_interest
+  display_name_ru: Интерес
+  device_metric: PM.Interest.Scaled
+  target_family: continuous_pm
+  target_type: continuous_regression
+  source_columns:
+  - PM.Interest.Raw
+  - PM.Interest.Scaled
+  - PM.Interest.Min
+  - PM.Interest.Max
+  - PM.Interest.IsActive
+  processed_column: target_interest
+  aggregation: mean(PM.Interest.Scaled) within 10-second window
+  units_or_scale: device-provided dimensionless scaled score
+  value_range:
+  - 0.134833
+  - 0.996604
+  higher_value_interpretation: higher device Interest score; not independently clinically validated
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived window aggregate of a native device metric
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: non-numeric values become NaN; target remains missing when the window mean is
+    missing
+  recommended_metrics:
+  - mae
+  - rmse
+  - r2
+  - spearman
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids:
+  - performance_metrics_regression
+  current_experiment_ids:
+  - pm_regression
+  - pm_regression_personalization
+  leakage_risk: low if all preprocessing and selection are fit on outer-train only
+  status: canonical
+  limitations: device metric semantics and scale are vendor-defined; no causal interpretation
+- target_id: target_focus
+  display_name_ru: Фокус
+  device_metric: PM.Focus.Scaled
+  target_family: continuous_pm
+  target_type: continuous_regression
+  source_columns:
+  - PM.Focus.Raw
+  - PM.Focus.Scaled
+  - PM.Focus.Min
+  - PM.Focus.Max
+  - PM.Focus.IsActive
+  processed_column: target_focus
+  aggregation: mean(PM.Focus.Scaled) within 10-second window
+  units_or_scale: device-provided dimensionless scaled score
+  value_range:
+  - 0.004077
+  - 0.991193
+  higher_value_interpretation: higher device Focus score; not independently clinically validated
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived window aggregate of a native device metric
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: non-numeric values become NaN; target remains missing when the window mean is
+    missing
+  recommended_metrics:
+  - mae
+  - rmse
+  - r2
+  - spearman
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids:
+  - focus_regression
+  - performance_metrics_regression
+  current_experiment_ids:
+  - pm_regression
+  - pm_regression_personalization
+  leakage_risk: low if all preprocessing and selection are fit on outer-train only
+  status: canonical
+  limitations: device metric semantics and scale are vendor-defined; no causal interpretation
+- target_id: activity_attention
+  display_name_ru: Активность метрики «Внимание»
+  device_metric: PM.Attention.IsActive
+  target_family: device_activity_proxy
+  target_type: native_activity_fraction_candidate
+  source_columns:
+  - PM.Attention.IsActive
+  processed_column: PM.Attention.IsActive__mean
+  aggregation: mean(normalized PM.Attention.IsActive) within 10-second window
+  units_or_scale: fraction in [0, 1]
+  value_range:
+  - 0.0
+  - 1.0
+  higher_value_interpretation: larger fraction of window marked active by device
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: native device flag normalized then window-aggregated
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: normalize_boolish_series; read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: unrecognized strings and non-numeric values become NaN
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - average_precision
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: target is excluded from features; task semantics and threshold require validation
+  status: requires_semantic_validation
+  limitations: processed values are empirically 0/1, but the source-field value domain was not exhaustively
+    rescanned
+- target_id: activity_engagement
+  display_name_ru: Активность метрики «Вовлечённость»
+  device_metric: PM.Engagement.IsActive
+  target_family: device_activity_proxy
+  target_type: native_activity_fraction_candidate
+  source_columns:
+  - PM.Engagement.IsActive
+  processed_column: PM.Engagement.IsActive__mean
+  aggregation: mean(normalized PM.Engagement.IsActive) within 10-second window
+  units_or_scale: fraction in [0, 1]
+  value_range:
+  - 0.0
+  - 1.0
+  higher_value_interpretation: larger fraction of window marked active by device
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: native device flag normalized then window-aggregated
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: normalize_boolish_series; read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: unrecognized strings and non-numeric values become NaN
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - average_precision
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: target is excluded from features; task semantics and threshold require validation
+  status: requires_semantic_validation
+  limitations: processed values are empirically 0/1, but the source-field value domain was not exhaustively
+    rescanned
+- target_id: activity_excitement
+  display_name_ru: Активность метрики «Возбуждение»
+  device_metric: PM.Excitement.IsActive
+  target_family: device_activity_proxy
+  target_type: native_activity_fraction_candidate
+  source_columns:
+  - PM.Excitement.IsActive
+  processed_column: PM.Excitement.IsActive__mean
+  aggregation: mean(normalized PM.Excitement.IsActive) within 10-second window
+  units_or_scale: fraction in [0, 1]
+  value_range:
+  - 0.0
+  - 1.0
+  higher_value_interpretation: larger fraction of window marked active by device
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: native device flag normalized then window-aggregated
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: normalize_boolish_series; read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: unrecognized strings and non-numeric values become NaN
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - average_precision
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: target is excluded from features; task semantics and threshold require validation
+  status: requires_semantic_validation
+  limitations: processed values are empirically 0/1, but the source-field value domain was not exhaustively
+    rescanned
+- target_id: activity_stress
+  display_name_ru: Активность метрики «Стресс»
+  device_metric: PM.Stress.IsActive
+  target_family: device_activity_proxy
+  target_type: native_activity_fraction_candidate
+  source_columns:
+  - PM.Stress.IsActive
+  processed_column: PM.Stress.IsActive__mean
+  aggregation: mean(normalized PM.Stress.IsActive) within 10-second window
+  units_or_scale: fraction in [0, 1]
+  value_range:
+  - 0.0
+  - 1.0
+  higher_value_interpretation: larger fraction of window marked active by device
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: native device flag normalized then window-aggregated
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: normalize_boolish_series; read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: unrecognized strings and non-numeric values become NaN
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - average_precision
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: target is excluded from features; task semantics and threshold require validation
+  status: requires_semantic_validation
+  limitations: processed values are empirically 0/1, but the source-field value domain was not exhaustively
+    rescanned
+- target_id: activity_relaxation
+  display_name_ru: Активность метрики «Расслабление»
+  device_metric: PM.Relaxation.IsActive
+  target_family: device_activity_proxy
+  target_type: native_activity_fraction_candidate
+  source_columns:
+  - PM.Relaxation.IsActive
+  processed_column: PM.Relaxation.IsActive__mean
+  aggregation: mean(normalized PM.Relaxation.IsActive) within 10-second window
+  units_or_scale: fraction in [0, 1]
+  value_range:
+  - 0.0
+  - 1.0
+  higher_value_interpretation: larger fraction of window marked active by device
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: native device flag normalized then window-aggregated
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: normalize_boolish_series; read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: unrecognized strings and non-numeric values become NaN
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - average_precision
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: target is excluded from features; task semantics and threshold require validation
+  status: requires_semantic_validation
+  limitations: processed values are empirically 0/1, but the source-field value domain was not exhaustively
+    rescanned
+- target_id: activity_interest
+  display_name_ru: Активность метрики «Интерес»
+  device_metric: PM.Interest.IsActive
+  target_family: device_activity_proxy
+  target_type: native_activity_fraction_candidate
+  source_columns:
+  - PM.Interest.IsActive
+  processed_column: PM.Interest.IsActive__mean
+  aggregation: mean(normalized PM.Interest.IsActive) within 10-second window
+  units_or_scale: fraction in [0, 1]
+  value_range:
+  - 0.0
+  - 1.0
+  higher_value_interpretation: larger fraction of window marked active by device
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: native device flag normalized then window-aggregated
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: normalize_boolish_series; read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: unrecognized strings and non-numeric values become NaN
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - average_precision
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: target is excluded from features; task semantics and threshold require validation
+  status: requires_semantic_validation
+  limitations: processed values are empirically 0/1, but the source-field value domain was not exhaustively
+    rescanned
+- target_id: activity_focus
+  display_name_ru: Активность метрики «Фокус»
+  device_metric: PM.Focus.IsActive
+  target_family: device_activity_proxy
+  target_type: native_activity_fraction_candidate
+  source_columns:
+  - PM.Focus.IsActive
+  processed_column: PM.Focus.IsActive__mean
+  aggregation: mean(normalized PM.Focus.IsActive) within 10-second window
+  units_or_scale: fraction in [0, 1]
+  value_range:
+  - 0.0
+  - 1.0
+  higher_value_interpretation: larger fraction of window marked active by device
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: native device flag normalized then window-aggregated
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: normalize_boolish_series; read_and_aggregate_record
+  derivation_scope: per source record, per 10-second window
+  missing_value_policy: unrecognized strings and non-numeric values become NaN
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - average_precision
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: target is excluded from features; task semantics and threshold require validation
+  status: requires_semantic_validation
+  limitations: processed values are empirically 0/1, but the source-field value domain was not exhaustively
+    rescanned
+- target_id: target_main
+  display_name_ru: Основная цель (устаревший псевдоним Focus)
+  device_metric: PM.Focus.Scaled
+  target_family: legacy_alias
+  target_type: continuous_regression_alias
+  source_columns:
+  - target_focus
+  processed_column: target_main
+  aggregation: copy target_focus; builder fallback to attention then engagement only if focus column is
+    absent
+  units_or_scale: same as target_focus
+  value_range:
+  - 0.004077
+  - 0.991193
+  higher_value_interpretation: same as target_focus
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived legacy alias
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: read_and_aggregate_record
+  derivation_scope: per built source record
+  missing_value_policy: inherits selected fallback target missingness
+  recommended_metrics:
+  - mae
+  - rmse
+  - r2
+  - spearman
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids:
+  - legacy configs only
+  leakage_risk: implicit loader fallback can silently change a task when target_col is omitted
+  status: legacy
+  limitations: not a distinct cognitive-state construct; explicit target_col is required
+- target_id: label_q5
+  display_name_ru: 'Фокус: пять порядковых классов'
+  device_metric: PM.Focus.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification
+  source_columns:
+  - target_main
+  - target_focus
+  - PM.Focus.Scaled__mean
+  processed_column: label_q5
+  aggregation: global pd.qcut(target_main, q=5, labels=False, duplicates='drop')
+  units_or_scale: ordered classes 0..4
+  value_range:
+  - 0
+  - 4
+  higher_value_interpretation: higher global quantile of device Focus score
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived legacy global benchmark label
+  derivation_file: src/04_build_windowed_pm_dataset.py
+  derivation_function: make_quality_labels; main
+  derivation_scope: all concatenated source records before outer splitting
+  missing_value_policy: missing target_main remains missing label; insufficient uniqueness returns all
+    missing
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  - feature_sequence
+  supported_raw_input: true
+  current_task_ids:
+  - cognitive_load_5class
+  current_experiment_ids:
+  - label_q5 benchmark
+  - personalization
+  - FOMAML
+  - DANN
+  leakage_risk: global quantile boundaries were computed before outer subject split
+  status: legacy
+  limitations: Focus-specific legacy label, not the complete cognitive-state target space
+  canonical_display_id: label_focus_q5
+  quantile_boundaries:
+  - 0.004077
+  - 0.330177
+  - 0.387786
+  - 0.4444580000000001
+  - 0.526585
+  - 0.991193
+- target_id: activity_multilabel_group
+  display_name_ru: Совместная активность семи PM
+  device_metric: seven PM IsActive fields
+  target_family: multi_label_group
+  target_type: multi_label_candidate
+  source_columns:
+  - PM.Attention.IsActive__mean
+  - PM.Engagement.IsActive__mean
+  - PM.Excitement.IsActive__mean
+  - PM.Stress.IsActive__mean
+  - PM.Relaxation.IsActive__mean
+  - PM.Interest.IsActive__mean
+  - PM.Focus.IsActive__mean
+  processed_column: null
+  aggregation: joint vector of seven existing window aggregates; not materialized
+  units_or_scale: seven activity fractions
+  value_range:
+  - 0
+  - 1
+  higher_value_interpretation: metric-specific active fraction
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived grouping of native activity indicators
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: candidate only
+  missing_value_policy: complete-case or explicitly masked multi-label loss required
+  recommended_metrics:
+  - macro_f1
+  - micro_f1
+  - average_precision
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: low for labels themselves; thresholds and missing-label policy must be train-safe
+  status: candidate
+  limitations: device activity semantics and target dependence require validation
+- target_id: pm_long_term_excitement_candidate
+  display_name_ru: Долговременное возбуждение (кандидат)
+  device_metric: PM.LongTermExcitement
+  target_family: candidate_additional_pm
+  target_type: continuous_candidate
+  source_columns:
+  - PM.LongTermExcitement
+  processed_column: null
+  aggregation: not selected by the current window builder
+  units_or_scale: unknown device-defined scale
+  value_range: null
+  higher_value_interpretation: not established
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: native device field, absent from processed Parquet
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: not materialized
+  missing_value_policy: not audited numerically
+  recommended_metrics:
+  - mae
+  - rmse
+  - spearman
+  supported_feature_inputs: []
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: unknown until semantics and cohort are validated
+  status: requires_semantic_validation
+  limitations: relationship to Excitement, scale, missingness, and cross-source semantics are unresolved
+- target_id: label_attention_q3_candidate
+  display_name_ru: 'Внимание: 3 порядковых класса (кандидат)'
+  device_metric: PM.Attention.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_attention
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..2
+  value_range:
+  - 0
+  - 2
+  higher_value_interpretation: higher quantile of attention within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_attention_q5_candidate
+  display_name_ru: 'Внимание: 5 порядковых класса (кандидат)'
+  device_metric: PM.Attention.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_attention
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..4
+  value_range:
+  - 0
+  - 4
+  higher_value_interpretation: higher quantile of attention within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_engagement_q3_candidate
+  display_name_ru: 'Вовлечённость: 3 порядковых класса (кандидат)'
+  device_metric: PM.Engagement.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_engagement
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..2
+  value_range:
+  - 0
+  - 2
+  higher_value_interpretation: higher quantile of engagement within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_engagement_q5_candidate
+  display_name_ru: 'Вовлечённость: 5 порядковых класса (кандидат)'
+  device_metric: PM.Engagement.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_engagement
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..4
+  value_range:
+  - 0
+  - 4
+  higher_value_interpretation: higher quantile of engagement within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_excitement_q3_candidate
+  display_name_ru: 'Возбуждение: 3 порядковых класса (кандидат)'
+  device_metric: PM.Excitement.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_excitement
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..2
+  value_range:
+  - 0
+  - 2
+  higher_value_interpretation: higher quantile of excitement within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_excitement_q5_candidate
+  display_name_ru: 'Возбуждение: 5 порядковых класса (кандидат)'
+  device_metric: PM.Excitement.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_excitement
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..4
+  value_range:
+  - 0
+  - 4
+  higher_value_interpretation: higher quantile of excitement within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_stress_q3_candidate
+  display_name_ru: 'Стресс: 3 порядковых класса (кандидат)'
+  device_metric: PM.Stress.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_stress
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..2
+  value_range:
+  - 0
+  - 2
+  higher_value_interpretation: higher quantile of stress within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_stress_q5_candidate
+  display_name_ru: 'Стресс: 5 порядковых класса (кандидат)'
+  device_metric: PM.Stress.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_stress
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..4
+  value_range:
+  - 0
+  - 4
+  higher_value_interpretation: higher quantile of stress within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_relaxation_q3_candidate
+  display_name_ru: 'Расслабление: 3 порядковых класса (кандидат)'
+  device_metric: PM.Relaxation.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_relaxation
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..2
+  value_range:
+  - 0
+  - 2
+  higher_value_interpretation: higher quantile of relaxation within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_relaxation_q5_candidate
+  display_name_ru: 'Расслабление: 5 порядковых класса (кандидат)'
+  device_metric: PM.Relaxation.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_relaxation
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..4
+  value_range:
+  - 0
+  - 4
+  higher_value_interpretation: higher quantile of relaxation within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_interest_q3_candidate
+  display_name_ru: 'Интерес: 3 порядковых класса (кандидат)'
+  device_metric: PM.Interest.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_interest
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..2
+  value_range:
+  - 0
+  - 2
+  higher_value_interpretation: higher quantile of interest within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_interest_q5_candidate
+  display_name_ru: 'Интерес: 5 порядковых класса (кандидат)'
+  device_metric: PM.Interest.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_interest
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..4
+  value_range:
+  - 0
+  - 4
+  higher_value_interpretation: higher quantile of interest within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_focus_q3_candidate
+  display_name_ru: 'Фокус: 3 порядковых класса (кандидат)'
+  device_metric: PM.Focus.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_focus
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..2
+  value_range:
+  - 0
+  - 2
+  higher_value_interpretation: higher quantile of focus within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+- target_id: label_focus_q5_candidate
+  display_name_ru: 'Фокус: 5 порядковых класса (кандидат)'
+  device_metric: PM.Focus.Scaled
+  target_family: derived_ordinal_proxy
+  target_type: ordinal_classification_candidate
+  source_columns:
+  - target_focus
+  processed_column: null
+  aggregation: not materialized; proposed train-fold quantiles
+  units_or_scale: ordered classes 0..4
+  value_range:
+  - 0
+  - 4
+  higher_value_interpretation: higher quantile of focus within outer-train reference distribution
+  available_sources:
+  - Old_EEG
+  - gpn_data
+  native_or_derived: derived candidate; not materialized
+  derivation_file: null
+  derivation_function: null
+  derivation_scope: must fit thresholds on each outer-train fold
+  missing_value_policy: retain missing continuous targets as missing labels
+  recommended_metrics:
+  - balanced_accuracy
+  - macro_f1
+  - quadratic_weighted_kappa
+  - ordinal_mae
+  supported_feature_inputs:
+  - eeg
+  - pow
+  - eeg_pow
+  supported_raw_input: false
+  current_task_ids: []
+  current_experiment_ids: []
+  leakage_risk: high if quantile boundaries are computed globally; must be fold-fitted
+  status: candidate
+  limitations: scientific meaning and class stability are not yet validated
+report_references:
+- reports/integration/full_target_registry_audit.md
+- reports/integration/target_pipeline_audit.md
+- reports/integration/target_pipeline_resolution.md
+- reports/integration/pm_multioutput_regression.md

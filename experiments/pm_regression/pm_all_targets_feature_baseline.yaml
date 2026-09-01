@@ -1,0 +1,113 @@
+schema_version: 1
+experiment_id: pm_all_targets_feature_baseline_v1
+result_status: baseline
+execution_mode: fixed_subject_groupkfold
+
+dataset:
+  path: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  target_contract: experiments/targets/canonical_target_contract.yaml
+  target_registry: reports/summary/target_registry.yaml
+  logical_recording_map: data/interim/logical_recording_map.parquet
+  reference_predictions: benchmark_results/groupkfold_rf_label_q5/20260713_182031/emotiv_cognitive/cognitive_load_5class/random_forest/group_kfold_subject/predictions.parquet
+
+targets:
+  single:
+    - pm_attention_regression
+    - pm_engagement_regression
+    - pm_excitement_regression
+    - pm_stress_regression
+    - pm_relaxation_regression
+    - pm_interest_regression
+    - pm_focus_regression
+  multioutput: pm_multioutput_regression_7
+  output_order: [attention, engagement, excitement, stress, relaxation, interest, focus]
+
+feature_sets:
+  eeg:
+    expected_count: 168
+    expected_hash: 6e822ee172422e7138945b47b2b27c947393b828b72d96b7a8e22850aded8aca
+  pow:
+    expected_count: 280
+    expected_hash: c3106631e4ad3eff1694c874a9ff5c4e26470aa587c7294cc5c3047c53d832dd
+  eeg_pow:
+    expected_count: 448
+    expected_hash: 8cd5d70faa8ff30fb4290dd9d9a2dde0e81f50e7682d05668b5fb47df511fd51
+
+models:
+  single_target:
+    dummy_mean:
+      deterministic: true
+      seeds: [42]
+      scaling: none
+      params: {strategy: mean}
+    ridge:
+      deterministic: true
+      seeds: [42]
+      scaling: standard
+      params: {alpha: 1.0}
+    random_forest:
+      deterministic: false
+      seeds: [42, 123, 2026]
+      scaling: none
+      params: {n_estimators: 20, max_depth: 8, n_jobs: -1}
+    hist_gradient_boosting:
+      deterministic: true
+      seeds: [42]
+      scaling: none
+      params:
+        max_iter: 100
+        learning_rate: 0.1
+        max_leaf_nodes: 31
+        early_stopping: false
+  multioutput:
+    dummy_mean:
+      deterministic: true
+      seeds: [42]
+      scaling: none
+      params: {strategy: mean}
+    ridge:
+      deterministic: true
+      seeds: [42]
+      scaling: standard
+      params: {alpha: 1.0}
+    random_forest:
+      deterministic: false
+      seeds: [42, 123, 2026]
+      scaling: none
+      params: {n_estimators: 20, max_depth: 8, n_jobs: -1}
+
+evaluation:
+  protocol: fixed_group_kfold_subject
+  group_column: subject_id
+  folds: [1, 2, 3, 4, 5]
+  reference_fold_column: fold
+  participant_aggregation: equal_weight_macro
+  source_slices: [overall, gpn_data, Old_EEG]
+  inner_validation:
+    required: false
+    policy: group_record
+    group_column: record_group_id
+    test_is_never_validation: true
+
+metrics:
+  participant: [mae, rmse, r2, pearson, spearman, normalized_mae]
+  window: [mae, rmse, r2, pearson, spearman]
+  normalized_mae_denominator: outer_train_target_standard_deviation
+  undefined_policy: preserve_nan_with_reason
+
+paired_single_vs_multioutput:
+  enabled: true
+  models: [ridge, random_forest]
+  feature_sets: [eeg, pow, eeg_pow]
+  cohort_target_id: pm_multioutput_regression_7
+
+smoke:
+  folds: [1]
+  feature_sets: [eeg_pow]
+  models: [dummy_mean, ridge]
+
+output_dir: benchmark_results/pm_all_targets_feature_baseline_v1
+resume:
+  skip_complete: true
+  retry_statuses: [pending, failed_technical]
+  fail_on_specification_mismatch: true

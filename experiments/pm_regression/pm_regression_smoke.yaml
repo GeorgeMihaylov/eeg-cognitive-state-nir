@@ -1,0 +1,71 @@
+output_dir: ./benchmark_results/pm_regression_smoke
+
+datasets:
+  emotiv_pm_regression:
+    data_path: ./data/processed/windowed_eeg_pm_dataset_w10.parquet
+    feature_set: pow_plus_eeg
+    target_cols:
+      - target_attention
+      - target_engagement
+      - target_excitement
+      - target_stress
+      - target_relaxation
+      - target_interest
+      - target_focus
+    n_outputs: 7
+    task_type: regression
+    discretize: false
+    max_features: 500
+    expected_feature_count: 448
+
+tasks:
+  - performance_metrics_regression
+
+models:
+  mean_regressor:
+    type: mean_regressor
+    task_type: regression
+    params:
+      strategy: mean
+
+  random_forest:
+    type: random_forest
+    task_type: regression
+    params:
+      n_estimators: 20
+      max_depth: 8
+      random_state: 42
+      n_jobs: -1
+
+  torch_mlp:
+    type: torch_mlp
+    task_type: regression
+    params:
+      hidden_dims: [128, 64]
+      dropout: 0.3
+      activation: relu
+      regression_loss: mse
+      batch_size: 512
+      max_epochs: 3
+      learning_rate: 0.001
+      weight_decay: 0.0001
+      validation_size: 0.15
+      early_stopping_patience: 2
+      device: auto
+      random_state: 42
+
+task_config:
+  test_size: 0.15
+  random_state: 42
+  n_splits: 5
+  n_outputs: 7
+
+evaluation:
+  protocol: group_kfold_subject
+  group_column: subject_id
+  n_splits: 5
+  folds: [1]
+  random_state: 42
+
+run_within_subject: false
+run_loso: false

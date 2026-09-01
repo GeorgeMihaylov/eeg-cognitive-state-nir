@@ -1,0 +1,57 @@
+study:
+  name: "transformer_label_q5_pilot"
+  objective_metric: "balanced_accuracy"
+  direction: "maximize"
+  sampler_seed: 42
+
+base_config:
+  path: "configs/groupkfold_torch_transformer_label_q5.yaml"
+
+artifacts:
+  output_root: "benchmark_results/automl/transformer_label_q5"
+  storage: "benchmark_results/automl/transformer_label_q5/study.db"
+
+evaluation:
+  nested: true
+  inner_protocol: "group_kfold_subject"
+  inner_splits: 3
+  evaluate_best: true
+
+search:
+  n_trials: 10
+  timeout_seconds: null
+  max_epochs: 12
+  max_windows: null
+
+search_space:
+  model.params.d_model:
+    type: categorical
+    choices: [64, 128, 256]
+  model.params.nhead:
+    type: categorical
+    choices: [2, 4, 8]
+  model.params.num_layers:
+    type: integer
+    low: 1
+    high: 3
+  model.params.dim_feedforward:
+    type: categorical
+    choices: [128, 256, 512]
+  model.params.dropout:
+    type: float
+    low: 0.05
+    high: 0.4
+  training.learning_rate:
+    type: log_float
+    low: 0.00005
+    high: 0.002
+  training.weight_decay:
+    type: log_float
+    low: 0.000001
+    high: 0.01
+  training.batch_size:
+    type: categorical
+    choices: [64, 128, 256]
+
+constraints:
+  - "d_model_divisible_by_nhead"

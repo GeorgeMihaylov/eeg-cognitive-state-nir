@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0",
+  "protocol_id": "fomaml_label_q5_raw_deduplicated_v2",
+  "execution_enabled": false,
+  "output_dir": "benchmark_results/meta_learning_fomaml_label_q5_raw_protocol",
+  "seed": 42,
+  "outer_fold": 1,
+  "dataset": {
+    "dataset_id": "emotiv_raw_eeg_raw_deduplicated_w10_raw_v3",
+    "cache_id": "raw-2251ca950a467267",
+    "manifest": "data/interim/raw_eeg_window_index_w10_raw_v3.parquet",
+    "logical_recording_map": "data/interim/logical_recording_map.parquet",
+    "expected_samples": 30958,
+    "channels": 14,
+    "samples_per_window": 2560,
+    "sampling_rate": 256,
+    "window_duration_seconds": 10.0,
+    "finite_windows_per_shard": 1
+  },
+  "outer_fold_assignments": "benchmark_results/groupkfold_rf_label_q5/20260713_182031/emotiv_cognitive/cognitive_load_5class/random_forest/group_kfold_subject/predictions.parquet",
+  "expected_outer_fold_artifact_sha256": "41ec5a244e11b5dd4ff25faa7361f2bca302dd719612fea8cbc54a55b6ff3341",
+  "old_protocol_manifest": "benchmark_results/meta_learning_fomaml_production_contract/meta_validation_protocol.json",
+  "old_episode_index": "benchmark_results/meta_learning_fomaml_production_contract/meta_validation_episode_index.parquet",
+  "old_protocol_hash": "a3e6ff5ee2dbfa1638ffee9180ddff582dbab8aa6186e164320dd92f082871e8",
+  "old_preregistration_hash": "54f21e907ff1a414d45c1594e422c4caede0a449ca9acf02374bb50502122754",
+  "old_status": "blocked_protocol_raw_sample_mismatch",
+  "immutable_runtime_directories": [
+    "benchmark_results/meta_learning_fomaml_production_contract",
+    "benchmark_results/meta_learning_fomaml_label_q5_diagnostic"
+  ],
+  "episode_contract": {
+    "episode_type": "subject_personalization",
+    "support_record_count": 1,
+    "query_record_count": "all_remaining_records",
+    "minimum_support_windows": 32,
+    "minimum_query_windows": 64,
+    "allow_window_level_fallback": false,
+    "sampling_with_replacement": false,
+    "oversampling": false,
+    "chronological": true
+  },
+  "class_policy_candidates": [
+    "none",
+    "at_least_one_per_class",
+    "require_all_classes"
+  ],
+  "selected_class_policy": "at_least_one_per_class",
+  "meta_validation": {
+    "fraction": 0.2,
+    "minimum_subjects": 5,
+    "selection_scope": "eligible_outer_train_only",
+    "balance_target": "label_q5_class_proportions"
+  },
+  "future_experiment": {
+    "architecture": "production_eegnet",
+    "architecture_signature": "248d244e050af2b9e5bd1de0b706665efd3cb13a642044a965fc85602bbe23a7",
+    "device": "auto",
+    "inner_steps": 1,
+    "inner_learning_rate": 0.01,
+    "meta_learning_rate": 0.001,
+    "maximum_epochs": 8,
+    "meta_batch_size": 4,
+    "batchnorm_policies": [
+      "frozen_global",
+      "support_local"
+    ],
+    "supervised_baselines": [
+      "zero_shot_supervised",
+      "supervised_full_model"
+    ],
+    "future_modes": [
+      "zero_shot_supervised",
+      "supervised_full_model",
+      "fomaml_frozen_global",
+      "fomaml_support_local"
+    ],
+    "checkpoint_criteria": {
+      "supervised": "meta_validation_query_macro_f1",
+      "fomaml": "mean_meta_validation_subject_macro_f1"
+    },
+    "metrics": [
+      "mean_subject_macro_f1",
+      "mean_subject_balanced_accuracy",
+      "accuracy",
+      "weighted_f1",
+      "ordinal_mae",
+      "quadratic_weighted_kappa",
+      "per_class_recall",
+      "prediction_entropy"
+    ],
+    "decision_rule": {
+      "proceed_macro_f1_gain": 0.01,
+      "proceed_balanced_accuracy_min_gain": -0.005,
+      "proceed_min_wins": 5,
+      "strong_macro_f1_gain": 0.02,
+      "strong_balanced_accuracy_gain": 0.01,
+      "strong_min_wins": 6,
+      "do_not_proceed_max_wins": 2
+    },
+    "scientific_hypothesis": "FOMAML initialization improves personal EEGNet adaptation relative to supervised initialization under identical support/query data and adaptation budget."
+  }
+}

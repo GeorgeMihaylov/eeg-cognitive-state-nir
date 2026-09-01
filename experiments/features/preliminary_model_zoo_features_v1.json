@@ -1,0 +1,80 @@
+{
+  "schema_version": "cogstate-features-v1",
+  "profile_id": "preliminary_model_zoo_features_v1",
+  "description": "Target-free preliminary EEG feature representation for the next model-zoo comparison. Sample entropy and feature selection are intentionally disabled.",
+  "feature_pipeline": {
+    "sample_rate": 256,
+    "channel_names": [
+      "AF3",
+      "F7",
+      "F3",
+      "FC5",
+      "T7",
+      "P7",
+      "O1",
+      "O2",
+      "P8",
+      "T8",
+      "FC6",
+      "F4",
+      "F8",
+      "AF4"
+    ],
+    "groups": {
+      "spectral": true,
+      "statistical": true,
+      "entropy": true,
+      "connectivity": true
+    },
+    "spectral": {
+      "nperseg": 256,
+      "noverlap": null,
+      "window": "hann",
+      "detrend": "constant",
+      "scaling": "density",
+      "average": "mean",
+      "spectral_edge": 0.95,
+      "bands": {
+        "delta": [1.0, 4.0],
+        "theta": [4.0, 8.0],
+        "alpha": [8.0, 13.0],
+        "beta": [13.0, 30.0],
+        "gamma": [30.0, 45.0]
+      }
+    },
+    "statistical": {
+      "include_hjorth": true,
+      "include_higher_moments": true,
+      "variance_epsilon": 1.0e-12
+    },
+    "entropy": {
+      "include_spectral_entropy": true,
+      "include_permutation_entropy": true,
+      "include_sample_entropy": false,
+      "spectral_nperseg": 256,
+      "spectral_noverlap": null,
+      "spectral_window": "hann",
+      "permutation_order": 3,
+      "permutation_delay": 1,
+      "sample_entropy_m": 2,
+      "sample_entropy_r_ratio": 0.2
+    },
+    "connectivity": {
+      "metrics": ["correlation", "coherence", "plv"],
+      "summary_statistics": ["mean", "std", "max"],
+      "nperseg": 128,
+      "noverlap": null,
+      "window": "hann",
+      "detrend": "constant",
+      "max_channel_pairs": null,
+      "bands": {
+        "delta": [1.0, 4.0],
+        "theta": [4.0, 8.0],
+        "alpha": [8.0, 13.0],
+        "beta": [13.0, 30.0],
+        "gamma": [30.0, 45.0]
+      }
+    }
+  },
+  "selection": "none"
+}

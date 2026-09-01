@@ -1,0 +1,24 @@
+candidate_id,candidate_family,source_target,classes_or_outputs,materialized,n_windows,n_zero,n_one,n_intermediate,recommended_derivation,status
+activity_attention,device_activity_proxy,PM.Attention.IsActive__mean,1,True,51124,7949,43175,0,use existing fraction as continuous until device semantics justify a binary task,requires_semantic_validation
+activity_engagement,device_activity_proxy,PM.Engagement.IsActive__mean,1,True,51124,2870,48254,0,use existing fraction as continuous until device semantics justify a binary task,requires_semantic_validation
+activity_excitement,device_activity_proxy,PM.Excitement.IsActive__mean,1,True,51124,141,50983,0,use existing fraction as continuous until device semantics justify a binary task,requires_semantic_validation
+activity_stress,device_activity_proxy,PM.Stress.IsActive__mean,1,True,51124,5740,45384,0,use existing fraction as continuous until device semantics justify a binary task,requires_semantic_validation
+activity_relaxation,device_activity_proxy,PM.Relaxation.IsActive__mean,1,True,51124,5730,45394,0,use existing fraction as continuous until device semantics justify a binary task,requires_semantic_validation
+activity_interest,device_activity_proxy,PM.Interest.IsActive__mean,1,True,51124,5684,45440,0,use existing fraction as continuous until device semantics justify a binary task,requires_semantic_validation
+activity_focus,device_activity_proxy,PM.Focus.IsActive__mean,1,True,51124,5740,45384,0,use existing fraction as continuous until device semantics justify a binary task,requires_semantic_validation
+activity_multilabel_group,multi_label_group,PM.Attention.IsActive__mean|PM.Engagement.IsActive__mean|PM.Excitement.IsActive__mean|PM.Stress.IsActive__mean|PM.Relaxation.IsActive__mean|PM.Interest.IsActive__mean|PM.Focus.IsActive__mean,7,False,51124,,,,joint vector with explicit missing-label policy; no new threshold,candidate
+label_attention_q3_candidate,derived_ordinal_proxy,target_attention,3,False,43175,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_attention_q5_candidate,derived_ordinal_proxy,target_attention,5,False,43175,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_engagement_q3_candidate,derived_ordinal_proxy,target_engagement,3,False,48254,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_engagement_q5_candidate,derived_ordinal_proxy,target_engagement,5,False,48254,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_excitement_q3_candidate,derived_ordinal_proxy,target_excitement,3,False,50983,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_excitement_q5_candidate,derived_ordinal_proxy,target_excitement,5,False,50983,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_stress_q3_candidate,derived_ordinal_proxy,target_stress,3,False,45384,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_stress_q5_candidate,derived_ordinal_proxy,target_stress,5,False,45384,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_relaxation_q3_candidate,derived_ordinal_proxy,target_relaxation,3,False,45394,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_relaxation_q5_candidate,derived_ordinal_proxy,target_relaxation,5,False,45394,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_interest_q3_candidate,derived_ordinal_proxy,target_interest,3,False,45440,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_interest_q5_candidate,derived_ordinal_proxy,target_interest,5,False,45440,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_focus_q3_candidate,derived_ordinal_proxy,target_focus,3,False,45384,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+label_focus_q5_candidate,derived_ordinal_proxy,target_focus,5,False,45384,,,,fit quantile boundaries on outer-train only; sensitivity analysis required,candidate
+pm_long_term_excitement_candidate,candidate_additional_pm,PM.LongTermExcitement,1,False,0,,,,validate semantics and add a window aggregate before task design,requires_semantic_validation

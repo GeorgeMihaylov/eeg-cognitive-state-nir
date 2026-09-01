@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "task": "7G-1",
+  "status": "implemented",
+  "experiment_type": "auxiliary_corn_lambda_selection_setup",
+  "model_training_performed": false,
+  "lambda_selection_performed": false,
+  "outer_test_used": false,
+  "feature_groups": [
+    "eeg_pow",
+    "eeg_only"
+  ],
+  "seeds": [
+    7,
+    42,
+    123
+  ],
+  "outer_folds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "auxiliary_weights": [
+    0.25,
+    0.5,
+    1.0
+  ],
+  "baseline_fold_materializations": 30,
+  "future_candidate_fold_fits": 90,
+  "selection": {
+    "balanced_accuracy_tolerance": 0.01,
+    "order": [
+      "balanced_accuracy_guard",
+      "severe_error_rate",
+      "ordinal_mae",
+      "lower_auxiliary_weight"
+    ],
+    "no_eligible_action": "abort_fold"
+  },
+  "baseline_index": "reports/ordinal_transformer_multiseed_runs_summary.json",
+  "runtime_output": "benchmark_results/auxiliary_corn_lambda_selection_setup",
+  "runtime_report": "reports/auxiliary_corn_lambda_selection_setup.md",
+  "runtime_summary": "reports/auxiliary_corn_lambda_selection_setup_summary.json",
+  "checkpoint_policy": "strict_load",
+  "legacy_checkpoint_support": "reconstruct_validation_indices_from_fixed_group_split",
+  "next_task": "7G-2 nested candidate training and selected-only outer-test evaluation"
+}

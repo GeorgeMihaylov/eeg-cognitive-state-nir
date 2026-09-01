@@ -1,0 +1,37 @@
+output_dir: ./benchmark_results
+
+datasets:
+  emotiv_cognitive:
+    data_path: ./data/processed/windowed_eeg_pm_dataset_w10.parquet
+    feature_set: pow_plus_eeg
+    target_col: label_q5
+    n_classes: 5
+    discretize: false
+    max_features: 500
+
+tasks:
+  - cognitive_load_5class
+
+models:
+  random_forest:
+    type: random_forest
+    task_type: classification
+    params:
+      n_estimators: 200
+      max_depth: 16
+      random_state: 42
+      n_jobs: -1
+
+task_config:
+  test_size: 0.15
+  random_state: 42
+  n_splits: 5
+
+evaluation:
+  protocol: group_kfold_subject
+  group_column: subject_id
+  n_splits: 5
+  random_state: 42
+
+run_within_subject: false
+run_loso: false

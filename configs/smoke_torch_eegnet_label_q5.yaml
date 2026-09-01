@@ -1,0 +1,53 @@
+output_dir: "./benchmark_results/smoke_torch_eegnet_label_q5"
+
+datasets:
+  emotiv_raw_eeg:
+    data_path: "./data/interim/raw_eeg_window_index_w10.parquet"
+    target_col: "label_q5"
+    max_windows: 1000
+
+tasks:
+  - cognitive_load_5class
+
+validation:
+  strategy: "group_record"
+  group_column: "record_group_id"
+  validation_size: 0.15
+  random_state: 42
+
+models:
+  torch_eegnet:
+    type: "torch_eegnet"
+    task_type: "classification"
+    params:
+      temporal_kernel_seconds: 0.5
+      separable_kernel_seconds: 0.125
+      f1: 4
+      depth_multiplier: 2
+      f2: 8
+      pool1: 4
+      pool2: 8
+      dropout: 0.5
+      batch_size: 32
+      max_epochs: 3
+      learning_rate: 0.001
+      weight_decay: 0.0001
+      early_stopping_patience: 2
+      device: "auto"
+      random_state: 42
+      standardize: true
+      num_workers: 0
+
+evaluation:
+  protocol: "group_kfold_subject"
+  n_splits: 5
+  group_column: "subject_id"
+  precomputed_fold_column: "outer_fold"
+  folds: [1]
+  random_state: 42
+
+task_config:
+  random_state: 42
+
+run_within_subject: false
+run_loso: false

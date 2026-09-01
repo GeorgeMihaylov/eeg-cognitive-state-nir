@@ -1,0 +1,3850 @@
+schema_version: 1
+purpose: Generated read-only configuration map; not a CLI configuration source.
+configs:
+- config_path: experiments/label_definition_sensitivity.yaml
+  topic: analysis
+  role: diagnostic
+  status: diagnostic
+  loader_type: label_definition_sensitivity
+  expected_cli_argument: --label-definition-sensitivity
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 38225333a523d73be6f8005215231d807cdc527a59091921133654e4b6ece3ad
+  used_by: []
+  report_links:
+  - reports/label_definition_sensitivity.md
+  - reports/label_definition_sensitivity_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/label_definition_sensitivity.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Leakage-safe label-definition sensitivity analysis.
+    canonical_config: experiments/label_definition_sensitivity.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/label_definition_sensitivity.md
+    - commit:75d3775
+    notes: []
+- config_path: experiments/label_target_audit.yaml
+  topic: analysis
+  role: diagnostic
+  status: diagnostic
+  loader_type: label_target_audit
+  expected_cli_argument: --label-target-audit
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: fe1810bfcbb272695f2acc48455392ff42739098ede0df1232fb00bbd9b921f5
+  used_by: []
+  report_links:
+  - reports/label_target_audit.md
+  - reports/label_target_audit_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/label_target_audit.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Target provenance and structure audit.
+    canonical_config: experiments/label_target_audit.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/label_target_audit.md
+    - commit:83b289a
+    notes: []
+- config_path: experiments/statistical_analysis.yaml
+  topic: analysis
+  role: diagnostic
+  status: diagnostic
+  loader_type: statistical_analysis
+  expected_cli_argument: --statistical-analysis
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: e8b317b8d2760a5533eff72577656ba7b061f57dac27508a681caf52bdaf7f9d
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/statistical_analysis.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Canonical completed-run statistical analysis specification.
+    canonical_config: experiments/statistical_analysis.yaml
+    result_status: diagnostic
+    canonical_status: completed
+    provenance_status: documented
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/statistical_model_comparison.md
+    - commit:02334e6
+    linked_report: reports/statistical_model_comparison.md
+    linked_runtime: benchmark_results/analysis
+    unlinked_category: diagnostic utility
+    notes: []
+- config_path: experiments/temporal_target_audit.yaml
+  topic: analysis
+  role: diagnostic
+  status: diagnostic
+  loader_type: temporal_target_audit
+  expected_cli_argument: --temporal-target-audit
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 10c871454c2968701a6c13987181efca0d6b524a5d3c6d7788ba29e925196c15
+  used_by: []
+  report_links:
+  - reports/diagnostic_baselines.md
+  - reports/temporal_label_structure.md
+  - reports/temporal_target_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/temporal_target_audit.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Temporal target structure and non-EEG diagnostic analysis.
+    canonical_config: experiments/temporal_target_audit.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/temporal_label_structure.md
+    - commit:968aeef
+    notes: []
+- config_path: configs.yaml
+  topic: classification
+  role: root
+  status: diagnostic
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 77c71b7f27368a169520b0a0fbd76be55a87b7cd1f2369e5f5adfa1e4c271419
+  used_by: []
+  report_links:
+  - reports/integration/benchmark_core_audit.md
+  - reports/integration/benchmark_core_branch_diff.txt
+  - reports/integration/benchmarking_branch_audit.md
+  - reports/integration/benchmarking_branch_file_matrix.csv
+  - reports/integration/config_validation_patch.md
+  - reports/integration/pm_multioutput_regression.md
+  - reports/integration/target_pipeline_audit.md
+  - reports/integration/wesad_metrics_review.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: root
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Канонический root diagnostic benchmark, не full result.
+    canonical_config: configs.yaml
+    result_status: diagnostic
+    config_role: root
+    linked_experiments: []
+    evidence:
+    - reports/integration/canonical_label_q5_smoke.md
+    - commit:3549b1b
+    notes: []
+- config_path: configs/groupkfold_rf_label_q5.yaml
+  topic: classification
+  role: full
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: ba31cb682f4ce0643d3d9544b232e830a17f5a66c7b48c031249bdb5268b1a38
+  used_by:
+  - label_q5_random_forest_groupkfold
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: baseline
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_rf_label_q5.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Канонический classical ML baseline label_q5.
+    canonical_config: configs/groupkfold_rf_label_q5.yaml
+    result_status: baseline
+    canonical_status: completed
+    provenance_status: documented
+    config_role: full
+    linked_experiments:
+    - label_q5_random_forest_groupkfold
+    evidence:
+    - reports/summary/experiment_registry.yaml
+    - commit:50d35ac
+    linked_report: reports/transformer_benchmark_report.md
+    linked_runtime: benchmark_results/groupkfold_rf_label_q5
+    notes: []
+- config_path: configs/groupkfold_torch_mlp_label_q5.yaml
+  topic: classification
+  role: full
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: b39cdd25e1961ec431a6dac569e45d1d5daa4fd112f1b974a03059ed1753309d
+  used_by:
+  - label_q5_torch_mlp_groupkfold
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+  automatic_role: full
+  automatic_status: baseline
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_mlp_label_q5.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Отдельный feature-based Torch MLP baseline.
+    canonical_config: configs/groupkfold_torch_mlp_label_q5.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments:
+    - label_q5_torch_mlp_groupkfold
+    evidence:
+    - reports/summary/experiment_registry.yaml
+    - commit:50d35ac
+    notes: []
+- config_path: configs/smoke_rf_label_q5.yaml
+  topic: classification
+  role: smoke
+  status: smoke
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: a6ca9b3eca775a75e9621f4f7904627db24bf0eb41486ea6a644e592ae09521e
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/smoke_rf_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Технический random-window RF smoke, не научный результат.
+    canonical_config: configs/smoke_rf_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - cli.py
+    - commit:50d35ac
+    unlinked_category: smoke support
+    notes: []
+- config_path: configs/smoke_torch_mlp_label_q5.yaml
+  topic: classification
+  role: smoke
+  status: smoke
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 26306a6bb3e25be61c528b54c59ae4e2baef90361fa9bff77c3565c17e9a7999
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/smoke_torch_mlp_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Технический feature Torch MLP smoke.
+    canonical_config: configs/smoke_torch_mlp_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - tests/test_bench_runner.py
+    - commit:50d35ac
+    unlinked_category: smoke support
+    notes: []
+- config_path: experiments/calibration/label_q5_finetuning_base_smoke.yaml
+  topic: classification_personalization
+  role: base
+  status: diagnostic
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: ff9a2ec639345d6e8d101d10bc1dc0ab04b52490673a3cf71b04504ee87f8f38
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/label_q5_finetuning_base_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Base run для single-seed calibration smoke.
+    canonical_config: experiments/calibration/label_q5_finetuning_base_smoke.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - experiments/calibration/label_q5_finetuning_smoke.yaml
+    - commit:3c47ce3
+    unlinked_category: base dependency
+    notes: []
+- config_path: experiments/calibration/label_q5_finetuning_cuda_smoke_base.yaml
+  topic: classification_personalization
+  role: base
+  status: diagnostic
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 475da05d4d32dff09aef99bcc9bd47052e8d250dcce5b61d36379cc3b35d8347
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/label_q5_finetuning_cuda_smoke_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Base run для CUDA integration smoke.
+    canonical_config: experiments/calibration/label_q5_finetuning_cuda_smoke_base.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - experiments/calibration/label_q5_finetuning_cuda_integration_smoke.yaml
+    - commit:275fadb
+    unlinked_category: base dependency
+    notes: []
+- config_path: experiments/calibration/label_q5_finetuning_full_base.yaml
+  topic: classification_personalization
+  role: base
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: d6cda728e4fdc6df9c9407884f4c846e20b980881b8d1938eaa52bd8c4b572b6
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/label_q5_finetuning_full_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Global base run для full-subject single-seed personalization.
+    canonical_config: experiments/calibration/label_q5_finetuning_full_base.yaml
+    result_status: baseline
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - experiments/calibration/label_q5_finetuning_full_subjects.yaml
+    - reports/integration/personalization_full_subjects.md
+    unlinked_category: base dependency
+    notes: []
+- config_path: experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml
+  topic: classification_personalization
+  role: base
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 1309f7beec71e78d2ef9b81cea17dfa9ba88c32f896fcccb558fc04c64f83170
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Template base для финальной multiseed personalization.
+    canonical_config: experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml
+    result_status: baseline
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+    - commit:255d802
+    unlinked_category: base dependency
+    notes: []
+- config_path: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke_base.yaml
+  topic: classification_personalization
+  role: base
+  status: diagnostic
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: dcc35266ddccd5610d447c57a6bab2995107bf12d553e70faf9cd3cbcad1ad88
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Template base для multiseed CUDA smoke.
+    canonical_config: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke_base.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke.yaml
+    - commit:255d802
+    unlinked_category: base dependency
+    notes: []
+- config_path: experiments/calibration/label_q5_finetuning_full_subjects.yaml
+  topic: classification_personalization
+  role: full
+  status: baseline
+  loader_type: user_calibration
+  expected_cli_argument: --calibration-experiment
+  base_config: experiments/calibration/label_q5_finetuning_full_base.yaml
+  inheritance_depth: 1
+  resolved_config_hash: 5605f6143923a7ca72ab4db8cc6f6f542543d98ee67f16614bcf376081304837
+  used_by: []
+  report_links:
+  - reports/integration/personalization_full_subjects.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/label_q5_finetuning_full_subjects.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Завершённый single-seed full-subject personalization baseline.
+    canonical_config: experiments/calibration/label_q5_finetuning_full_subjects.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - reports/integration/personalization_full_subjects.md
+    - commit:275fadb
+    notes:
+    - Не заменять автоматически multiseed-конфигом.
+- config_path: experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+  topic: classification_personalization
+  role: full
+  status: final
+  loader_type: user_calibration_multiseed
+  expected_cli_argument: --calibration-experiment
+  base_config: experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml
+  inheritance_depth: 1
+  resolved_config_hash: b3c846881b82756661c585e1ea7a806d0a425577cac1e0ed4156727899f742a7
+  used_by:
+  - label_q5_personalization_multiseed_20pct
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: final
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Финальный multiseed 20% classification personalization.
+    canonical_config: experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml
+    result_status: final
+    canonical_status: completed
+    provenance_status: documented
+    config_role: full
+    linked_experiments:
+    - label_q5_personalization_multiseed_20pct
+    evidence:
+    - reports/summary/experiment_registry.yaml
+    - reports/integration/personalization_multiseed_20pct.md
+    linked_report: reports/integration/personalization_multiseed_20pct.md
+    linked_runtime: benchmark_results/calibration_label_q5_multiseed_20pct/20260725_172240
+    orchestration_provenance:
+      split_seed: 42
+      model_seeds:
+      - 7
+      - 42
+      - 2026
+    notes: []
+- config_path: experiments/calibration/label_q5_finetuning_cuda_integration_smoke.yaml
+  topic: classification_personalization
+  role: smoke
+  status: smoke
+  loader_type: user_calibration
+  expected_cli_argument: --calibration-experiment
+  base_config: experiments/calibration/label_q5_finetuning_cuda_smoke_base.yaml
+  inheritance_depth: 1
+  resolved_config_hash: f96da712158af4915505dc96703efdac5fdb75b19cbfa43ce314e6a759a2bf95
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/label_q5_finetuning_cuda_integration_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: CUDA integration smoke для classification fine-tuning.
+    canonical_config: experiments/calibration/label_q5_finetuning_cuda_integration_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - tests/test_personalization_finetuning.py
+    - commit:275fadb
+    unlinked_category: smoke support
+    notes: []
+- config_path: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke.yaml
+  topic: classification_personalization
+  role: smoke
+  status: smoke
+  loader_type: user_calibration_multiseed
+  expected_cli_argument: --calibration-experiment
+  base_config: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke_base.yaml
+  inheritance_depth: 1
+  resolved_config_hash: d0e6bce1fbc62f6a1b7417dcc3c37f194f4d5053d10a7d347e7dce373d74e25a
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: CUDA smoke для multiseed classification orchestration.
+    canonical_config: experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - tests/test_personalization_multiseed.py
+    - commit:255d802
+    unlinked_category: smoke support
+    notes: []
+- config_path: experiments/calibration/label_q5_finetuning_smoke.yaml
+  topic: classification_personalization
+  role: smoke
+  status: smoke
+  loader_type: user_calibration
+  expected_cli_argument: --calibration-experiment
+  base_config: experiments/calibration/label_q5_finetuning_base_smoke.yaml
+  inheritance_depth: 1
+  resolved_config_hash: df8b27cbcd01819a88e6dedf5e7d7a519edd65796c3723b1aca405aa5bd6fe3a
+  used_by: []
+  report_links:
+  - reports/integration/personalization_finetuning_smoke.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/label_q5_finetuning_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Первый leakage-safe single-seed fine-tuning smoke.
+    canonical_config: experiments/calibration/label_q5_finetuning_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - reports/integration/personalization_finetuning_smoke.md
+    - commit:3c47ce3
+    notes: []
+- config_path: experiments/user_calibration_transformer_label_q5.yaml
+  topic: classification_personalization
+  role: legacy
+  status: baseline
+  loader_type: user_calibration
+  expected_cli_argument: --calibration-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 38a23388f3f10aa599cc646b343fba396d587978239d7abf96ebd05b0c2f5cd4
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/user_calibration_transformer_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: 'Завершённый Transformer calibration protocol предшествует текущему MLP fine-tuning и нужен для воспроизводимости
+      статистического inventory.
+
+      '
+    canonical_config: experiments/user_calibration_transformer_label_q5.yaml
+    result_status: baseline
+    config_role: legacy
+    linked_experiments: []
+    evidence:
+    - reports/user_calibration_report.md
+    - experiments/statistical_analysis.yaml
+    - commit:43ee533
+    unlinked_category: legacy reproducibility
+    notes: []
+- config_path: experiments/feature_group_rf_ablation.yaml
+  topic: feature_groups
+  role: ablation
+  status: diagnostic
+  loader_type: feature_group_experiment
+  expected_cli_argument: --feature-group-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 6fd7e4c759f9f1e0b3d255280b3079b7dd2b4fc7d97e3c3c6d31874bd1db4d1d
+  used_by: []
+  report_links:
+  - reports/feature_group_rf_ablation.md
+  - reports/feature_group_rf_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: ablation
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/feature_group_rf_ablation.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Каноническая RF feature-group ablation.
+    canonical_config: experiments/feature_group_rf_ablation.yaml
+    result_status: diagnostic
+    config_role: ablation
+    linked_experiments: []
+    evidence:
+    - reports/feature_group_rf_ablation.md
+    - commit:9115f2b
+    notes: []
+- config_path: experiments/ordinal_transformer_full_seed42.yaml
+  topic: ordinal_transformer
+  role: full
+  status: baseline
+  loader_type: ordinal_transformer_full
+  expected_cli_argument: --ordinal-transformer-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 23df7f44c25f9be6fb767836aa42c2a15fb853a42dcefd98f00f2cefe80e8b8c
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/ordinal_transformer_full_seed42.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Полный seed-42 ordinal reference, используемый multiseed analysis.
+    canonical_config: experiments/ordinal_transformer_full_seed42.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - reports/ordinal_transformer_full_seed42.md
+    - reports/ordinal_transformer_statistical_analysis.md
+    - commit:ad3365a
+    unlinked_category: active but undocumented
+    notes: []
+- config_path: experiments/ordinal_transformer_multiseed.yaml
+  topic: ordinal_transformer
+  role: full
+  status: baseline
+  loader_type: ordinal_transformer_multiseed
+  expected_cli_argument: --ordinal-transformer-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 86de7c9385ec2aa5c01baab90825b4fc899a4a93743098391a09923c3d4310a6
+  used_by: []
+  report_links:
+  - reports/ordinal_transformer_multiseed_runs.md
+  - reports/ordinal_transformer_multiseed_runs_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/ordinal_transformer_multiseed.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Полная multiseed ordinal Transformer matrix.
+    canonical_config: experiments/ordinal_transformer_multiseed.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - reports/ordinal_transformer_multiseed_runs.md
+    - reports/ordinal_transformer_multiseed_decision.md
+    - commit:d8428d9
+    notes: []
+- config_path: experiments/auxiliary_corn_transformer_smoke.yaml
+  topic: ordinal_transformer
+  role: smoke
+  status: smoke
+  loader_type: auxiliary_corn_transformer_smoke
+  expected_cli_argument: --ordinal-transformer-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: e9462ca403a59bc7434aacac141980a290b2b4abc1dbc3adce0dac30a122d445
+  used_by: []
+  report_links:
+  - reports/auxiliary_corn_transformer_smoke_results.json
+  - reports/auxiliary_corn_transformer_smoke_results.md
+  - reports/auxiliary_corn_transformer_smoke_setup.md
+  - reports/auxiliary_corn_transformer_smoke_setup_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/auxiliary_corn_transformer_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Технический smoke категориальной головы с auxiliary CORN loss.
+    canonical_config: experiments/auxiliary_corn_transformer_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - reports/auxiliary_corn_transformer_smoke_results.md
+    - commit:6ea8363
+    notes: []
+- config_path: experiments/ordinal_transformer_smoke.yaml
+  topic: ordinal_transformer
+  role: smoke
+  status: smoke
+  loader_type: ordinal_transformer_smoke
+  expected_cli_argument: --ordinal-transformer-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: fd96cd11cfbcad2219c1bf9c7c77c11605c8bdda09f14b6676201cfb7cf13a25
+  used_by: []
+  report_links:
+  - reports/ordinal_transformer_smoke.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/ordinal_transformer_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Канонический ordinal Transformer technical smoke.
+    canonical_config: experiments/ordinal_transformer_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - reports/ordinal_transformer_smoke.md
+    - commit:b7255cc
+    notes: []
+- config_path: experiments/auxiliary_corn_lambda_selection_setup.yaml
+  topic: ordinal_transformer
+  role: diagnostic
+  status: diagnostic
+  loader_type: auxiliary_corn_lambda_selection_setup
+  expected_cli_argument: --ordinal-transformer-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 92b227e0c5984c48cc83131153019ce6b6d2f4ff6b2fff90f12168123c17b5ae
+  used_by: []
+  report_links:
+  - reports/auxiliary_corn_lambda_selection_setup.md
+  - reports/auxiliary_corn_lambda_selection_setup_summary.json
+  - reports/ordinal_transformer_multiseed_runs_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/auxiliary_corn_lambda_selection_setup.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Infrastructure/setup для leakage-safe CORN lambda selection.
+    canonical_config: experiments/auxiliary_corn_lambda_selection_setup.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/auxiliary_corn_lambda_selection_setup.md
+    - commit:27c657b
+    notes: []
+- config_path: experiments/auxiliary_corn_nested_lambda.yaml
+  topic: ordinal_transformer
+  role: diagnostic
+  status: diagnostic
+  loader_type: auxiliary_corn_nested_lambda
+  expected_cli_argument: --ordinal-transformer-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 413cf9789e128641e90c7530b6f309625dcf0c202d0f47cb1b6eb3c614576eee
+  used_by: []
+  report_links:
+  - reports/auxiliary_corn_nested_lambda_results.json
+  - reports/auxiliary_corn_nested_lambda_results.md
+  - reports/ordinal_transformer_multiseed_runs_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/auxiliary_corn_nested_lambda.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Nested CORN lambda diagnostic matrix.
+    canonical_config: experiments/auxiliary_corn_nested_lambda.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/auxiliary_corn_nested_lambda_results.md
+    - commit:533d6df
+    notes: []
+- config_path: experiments/auxiliary_corn_nested_lambda_finalize.yaml
+  topic: ordinal_transformer
+  role: diagnostic
+  status: diagnostic
+  loader_type: auxiliary_corn_nested_lambda_finalize
+  expected_cli_argument: --ordinal-transformer-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 9910a5f17ce876d21f62340d322ad5cd13e75ca25fd3293f9044bc6c5a45c0b2
+  used_by: []
+  report_links:
+  - reports/auxiliary_corn_nested_lambda_finalized_results.json
+  - reports/auxiliary_corn_nested_lambda_finalized_results.md
+  - reports/auxiliary_corn_nested_lambda_results.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/auxiliary_corn_nested_lambda_finalize.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Финализация сохранённых nested-lambda predictions без обучения.
+    canonical_config: experiments/auxiliary_corn_nested_lambda_finalize.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/auxiliary_corn_nested_lambda_finalized_results.md
+    - commit:b9a94bb
+    notes: []
+- config_path: experiments/auxiliary_corn_policy_statistics.yaml
+  topic: ordinal_transformer
+  role: diagnostic
+  status: diagnostic
+  loader_type: auxiliary_corn_policy_statistics
+  expected_cli_argument: --ordinal-transformer-analysis
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 68c9d64c18db1c27155c2c31174e85de2004b09612a0201317391691a8efb514
+  used_by: []
+  report_links:
+  - reports/auxiliary_corn_nested_lambda_finalized_results.json
+  - reports/auxiliary_corn_policy_decision.md
+  - reports/auxiliary_corn_policy_statistics_implementation_summary.json
+  - reports/auxiliary_corn_policy_subject_analysis.md
+  - reports/auxiliary_corn_policy_subject_analysis_summary.json
+  - reports/ordinal_transformer_multiseed_runs_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/auxiliary_corn_policy_statistics.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Статистическая проверка auxiliary-CORN policy.
+    canonical_config: experiments/auxiliary_corn_policy_statistics.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/auxiliary_corn_policy_decision.md
+    - commit:790a0c5
+    notes: []
+- config_path: experiments/ordinal_transformer_multiseed_statistics.yaml
+  topic: ordinal_transformer
+  role: diagnostic
+  status: diagnostic
+  loader_type: ordinal_transformer_multiseed_statistics
+  expected_cli_argument: --ordinal-transformer-analysis
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: e8618a3988638f1f3e4b44112979c926083ff4f07ea6bc7fe98bd3260f18a2eb
+  used_by: []
+  report_links:
+  - reports/ordinal_transformer_multiseed_decision.md
+  - reports/ordinal_transformer_multiseed_runs_summary.json
+  - reports/ordinal_transformer_multiseed_statistics.md
+  - reports/ordinal_transformer_multiseed_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/ordinal_transformer_multiseed_statistics.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Paired subject-level анализ ordinal multiseed runs.
+    canonical_config: experiments/ordinal_transformer_multiseed_statistics.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/ordinal_transformer_multiseed_statistics.md
+    - commit:d8428d9
+    notes: []
+- config_path: experiments/ordinal_transformer_statistics.yaml
+  topic: ordinal_transformer
+  role: diagnostic
+  status: diagnostic
+  loader_type: completed_run_subject_statistics
+  expected_cli_argument: --ordinal-transformer-analysis
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 3f19c9a57cf78b6e21f6a4b5d514c4781f0846219ee479883047a93069c2a6f1
+  used_by: []
+  report_links:
+  - reports/ordinal_transformer_decision.md
+  - reports/ordinal_transformer_statistical_analysis.md
+  - reports/ordinal_transformer_statistical_analysis_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/ordinal_transformer_statistics.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Seed-42 paired ordinal statistical analysis.
+    canonical_config: experiments/ordinal_transformer_statistics.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/ordinal_transformer_statistical_analysis.md
+    - commit:577536e
+    notes: []
+- config_path: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
+  topic: pm_regression
+  role: full
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: e1d473096353dfb41c751275d70d6b9068683a3370e57b28d6ffd48245a23def
+  used_by:
+  - pm_regression_mean_baseline_5fold
+  - pm_regression_random_forest_5fold
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: baseline
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: 'Каноническая воспроизводимая точка входа завершённого пятифолдового mean/RF baseline многовыходной PM-регрессии.
+
+      '
+    canonical_config: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
+    result_status: baseline
+    canonical_status: completed
+    provenance_status: documented
+    config_role: full
+    linked_experiments:
+    - pm_regression_mean_baseline_5fold
+    - pm_regression_random_forest_5fold
+    evidence:
+    - reports/integration/pm_multioutput_regression.md
+    - reports/summary/experiment_registry.yaml
+    - commit:733a85c
+    linked_report: reports/integration/pm_multioutput_regression.md
+    linked_runtime: benchmark_results/pm_regression_baseline_5fold/20260724_121853
+    orchestration_provenance:
+      resolved_config: benchmark_results/pm_regression_baseline_5fold/20260724_121853/config.yaml
+      run_manifest: benchmark_results/pm_regression_baseline_5fold/20260724_121853/run_manifest.json
+      dataset_sha256_current_file: 26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8
+      dataset_hash_limitation: runtime manifest did not persist the dataset hash
+    notes:
+    - Explicit preprocessing none is metadata-equivalent to the completed resolved config.
+- config_path: experiments/pm_regression/pm_regression_group_validation_smoke.yaml
+  topic: pm_regression
+  role: smoke
+  status: smoke
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 00c9d1f919f97d42763aadfee0b9ecc546514c772e475e87a84be51d7210a77c
+  used_by: []
+  report_links:
+  - reports/integration/torch_group_validation.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/pm_regression/pm_regression_group_validation_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Torch PM group-validation integration smoke.
+    canonical_config: experiments/pm_regression/pm_regression_group_validation_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - reports/integration/torch_group_validation.md
+    - commit:30e2221
+    notes: []
+- config_path: experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
+  topic: pm_regression
+  role: smoke
+  status: diagnostic
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: fa075fd87447ce9011a6c9b0999b0c414e4a84634d8336833c8d12ecf56afb63
+  used_by:
+  - pm_standard_clip_audit
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Ограниченный robust-scaling diagnostic, не full PM baseline.
+    canonical_config: experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml
+    result_status: diagnostic
+    config_role: smoke
+    linked_experiments:
+    - pm_standard_clip_audit
+    evidence:
+    - reports/integration/robust_feature_scaling_audit.md
+    - reports/summary/experiment_registry.yaml
+    notes: []
+- config_path: experiments/pm_regression/pm_regression_smoke.yaml
+  topic: pm_regression
+  role: smoke
+  status: smoke
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 2bb6fd2f2bcc9088293a9cbc1874a706306f71a750c626c356edb7e997dfa6ae
+  used_by: []
+  report_links:
+  - reports/integration/pm_multioutput_regression.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/pm_regression/pm_regression_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Технический multi-output PM regression smoke.
+    canonical_config: experiments/pm_regression/pm_regression_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - reports/integration/pm_multioutput_regression.md
+    - commit:1d1e462
+    notes: []
+- config_path: experiments/calibration/pm_regression_personalization_20pct_base.yaml
+  topic: pm_regression_personalization
+  role: base
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: b5f2e4221c7dc3c17eaceb4566200bc37e9f37aabd2489e0ee42b0dfc055b16d
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/pm_regression_personalization_20pct_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Global base/template для PM personalization.
+    canonical_config: experiments/calibration/pm_regression_personalization_20pct_base.yaml
+    result_status: baseline
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - experiments/calibration/pm_regression_personalization_20pct.yaml
+    - experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+    - commit:b1f47f4
+    unlinked_category: base dependency
+    notes: []
+- config_path: experiments/calibration/pm_regression_personalization_cuda_smoke_base.yaml
+  topic: pm_regression_personalization
+  role: base
+  status: diagnostic
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 09c7f1baf5c278972a02c01695f40a052a7f92cb41a20f8a81fb54289821d6a1
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/pm_regression_personalization_cuda_smoke_base.yaml
+    review_status: reviewed
+    decision: keep_as_base
+    decision_reason: Global base для PM CUDA smoke.
+    canonical_config: experiments/calibration/pm_regression_personalization_cuda_smoke_base.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - experiments/calibration/pm_regression_personalization_cuda_smoke.yaml
+    - commit:b1f47f4
+    unlinked_category: base dependency
+    notes: []
+- config_path: experiments/calibration/pm_regression_personalization_20pct.yaml
+  topic: pm_regression_personalization
+  role: full
+  status: baseline
+  loader_type: pm_regression_personalization
+  expected_cli_argument: --calibration-experiment
+  base_config: experiments/calibration/pm_regression_personalization_20pct_base.yaml
+  inheritance_depth: 1
+  resolved_config_hash: bf914a62e471135b92e74b9f9f8edf3476117ba4c6bb1c6e28060f6cf2639d8d
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/pm_regression_personalization_20pct.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Завершённый single-seed PM personalization baseline.
+    canonical_config: experiments/calibration/pm_regression_personalization_20pct.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - reports/integration/pm_regression_personalization_20pct.md
+    - commit:b1f47f4
+    unlinked_category: active but undocumented
+    notes: []
+- config_path: experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+  topic: pm_regression_personalization
+  role: full
+  status: final
+  loader_type: pm_regression_personalization_multiseed
+  expected_cli_argument: --calibration-experiment
+  base_config: experiments/calibration/pm_regression_personalization_20pct_base.yaml
+  inheritance_depth: 1
+  resolved_config_hash: 0435ee0ea99025ff640fbc3a15980dfc759cc73bc2dd6fcb02f9e61484dd03ae
+  used_by:
+  - pm_regression_personalization_multiseed_20pct
+  report_links:
+  - reports/integration/pm_regression_personalization_multiseed_20pct.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: final
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Финальный multiseed PM personalization protocol.
+    canonical_config: experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml
+    result_status: final
+    config_role: full
+    linked_experiments:
+    - pm_regression_personalization_multiseed_20pct
+    evidence:
+    - reports/summary/experiment_registry.yaml
+    - reports/integration/pm_regression_personalization_multiseed_20pct.md
+    orchestration_provenance:
+      split_seed: 42
+      model_seeds:
+      - 7
+      - 42
+      - 2026
+    notes: []
+- config_path: experiments/calibration/pm_regression_personalization_cuda_smoke.yaml
+  topic: pm_regression_personalization
+  role: smoke
+  status: smoke
+  loader_type: pm_regression_personalization
+  expected_cli_argument: --calibration-experiment
+  base_config: experiments/calibration/pm_regression_personalization_cuda_smoke_base.yaml
+  inheritance_depth: 1
+  resolved_config_hash: e33a6962fb1808e24ab28a69a21030b5015b241f4668ee5568f812a6444e30b6
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/pm_regression_personalization_cuda_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Single-seed PM personalization CUDA smoke.
+    canonical_config: experiments/calibration/pm_regression_personalization_cuda_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - tests/test_pm_regression_personalization.py
+    - commit:b1f47f4
+    unlinked_category: smoke support
+    notes: []
+- config_path: experiments/calibration/pm_regression_personalization_multiseed_cuda_smoke.yaml
+  topic: pm_regression_personalization
+  role: smoke
+  status: smoke
+  loader_type: pm_regression_personalization_multiseed
+  expected_cli_argument: --calibration-experiment
+  base_config: experiments/calibration/pm_regression_personalization_20pct_base.yaml
+  inheritance_depth: 1
+  resolved_config_hash: 9591a47d3f2287d156284afb069354bac8a3bb338ca018194a075017cc9c4aa8
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/calibration/pm_regression_personalization_multiseed_cuda_smoke.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Multiseed PM personalization CUDA smoke.
+    canonical_config: experiments/calibration/pm_regression_personalization_multiseed_cuda_smoke.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - tests/test_pm_regression_personalization_multiseed.py
+    - commit:6c0b77f
+    unlinked_category: smoke support
+    notes: []
+- config_path: configs/raw_preprocessing_a_raw.yaml
+  topic: preprocessing_ablation
+  role: base
+  status: diagnostic
+  loader_type: raw_preprocessing_fragment
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 8a6506eb7ef477f1ad1d209fe6ea547d67e5096e521182c3dc8245a7149eed07
+  used_by: []
+  report_links:
+  - reports/preprocessing_ablation_implementation_audit.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/raw_preprocessing_a_raw.yaml
+    review_status: not_applicable
+    decision: keep_as_base
+    decision_reason: Raw preprocessing fragment A; не standalone run.
+    canonical_config: configs/raw_preprocessing_a_raw.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - reports/preprocessing_ablation_implementation_audit.md
+    - commit:50d35ac
+    notes: []
+- config_path: configs/raw_preprocessing_b_bandpass.yaml
+  topic: preprocessing_ablation
+  role: base
+  status: diagnostic
+  loader_type: raw_preprocessing_fragment
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 41cc8f381cdb6e4b3e7a3c2df5b3e5c990382216692a94ccecd918869bb6af37
+  used_by: []
+  report_links:
+  - reports/preprocessing_ablation_implementation_audit.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/raw_preprocessing_b_bandpass.yaml
+    review_status: not_applicable
+    decision: keep_as_base
+    decision_reason: Band-pass preprocessing fragment B; не standalone run.
+    canonical_config: configs/raw_preprocessing_b_bandpass.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - reports/preprocessing_ablation_implementation_audit.md
+    - commit:50d35ac
+    notes: []
+- config_path: configs/raw_preprocessing_c_bandpass_notch.yaml
+  topic: preprocessing_ablation
+  role: base
+  status: diagnostic
+  loader_type: raw_preprocessing_fragment
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 83f0f029856a71d6039024dd965741160734a20ae0cce4368888e6a7dd48ca6f
+  used_by: []
+  report_links:
+  - reports/preprocessing_ablation_implementation_audit.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/raw_preprocessing_c_bandpass_notch.yaml
+    review_status: not_applicable
+    decision: keep_as_base
+    decision_reason: Band-pass+notch fragment C; не standalone run.
+    canonical_config: configs/raw_preprocessing_c_bandpass_notch.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - reports/preprocessing_ablation_implementation_audit.md
+    - commit:50d35ac
+    notes: []
+- config_path: configs/raw_preprocessing_d_bandpass_notch_car.yaml
+  topic: preprocessing_ablation
+  role: base
+  status: diagnostic
+  loader_type: raw_preprocessing_fragment
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 0b0d815aca8c43787253a561ddbfa33e4f857fc306e444879eef304a0c4ae6eb
+  used_by: []
+  report_links:
+  - reports/preprocessing_ablation_implementation_audit.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings: []
+  automatic_role: base
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/raw_preprocessing_d_bandpass_notch_car.yaml
+    review_status: not_applicable
+    decision: keep_as_base
+    decision_reason: Full-filter fragment D; не standalone run.
+    canonical_config: configs/raw_preprocessing_d_bandpass_notch_car.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - reports/preprocessing_ablation_implementation_audit.md
+    - commit:50d35ac
+    notes: []
+- config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+  topic: preprocessing_ablation
+  role: ablation
+  status: diagnostic
+  loader_type: preprocessing_ablation
+  expected_cli_argument: --experiment-matrix
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: acdefce5d23db0d6e333549a5e307b4fb5d25bf05cc2a97ea5134b7fed23d3da
+  used_by:
+  - shallowconvnet_preprocessing_ablation
+  report_links:
+  - reports/preprocessing_selected_trials_multiseed.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'experiment_registry_mismatch: shallowconvnet_preprocessing_ablation seeds: registry=[7,42,123] config=[42]'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: ablation
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Каноническая factorial preprocessing matrix.
+    canonical_config: experiments/preprocessing_ablation_shallowconvnet.yaml
+    result_status: diagnostic
+    config_role: ablation
+    linked_experiments:
+    - shallowconvnet_preprocessing_ablation
+    evidence:
+    - reports/summary/experiment_registry.yaml
+    - reports/preprocessing_selected_trials_multiseed.md
+    orchestration_provenance:
+      split_seed: 42
+      external_model_seeds:
+      - 7
+      - 42
+      - 123
+    notes: []
+- config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+  topic: raw_eeg
+  role: full
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 922041982356e6023206f9e257d3b94f8b7c70bcb985dad3dfc3c5c9b2c1d4b1
+  used_by:
+  - label_q5_eegnet_raw_dedup_multiseed
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'experiment_registry_mismatch: label_q5_eegnet_raw_dedup_multiseed seeds: registry=[7,42,123] config=[42]'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: baseline
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Канонический EEGNet raw-deduplicated multiseed baseline seed 42.
+    canonical_config: configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments:
+    - label_q5_eegnet_raw_dedup_multiseed
+    evidence:
+    - reports/summary/experiment_registry.yaml
+    - reports/raw_eeg_cnn_model_comparison.md
+    orchestration_provenance:
+      primary_seed: 42
+      sibling_seeds:
+      - 7
+      - 123
+    notes: []
+- config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml
+  topic: raw_eeg
+  role: full
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 369ede805c413b37b8e861d551f52907877d49132628123e10968da36c0d1145
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Отдельный seed-123 EEGNet config; runner не принимает seed list.
+    canonical_config: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - reports/raw_eeg_cnn_model_comparison.md
+    - experiments/statistical_analysis.yaml
+    - commit:50d35ac
+    unlinked_category: active but undocumented
+    notes: []
+- config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml
+  topic: raw_eeg
+  role: full
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 8c566c98fb52476b9dd409f01b389825b7294c9350e59144d1b47c665d03925c
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Отдельный seed-7 EEGNet config; runner не принимает seed list.
+    canonical_config: configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml
+    result_status: baseline
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - reports/raw_eeg_cnn_model_comparison.md
+    - experiments/statistical_analysis.yaml
+    - commit:50d35ac
+    unlinked_category: active but undocumented
+    notes: []
+- config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+  topic: raw_eeg
+  role: full
+  status: final
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 02fafd53bed9a625559b3d057ae6a74e6ae3c3a34a917c0ea21a24bd34c59a0d
+  used_by:
+  - label_q5_shallowconvnet_raw_dedup_multiseed
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'experiment_registry_mismatch: label_q5_shallowconvnet_raw_dedup_multiseed seeds: registry=[7,42,123] config=[42]'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: final
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Канонический final ShallowConvNet raw-deduplicated seed-42 config.
+    canonical_config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+    result_status: final
+    canonical_status: completed
+    provenance_status: documented
+    config_role: full
+    linked_experiments:
+    - label_q5_shallowconvnet_raw_dedup_multiseed
+    evidence:
+    - reports/summary/experiment_registry.yaml
+    - reports/raw_eeg_cnn_model_comparison.md
+    linked_report: reports/raw_eeg_cnn_model_comparison.md
+    linked_runtime: benchmark_results/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed42
+    orchestration_provenance:
+      primary_seed: 42
+      sibling_seeds:
+      - 7
+      - 123
+    notes: []
+- config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
+  topic: raw_eeg
+  role: full
+  status: final
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: bab1474903c66234b47cf856829d0c4aad7fd6fe52dc33875c66185256a6c481
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Отдельный seed-123 ShallowConvNet final-family config.
+    canonical_config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
+    result_status: final
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - reports/raw_eeg_cnn_model_comparison.md
+    - experiments/statistical_analysis.yaml
+    - commit:50d35ac
+    unlinked_category: active but undocumented
+    notes: []
+- config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+  topic: raw_eeg
+  role: full
+  status: final
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 6f76378aa4daf6e7026b9bf056625fdf3ffcbd422568c8722441de44181d1b18
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Отдельный seed-7 ShallowConvNet final-family config.
+    canonical_config: configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+    result_status: final
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - reports/raw_eeg_cnn_model_comparison.md
+    - experiments/statistical_analysis.yaml
+    - commit:50d35ac
+    unlinked_category: active but undocumented
+    notes: []
+- config_path: configs/smoke_torch_eegnet_dedup_preprocessed_label_q5.yaml
+  topic: raw_eeg
+  role: smoke
+  status: smoke
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: fc331e70df3dbc3c56680e9b0c63dbb63eaae438104a6c6047c8c54f471b3c99
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/smoke_torch_eegnet_dedup_preprocessed_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Filtered deduplicated EEGNet technical smoke.
+    canonical_config: configs/smoke_torch_eegnet_dedup_preprocessed_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - tests/test_torch_eegnet.py
+    - commit:50d35ac
+    unlinked_category: smoke support
+    notes: []
+- config_path: configs/smoke_torch_eegnet_label_q5.yaml
+  topic: raw_eeg
+  role: smoke
+  status: smoke
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: e209ade1fb97783acf65016773375b1a7e1abaf03e6078b1f9d4a59dd586f8d4
+  used_by: []
+  report_links:
+  - reports/raw_eegnet_label_q5_report.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/smoke_torch_eegnet_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Original EEGNet technical smoke.
+    canonical_config: configs/smoke_torch_eegnet_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - reports/raw_eegnet_label_q5_report.md
+    - commit:50d35ac
+    notes: []
+- config_path: configs/smoke_torch_shallow_convnet_label_q5.yaml
+  topic: raw_eeg
+  role: smoke
+  status: smoke
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: d637c419e5ac2e196e68cbaea5c388d711ed6215e27cae5920e261b29ff7a1fe
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/smoke_torch_shallow_convnet_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Канонический ShallowConvNet technical smoke.
+    canonical_config: configs/smoke_torch_shallow_convnet_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - tests/test_torch_shallow_convnet.py
+    - commit:50d35ac
+    unlinked_category: smoke support
+    notes: []
+- config_path: configs/groupkfold_torch_eegnet_preprocessed_dedup_label_q5.yaml
+  topic: raw_eeg
+  role: diagnostic
+  status: diagnostic
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: d5880cdfcbe4c7cbd34d46327af4af6e088790c0a6fc5ecd5fbe31569566ab4e
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_eegnet_preprocessed_dedup_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Filtered deduplicated raw-EEG preprocessing comparison.
+    canonical_config: configs/groupkfold_torch_eegnet_preprocessed_dedup_label_q5.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/raw_eeg_logical_dedup_preprocessing_ablation.md
+    - commit:50d35ac
+    unlinked_category: diagnostic utility
+    notes: []
+- config_path: configs/groupkfold_torch_eegnet_raw_all_label_q5.yaml
+  topic: raw_eeg
+  role: diagnostic
+  status: diagnostic
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 257286beb8b70c198a681833395771697f5bbc396bcdc3e9c75fabf8bd19b180
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_eegnet_raw_all_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Raw-all logical-duplicate sensitivity comparison.
+    canonical_config: configs/groupkfold_torch_eegnet_raw_all_label_q5.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/raw_eeg_logical_dedup_preprocessing_ablation.md
+    - commit:50d35ac
+    unlinked_category: diagnostic utility
+    notes: []
+- config_path: configs/groupkfold_torch_eegnet_label_q5.yaml
+  topic: raw_eeg
+  role: legacy
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 8d2915840ce4975d97371314366618fba8556b334705486d90e14d42596881ae
+  used_by: []
+  report_links:
+  - reports/raw_eegnet_label_q5_report.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_eegnet_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: 'Завершённый исходный EEGNet run до logical-record dedup; сохраняется рядом с актуальным raw-deduplicated
+      baseline.
+
+      '
+    canonical_config: configs/groupkfold_torch_eegnet_label_q5.yaml
+    result_status: baseline
+    config_role: legacy
+    linked_experiments: []
+    evidence:
+    - reports/raw_eegnet_label_q5_report.md
+    - reports/raw_eeg_logical_dedup_preprocessing_ablation.md
+    - commit:50d35ac
+    notes: []
+- config_path: configs/groupkfold_source_gpn_rf_transformer_label_q5.yaml
+  topic: sequence_models
+  role: full
+  status: diagnostic
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 97a38405f53e7face6a98df58837e530751ae23d3bdb8341b68a98da6e375ecb
+  used_by: []
+  report_links:
+  - reports/cross_source_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_source_gpn_rf_transformer_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: In-domain gpn_data reference для cross-source protocol.
+    canonical_config: configs/groupkfold_source_gpn_rf_transformer_label_q5.yaml
+    result_status: diagnostic
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - experiments/cross_source_generalization.yaml
+    - reports/cross_source_summary.json
+    - commit:1ac7d0f
+    notes: []
+- config_path: configs/groupkfold_source_old_eeg_rf_transformer_label_q5.yaml
+  topic: sequence_models
+  role: full
+  status: diagnostic
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 1bfffbe63a90102feef8907b37024dbe08d9dc6075167bfa389cadee6c45f427
+  used_by: []
+  report_links:
+  - reports/cross_source_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_source_old_eeg_rf_transformer_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: In-domain Old_EEG reference для cross-source protocol.
+    canonical_config: configs/groupkfold_source_old_eeg_rf_transformer_label_q5.yaml
+    result_status: diagnostic
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - experiments/cross_source_generalization.yaml
+    - reports/cross_source_summary.json
+    - commit:1ac7d0f
+    notes: []
+- config_path: configs/groupkfold_torch_transformer_label_q5.yaml
+  topic: sequence_models
+  role: full
+  status: final
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 5a9a9f68e63e07ec732f3eeb49523253f87b8e627163743962e99f70cc7a11c4
+  used_by:
+  - label_q5_transformer_multiseed
+  report_links:
+  - reports/automl_architecture_audit.md
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'experiment_registry_mismatch: label_q5_transformer_multiseed seeds: registry=[7,42,123] config=[42]'
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: final
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_transformer_label_q5.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Канонический final categorical Transformer config.
+    canonical_config: configs/groupkfold_torch_transformer_label_q5.yaml
+    result_status: final
+    config_role: full
+    linked_experiments:
+    - label_q5_transformer_multiseed
+    evidence:
+    - reports/summary/experiment_registry.yaml
+    - reports/transformer_benchmark_report.md
+    orchestration_provenance:
+      primary_seed: 42
+      external_seeds:
+      - 7
+      - 123
+    notes: []
+- config_path: experiments/cross_source_generalization.yaml
+  topic: sequence_models
+  role: full
+  status: diagnostic
+  loader_type: cross_source_experiment
+  expected_cli_argument: --cross-source-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 2e1b8f5333c2e1815fb0da3daaa3bc8974c9c7006ad3d71c08020b723dad917a
+  used_by: []
+  report_links:
+  - reports/cross_source_experiment_plan.json
+  - reports/cross_source_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/cross_source_generalization.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: 'Завершённая проверка по data subsets/protocol organization; не интерпретировать как cross-device final
+      result.
+
+      '
+    canonical_config: experiments/cross_source_generalization.yaml
+    result_status: diagnostic
+    config_role: full
+    linked_experiments: []
+    evidence:
+    - reports/cross_source_generalization_report.md
+    - commit:1ac7d0f
+    notes: []
+- config_path: configs/smoke_torch_lstm_label_q5.yaml
+  topic: sequence_models
+  role: smoke
+  status: smoke
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 0f16e8d80d3367d829a7b4aeef4becaa47d3c305c086251037bf707ef89c85e0
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+    - 'missing_inner_validation [validation]: Torch sequence config has no explicit group-aware inner validation'
+  automatic_role: smoke
+  automatic_status: smoke
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/smoke_torch_lstm_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Sequence model technical smoke.
+    canonical_config: configs/smoke_torch_lstm_label_q5.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - tests/test_torch_lstm.py
+    - commit:50d35ac
+    unlinked_category: smoke support
+    notes: []
+- config_path: experiments/automl_transformer_label_q5.yaml
+  topic: sequence_models
+  role: diagnostic
+  status: diagnostic
+  loader_type: automl_study
+  expected_cli_argument: --automl-study
+  base_config: configs/groupkfold_torch_transformer_label_q5.yaml
+  inheritance_depth: 1
+  resolved_config_hash: a2c0c0e3ab18b506e96cbc380473c9012558212d217c9667a0be2a3e64414343
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/automl_transformer_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Nested AutoML pilot, не финальный model-selection protocol.
+    canonical_config: experiments/automl_transformer_label_q5.yaml
+    result_status: diagnostic
+    canonical_status: completed
+    provenance_status: documented
+    config_role: diagnostic
+    linked_experiments: []
+    evidence:
+    - reports/automl_transformer_pilot.md
+    - commit:54c98fc
+    linked_report: reports/automl_transformer_pilot.md
+    linked_runtime: benchmark_results/automl/transformer_label_q5/transformer_label_q5_pilot
+    unlinked_category: diagnostic utility
+    notes: []
+- config_path: experiments/feature_group_transformer_ablation.yaml
+  topic: sequence_models
+  role: ablation
+  status: diagnostic
+  loader_type: feature_group_experiment
+  expected_cli_argument: --feature-group-experiment
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 4dc6d8b6b45dfcdf524ac9bfd4ede0fa02a97f3bfe1d70342f300d8aadcb2cc8
+  used_by: []
+  report_links:
+  - reports/feature_group_rf_summary.json
+  - reports/feature_group_transformer_ablation.md
+  - reports/feature_group_transformer_summary.json
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: ablation
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/feature_group_transformer_ablation.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Transformer feature-group ablation, отдельная от RF.
+    canonical_config: experiments/feature_group_transformer_ablation.yaml
+    result_status: diagnostic
+    config_role: ablation
+    linked_experiments: []
+    evidence:
+    - reports/feature_group_transformer_ablation.md
+    - commit:d234f71
+    notes: []
+- config_path: configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+  topic: sequence_models
+  role: legacy
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 0577926406c129aa21175f19c03c946bfd0ef1f206d000bf60e05ae65a4229c2
+  used_by:
+  - label_q5_gapaware_bilstm_groupkfold
+  report_links: []
+  is_legacy: true
+  superseded_by: null
+  deprecation_reason: Tracked statistical_analysis.yaml identifies this completed length-10 representation as legacy; retain
+    as a baseline.
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: legacy
+  automatic_status: baseline
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: Completed length-10 gap-aware BiLSTM baseline.
+    canonical_config: configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+    result_status: baseline
+    config_role: legacy
+    linked_experiments:
+    - label_q5_gapaware_bilstm_groupkfold
+    evidence:
+    - reports/summary/experiment_registry.yaml
+    - experiments/statistical_analysis.yaml
+    - commit:50d35ac
+    notes: []
+- config_path: configs/groupkfold_torch_bilstm_label_q5.yaml
+  topic: sequence_models
+  role: legacy
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 5c7b60b09dd036809e27711201af228dcf1205888c2ebe394088968d0e96312b
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+    - 'missing_inner_validation [validation]: Torch sequence config has no explicit group-aware inner validation'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_bilstm_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: 'Завершённый исторический five-fold BiLSTM baseline без gap-aware continuity checks и явного group-record
+      inner validation; сохраняется отдельно и не объявляется заменённым другим протоколом.
+
+      '
+    canonical_config: configs/groupkfold_torch_bilstm_label_q5.yaml
+    result_status: baseline
+    canonical_status: historical
+    provenance_status: documented
+    config_role: legacy
+    linked_experiments: []
+    evidence:
+    - commit:50d35ac
+    linked_runtime: benchmark_results/groupkfold_torch_bilstm_label_q5/20260714_150400
+    orchestration_provenance:
+      related_gapaware_config: configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml
+      relationship: distinct completed historical protocol
+    unlinked_category: historical runtime provenance
+    notes:
+    - Gap-aware BiLSTM is the scientifically safer current sequence reference.
+- config_path: configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+  topic: sequence_models
+  role: legacy
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: eacd5a8831d6793f052cee2333e594dc7b6c95b6458ecdc3ff010b85c9c48365
+  used_by:
+  - label_q5_gapaware_lstm_groupkfold
+  report_links: []
+  is_legacy: true
+  superseded_by: null
+  deprecation_reason: Tracked statistical_analysis.yaml identifies this completed length-10 representation as legacy; retain
+    as a baseline.
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'missing_config_version: configuration has no explicit config version'
+  automatic_role: legacy
+  automatic_status: baseline
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: Completed length-10 gap-aware LSTM baseline.
+    canonical_config: configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+    result_status: baseline
+    config_role: legacy
+    linked_experiments:
+    - label_q5_gapaware_lstm_groupkfold
+    evidence:
+    - reports/summary/experiment_registry.yaml
+    - experiments/statistical_analysis.yaml
+    - commit:50d35ac
+    notes: []
+- config_path: configs/groupkfold_torch_lstm_label_q5.yaml
+  topic: sequence_models
+  role: legacy
+  status: baseline
+  loader_type: benchmark_config
+  expected_cli_argument: --config
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: e73bd72c962901543795a5ff6e34e7d20c643fae849a9c079434eaa69da63a94
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: true
+    schema_valid: true
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+    - 'missing_inner_validation [validation]: Torch sequence config has no explicit group-aware inner validation'
+  automatic_role: full
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/groupkfold_torch_lstm_label_q5.yaml
+    review_status: reviewed
+    decision: keep_as_legacy
+    decision_reason: 'Завершённый исторический five-fold LSTM baseline без gap-aware continuity checks и явного group-record
+      inner validation; сохраняется отдельно и не объявляется заменённым другим протоколом.
+
+      '
+    canonical_config: configs/groupkfold_torch_lstm_label_q5.yaml
+    result_status: baseline
+    canonical_status: historical
+    provenance_status: documented
+    config_role: legacy
+    linked_experiments: []
+    evidence:
+    - commit:50d35ac
+    linked_runtime: benchmark_results/groupkfold_torch_lstm_label_q5/20260714_150259
+    orchestration_provenance:
+      related_gapaware_config: configs/groupkfold_torch_lstm_gapaware_label_q5.yaml
+      relationship: distinct completed historical protocol
+    unlinked_category: historical runtime provenance
+    notes:
+    - Gap-aware LSTM is the scientifically safer current sequence reference.
+duplicate_groups:
+- kind: same_protocol_different_output
+  hash: 042e8b993ce057b12e6631e405aa5349bcea22b50f8ab69b05218deb1190dd8a
+  configs:
+  - experiments/calibration/label_q5_finetuning_cuda_smoke_base.yaml
+  - experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke_base.yaml
+  recommendation: keep separate when outputs represent distinct completed runs
+  group_id: D001
+- kind: same_protocol_different_output
+  hash: afcb1cb1fe5a9016de6f237274016196d73c2ea1aa6482008187086bb9c53be6
+  configs:
+  - experiments/calibration/label_q5_finetuning_full_base.yaml
+  - experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml
+  recommendation: keep separate when outputs represent distinct completed runs
+  group_id: D002
+- kind: same_protocol_different_seed
+  hash: 60cf7b742b29145aaccdc2ac48f9ea6f719425668c24ff587377cb8a432f74c8
+  configs:
+  - configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+  - configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml
+  - configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml
+  recommendation: replace with a seed-aware base config on the consolidation stage
+  group_id: D003
+- kind: same_protocol_different_seed
+  hash: 7fc40035d6340017d2e50c7b840e7cca2737dc0f62e07ce6b653d8f17b1da042
+  configs:
+  - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml
+  - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml
+  - configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml
+  recommendation: replace with a seed-aware base config on the consolidation stage
+  group_id: D004

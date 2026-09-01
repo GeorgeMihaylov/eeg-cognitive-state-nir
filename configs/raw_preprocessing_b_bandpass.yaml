@@ -1,0 +1,16 @@
+raw_preprocessing:
+  resample_hz: 256
+  bandpass:
+    enabled: true
+    low_hz: 1.0
+    high_hz: 45.0
+  notch:
+    enabled: false
+    frequency_hz: 50.0
+    quality_factor: 30.0
+  rereference:
+    mode: none
+  artifact_rejection:
+    enabled: false
+    max_abs_amplitude: null
+    max_flat_fraction: null

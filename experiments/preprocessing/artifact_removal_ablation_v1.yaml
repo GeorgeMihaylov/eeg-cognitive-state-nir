@@ -1,0 +1,67 @@
+experiment_id: artifact_removal_ablation_v1
+result_status: baseline
+
+dataset:
+  raw_window_index: data/interim/raw_eeg_window_index_w10_raw_v3.parquet
+  target_table: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  logical_recording_map: data/interim/logical_recording_map.parquet
+  reference_fold_manifest: benchmark_results/pm_all_targets_feature_baseline_v1/preregistration/fold_manifest.json
+  raw_preprocessing:
+    resample_hz: 256
+    bandpass: {enabled: false, low_hz: 1.0, high_hz: 45.0}
+    notch: {enabled: false, frequency_hz: 50.0, quality_factor: 30.0}
+    rereference: {mode: none}
+    artifact_rejection: {enabled: false, max_abs_amplitude: null, max_flat_fraction: null}
+
+targets: [attention, engagement, excitement, stress, relaxation, interest, focus]
+variants: [raw, faster, ica, faster_ica]
+
+faster:
+  z_threshold: 3.0
+  interpolate_bad_channels: true
+  interpolate_bad_channel_epoch: true
+
+ica:
+  calibration_selection: deterministic_participant_balanced_outer_train
+  calibration_max_windows: 64
+  n_components: 14
+  max_iter: 500
+  random_state: 42
+
+artifact_runtime:
+  cache_transformed_windows: true
+
+model:
+  name: torch_shallow_convnet
+  params:
+    n_filters: 40
+    temporal_kernel_samples: 25
+    pool_size: 75
+    pool_stride: 15
+    dropout: 0.5
+    batch_size: 128
+    max_epochs: 15
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    validation_size: 0.15
+    early_stopping_patience: 4
+    device: auto
+    random_state: 42
+    standardize: true
+    num_workers: 0
+
+evaluation:
+  protocol: fixed_group_kfold_subject
+  folds: [1, 2, 3, 4, 5]
+  group_column: subject_id
+  inner_validation_group_column: record_group_id
+
+smoke:
+  targets: [attention]
+  folds: [1]
+  max_train_windows: 600
+  max_test_windows: 200
+  max_epochs: 1
+  ica_calibration_max_windows: 16
+
+output_dir: benchmark_results/artifact_removal_ablation_v1

@@ -1,0 +1,8 @@
+﻿dataset,analysis_unit,rows_or_windows,subjects,records,channels,features,sampling_rate_hz,window_seconds,target,notes
+gpn_data + Old_EEG aggregate,window,51308,55,120,14,448,,10,label_q5 / seven PM targets,Before supervised target filtering; 168 EEG + 280 POW features.
+label_q5 supervised,window,45384,54,119,14,448,,10,label_q5 (5 classes),Rows with missing target removed.
+seven-target PM regression,window,43174,53,,14,448,,10,7 continuous PM targets,Complete-case target rows.
+raw EEG deduplicated,window,30958,54,,14,,256,10,label_q5,"Input [1,14,2560]; logical-record deduplication."
+COG-BCI corpus,record,1044,29,1044,62/63,,500,,N-Back / MATB-II protocol,Three sessions; ECG1 excluded from EEG policies.
+COG-BCI emotiv_common cache,window,56903,29,1044,14,,500,5.12,protocol-derived,Record-safe native-time cache.
+COG-BCI time-aligned cache,window,28910,29,1044,14,,256,10,contrastive pretraining,Whole-record polyphase 64/125 resampling.

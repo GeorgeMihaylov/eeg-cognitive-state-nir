@@ -1,0 +1,100 @@
+{
+  "result_status": "diagnostic",
+  "input_cache": "benchmark_results/cog_bci_windows/emotiv_common_full",
+  "source_dataset_root": "data/raw/cog_bci/extracted",
+  "index_cache": "benchmark_results/cog_bci_loader/record_index.json",
+  "task_protocol": "benchmark_results/cog_bci_protocols/nback_3class",
+  "channel_audit_dir": "benchmark_results/cog_bci_channel_audit",
+  "output_dir": "benchmark_results/cog_bci_spectral_benchmark/nback_3class",
+  "tracked_report": "reports/integration/cog_bci_nback_spectral_benchmark.md",
+  "seed": 42,
+  "channel_policies": [
+    "emotiv_common",
+    "cog_bci_common"
+  ],
+  "representations": [
+    "channel_wise",
+    "global_summary"
+  ],
+  "feature_sets": [
+    "spectral_only",
+    "spectral_plus_nuisance"
+  ],
+  "spectral_features": {
+    "sampling_rate_hz": 500.0,
+    "frequency_bands_hz": {
+      "delta": [1.0, 4.0],
+      "theta": [4.0, 8.0],
+      "alpha": [8.0, 13.0],
+      "beta": [13.0, 30.0],
+      "low_gamma": [30.0, 45.0]
+    },
+    "welch_nperseg": 512,
+    "welch_noverlap": 256,
+    "detrend": "constant",
+    "scaling": "density",
+    "record_aggregation": [
+      "mean",
+      "median",
+      "std",
+      "iqr"
+    ]
+  },
+  "models": {
+    "enabled": [
+      "multinomial_logistic_regression",
+      "hist_gradient_boosting"
+    ],
+    "selection_metric": "inner_validation_record_macro_f1",
+    "scaler_fit_partition": "inner_train",
+    "tie_break": [
+      "spectral_only",
+      "fewer_features",
+      "stronger_regularization"
+    ],
+    "logistic_regression": {
+      "penalty": "l2",
+      "solver": "lbfgs",
+      "C": [0.01, 0.1, 1.0, 10.0]
+    },
+    "hist_gradient_boosting": {
+      "selection_seed": 42,
+      "seeds": [42, 43, 44, 45, 46],
+      "grid": [
+        {
+          "learning_rate": 0.05,
+          "max_iter": 100,
+          "max_leaf_nodes": 7,
+          "l2_regularization": 0.001
+        },
+        {
+          "learning_rate": 0.08,
+          "max_iter": 100,
+          "max_leaf_nodes": 15,
+          "l2_regularization": 0.0001
+        }
+      ]
+    }
+  },
+  "split_contract": {
+    "outer_protocol": "precomputed_5_fold_groupkfold_subject_id",
+    "outer_split_hash": "5874a0a93bff6f8a504cbc75e15c48588bf12cd51f460eb0f9d16ff94809ac01",
+    "inner_protocol": "precomputed_subject_disjoint_holdout",
+    "inner_split_hash": "d84f3853e244f2be47f6ad4431b533a1ec8d6e0b8d41687991d6b2fc32922ef9",
+    "outer_test_used_for_selection": false
+  },
+  "bootstrap": {
+    "unit": "subject_with_all_records",
+    "repeats": 2000,
+    "seed": 42,
+    "interval": "percentile_95"
+  },
+  "decision_rule": {
+    "primary_model": "multinomial_logistic_regression",
+    "primary_representation": "channel_wise",
+    "minimum_balanced_accuracy_gain": 0.03,
+    "minimum_advantage_folds": 3,
+    "minimum_positive_bootstrap_fraction": 0.8,
+    "minimum_spectral_only_selected_folds": 3
+  }
+}

@@ -15,7 +15,7 @@ env/
 .vscode/
 
 # Data
-data/
+/data/
 *.parquet
 *.csv
 *.bz2
@@ -24,6 +24,8 @@ data/
 *.zip
 
 # Generated outputs
+benchmark_results/
+/_share/
 reports/runs/
 reports/figures/
 outputs/
@@ -31,7 +33,6 @@ logs/
 *.log
 
 # Models/checkpoints
-models/
 checkpoints/
 *.pt
 *.pth
@@ -47,3 +48,16 @@ data/external/
 *.zip
 *.7z
 *.rar
+
+.pytest_cache/
+/.pytest_tmp/
+
+AGENTS.md
+PROJECT_CONTEXT.md
+TODO.md
+
+
+# Deterministic final report artifacts
+!reports/summary/final_experiment_inventory.csv
+!reports/summary/final_result_tables/
+!reports/summary/final_result_tables/*.csv

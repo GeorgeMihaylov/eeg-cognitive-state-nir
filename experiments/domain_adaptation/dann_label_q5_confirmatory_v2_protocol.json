@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0",
+  "experiment_id": "dann_label_q5_old_eeg_to_gpn_confirmatory_v2",
+  "protocol_id": "dann_label_q5_old_eeg_to_gpn_confirmatory_v2",
+  "execution_enabled": false,
+  "rerun_observed_diagnostic": false,
+  "output_dir": "benchmark_results/domain_adaptation_dann_confirmatory_v2_protocol",
+  "direction": "Old_EEG_to_gpn_data",
+  "outer_folds": [1, 2, 3, 4, 5],
+  "primary_seeds": [123, 2026],
+  "secondary_seeds": [42],
+  "modes": ["source_only_matched", "dann"],
+  "observed_diagnostic_cell": {
+    "fold": 1,
+    "seed": 42,
+    "analysis_group": "previously_observed_diagnostic",
+    "execution_status": "already_completed"
+  },
+  "raw_universe_hash": "308fdd96523565417d0fc2f3b3bfdea74639224ce1ee44f5e87af6cc0b7e94cf",
+  "confirmatory_v1_reference": {
+    "protocol_id": "dann_label_q5_raw_confirmatory_multifold_v1",
+    "protocol_hash": "a261d6081b4924af82752021fa24bbd50a75ed83ac3672db1e691709ad2cad71",
+    "preregistration_hash": "f4862dbf09d6eccd04438eebd5bbd99899dc4f1530ba3554c87a45a13dba59c4",
+    "protocol_manifest": "benchmark_results/domain_adaptation_dann_confirmatory_protocol/protocol_manifest.json",
+    "protocol_manifest_sha256": "ba34bec9edc0b95d8c951ed17aed5ce356a471b65dd01ffddcd6e9afb786cc88",
+    "preregistration": "benchmark_results/domain_adaptation_dann_confirmatory_protocol/preregistration/experiment_preregistration.json",
+    "fold_partitions": "benchmark_results/domain_adaptation_dann_confirmatory_protocol/fold_subject_partitions.parquet",
+    "fold_partitions_sha256": "94f7c06fecb9122ba296e8a94ac3405fc743c90f470c90da10b7f6743b96feb6",
+    "model_seed_manifest": "benchmark_results/domain_adaptation_dann_confirmatory_protocol/model_seed_manifest.json",
+    "model_seed_manifest_sha256": "973ee256b64b8337652d57f893fa25962e7cc0c1defaa3192c710a3383e41d2f",
+    "target_label_firewall": "benchmark_results/domain_adaptation_dann_confirmatory_protocol/target_label_firewall_audit.json",
+    "target_label_firewall_sha256": "281edc178c1de7c294e4fbcc18783eb5ba9bb86346b6dab0f8109b63cda93195"
+  },
+  "diagnostic_reference": {
+    "source": "benchmark_results/domain_adaptation_dann_raw_diagnostic",
+    "protocol_hash": "7f5642109e1ed26dd6de96aa88fe0711bfa08e8f3a58422b17364301d693f7c5",
+    "preregistration_hash": "f5e7cd962cc361b36e74b073c8532e2af5f4a94a36831f21531d6db36b54a817",
+    "source_only_checkpoint": "benchmark_results/domain_adaptation_dann_raw_diagnostic/source_only/checkpoint.pt",
+    "source_only_checkpoint_sha256": "5b371b8da06088f0f386aa82c6848cd9d473e7845b2f1655339587acc72e11f3",
+    "dann_checkpoint": "benchmark_results/domain_adaptation_dann_raw_diagnostic/dann/checkpoint.pt",
+    "dann_checkpoint_sha256": "0fa4900e166c2ce2a6f51bbd3c79871409ba47d20df4e649146684d925e1ada2",
+    "target_test_predictions": "benchmark_results/domain_adaptation_dann_raw_diagnostic/target_test_predictions.parquet",
+    "target_test_predictions_sha256": "00c7abbb4037973b7482d611a162f32ff9ba4c1914e6bfefa817bd275191e218",
+    "participant_metrics": "benchmark_results/domain_adaptation_dann_raw_diagnostic/target_test_subject_metrics.csv",
+    "participant_metrics_sha256": "dabb732aa01703500aac51450b9221b14d98cd9d4ee9306ff2c8f78a53203104",
+    "diagnostic_summary": "benchmark_results/domain_adaptation_dann_raw_diagnostic/diagnostic_summary.json",
+    "diagnostic_summary_sha256": "fc52fe7f72f2c2d8b9d8ed6ec8ec2218d2dcbe47be18278fab9b13ea0143bd3d"
+  },
+  "architecture": {
+    "model": "torch_eegnet",
+    "input_shape": [1, 14, 2560],
+    "num_outputs": 5,
+    "task_parameter_count": 8501,
+    "latent_dim": 1280,
+    "architecture_signature": "248d244e050af2b9e5bd1de0b706665efd3cb13a642044a965fc85602bbe23a7",
+    "domain_parameter_count": 172354,
+    "domain_outputs": 2,
+    "domain_head_signature": "76af7a0e9a0d75d6637380a25903d296d1a50d12bdb07c2913ab694619e158e0"
+  },
+  "training": {
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "source_batch_size": 32,
+    "target_batch_size": 32,
+    "maximum_epochs": 12,
+    "early_stopping_patience": 3,
+    "gradient_clip_norm": 5.0,
+    "grl_alpha_schedule": "alpha(p)=2/(1+exp(-10*p))-1",
+    "domain_lambda_schedule": "constant_1.0",
+    "checkpoint_primary": "source_validation_macro_f1",
+    "checkpoint_secondary": "source_validation_balanced_accuracy",
+    "checkpoint_partition": "source_validation",
+    "domain_accuracy_selects_checkpoint": false,
+    "source_validation_split_seed": 42,
+    "source_validation_shared_across_model_seeds": true,
+    "target_train_task_labels_accessible": false
+  },
+  "primary_aggregation": {
+    "analysis_group": "primary_confirmatory",
+    "primary_unit": "unique_target_test_participant",
+    "seed_order": [123, 2026],
+    "order": ["pair_modes_within_fold_seed_participant", "average_within_participant_across_primary_seeds", "aggregate_unique_participants"],
+    "participant_weighting": "equal",
+    "window_count_weighting": false,
+    "best_seed_selection": false
+  },
+  "secondary_aggregation": {
+    "analysis_groups": ["primary_confirmatory", "secondary_sensitivity", "previously_observed_diagnostic"],
+    "purpose": ["three_seed_robustness", "diagnostic_comparison", "seed_variability"],
+    "may_change_primary_decision": false,
+    "result_field": "secondary_sensitivity_status"
+  },
+  "primary_decision_rule": {
+    "confirmed_mean_delta_macro_f1_min": 0.01,
+    "confirmed_median_delta_macro_f1_strictly_positive": true,
+    "confirmed_mean_delta_balanced_accuracy_min": 0.0,
+    "confirmed_participant_win_fraction_min": 0.6,
+    "confirmed_nonnegative_fold_count_min": 4,
+    "confirmed_nonnegative_primary_seed_count": 2,
+    "partially_confirmed_requires_positive_overall_mean": true,
+    "not_confirmed_overall_mean_max": 0.0,
+    "not_confirmed_positive_fold_count_max": 1,
+    "not_confirmed_participant_win_fraction_below": 0.4,
+    "methodological_error_status": "blocked"
+  },
+  "secondary_sensitivity_rule": {
+    "reported_separately": true,
+    "primary_decision_immutable": true,
+    "statistical_significance_claimed": false
+  },
+  "target_test_lock": {
+    "initial_status": "locked",
+    "one_manifest_per_fold_seed": true,
+    "required_before_unlock": ["source_only_checkpoint_hash", "dann_checkpoint_hash", "source_only_best_epoch", "dann_best_epoch", "source_validation_metrics", "batch_sequence_hashes", "preregistration_hash", "protocol_hash"],
+    "diagnostic_unlock_reusable_for_new_runs": false
+  }
+}

@@ -1,0 +1,32 @@
+analysis:
+  name: ordinal_transformer_multiseed_statistics
+  type: ordinal_transformer_multiseed_statistics
+  run_summary: reports/ordinal_transformer_multiseed_runs_summary.json
+  output_dir: benchmark_results/ordinal_transformer_multiseed_statistics
+  report_path: reports/ordinal_transformer_multiseed_statistics.md
+  summary_path: reports/ordinal_transformer_multiseed_summary.json
+  decision_report_path: reports/ordinal_transformer_multiseed_decision.md
+  bootstrap_samples: 10000
+  random_state: 42
+
+expected:
+  seeds: [7, 42, 123]
+  sequences: 44142
+  subjects: 53
+  folds: 5
+  sequence_index_sha256: 1d0a1fe8ab8aad1c6da8637cb882c4365c01acb80c0822e34ced21ef7ee36afa
+  source_parquet: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  source_parquet_sha256: 26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8
+
+hypotheses:
+  primary_metrics: [ordinal_mae, severe_error_rate]
+  secondary_metrics:
+    - balanced_accuracy
+    - macro_f1
+    - quadratic_weighted_kappa
+    - adjacent_accuracy
+    - expected_rank_mae
+    - expected_rank_spearman
+  candidates: [coral, corn]
+  reference: categorical
+  feature_groups: [eeg_only, eeg_pow]

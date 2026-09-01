@@ -1,0 +1,173 @@
+{
+  "schema_version": "personalization-calibration-v1",
+  "experiment": {
+    "type": "personalization_calibration",
+    "experiment_id": "seven_pm_personalization_calibration_v1",
+    "result_status": "planned",
+    "output_dir": "benchmark_results/personalization_calibration_v1",
+    "random_state": 42
+  },
+  "data": {
+    "raw_manifest": "data/interim/raw_eeg_window_index_w10_pm_union_composite_v1.parquet",
+    "logical_recording_map": "data/interim/logical_recording_map.parquet",
+    "processed_targets": "data/processed/windowed_eeg_pm_dataset_w10.parquet",
+    "dataset_mode": "raw_deduplicated_logical_records",
+    "raw_preprocessing": {
+      "resample_hz": 256,
+      "bandpass": {
+        "enabled": false,
+        "low_hz": 1.0,
+        "high_hz": 45.0
+      },
+      "notch": {
+        "enabled": false,
+        "frequency_hz": 50.0,
+        "quality_factor": 30.0
+      },
+      "rereference": {
+        "mode": "none"
+      },
+      "artifact_rejection": {
+        "enabled": false,
+        "max_abs_amplitude": null,
+        "max_flat_fraction": null
+      }
+    }
+  },
+  "pms": [
+    "attention",
+    "engagement",
+    "excitement",
+    "stress",
+    "relaxation",
+    "interest",
+    "focus"
+  ],
+  "task_types": [
+    "classification"
+  ],
+  "models": [
+    {
+      "model_id": "torch_shallow_convnet",
+      "input_family": "raw"
+    },
+    {
+      "model_id": "torch_eegnet",
+      "input_family": "raw"
+    },
+    {
+      "model_id": "torch_mlp",
+      "input_family": "features"
+    }
+  ],
+  "protocol": {
+    "n_outer_folds": 5,
+    "outer_group_column": "subject_id",
+    "fixed_outer_fold_column": "outer_fold",
+    "inner_validation_group_column": "record_group_id",
+    "split_strategy": "chronological_prefix",
+    "fraction_allocation": "global_prefix",
+    "window_seconds": 10.0,
+    "max_gap_seconds": 10.5,
+    "purge_windows": 0,
+    "minimum_calibration_samples": 5,
+    "minimum_evaluation_samples": 20,
+    "q3_transform": "FoldLocalQuantileTargetTransform",
+    "q3_fit_scope": "outer_train_only",
+    "fixed_evaluation_reference_budget_fraction": 0.2
+  },
+  "calibration": {
+    "budgets_fraction": [
+      0.0,
+      0.01,
+      0.05,
+      0.1,
+      0.2
+    ],
+    "modes": [
+      "zero_shot",
+      "head_only",
+      "full_model"
+    ],
+    "adaptation_validation_fraction": 0.2,
+    "adaptation_validation_source": "calibration_only_chronological_suffix",
+    "head_only_learning_rate": 0.001,
+    "full_model_learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "max_epochs": 5,
+    "early_stopping_patience": 3
+  },
+  "metrics": {
+    "classification": [
+      "accuracy",
+      "balanced_accuracy",
+      "macro_f1",
+      "weighted_f1"
+    ],
+    "regression": [
+      "mae",
+      "rmse",
+      "r2",
+      "pearson",
+      "spearman"
+    ],
+    "aggregation": "participant_macro",
+    "reference": "zero_shot_on_identical_evaluation_samples"
+  },
+  "analysis": {
+    "formal_accuracy_threshold": 0.75,
+    "aggregation": "participant_macro",
+    "threshold_role": "report_only_not_for_selection"
+  },
+  "execution": {
+    "save_adapted_checkpoints": true,
+    "feature_scaling": {
+      "strategy": "standard_clip",
+      "clip_percentiles": [0.5, 99.5]
+    },
+    "base_training": {
+      "max_epochs": 15,
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "validation_size": 0.15,
+      "early_stopping_patience": 4,
+      "device": "auto",
+      "random_state": 42,
+      "standardize": true,
+      "num_workers": 0
+    },
+    "model_params": {
+      "torch_shallow_convnet": {
+        "common": {
+          "n_filters": 40,
+          "temporal_kernel_samples": 25,
+          "pool_size": 75,
+          "pool_stride": 15,
+          "dropout": 0.5,
+          "batch_size": 128
+        }
+      },
+      "torch_eegnet": {
+        "common": {
+          "temporal_kernel_seconds": 0.5,
+          "separable_kernel_seconds": 0.125,
+          "f1": 8,
+          "depth_multiplier": 2,
+          "f2": 16,
+          "pool1": 4,
+          "pool2": 8,
+          "dropout": 0.5,
+          "batch_size": 32
+        }
+      },
+      "torch_mlp": {
+        "common": {
+          "hidden_dims": [256, 128],
+          "dropout": 0.3,
+          "activation": "relu",
+          "batch_size": 256
+        }
+      }
+    }
+  }
+}

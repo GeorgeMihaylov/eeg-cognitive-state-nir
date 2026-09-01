@@ -1,0 +1,58 @@
+schema_version: preliminary-streaming-handoff-v1
+experiment_id: preliminary_streaming_handoff_shallow_fold1_seed42
+result_status: preliminary
+output_dir: benchmark_results/preliminary_streaming_handoff_shallow_fold1
+
+data:
+  composite_manifest: data/interim/raw_eeg_window_index_w10_pm_union_composite_v1.parquet
+  processed_targets: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  logical_recording_map: data/interim/logical_recording_map.parquet
+  dataset_mode: raw_deduplicated_logical_records
+
+raw_preprocessing:
+  resample_hz: 256
+  bandpass: {enabled: false, low_hz: 1.0, high_hz: 45.0}
+  notch: {enabled: false, frequency_hz: 50.0, quality_factor: 30.0}
+  rereference: {mode: none}
+  artifact_rejection: {enabled: false, max_abs_amplitude: null, max_flat_fraction: null}
+
+targets: [attention, engagement, excitement, stress, relaxation, interest, focus]
+
+model:
+  type: torch_shallow_convnet
+  params:
+    n_filters: 40
+    temporal_kernel_samples: 25
+    pool_size: 75
+    pool_stride: 15
+    dropout: 0.5
+    batch_size: 128
+    max_epochs: 5
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    validation_size: 0.15
+    early_stopping_patience: 2
+    device: auto
+    random_state: 42
+    standardize: true
+    num_workers: 0
+
+evaluation:
+  protocol: group_kfold_subject
+  n_splits: 5
+  group_column: subject_id
+  precomputed_fold_column: outer_fold
+  folds: [1]
+  random_state: 42
+
+validation:
+  strategy: group_record
+  group_column: record_group_id
+  validation_size: 0.15
+  random_state: 42
+
+latency:
+  warmup_iterations: 20
+  measured_iterations: 100
+  batch_size: 1
+

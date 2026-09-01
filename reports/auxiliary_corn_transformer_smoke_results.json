@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "experiment": "auxiliary_corn_transformer_smoke",
+  "technical_only": true,
+  "lambda_selection_performed": false,
+  "source_parquet_sha256": "26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8",
+  "full_sequence_index_sha256": "1d0a1fe8ab8aad1c6da8637cb882c4365c01acb80c0822e34ced21ef7ee36afa",
+  "smoke_sequence_subset_sha256": "6201df099c015dbbf08cfdea20eea2aa2b80f4e8904020032e859061b6aa5c32",
+  "audit_status": "completed",
+  "ready_for_nested_lambda_experiment": true,
+  "trials": [
+    {
+      "trial_id": "categorical_corn_eeg_pow_lambda_0p25",
+      "auxiliary_weight": 0.25,
+      "outcome": "completed",
+      "epochs_trained": 3,
+      "best_epoch": 3,
+      "best_validation_loss": 1.2150775167197663,
+      "training_time_seconds": 9.362337350845337,
+      "balanced_accuracy": 0.3756222098949119,
+      "macro_f1": 0.3690473451496009,
+      "ordinal_mae": 0.9626136363636364,
+      "severe_error_rate": 0.24329545454545454,
+      "aux_ordinal_mae": 0.9159090909090909,
+      "aux_severe_error_rate": 0.21522727272727274,
+      "categorical_aux_prediction_agreement": 0.8152272727272727,
+      "probability_validation": {
+        "rows": 8800,
+        "head_type": "categorical_corn",
+        "auxiliary_weight": 0.25,
+        "primary_probability_shape": [
+          8800,
+          5
+        ],
+        "auxiliary_probability_shape": [
+          8800,
+          5
+        ],
+        "auxiliary_threshold_shape": [
+          8800,
+          4
+        ],
+        "minimum_class_probability": 7.90760441304883e-06,
+        "maximum_primary_probability_sum_error": 1.6123703971970826e-07,
+        "maximum_auxiliary_probability_sum_error": 1.253793016076088e-07,
+        "maximum_legacy_probability_delta": 0.0,
+        "maximum_auxiliary_monotonicity_violation": 0.0,
+        "round_off_correction_count": 0,
+        "primary_prediction_recomputation_mismatches": 0,
+        "auxiliary_prediction_recomputation_mismatches": 0,
+        "auxiliary_argmax_recomputation_mismatches": 0,
+        "maximum_categorical_expected_rank_delta": 3.2223761081695557e-07,
+        "maximum_auxiliary_expected_rank_delta": 2.3096799850463867e-07,
+        "categorical_aux_prediction_agreement": 0.8152272727272727
+      },
+      "checkpoint_reload": {
+        "strict_load": true,
+        "primary_prediction_mismatches": 0,
+        "auxiliary_prediction_mismatches": 0,
+        "auxiliary_argmax_mismatches": 0,
+        "maximum_primary_class_probability_delta": 0.0,
+        "maximum_auxiliary_class_probability_delta": 0.0,
+        "maximum_auxiliary_threshold_probability_delta": 0.0,
+        "maximum_categorical_expected_rank_delta": 0.0,
+        "maximum_auxiliary_expected_rank_delta": 0.0
+      },
+      "risk_counts": [
+        30038,
+        24469,
+        18394,
+        12319
+      ]
+    },
+    {
+      "trial_id": "categorical_corn_eeg_pow_lambda_0p5",
+      "auxiliary_weight": 0.5,
+      "outcome": "completed",
+      "epochs_trained": 3,
+      "best_epoch": 3,
+      "best_validation_loss": 1.1998998374421133,
+      "training_time_seconds": 7.4624552726745605,
+      "balanced_accuracy": 0.3766533722729021,
+      "macro_f1": 0.36688212504444107,
+      "ordinal_mae": 0.96,
+      "severe_error_rate": 0.2359090909090909,
+      "aux_ordinal_mae": 0.9147727272727273,
+      "aux_severe_error_rate": 0.21545454545454545,
+      "categorical_aux_prediction_agreement": 0.8302272727272727,
+      "probability_validation": {
+        "rows": 8800,
+        "head_type": "categorical_corn",
+        "auxiliary_weight": 0.5,
+        "primary_probability_shape": [
+          8800,
+          5
+        ],
+        "auxiliary_probability_shape": [
+          8800,
+          5
+        ],
+        "auxiliary_threshold_shape": [
+          8800,
+          4
+        ],
+        "minimum_class_probability": 9.389545084559359e-06,
+        "maximum_primary_probability_sum_error": 1.6651756595820189e-07,
+        "maximum_auxiliary_probability_sum_error": 1.2161035556346178e-07,
+        "maximum_legacy_probability_delta": 0.0,
+        "maximum_auxiliary_monotonicity_violation": 0.0,
+        "round_off_correction_count": 0,
+        "primary_prediction_recomputation_mismatches": 0,
+        "auxiliary_prediction_recomputation_mismatches": 0,
+        "auxiliary_argmax_recomputation_mismatches": 0,
+        "maximum_categorical_expected_rank_delta": 2.905726432800293e-07,
+        "maximum_auxiliary_expected_rank_delta": 2.2351741790771484e-07,
+        "categorical_aux_prediction_agreement": 0.8302272727272727
+      },
+      "checkpoint_reload": {
+        "strict_load": true,
+        "primary_prediction_mismatches": 0,
+        "auxiliary_prediction_mismatches": 0,
+        "auxiliary_argmax_mismatches": 0,
+        "maximum_primary_class_probability_delta": 0.0,
+        "maximum_auxiliary_class_probability_delta": 0.0,
+        "maximum_auxiliary_threshold_probability_delta": 0.0,
+        "maximum_categorical_expected_rank_delta": 0.0,
+        "maximum_auxiliary_expected_rank_delta": 0.0
+      },
+      "risk_counts": [
+        30038,
+        24469,
+        18394,
+        12319
+      ]
+    },
+    {
+      "trial_id": "categorical_corn_eeg_pow_lambda_1",
+      "auxiliary_weight": 1.0,
+      "outcome": "completed",
+      "epochs_trained": 3,
+      "best_epoch": 3,
+      "best_validation_loss": 1.227571478796221,
+      "training_time_seconds": 8.158544540405273,
+      "balanced_accuracy": 0.3712926164151963,
+      "macro_f1": 0.36663923359523076,
+      "ordinal_mae": 0.9263636363636364,
+      "severe_error_rate": 0.21,
+      "aux_ordinal_mae": 0.8954545454545455,
+      "aux_severe_error_rate": 0.19829545454545455,
+      "categorical_aux_prediction_agreement": 0.8263636363636364,
+      "probability_validation": {
+        "rows": 8800,
+        "head_type": "categorical_corn",
+        "auxiliary_weight": 1.0,
+        "primary_probability_shape": [
+          8800,
+          5
+        ],
+        "auxiliary_probability_shape": [
+          8800,
+          5
+        ],
+        "auxiliary_threshold_shape": [
+          8800,
+          4
+        ],
+        "minimum_class_probability": 5.581301593338139e-06,
+        "maximum_primary_probability_sum_error": 1.6834201232995838e-07,
+        "maximum_auxiliary_probability_sum_error": 1.0803341865539551e-07,
+        "maximum_legacy_probability_delta": 0.0,
+        "maximum_auxiliary_monotonicity_violation": 0.0,
+        "round_off_correction_count": 0,
+        "primary_prediction_recomputation_mismatches": 0,
+        "auxiliary_prediction_recomputation_mismatches": 0,
+        "auxiliary_argmax_recomputation_mismatches": 0,
+        "maximum_categorical_expected_rank_delta": 3.166496753692627e-07,
+        "maximum_auxiliary_expected_rank_delta": 2.2351741790771484e-07,
+        "categorical_aux_prediction_agreement": 0.8263636363636364
+      },
+      "checkpoint_reload": {
+        "strict_load": true,
+        "primary_prediction_mismatches": 0,
+        "auxiliary_prediction_mismatches": 0,
+        "auxiliary_argmax_mismatches": 0,
+        "maximum_primary_class_probability_delta": 0.0,
+        "maximum_auxiliary_class_probability_delta": 0.0,
+        "maximum_auxiliary_threshold_probability_delta": 0.0,
+        "maximum_categorical_expected_rank_delta": 0.0,
+        "maximum_auxiliary_expected_rank_delta": 0.0
+      },
+      "risk_counts": [
+        30038,
+        24469,
+        18394,
+        12319
+      ]
+    }
+  ]
+}

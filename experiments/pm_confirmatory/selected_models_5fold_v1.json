@@ -1,0 +1,53 @@
+{
+  "schema_version": "pm-confirmatory-selected-models-v1",
+  "experiment_id": "pm_confirmatory_selected_models_5fold_seed42_v1",
+  "result_status": "confirmatory",
+  "output_dir": "benchmark_results/pm_confirmatory_selected_models_5fold_seed42_v1",
+  "seed": 42,
+  "folds": [1, 2, 3, 4, 5],
+  "pm_names": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
+  "data": {
+    "raw_manifest": "data/interim/raw_eeg_window_index_w10_pm_union_composite_v1.parquet",
+    "logical_recording_map": "data/interim/logical_recording_map.parquet",
+    "processed_targets": "data/processed/windowed_eeg_pm_dataset_w10.parquet"
+  },
+  "feature_cache_identity": {
+    "cache_schema_version": "cogstate-feature-cache-v1",
+    "cache_identity_hash": "92b3d00f70e56c5f7e06fee65df649602670be0179ffce8fb58c2a11f969c5d8",
+    "feature_hash": "454ea5db886fce8c981dc28f8910ca07355956033b001550020a04fd4605832e",
+    "sample_id_universe_hash": "1b8a0ccc2ea4a9066533f6ad60496079822729220c159ce00b2592db750b7c3c",
+    "raw_preprocessing_hash": "2251ca950a467267dcccc1c5b83157f26e02768f46c6073d33f5dc16225bda84",
+    "rows": 34354,
+    "n_features": 371,
+    "dtype": "float32",
+    "selection": "none",
+    "sample_entropy": false
+  },
+  "raw_preprocessing": {
+    "resample_hz": 256,
+    "bandpass": {"enabled": false, "low_hz": 1.0, "high_hz": 45.0},
+    "notch": {"enabled": false, "frequency_hz": 50.0, "quality_factor": 30.0},
+    "rereference": {"mode": "none"},
+    "artifact_rejection": {"enabled": false, "max_abs_amplitude": null, "max_flat_fraction": null}
+  },
+  "raw_input": {"dtype": "float32", "channels": 14, "sampling_rate_hz": 256, "window_seconds": 10, "input_shape": [1, 14, 2560]},
+  "sequence": {"length": 10, "stride": 1, "target_position": "last", "expected_step_seconds": 10.0, "max_gap_seconds": 10.01, "input_shape": [10, 371]},
+  "validation": {"strategy": "group_record", "group_column": "record_group_id", "validation_size": 0.15, "random_state": 42},
+  "models": {
+    "random_forest": {
+      "classification": {"n_estimators": 200, "n_jobs": -1, "random_state": 42},
+      "regression": {"n_estimators": 200, "n_jobs": -1, "random_state": 42}
+    },
+    "xgboost": {
+      "classification": {"n_estimators": 200, "n_jobs": 4, "random_state": 42},
+      "regression": {"n_estimators": 200, "n_jobs": 4, "random_state": 42}
+    },
+    "torch_shallow_convnet": {
+      "classification": {"n_filters": 40, "temporal_kernel_samples": 25, "pool_size": 75, "pool_stride": 15, "dropout": 0.5, "batch_size": 128, "max_epochs": 5, "learning_rate": 0.001, "weight_decay": 0.0001, "validation_size": 0.15, "early_stopping_patience": 2, "device": "auto", "random_state": 42, "standardize": true, "num_workers": 0},
+      "regression": {"n_filters": 40, "temporal_kernel_samples": 25, "pool_size": 75, "pool_stride": 15, "dropout": 0.5, "batch_size": 128, "max_epochs": 5, "learning_rate": 0.001, "weight_decay": 0.0001, "validation_size": 0.15, "early_stopping_patience": 2, "device": "auto", "random_state": 42, "standardize": true, "num_workers": 0}
+    },
+    "torch_lstm": {
+      "classification": {"hidden_size": 128, "num_layers": 1, "bidirectional": false, "dropout": 0.2, "classifier_hidden": 64, "batch_size": 256, "max_epochs": 5, "learning_rate": 0.001, "weight_decay": 0.0001, "validation_size": 0.15, "early_stopping_patience": 2, "device": "auto", "random_state": 42, "standardize": true, "num_workers": 0}
+    }
+  }
+}

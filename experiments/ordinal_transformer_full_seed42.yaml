@@ -1,0 +1,108 @@
+experiment:
+  name: ordinal_transformer_full_seed42
+  type: ordinal_transformer_full
+  output_dir: benchmark_results/ordinal_transformer_full_seed42
+
+dataset:
+  name: emotiv_cognitive
+  data_path: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  target: label_q5
+  subject_col: subject_id
+  expected_supervised_rows: 45384
+  expected_sequences: 44142
+  expected_subjects: 53
+  sequence_index_sha256: 1d0a1fe8ab8aad1c6da8637cb882c4365c01acb80c0822e34ced21ef7ee36afa
+  parquet_sha256: 26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8
+
+task:
+  name: cognitive_load_5class
+  benchmark_task: cognitive_load_5class
+  num_classes: 5
+
+feature_groups:
+  - eeg_only
+  - eeg_pow
+
+feature_definitions:
+  eeg_only:
+    feature_set: eeg_only
+    feature_count: 168
+    feature_list_sha256: 6e822ee172422e7138945b47b2b27c947393b828b72d96b7a8e22850aded8aca
+  eeg_pow:
+    feature_set: eeg_pow
+    feature_count: 448
+    feature_list_sha256: 8cd5d70faa8ff30fb4290dd9d9a2dde0e81f50e7682d05668b5fb47df511fd51
+
+head_types:
+  - coral
+  - corn
+
+seeds:
+  - 42
+
+categorical_references:
+  eeg_only:
+    run_directory: benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023
+  eeg_pow:
+    run_directory: benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412
+
+model:
+  name: torch_transformer
+  type: torch_transformer
+  params:
+    sequence_length: 8
+    d_model: 128
+    nhead: 4
+    num_layers: 2
+    dim_feedforward: 256
+    dropout: 0.1
+    activation: gelu
+    pooling: last
+    positional_encoding: learned
+    num_classes: 5
+    batch_size: 128
+    max_epochs: 15
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    validation_size: 0.15
+    early_stopping_patience: 4
+    device: auto
+    random_state: 42
+    standardize: true
+    num_workers: 0
+
+sequence:
+  length: 8
+  stride: 1
+  target_position: last
+  expected_step_seconds: 10.0
+  max_gap_seconds: 10.5
+
+validation:
+  strategy: group_record
+  group_column: record_group_id
+  validation_size: 0.15
+  random_state: 42
+
+evaluation:
+  protocol: group_kfold_subject
+  n_splits: 5
+  group_column: subject_id
+  folds:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+  random_state: 42
+
+protocol:
+  outer_folds:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+  max_sequences: null
+  max_epochs: 15
+  technical_only: false

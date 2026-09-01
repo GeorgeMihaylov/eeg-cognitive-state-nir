@@ -1,0 +1,2526 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "experiment": "auxiliary_corn_lambda_selection_setup",
+  "plan": {
+    "baselines": [
+      {
+        "feature_group": "eeg_only",
+        "seed": 7,
+        "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522"
+      },
+      {
+        "feature_group": "eeg_only",
+        "seed": 42,
+        "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023"
+      },
+      {
+        "feature_group": "eeg_only",
+        "seed": 123,
+        "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015"
+      },
+      {
+        "feature_group": "eeg_pow",
+        "seed": 7,
+        "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731"
+      },
+      {
+        "feature_group": "eeg_pow",
+        "seed": 42,
+        "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412"
+      },
+      {
+        "feature_group": "eeg_pow",
+        "seed": 123,
+        "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227"
+      }
+    ],
+    "baseline_fold_materializations": 30,
+    "future_candidate_fold_fits": 90,
+    "feature_groups": [
+      "eeg_pow",
+      "eeg_only"
+    ],
+    "seeds": [
+      7,
+      42,
+      123
+    ],
+    "folds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "auxiliary_weights": [
+      0.25,
+      0.5,
+      1.0
+    ],
+    "balanced_accuracy_tolerance": 0.01,
+    "output_directory": "benchmark_results/auxiliary_corn_lambda_selection_setup",
+    "outer_test_used": false
+  },
+  "outcomes": [
+    {
+      "feature_group": "eeg_only",
+      "seed": 7,
+      "outcome": "materialized",
+      "summary": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/baseline_validation_summary.json",
+      "result": {
+        "feature_group": "eeg_only",
+        "seed": 7,
+        "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522",
+        "folds": [
+          {
+            "feature_group": "eeg_only",
+            "seed": 7,
+            "outer_fold": 1,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_01/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/fold_01/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/fold_01/validation_metrics.json",
+            "validation_rows": 5304,
+            "validation_identity_sha256": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f",
+            "metrics": {
+              "accuracy": 0.49095022624434387,
+              "balanced_accuracy": 0.4966869962636581,
+              "precision": 0.49951586010075333,
+              "recall": 0.49095022624434387,
+              "macro_f1": 0.4941210362582428,
+              "weighted_f1": 0.49121737890308115,
+              "f1_macro": 0.4941210362582428,
+              "f1_weighted": 0.49121737890308115,
+              "kappa": 0.3647666102366667,
+              "quadratic_weighted_kappa": 0.7218097119817577,
+              "ordinal_mae": 0.6779788838612368,
+              "adjacent_accuracy": 0.8648190045248869,
+              "severe_error_rate": 0.1351809954751131,
+              "confusion_matrix": [
+                [
+                  594,
+                  271,
+                  51,
+                  29,
+                  4
+                ],
+                [
+                  219,
+                  456,
+                  198,
+                  91,
+                  10
+                ],
+                [
+                  153,
+                  376,
+                  370,
+                  216,
+                  52
+                ],
+                [
+                  53,
+                  155,
+                  194,
+                  496,
+                  225
+                ],
+                [
+                  13,
+                  53,
+                  53,
+                  284,
+                  688
+                ]
+              ],
+              "auc": 0.7971041041604735,
+              "expected_rank_mae": 0.7013786131130506,
+              "expected_rank_spearman": 0.7505615614544165,
+              "n_samples": 5304,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 7,
+            "outer_fold": 2,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_02/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/fold_02/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/fold_02/validation_metrics.json",
+            "validation_rows": 5319,
+            "validation_identity_sha256": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558",
+            "metrics": {
+              "accuracy": 0.47997743936830234,
+              "balanced_accuracy": 0.4957890145693059,
+              "precision": 0.47342844366030584,
+              "recall": 0.47997743936830234,
+              "macro_f1": 0.4871788915345103,
+              "weighted_f1": 0.4712109596925576,
+              "f1_macro": 0.4871788915345103,
+              "f1_weighted": 0.4712109596925576,
+              "kappa": 0.3475084799238176,
+              "quadratic_weighted_kappa": 0.7036737658514243,
+              "ordinal_mae": 0.6922353825907125,
+              "adjacent_accuracy": 0.8584320360970107,
+              "severe_error_rate": 0.14156796390298929,
+              "confusion_matrix": [
+                [
+                  704,
+                  200,
+                  141,
+                  57,
+                  3
+                ],
+                [
+                  379,
+                  277,
+                  404,
+                  117,
+                  18
+                ],
+                [
+                  151,
+                  158,
+                  539,
+                  262,
+                  59
+                ],
+                [
+                  66,
+                  88,
+                  254,
+                  506,
+                  157
+                ],
+                [
+                  3,
+                  10,
+                  40,
+                  199,
+                  527
+                ]
+              ],
+              "auc": 0.7856781830674175,
+              "expected_rank_mae": 0.7126815440303055,
+              "expected_rank_spearman": 0.7253630860097166,
+              "n_samples": 5319,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 7,
+            "outer_fold": 3,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_03/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/fold_03/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/fold_03/validation_metrics.json",
+            "validation_rows": 5285,
+            "validation_identity_sha256": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e",
+            "metrics": {
+              "accuracy": 0.482876064333018,
+              "balanced_accuracy": 0.47901679017981547,
+              "precision": 0.4734566258396887,
+              "recall": 0.482876064333018,
+              "macro_f1": 0.4700749931743042,
+              "weighted_f1": 0.47327983654556216,
+              "f1_macro": 0.4700749931743042,
+              "f1_weighted": 0.47327983654556216,
+              "kappa": 0.3506684508566431,
+              "quadratic_weighted_kappa": 0.6718796523460198,
+              "ordinal_mae": 0.7350993377483444,
+              "adjacent_accuracy": 0.8448438978240302,
+              "severe_error_rate": 0.15515610217596973,
+              "confusion_matrix": [
+                [
+                  405,
+                  250,
+                  44,
+                  77,
+                  34
+                ],
+                [
+                  232,
+                  503,
+                  175,
+                  92,
+                  34
+                ],
+                [
+                  109,
+                  314,
+                  280,
+                  256,
+                  102
+                ],
+                [
+                  65,
+                  149,
+                  165,
+                  464,
+                  341
+                ],
+                [
+                  17,
+                  54,
+                  43,
+                  180,
+                  900
+                ]
+              ],
+              "auc": 0.7993419789624621,
+              "expected_rank_mae": 0.7372046991618828,
+              "expected_rank_spearman": 0.7145417278082775,
+              "n_samples": 5285,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 7,
+            "outer_fold": 4,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_04/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/fold_04/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/fold_04/validation_metrics.json",
+            "validation_rows": 5290,
+            "validation_identity_sha256": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306",
+            "metrics": {
+              "accuracy": 0.46956521739130436,
+              "balanced_accuracy": 0.4636210410457421,
+              "precision": 0.47850887872632347,
+              "recall": 0.46956521739130436,
+              "macro_f1": 0.46127699041532877,
+              "weighted_f1": 0.4710505512405571,
+              "f1_macro": 0.46127699041532877,
+              "f1_weighted": 0.4710505512405571,
+              "kappa": 0.3362823766425611,
+              "quadratic_weighted_kappa": 0.674965342540145,
+              "ordinal_mae": 0.7519848771266541,
+              "adjacent_accuracy": 0.8313799621928166,
+              "severe_error_rate": 0.16862003780718338,
+              "confusion_matrix": [
+                [
+                  501,
+                  173,
+                  121,
+                  52,
+                  22
+                ],
+                [
+                  329,
+                  305,
+                  221,
+                  121,
+                  30
+                ],
+                [
+                  142,
+                  267,
+                  324,
+                  277,
+                  34
+                ],
+                [
+                  61,
+                  173,
+                  159,
+                  521,
+                  173
+                ],
+                [
+                  14,
+                  65,
+                  57,
+                  315,
+                  833
+                ]
+              ],
+              "auc": 0.7847544062838617,
+              "expected_rank_mae": 0.7675571062931322,
+              "expected_rank_spearman": 0.7060030419045403,
+              "n_samples": 5290,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 7,
+            "outer_fold": 5,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed7/20260718_181522/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_05/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/fold_05/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_7/fold_05/validation_metrics.json",
+            "validation_rows": 5299,
+            "validation_identity_sha256": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878",
+            "metrics": {
+              "accuracy": 0.5427439139460275,
+              "balanced_accuracy": 0.5223982961273661,
+              "precision": 0.5319205451233091,
+              "recall": 0.5427439139460275,
+              "macro_f1": 0.5138662801740961,
+              "weighted_f1": 0.5336238875510247,
+              "f1_macro": 0.5138662801740961,
+              "f1_weighted": 0.5336238875510247,
+              "kappa": 0.4196312220926284,
+              "quadratic_weighted_kappa": 0.770905646263134,
+              "ordinal_mae": 0.6020003774297037,
+              "adjacent_accuracy": 0.8786563502547651,
+              "severe_error_rate": 0.12134364974523495,
+              "confusion_matrix": [
+                [
+                  509,
+                  141,
+                  98,
+                  21,
+                  7
+                ],
+                [
+                  251,
+                  267,
+                  222,
+                  78,
+                  36
+                ],
+                [
+                  129,
+                  168,
+                  447,
+                  179,
+                  81
+                ],
+                [
+                  29,
+                  83,
+                  278,
+                  468,
+                  339
+                ],
+                [
+                  5,
+                  14,
+                  62,
+                  202,
+                  1185
+                ]
+              ],
+              "auc": 0.841793042122408,
+              "expected_rank_mae": 0.6107319712362569,
+              "expected_rank_spearman": 0.8106353841934638,
+              "n_samples": 5299,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          }
+        ],
+        "outer_test_used": false
+      }
+    },
+    {
+      "feature_group": "eeg_only",
+      "seed": 42,
+      "outcome": "materialized",
+      "summary": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/baseline_validation_summary.json",
+      "result": {
+        "feature_group": "eeg_only",
+        "seed": 42,
+        "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023",
+        "folds": [
+          {
+            "feature_group": "eeg_only",
+            "seed": 42,
+            "outer_fold": 1,
+            "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023",
+            "checkpoint": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_01/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/fold_01/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/fold_01/validation_metrics.json",
+            "validation_rows": 5304,
+            "validation_identity_sha256": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f",
+            "metrics": {
+              "accuracy": 0.4462669683257919,
+              "balanced_accuracy": 0.45128271139228326,
+              "precision": 0.4409983870340278,
+              "recall": 0.4462669683257919,
+              "macro_f1": 0.4360100029808076,
+              "weighted_f1": 0.43466556247573906,
+              "f1_macro": 0.4360100029808076,
+              "f1_weighted": 0.43466556247573906,
+              "kappa": 0.30898298940655,
+              "quadratic_weighted_kappa": 0.6729208091756982,
+              "ordinal_mae": 0.7933634992458521,
+              "adjacent_accuracy": 0.8167420814479638,
+              "severe_error_rate": 0.1832579185520362,
+              "confusion_matrix": [
+                [
+                  657,
+                  163,
+                  76,
+                  51,
+                  2
+                ],
+                [
+                  381,
+                  247,
+                  235,
+                  96,
+                  15
+                ],
+                [
+                  353,
+                  193,
+                  337,
+                  224,
+                  60
+                ],
+                [
+                  153,
+                  61,
+                  241,
+                  396,
+                  272
+                ],
+                [
+                  34,
+                  8,
+                  63,
+                  256,
+                  730
+                ]
+              ],
+              "auc": 0.7701035701465128,
+              "expected_rank_mae": 0.7849564227671678,
+              "expected_rank_spearman": 0.7045814025510786,
+              "n_samples": 5304,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 42,
+            "outer_fold": 2,
+            "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023",
+            "checkpoint": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_02/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/fold_02/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/fold_02/validation_metrics.json",
+            "validation_rows": 5319,
+            "validation_identity_sha256": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558",
+            "metrics": {
+              "accuracy": 0.5196465501034029,
+              "balanced_accuracy": 0.5321799630013075,
+              "precision": 0.5242595397820938,
+              "recall": 0.5196465501034029,
+              "macro_f1": 0.5342683713930085,
+              "weighted_f1": 0.521070321487773,
+              "f1_macro": 0.5342683713930085,
+              "f1_weighted": 0.521070321487773,
+              "kappa": 0.39638903259825986,
+              "quadratic_weighted_kappa": 0.7283106779252577,
+              "ordinal_mae": 0.6243654822335025,
+              "adjacent_accuracy": 0.8821206993795826,
+              "severe_error_rate": 0.11787930062041738,
+              "confusion_matrix": [
+                [
+                  613,
+                  296,
+                  126,
+                  65,
+                  5
+                ],
+                [
+                  271,
+                  495,
+                  309,
+                  105,
+                  15
+                ],
+                [
+                  80,
+                  223,
+                  562,
+                  263,
+                  41
+                ],
+                [
+                  34,
+                  89,
+                  249,
+                  552,
+                  147
+                ],
+                [
+                  2,
+                  11,
+                  54,
+                  170,
+                  542
+                ]
+              ],
+              "auc": 0.8074237424736213,
+              "expected_rank_mae": 0.66391640153706,
+              "expected_rank_spearman": 0.7482090524219527,
+              "n_samples": 5319,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 42,
+            "outer_fold": 3,
+            "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023",
+            "checkpoint": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_03/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/fold_03/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/fold_03/validation_metrics.json",
+            "validation_rows": 5285,
+            "validation_identity_sha256": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e",
+            "metrics": {
+              "accuracy": 0.5339640491958373,
+              "balanced_accuracy": 0.530662145132869,
+              "precision": 0.534456062495225,
+              "recall": 0.5339640491958373,
+              "macro_f1": 0.5243836822356741,
+              "weighted_f1": 0.5288704153218928,
+              "f1_macro": 0.5243836822356741,
+              "f1_weighted": 0.5288704153218928,
+              "kappa": 0.4154209758205657,
+              "quadratic_weighted_kappa": 0.7383348066813978,
+              "ordinal_mae": 0.6210028382213812,
+              "adjacent_accuracy": 0.8853358561967833,
+              "severe_error_rate": 0.11466414380321666,
+              "confusion_matrix": [
+                [
+                  454,
+                  262,
+                  39,
+                  32,
+                  23
+                ],
+                [
+                  239,
+                  580,
+                  131,
+                  70,
+                  16
+                ],
+                [
+                  109,
+                  332,
+                  295,
+                  259,
+                  66
+                ],
+                [
+                  50,
+                  122,
+                  181,
+                  638,
+                  193
+                ],
+                [
+                  18,
+                  33,
+                  28,
+                  260,
+                  855
+                ]
+              ],
+              "auc": 0.8334182080268975,
+              "expected_rank_mae": 0.6558633778735911,
+              "expected_rank_spearman": 0.7714704276234718,
+              "n_samples": 5285,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 42,
+            "outer_fold": 4,
+            "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023",
+            "checkpoint": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_04/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/fold_04/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/fold_04/validation_metrics.json",
+            "validation_rows": 5290,
+            "validation_identity_sha256": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306",
+            "metrics": {
+              "accuracy": 0.45179584120982985,
+              "balanced_accuracy": 0.4436790244365527,
+              "precision": 0.4510009157252487,
+              "recall": 0.45179584120982985,
+              "macro_f1": 0.43456175336371217,
+              "weighted_f1": 0.4450605766901027,
+              "f1_macro": 0.43456175336371217,
+              "f1_weighted": 0.4450605766901027,
+              "kappa": 0.31280873717037283,
+              "quadratic_weighted_kappa": 0.649923651788447,
+              "ordinal_mae": 0.7922495274102079,
+              "adjacent_accuracy": 0.8164461247637051,
+              "severe_error_rate": 0.1835538752362949,
+              "confusion_matrix": [
+                [
+                  494,
+                  103,
+                  165,
+                  94,
+                  13
+                ],
+                [
+                  321,
+                  179,
+                  300,
+                  168,
+                  38
+                ],
+                [
+                  145,
+                  165,
+                  368,
+                  307,
+                  59
+                ],
+                [
+                  97,
+                  80,
+                  194,
+                  488,
+                  228
+                ],
+                [
+                  20,
+                  25,
+                  67,
+                  311,
+                  861
+                ]
+              ],
+              "auc": 0.766841804326265,
+              "expected_rank_mae": 0.8150755650492382,
+              "expected_rank_spearman": 0.6807845801543014,
+              "n_samples": 5290,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 42,
+            "outer_fold": 5,
+            "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023",
+            "checkpoint": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_05/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/fold_05/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_42/fold_05/validation_metrics.json",
+            "validation_rows": 5299,
+            "validation_identity_sha256": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878",
+            "metrics": {
+              "accuracy": 0.4949990564257407,
+              "balanced_accuracy": 0.4638348903953414,
+              "precision": 0.4835337193216071,
+              "recall": 0.4949990564257407,
+              "macro_f1": 0.4610483112854286,
+              "weighted_f1": 0.4867413151790825,
+              "f1_macro": 0.4610483112854286,
+              "f1_weighted": 0.4867413151790825,
+              "kappa": 0.3563845504231077,
+              "quadratic_weighted_kappa": 0.7090682931029542,
+              "ordinal_mae": 0.6961690885072656,
+              "adjacent_accuracy": 0.8480845442536328,
+              "severe_error_rate": 0.15191545574636725,
+              "confusion_matrix": [
+                [
+                  365,
+                  224,
+                  107,
+                  71,
+                  9
+                ],
+                [
+                  189,
+                  295,
+                  177,
+                  150,
+                  43
+                ],
+                [
+                  117,
+                  227,
+                  256,
+                  313,
+                  91
+                ],
+                [
+                  35,
+                  102,
+                  150,
+                  555,
+                  355
+                ],
+                [
+                  3,
+                  35,
+                  42,
+                  236,
+                  1152
+                ]
+              ],
+              "auc": 0.8078571026577734,
+              "expected_rank_mae": 0.7066589811063528,
+              "expected_rank_spearman": 0.7577432095584211,
+              "n_samples": 5299,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          }
+        ],
+        "outer_test_used": false
+      }
+    },
+    {
+      "feature_group": "eeg_only",
+      "seed": 123,
+      "outcome": "materialized",
+      "summary": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/baseline_validation_summary.json",
+      "result": {
+        "feature_group": "eeg_only",
+        "seed": 123,
+        "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015",
+        "folds": [
+          {
+            "feature_group": "eeg_only",
+            "seed": 123,
+            "outer_fold": 1,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_01/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/fold_01/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/fold_01/validation_metrics.json",
+            "validation_rows": 5304,
+            "validation_identity_sha256": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f",
+            "metrics": {
+              "accuracy": 0.4506033182503771,
+              "balanced_accuracy": 0.45181621336085287,
+              "precision": 0.4621972266035214,
+              "recall": 0.4506033182503771,
+              "macro_f1": 0.4520413119129028,
+              "weighted_f1": 0.452096378735369,
+              "f1_macro": 0.4520413119129028,
+              "f1_weighted": 0.452096378735369,
+              "kappa": 0.3126069836507811,
+              "quadratic_weighted_kappa": 0.6785454131067814,
+              "ordinal_mae": 0.7515082956259427,
+              "adjacent_accuracy": 0.8365384615384616,
+              "severe_error_rate": 0.16346153846153846,
+              "confusion_matrix": [
+                [
+                  574,
+                  207,
+                  125,
+                  42,
+                  1
+                ],
+                [
+                  273,
+                  256,
+                  346,
+                  91,
+                  8
+                ],
+                [
+                  231,
+                  244,
+                  418,
+                  242,
+                  32
+                ],
+                [
+                  92,
+                  128,
+                  224,
+                  518,
+                  161
+                ],
+                [
+                  20,
+                  21,
+                  76,
+                  350,
+                  624
+                ]
+              ],
+              "auc": 0.7702765350502182,
+              "expected_rank_mae": 0.777517635170876,
+              "expected_rank_spearman": 0.7120409641974367,
+              "n_samples": 5304,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 123,
+            "outer_fold": 2,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_02/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/fold_02/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/fold_02/validation_metrics.json",
+            "validation_rows": 5319,
+            "validation_identity_sha256": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558",
+            "metrics": {
+              "accuracy": 0.466065049821395,
+              "balanced_accuracy": 0.4811279348335731,
+              "precision": 0.46821097305214976,
+              "recall": 0.466065049821395,
+              "macro_f1": 0.4811916456308333,
+              "weighted_f1": 0.4662191801192261,
+              "f1_macro": 0.4811916456308333,
+              "f1_weighted": 0.4662191801192261,
+              "kappa": 0.3295467820113188,
+              "quadratic_weighted_kappa": 0.7074126844945334,
+              "ordinal_mae": 0.6899793194209438,
+              "adjacent_accuracy": 0.8702763677382966,
+              "severe_error_rate": 0.12972363226170333,
+              "confusion_matrix": [
+                [
+                  582,
+                  334,
+                  129,
+                  56,
+                  4
+                ],
+                [
+                  291,
+                  436,
+                  295,
+                  154,
+                  19
+                ],
+                [
+                  102,
+                  300,
+                  405,
+                  306,
+                  56
+                ],
+                [
+                  36,
+                  86,
+                  245,
+                  537,
+                  167
+                ],
+                [
+                  6,
+                  9,
+                  33,
+                  212,
+                  519
+                ]
+              ],
+              "auc": 0.781906680606321,
+              "expected_rank_mae": 0.719272234771435,
+              "expected_rank_spearman": 0.7266589195389282,
+              "n_samples": 5319,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 123,
+            "outer_fold": 3,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_03/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/fold_03/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/fold_03/validation_metrics.json",
+            "validation_rows": 5285,
+            "validation_identity_sha256": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e",
+            "metrics": {
+              "accuracy": 0.5159886471144749,
+              "balanced_accuracy": 0.5098395894210599,
+              "precision": 0.5132881590193408,
+              "recall": 0.5159886471144749,
+              "macro_f1": 0.5093616761006143,
+              "weighted_f1": 0.5144993532844511,
+              "f1_macro": 0.5093616761006143,
+              "f1_weighted": 0.5144993532844511,
+              "kappa": 0.39188114777714145,
+              "quadratic_weighted_kappa": 0.6983998837311036,
+              "ordinal_mae": 0.6684957426679281,
+              "adjacent_accuracy": 0.865279091769158,
+              "severe_error_rate": 0.134720908230842,
+              "confusion_matrix": [
+                [
+                  410,
+                  238,
+                  95,
+                  47,
+                  20
+                ],
+                [
+                  193,
+                  421,
+                  311,
+                  89,
+                  22
+                ],
+                [
+                  83,
+                  204,
+                  425,
+                  267,
+                  82
+                ],
+                [
+                  73,
+                  113,
+                  184,
+                  579,
+                  235
+                ],
+                [
+                  18,
+                  45,
+                  25,
+                  214,
+                  892
+                ]
+              ],
+              "auc": 0.8195831355283031,
+              "expected_rank_mae": 0.6873767683308928,
+              "expected_rank_spearman": 0.741285865460256,
+              "n_samples": 5285,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 123,
+            "outer_fold": 4,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_04/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/fold_04/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/fold_04/validation_metrics.json",
+            "validation_rows": 5290,
+            "validation_identity_sha256": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306",
+            "metrics": {
+              "accuracy": 0.4589792060491493,
+              "balanced_accuracy": 0.4513564128955013,
+              "precision": 0.4605281933938269,
+              "recall": 0.4589792060491493,
+              "macro_f1": 0.4448167583527292,
+              "weighted_f1": 0.45541594480909653,
+              "f1_macro": 0.4448167583527292,
+              "f1_weighted": 0.45541594480909653,
+              "kappa": 0.3222419317473445,
+              "quadratic_weighted_kappa": 0.665001867273169,
+              "ordinal_mae": 0.7731568998109641,
+              "adjacent_accuracy": 0.8223062381852552,
+              "severe_error_rate": 0.1776937618147448,
+              "confusion_matrix": [
+                [
+                  505,
+                  109,
+                  132,
+                  104,
+                  19
+                ],
+                [
+                  338,
+                  211,
+                  255,
+                  180,
+                  22
+                ],
+                [
+                  160,
+                  210,
+                  355,
+                  283,
+                  36
+                ],
+                [
+                  65,
+                  123,
+                  192,
+                  489,
+                  218
+                ],
+                [
+                  12,
+                  35,
+                  52,
+                  317,
+                  868
+                ]
+              ],
+              "auc": 0.7807372691822232,
+              "expected_rank_mae": 0.7693546347094732,
+              "expected_rank_spearman": 0.7056473913777518,
+              "n_samples": 5290,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_only",
+            "seed": 123,
+            "outer_fold": 5,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_only_seed123/20260718_182015/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_05/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/fold_05/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_only/seed_123/fold_05/validation_metrics.json",
+            "validation_rows": 5299,
+            "validation_identity_sha256": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878",
+            "metrics": {
+              "accuracy": 0.5535006605019815,
+              "balanced_accuracy": 0.5222699398019715,
+              "precision": 0.5558817959061229,
+              "recall": 0.5535006605019815,
+              "macro_f1": 0.5258660563928986,
+              "weighted_f1": 0.5528764477968113,
+              "f1_macro": 0.5258660563928986,
+              "f1_weighted": 0.5528764477968113,
+              "kappa": 0.4320582742308432,
+              "quadratic_weighted_kappa": 0.7596155780167589,
+              "ordinal_mae": 0.5835063219475373,
+              "adjacent_accuracy": 0.8867710888846952,
+              "severe_error_rate": 0.11322891111530478,
+              "confusion_matrix": [
+                [
+                  369,
+                  201,
+                  145,
+                  49,
+                  12
+                ],
+                [
+                  157,
+                  301,
+                  280,
+                  97,
+                  19
+                ],
+                [
+                  89,
+                  151,
+                  460,
+                  266,
+                  38
+                ],
+                [
+                  17,
+                  60,
+                  238,
+                  629,
+                  253
+                ],
+                [
+                  1,
+                  15,
+                  58,
+                  220,
+                  1174
+                ]
+              ],
+              "auc": 0.8406608608289898,
+              "expected_rank_mae": 0.6207301015831188,
+              "expected_rank_spearman": 0.7992828488797898,
+              "n_samples": 5299,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          }
+        ],
+        "outer_test_used": false
+      }
+    },
+    {
+      "feature_group": "eeg_pow",
+      "seed": 7,
+      "outcome": "materialized",
+      "summary": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/baseline_validation_summary.json",
+      "result": {
+        "feature_group": "eeg_pow",
+        "seed": 7,
+        "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731",
+        "folds": [
+          {
+            "feature_group": "eeg_pow",
+            "seed": 7,
+            "outer_fold": 1,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_01/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/fold_01/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/fold_01/validation_metrics.json",
+            "validation_rows": 5304,
+            "validation_identity_sha256": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f",
+            "metrics": {
+              "accuracy": 0.5484539969834088,
+              "balanced_accuracy": 0.5523202860612155,
+              "precision": 0.5511774119398412,
+              "recall": 0.5484539969834088,
+              "macro_f1": 0.5470725188593627,
+              "weighted_f1": 0.5438750465468918,
+              "f1_macro": 0.5470725188593627,
+              "f1_weighted": 0.5438750465468918,
+              "kappa": 0.43494097832661105,
+              "quadratic_weighted_kappa": 0.7604193287757245,
+              "ordinal_mae": 0.5933257918552036,
+              "adjacent_accuracy": 0.888763197586727,
+              "severe_error_rate": 0.111236802413273,
+              "confusion_matrix": [
+                [
+                  709,
+                  131,
+                  63,
+                  46,
+                  0
+                ],
+                [
+                  197,
+                  372,
+                  237,
+                  154,
+                  14
+                ],
+                [
+                  108,
+                  229,
+                  430,
+                  357,
+                  43
+                ],
+                [
+                  45,
+                  68,
+                  117,
+                  662,
+                  231
+                ],
+                [
+                  17,
+                  23,
+                  9,
+                  306,
+                  736
+                ]
+              ],
+              "auc": 0.8254260834389786,
+              "expected_rank_mae": 0.6267184147768939,
+              "expected_rank_spearman": 0.7887953753415796,
+              "n_samples": 5304,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 7,
+            "outer_fold": 2,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_02/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/fold_02/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/fold_02/validation_metrics.json",
+            "validation_rows": 5319,
+            "validation_identity_sha256": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558",
+            "metrics": {
+              "accuracy": 0.5495393871028389,
+              "balanced_accuracy": 0.5616763220794003,
+              "precision": 0.5561534586441694,
+              "recall": 0.5495393871028389,
+              "macro_f1": 0.5649330264291829,
+              "weighted_f1": 0.5516705748066851,
+              "f1_macro": 0.5649330264291829,
+              "f1_weighted": 0.5516705748066851,
+              "kappa": 0.43373786159721495,
+              "quadratic_weighted_kappa": 0.7656881737565239,
+              "ordinal_mae": 0.5630757661214514,
+              "adjacent_accuracy": 0.9058093626621545,
+              "severe_error_rate": 0.09419063733784545,
+              "confusion_matrix": [
+                [
+                  658,
+                  294,
+                  112,
+                  35,
+                  6
+                ],
+                [
+                  229,
+                  512,
+                  361,
+                  82,
+                  11
+                ],
+                [
+                  69,
+                  228,
+                  604,
+                  237,
+                  31
+                ],
+                [
+                  23,
+                  85,
+                  235,
+                  592,
+                  136
+                ],
+                [
+                  2,
+                  13,
+                  32,
+                  175,
+                  557
+                ]
+              ],
+              "auc": 0.8319745989251471,
+              "expected_rank_mae": 0.6039357537208999,
+              "expected_rank_spearman": 0.7845468984506928,
+              "n_samples": 5319,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 7,
+            "outer_fold": 3,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_03/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/fold_03/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/fold_03/validation_metrics.json",
+            "validation_rows": 5285,
+            "validation_identity_sha256": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e",
+            "metrics": {
+              "accuracy": 0.5195837275307474,
+              "balanced_accuracy": 0.5190957151247824,
+              "precision": 0.5121495949213739,
+              "recall": 0.5195837275307474,
+              "macro_f1": 0.5124155118117679,
+              "weighted_f1": 0.5131437715130668,
+              "f1_macro": 0.5124155118117679,
+              "f1_weighted": 0.5131437715130668,
+              "kappa": 0.3969608453270518,
+              "quadratic_weighted_kappa": 0.7398612771302522,
+              "ordinal_mae": 0.6348155156102177,
+              "adjacent_accuracy": 0.8821192052980132,
+              "severe_error_rate": 0.11788079470198676,
+              "confusion_matrix": [
+                [
+                  495,
+                  200,
+                  46,
+                  47,
+                  22
+                ],
+                [
+                  256,
+                  505,
+                  152,
+                  91,
+                  32
+                ],
+                [
+                  66,
+                  361,
+                  291,
+                  251,
+                  92
+                ],
+                [
+                  30,
+                  117,
+                  216,
+                  573,
+                  248
+                ],
+                [
+                  6,
+                  28,
+                  46,
+                  232,
+                  882
+                ]
+              ],
+              "auc": 0.8184956905908823,
+              "expected_rank_mae": 0.6751075768859153,
+              "expected_rank_spearman": 0.7676761376604426,
+              "n_samples": 5285,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 7,
+            "outer_fold": 4,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_04/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/fold_04/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/fold_04/validation_metrics.json",
+            "validation_rows": 5290,
+            "validation_identity_sha256": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306",
+            "metrics": {
+              "accuracy": 0.5092627599243856,
+              "balanced_accuracy": 0.498593247507989,
+              "precision": 0.514405430701998,
+              "recall": 0.5092627599243856,
+              "macro_f1": 0.4982965215484012,
+              "weighted_f1": 0.5066574616853995,
+              "f1_macro": 0.4982965215484012,
+              "f1_weighted": 0.5066574616853995,
+              "kappa": 0.38296489697487535,
+              "quadratic_weighted_kappa": 0.7006412952670209,
+              "ordinal_mae": 0.6924385633270321,
+              "adjacent_accuracy": 0.8474480151228734,
+              "severe_error_rate": 0.15255198487712665,
+              "confusion_matrix": [
+                [
+                  459,
+                  219,
+                  65,
+                  117,
+                  9
+                ],
+                [
+                  159,
+                  481,
+                  160,
+                  179,
+                  27
+                ],
+                [
+                  79,
+                  313,
+                  307,
+                  296,
+                  49
+                ],
+                [
+                  45,
+                  159,
+                  123,
+                  465,
+                  295
+                ],
+                [
+                  4,
+                  45,
+                  29,
+                  224,
+                  982
+                ]
+              ],
+              "auc": 0.8073619961043496,
+              "expected_rank_mae": 0.7094785751764344,
+              "expected_rank_spearman": 0.7419220374835845,
+              "n_samples": 5290,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 7,
+            "outer_fold": 5,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed7/20260718_181731/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_05/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/fold_05/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_7/fold_05/validation_metrics.json",
+            "validation_rows": 5299,
+            "validation_identity_sha256": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878",
+            "metrics": {
+              "accuracy": 0.5799207397622193,
+              "balanced_accuracy": 0.5637183019672564,
+              "precision": 0.6073511168999767,
+              "recall": 0.5799207397622193,
+              "macro_f1": 0.568512399549735,
+              "weighted_f1": 0.5872616461043071,
+              "f1_macro": 0.568512399549735,
+              "f1_weighted": 0.5872616461043071,
+              "kappa": 0.46904383611947587,
+              "quadratic_weighted_kappa": 0.7969877811396426,
+              "ordinal_mae": 0.5210417059822608,
+              "adjacent_accuracy": 0.9124363087374976,
+              "severe_error_rate": 0.08756369126250235,
+              "confusion_matrix": [
+                [
+                  446,
+                  197,
+                  97,
+                  33,
+                  3
+                ],
+                [
+                  156,
+                  370,
+                  224,
+                  96,
+                  8
+                ],
+                [
+                  58,
+                  210,
+                  484,
+                  232,
+                  20
+                ],
+                [
+                  13,
+                  70,
+                  220,
+                  783,
+                  111
+                ],
+                [
+                  1,
+                  9,
+                  56,
+                  412,
+                  990
+                ]
+              ],
+              "auc": 0.8592407759683717,
+              "expected_rank_mae": 0.5811336119323555,
+              "expected_rank_spearman": 0.8303429908607383,
+              "n_samples": 5299,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          }
+        ],
+        "outer_test_used": false
+      }
+    },
+    {
+      "feature_group": "eeg_pow",
+      "seed": 42,
+      "outcome": "materialized",
+      "summary": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/baseline_validation_summary.json",
+      "result": {
+        "feature_group": "eeg_pow",
+        "seed": 42,
+        "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412",
+        "folds": [
+          {
+            "feature_group": "eeg_pow",
+            "seed": 42,
+            "outer_fold": 1,
+            "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412",
+            "checkpoint": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_01/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/fold_01/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/fold_01/validation_metrics.json",
+            "validation_rows": 5304,
+            "validation_identity_sha256": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f",
+            "metrics": {
+              "accuracy": 0.5652337858220211,
+              "balanced_accuracy": 0.5700765867414003,
+              "precision": 0.5703450049969712,
+              "recall": 0.5652337858220211,
+              "macro_f1": 0.5688859253705896,
+              "weighted_f1": 0.5649229300383893,
+              "f1_macro": 0.5688859253705896,
+              "f1_weighted": 0.5649229300383893,
+              "kappa": 0.4563413296768867,
+              "quadratic_weighted_kappa": 0.7911681410970003,
+              "ordinal_mae": 0.5427978883861236,
+              "adjacent_accuracy": 0.9134615384615384,
+              "severe_error_rate": 0.08653846153846154,
+              "confusion_matrix": [
+                [
+                  656,
+                  226,
+                  41,
+                  21,
+                  5
+                ],
+                [
+                  138,
+                  500,
+                  222,
+                  102,
+                  12
+                ],
+                [
+                  73,
+                  308,
+                  442,
+                  308,
+                  36
+                ],
+                [
+                  30,
+                  79,
+                  160,
+                  620,
+                  234
+                ],
+                [
+                  10,
+                  21,
+                  29,
+                  251,
+                  780
+                ]
+              ],
+              "auc": 0.8414278851706692,
+              "expected_rank_mae": 0.5826547566612903,
+              "expected_rank_spearman": 0.8112263162155299,
+              "n_samples": 5304,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 42,
+            "outer_fold": 2,
+            "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412",
+            "checkpoint": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_02/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/fold_02/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/fold_02/validation_metrics.json",
+            "validation_rows": 5319,
+            "validation_identity_sha256": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558",
+            "metrics": {
+              "accuracy": 0.5126903553299492,
+              "balanced_accuracy": 0.520945738877634,
+              "precision": 0.5258314050609156,
+              "recall": 0.5126903553299492,
+              "macro_f1": 0.5272293414728025,
+              "weighted_f1": 0.5146851764831388,
+              "f1_macro": 0.5272293414728025,
+              "f1_weighted": 0.5146851764831388,
+              "kappa": 0.3860104499171927,
+              "quadratic_weighted_kappa": 0.7461719831597882,
+              "ordinal_mae": 0.6121451400639218,
+              "adjacent_accuracy": 0.8950930626057529,
+              "severe_error_rate": 0.10490693739424704,
+              "confusion_matrix": [
+                [
+                  660,
+                  359,
+                  55,
+                  29,
+                  2
+                ],
+                [
+                  283,
+                  650,
+                  179,
+                  77,
+                  6
+                ],
+                [
+                  99,
+                  419,
+                  419,
+                  210,
+                  22
+                ],
+                [
+                  28,
+                  171,
+                  245,
+                  503,
+                  124
+                ],
+                [
+                  3,
+                  33,
+                  33,
+                  215,
+                  495
+                ]
+              ],
+              "auc": 0.8164738553882002,
+              "expected_rank_mae": 0.6502345931047581,
+              "expected_rank_spearman": 0.7737625841625557,
+              "n_samples": 5319,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 42,
+            "outer_fold": 3,
+            "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412",
+            "checkpoint": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_03/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/fold_03/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/fold_03/validation_metrics.json",
+            "validation_rows": 5285,
+            "validation_identity_sha256": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e",
+            "metrics": {
+              "accuracy": 0.5491012298959319,
+              "balanced_accuracy": 0.5344327090420107,
+              "precision": 0.5689293031093372,
+              "recall": 0.5491012298959319,
+              "macro_f1": 0.5398174684710039,
+              "weighted_f1": 0.546434918415549,
+              "f1_macro": 0.5398174684710039,
+              "f1_weighted": 0.546434918415549,
+              "kappa": 0.43036125389722146,
+              "quadratic_weighted_kappa": 0.736295290982575,
+              "ordinal_mae": 0.5867549668874172,
+              "adjacent_accuracy": 0.8985808893093661,
+              "severe_error_rate": 0.10141911069063388,
+              "confusion_matrix": [
+                [
+                  305,
+                  336,
+                  91,
+                  41,
+                  37
+                ],
+                [
+                  60,
+                  511,
+                  350,
+                  81,
+                  34
+                ],
+                [
+                  17,
+                  177,
+                  481,
+                  305,
+                  81
+                ],
+                [
+                  2,
+                  98,
+                  147,
+                  680,
+                  257
+                ],
+                [
+                  0,
+                  31,
+                  23,
+                  215,
+                  925
+                ]
+              ],
+              "auc": 0.8365940396723538,
+              "expected_rank_mae": 0.625768732950761,
+              "expected_rank_spearman": 0.7782401247166468,
+              "n_samples": 5285,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 42,
+            "outer_fold": 4,
+            "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412",
+            "checkpoint": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_04/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/fold_04/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/fold_04/validation_metrics.json",
+            "validation_rows": 5290,
+            "validation_identity_sha256": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306",
+            "metrics": {
+              "accuracy": 0.4882797731568998,
+              "balanced_accuracy": 0.4742454134129835,
+              "precision": 0.4967555760197578,
+              "recall": 0.4882797731568998,
+              "macro_f1": 0.47824426704083256,
+              "weighted_f1": 0.4879328129735178,
+              "f1_macro": 0.47824426704083256,
+              "f1_weighted": 0.4879328129735178,
+              "kappa": 0.3553968698821792,
+              "quadratic_weighted_kappa": 0.6925139076046949,
+              "ordinal_mae": 0.7020793950850661,
+              "adjacent_accuracy": 0.8482041587901701,
+              "severe_error_rate": 0.15179584120982986,
+              "confusion_matrix": [
+                [
+                  402,
+                  199,
+                  157,
+                  96,
+                  15
+                ],
+                [
+                  130,
+                  309,
+                  365,
+                  175,
+                  27
+                ],
+                [
+                  59,
+                  178,
+                  439,
+                  297,
+                  71
+                ],
+                [
+                  24,
+                  98,
+                  213,
+                  460,
+                  292
+                ],
+                [
+                  3,
+                  21,
+                  57,
+                  230,
+                  973
+                ]
+              ],
+              "auc": 0.8032382901616202,
+              "expected_rank_mae": 0.734307806630441,
+              "expected_rank_spearman": 0.7395413986517687,
+              "n_samples": 5290,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 42,
+            "outer_fold": 5,
+            "run_directory": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412",
+            "checkpoint": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_05/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/fold_05/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_42/fold_05/validation_metrics.json",
+            "validation_rows": 5299,
+            "validation_identity_sha256": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878",
+            "metrics": {
+              "accuracy": 0.5757690130213248,
+              "balanced_accuracy": 0.5446625438462949,
+              "precision": 0.5782381394605735,
+              "recall": 0.5757690130213248,
+              "macro_f1": 0.5483949849054008,
+              "weighted_f1": 0.5731120277820813,
+              "f1_macro": 0.5483949849054008,
+              "f1_weighted": 0.5731120277820813,
+              "kappa": 0.4592777373658511,
+              "quadratic_weighted_kappa": 0.7739627845959612,
+              "ordinal_mae": 0.5536893753538403,
+              "adjacent_accuracy": 0.8909228156255897,
+              "severe_error_rate": 0.10907718437441026,
+              "confusion_matrix": [
+                [
+                  421,
+                  155,
+                  146,
+                  51,
+                  3
+                ],
+                [
+                  136,
+                  316,
+                  228,
+                  163,
+                  11
+                ],
+                [
+                  58,
+                  185,
+                  371,
+                  353,
+                  37
+                ],
+                [
+                  18,
+                  49,
+                  137,
+                  763,
+                  230
+                ],
+                [
+                  6,
+                  10,
+                  26,
+                  246,
+                  1180
+                ]
+              ],
+              "auc": 0.8546749631935876,
+              "expected_rank_mae": 0.5769378208232069,
+              "expected_rank_spearman": 0.8227234200365511,
+              "n_samples": 5299,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          }
+        ],
+        "outer_test_used": false
+      }
+    },
+    {
+      "feature_group": "eeg_pow",
+      "seed": 123,
+      "outcome": "materialized",
+      "summary": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/baseline_validation_summary.json",
+      "result": {
+        "feature_group": "eeg_pow",
+        "seed": 123,
+        "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227",
+        "folds": [
+          {
+            "feature_group": "eeg_pow",
+            "seed": 123,
+            "outer_fold": 1,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_01/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/fold_01/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/fold_01/validation_metrics.json",
+            "validation_rows": 5304,
+            "validation_identity_sha256": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f",
+            "metrics": {
+              "accuracy": 0.47492458521870284,
+              "balanced_accuracy": 0.478856780134827,
+              "precision": 0.4933273813950174,
+              "recall": 0.47492458521870284,
+              "macro_f1": 0.4832614919808279,
+              "weighted_f1": 0.480388995877108,
+              "f1_macro": 0.4832614919808279,
+              "f1_weighted": 0.480388995877108,
+              "kappa": 0.3432687182090878,
+              "quadratic_weighted_kappa": 0.7145320418078984,
+              "ordinal_mae": 0.6828808446455505,
+              "adjacent_accuracy": 0.8733031674208145,
+              "severe_error_rate": 0.12669683257918551,
+              "confusion_matrix": [
+                [
+                  595,
+                  247,
+                  77,
+                  27,
+                  3
+                ],
+                [
+                  195,
+                  392,
+                  264,
+                  113,
+                  10
+                ],
+                [
+                  112,
+                  337,
+                  443,
+                  251,
+                  24
+                ],
+                [
+                  63,
+                  133,
+                  255,
+                  495,
+                  177
+                ],
+                [
+                  19,
+                  21,
+                  70,
+                  387,
+                  594
+                ]
+              ],
+              "auc": 0.7954969411270694,
+              "expected_rank_mae": 0.7247961717749051,
+              "expected_rank_spearman": 0.7528344969790164,
+              "n_samples": 5304,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 123,
+            "outer_fold": 2,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_02/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/fold_02/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/fold_02/validation_metrics.json",
+            "validation_rows": 5319,
+            "validation_identity_sha256": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558",
+            "metrics": {
+              "accuracy": 0.48599360782101897,
+              "balanced_accuracy": 0.49364249852528974,
+              "precision": 0.5078825056706937,
+              "recall": 0.48599360782101897,
+              "macro_f1": 0.5023160615633293,
+              "weighted_f1": 0.49061232611370753,
+              "f1_macro": 0.5023160615633293,
+              "f1_weighted": 0.49061232611370753,
+              "kappa": 0.35278884589817705,
+              "quadratic_weighted_kappa": 0.7208315260263121,
+              "ordinal_mae": 0.6452340665538635,
+              "adjacent_accuracy": 0.8924609889076894,
+              "severe_error_rate": 0.10753901109231058,
+              "confusion_matrix": [
+                [
+                  568,
+                  362,
+                  97,
+                  71,
+                  7
+                ],
+                [
+                  221,
+                  505,
+                  307,
+                  153,
+                  9
+                ],
+                [
+                  61,
+                  323,
+                  441,
+                  318,
+                  26
+                ],
+                [
+                  13,
+                  90,
+                  232,
+                  630,
+                  106
+                ],
+                [
+                  3,
+                  13,
+                  29,
+                  293,
+                  441
+                ]
+              ],
+              "auc": 0.800637376442881,
+              "expected_rank_mae": 0.6906296515749415,
+              "expected_rank_spearman": 0.7474845511736715,
+              "n_samples": 5319,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 123,
+            "outer_fold": 3,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_03/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/fold_03/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/fold_03/validation_metrics.json",
+            "validation_rows": 5285,
+            "validation_identity_sha256": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e",
+            "metrics": {
+              "accuracy": 0.5877010406811731,
+              "balanced_accuracy": 0.5879177365051836,
+              "precision": 0.5840851658319683,
+              "recall": 0.5877010406811731,
+              "macro_f1": 0.5839989645897163,
+              "weighted_f1": 0.5845348379912303,
+              "f1_macro": 0.5839989645897163,
+              "f1_weighted": 0.5845348379912303,
+              "kappa": 0.4827981660646875,
+              "quadratic_weighted_kappa": 0.7831542854834366,
+              "ordinal_mae": 0.5333964049195837,
+              "adjacent_accuracy": 0.9091769157994324,
+              "severe_error_rate": 0.09082308420056764,
+              "confusion_matrix": [
+                [
+                  534,
+                  170,
+                  36,
+                  42,
+                  28
+                ],
+                [
+                  253,
+                  539,
+                  177,
+                  40,
+                  27
+                ],
+                [
+                  50,
+                  245,
+                  508,
+                  187,
+                  71
+                ],
+                [
+                  10,
+                  91,
+                  273,
+                  572,
+                  238
+                ],
+                [
+                  3,
+                  19,
+                  63,
+                  156,
+                  953
+                ]
+              ],
+              "auc": 0.855848880770571,
+              "expected_rank_mae": 0.5779223377539493,
+              "expected_rank_spearman": 0.8061604555188596,
+              "n_samples": 5285,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 123,
+            "outer_fold": 4,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_04/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/fold_04/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/fold_04/validation_metrics.json",
+            "validation_rows": 5290,
+            "validation_identity_sha256": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306",
+            "metrics": {
+              "accuracy": 0.46880907372400754,
+              "balanced_accuracy": 0.4584980478947557,
+              "precision": 0.46685572213234344,
+              "recall": 0.46880907372400754,
+              "macro_f1": 0.45618330435229576,
+              "weighted_f1": 0.4643697002171904,
+              "f1_macro": 0.45618330435229576,
+              "f1_weighted": 0.4643697002171904,
+              "kappa": 0.33183818104138196,
+              "quadratic_weighted_kappa": 0.6708415391779359,
+              "ordinal_mae": 0.7500945179584121,
+              "adjacent_accuracy": 0.8283553875236295,
+              "severe_error_rate": 0.1716446124763705,
+              "confusion_matrix": [
+                [
+                  466,
+                  147,
+                  145,
+                  98,
+                  13
+                ],
+                [
+                  207,
+                  235,
+                  326,
+                  195,
+                  43
+                ],
+                [
+                  90,
+                  139,
+                  449,
+                  278,
+                  88
+                ],
+                [
+                  42,
+                  109,
+                  242,
+                  402,
+                  292
+                ],
+                [
+                  6,
+                  29,
+                  50,
+                  271,
+                  928
+                ]
+              ],
+              "auc": 0.7783599162316751,
+              "expected_rank_mae": 0.7887268999982309,
+              "expected_rank_spearman": 0.7054826358058,
+              "n_samples": 5290,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          },
+          {
+            "feature_group": "eeg_pow",
+            "seed": 123,
+            "outer_fold": 5,
+            "run_directory": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227",
+            "checkpoint": "benchmark_results/ordinal_transformer_multiseed/runs/categorical_eeg_pow_seed123/20260718_182227/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/fold_05/model.pt",
+            "validation_predictions": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/fold_05/validation_predictions.parquet",
+            "validation_metrics": "benchmark_results/auxiliary_corn_lambda_selection_setup/baselines/eeg_pow/seed_123/fold_05/validation_metrics.json",
+            "validation_rows": 5299,
+            "validation_identity_sha256": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878",
+            "metrics": {
+              "accuracy": 0.5836950367993962,
+              "balanced_accuracy": 0.5541065119019125,
+              "precision": 0.5942508312558775,
+              "recall": 0.5836950367993962,
+              "macro_f1": 0.5611158928629767,
+              "weighted_f1": 0.5851467369064546,
+              "f1_macro": 0.5611158928629767,
+              "f1_weighted": 0.5851467369064546,
+              "kappa": 0.47009466731714167,
+              "quadratic_weighted_kappa": 0.7772536980288833,
+              "ordinal_mae": 0.5395357614644273,
+              "adjacent_accuracy": 0.8958294017739196,
+              "severe_error_rate": 0.1041705982260804,
+              "confusion_matrix": [
+                [
+                  395,
+                  198,
+                  121,
+                  60,
+                  2
+                ],
+                [
+                  109,
+                  333,
+                  267,
+                  134,
+                  11
+                ],
+                [
+                  52,
+                  148,
+                  470,
+                  305,
+                  29
+                ],
+                [
+                  10,
+                  66,
+                  176,
+                  730,
+                  215
+                ],
+                [
+                  1,
+                  14,
+                  52,
+                  236,
+                  1165
+                ]
+              ],
+              "auc": 0.8618098182625866,
+              "expected_rank_mae": 0.5711395396762423,
+              "expected_rank_spearman": 0.8212490482800114,
+              "n_samples": 5299,
+              "n_classes": 5
+            },
+            "normalization_audit": {
+              "artifact_present": true,
+              "feature_order_equal": true,
+              "mean_max_abs_delta": 0.0,
+              "scale_max_abs_delta": 0.0
+            },
+            "outer_test_used": false,
+            "strict_checkpoint_load": true
+          }
+        ],
+        "outer_test_used": false
+      }
+    }
+  ],
+  "cross_seed_validation_alignment": {
+    "eeg_pow_fold_01": {
+      "exact": true,
+      "hashes": {
+        "7": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f",
+        "42": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f",
+        "123": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f"
+      }
+    },
+    "eeg_pow_fold_02": {
+      "exact": true,
+      "hashes": {
+        "7": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558",
+        "42": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558",
+        "123": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558"
+      }
+    },
+    "eeg_pow_fold_03": {
+      "exact": true,
+      "hashes": {
+        "7": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e",
+        "42": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e",
+        "123": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e"
+      }
+    },
+    "eeg_pow_fold_04": {
+      "exact": true,
+      "hashes": {
+        "7": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306",
+        "42": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306",
+        "123": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306"
+      }
+    },
+    "eeg_pow_fold_05": {
+      "exact": true,
+      "hashes": {
+        "7": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878",
+        "42": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878",
+        "123": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878"
+      }
+    },
+    "eeg_only_fold_01": {
+      "exact": true,
+      "hashes": {
+        "7": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f",
+        "42": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f",
+        "123": "953939529ad783252e18b50a47fb6814f994965fa556587b454ea11c816e623f"
+      }
+    },
+    "eeg_only_fold_02": {
+      "exact": true,
+      "hashes": {
+        "7": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558",
+        "42": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558",
+        "123": "1bfcbec8333b7471522d15254bde0aeac83618047349c0626dc71896e04e0558"
+      }
+    },
+    "eeg_only_fold_03": {
+      "exact": true,
+      "hashes": {
+        "7": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e",
+        "42": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e",
+        "123": "407b1832c698625f9b1fe14e55d67c53bbfe3a87f0a80f84678581d94123a12e"
+      }
+    },
+    "eeg_only_fold_04": {
+      "exact": true,
+      "hashes": {
+        "7": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306",
+        "42": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306",
+        "123": "928495b5d2d452f8cf2582d8e2eb220af73cdf8df4a3f83218121c21cbd57306"
+      }
+    },
+    "eeg_only_fold_05": {
+      "exact": true,
+      "hashes": {
+        "7": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878",
+        "42": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878",
+        "123": "1c4f029a3aa4ed55495471b8de79fbf56f193625b7da2dbde11af38664a05878"
+      }
+    }
+  },
+  "selection_rule": {
+    "balanced_accuracy_tolerance": 0.01,
+    "order": [
+      "balanced_accuracy_guard",
+      "severe_error_rate",
+      "ordinal_mae",
+      "lower_auxiliary_weight"
+    ],
+    "no_eligible_action": "abort_fold"
+  },
+  "outer_test_used": false,
+  "model_training_performed": false,
+  "ready_for_nested_candidate_training": true
+}

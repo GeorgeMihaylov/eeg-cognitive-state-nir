@@ -1,0 +1,9 @@
+trial_id,preprocessing_hash,cache_path,json_shards,npy_shards,size_bytes,index_rows,accepted_rows,deduplicated_rows,subjects,sample_ids_match_A,folds_match_A,labels_match_A,semantic_validation,reusable
+A,97bcf690085e85b31674a02b48afa4be50c9cfb7bf0dad60b478935ed1687767,data/interim/raw_eeg_cache_w10_v3/raw-2251ca950a467267,119,119,6511440533,45384,45326,30958,54,true,true,true,pass,true
+B,cf250ae33309023f10fe012f35a8210023ae1326956410a62d00a8c317cc4793,data/interim/raw_eeg_cache_w10_v3/raw-bp-9f1fb83cec499628,119,119,6510749713,45384,45326,30958,54,true,true,true,pass,true
+C,3754791a2ee2375a8a4e28cb6b00b931e4e32bea046b55876deed9c54b580990,data/interim/raw_eeg_cache_w10_v3/raw-notch-43a7f0b7f1efd276,119,119,6511352202,45384,45326,30958,54,true,true,true,pass,true
+D,3c3bd78a85d95e6b778c553ed76aa0505e92f123366735302016f52c1d839d67,data/interim/raw_eeg_cache_w10_v3/raw-car-ab2e941743003cba,119,119,6510883924,45384,45326,30958,54,true,true,true,pass,true
+E,b5ede23d23e06dbc7366c1c036e7386958077f74bc16a852421d74e28d489cee,data/interim/raw_eeg_cache_w10_v3/raw-bp-notch-54278ee46868b00e,119,119,6510749723,45384,45326,30958,54,true,true,true,pass,true
+F,94b211d9f199ea7da9a97a2dab8d576f7cd38aeaf5fc7348462b4617f2a552bb,data/interim/raw_eeg_cache_w10_v3/raw-bp-car-c42d830e507ac3ff,119,119,6510753517,45384,45326,30958,54,true,true,true,pass,true
+G,399f7f260d322a7a7e9413a999315359283882e3e5c473a86302d8b7854cd206,data/interim/raw_eeg_cache_w10_v3/raw-notch-car-d12e6cc4cb0eb08d,119,119,6510764599,45384,45326,30958,54,true,true,true,pass,true
+H,a3b01b3aa0ec6eef5d0658e4e2c5481e4663b8d9270ce87ff9202eba83ad6022,data/interim/raw_eeg_cache_w10_v3/raw-bp-notch-car-445be3721678be51,119,119,6510754301,45384,45326,30958,54,true,true,true,pass,true

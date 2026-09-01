@@ -1,0 +1,28 @@
+{
+  "dataset": "cog_bci",
+  "window_cache": {
+    "path": "benchmark_results/cog_bci_windows/emotiv_common_full",
+    "config_hash": "4f60a6c7cd9d0dd6613a9338834691d9ee289a749a08551045502aef4da80d72"
+  },
+  "task_id": "cog_bci_nback_3class",
+  "target_name": "n_back_level",
+  "splitter": {
+    "name": "group_kfold",
+    "group_column": "subject_id",
+    "n_splits": 5,
+    "shuffle": false
+  },
+  "inner_validation": {
+    "name": "group_kfold_first_fold",
+    "group_column": "subject_id",
+    "n_splits": 5,
+    "shuffle": false,
+    "outer_train_only": true
+  },
+  "loso": {
+    "enabled": true,
+    "group_column": "subject_id"
+  },
+  "result_status": "diagnostic",
+  "output_dir": "benchmark_results/cog_bci_protocols/nback_3class"
+}

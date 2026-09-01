@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0",
+  "result_status": "diagnostic",
+  "execution_enabled": true,
+  "output_dir": "benchmark_results/meta_learning_fomaml_label_q5_diagnostic",
+  "dataset": {
+    "name": "emotiv_raw_eeg",
+    "config": "configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml",
+    "target": "label_q5",
+    "classes": 5,
+    "input_shape": [1, 14, 2560],
+    "sampling_rate": 256,
+    "window_duration_seconds": 10.0
+  },
+  "protocol": {
+    "outer_fold": 1,
+    "manifest": "benchmark_results/meta_learning_fomaml_production_contract/meta_validation_protocol.json",
+    "episode_index": "benchmark_results/meta_learning_fomaml_production_contract/meta_validation_episode_index.parquet",
+    "errors": "benchmark_results/meta_learning_fomaml_production_contract/errors.csv",
+    "expected_hash": "a3e6ff5ee2dbfa1638ffee9180ddff582dbab8aa6186e164320dd92f082871e8",
+    "support_budget": 32,
+    "query_budget": 64,
+    "training_sample_contract": "union_of_materialized_meta_train_support_and_query_ids",
+    "supervised_validation_contract": "materialized_meta_validation_query_ids_only"
+  },
+  "model": {
+    "name": "torch_eegnet",
+    "architecture_signature": "248d244e050af2b9e5bd1de0b706665efd3cb13a642044a965fc85602bbe23a7",
+    "latent_dim": 1280,
+    "parameter_count": 8501,
+    "outputs": 5
+  },
+  "seed": 42,
+  "device": "auto",
+  "supervised": {
+    "batch_size": 64,
+    "maximum_epochs": 12,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "early_stopping_patience": 3,
+    "checkpoint_criterion": "meta_validation_query_macro_f1"
+  },
+  "fomaml": {
+    "inner_steps": 1,
+    "inner_learning_rate": 0.01,
+    "meta_learning_rate": 0.001,
+    "meta_batch_size": 4,
+    "maximum_meta_epochs": 8,
+    "early_stopping_patience": 3,
+    "gradient_clip_norm": 5.0,
+    "meta_optimizer": "Adam",
+    "checkpoint_criterion": "mean_meta_validation_subject_macro_f1",
+    "buffer_policies": [
+      "frozen_global",
+      "support_local"
+    ]
+  },
+  "baselines": [
+    "zero_shot_supervised",
+    "supervised_full_model"
+  ],
+  "primary_metric": "mean_subject_macro_f1",
+  "secondary_metrics": [
+    "mean_subject_balanced_accuracy",
+    "accuracy",
+    "weighted_f1",
+    "macro_precision",
+    "macro_recall",
+    "ordinal_mae",
+    "quadratic_weighted_kappa",
+    "per_class_recall",
+    "prediction_entropy"
+  ],
+  "policy_selection": {
+    "primary": "mean_meta_validation_subject_macro_f1",
+    "secondary": "mean_meta_validation_subject_balanced_accuracy",
+    "frozen_global_tie_threshold": 0.005
+  },
+  "decision_rule": {
+    "proceed_macro_f1_gain": 0.01,
+    "proceed_balanced_accuracy_min_gain": -0.005,
+    "proceed_min_wins": 5,
+    "strong_macro_f1_gain": 0.02,
+    "strong_balanced_accuracy_gain": 0.01,
+    "strong_min_wins": 6,
+    "do_not_proceed_max_wins": 2
+  }
+}

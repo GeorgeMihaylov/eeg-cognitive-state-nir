@@ -1,0 +1,86 @@
+experiment:
+  name: feature_group_transformer_ablation
+  type: transformer
+  trial_prefix: transformer
+  output_dir: benchmark_results/feature_group_transformer_ablation
+  report_path: reports/feature_group_transformer_ablation.md
+  summary_path: reports/feature_group_transformer_summary.json
+  canonical_reference_run: benchmark_results/groupkfold_torch_transformer_label_q5/20260716_191246
+  canonical_reference_predictions: benchmark_results/groupkfold_torch_transformer_label_q5/20260716_191246/emotiv_cognitive/cognitive_load_5class/torch_transformer/group_kfold_subject/predictions.parquet
+
+dataset:
+  name: emotiv_cognitive
+  data_path: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  subject_col: subject_id
+  expected_supervised_rows: 45384
+  expected_sequences: 44142
+
+feature_groups:
+  eeg_only:
+    feature_set: eeg_only
+    feature_count: 168
+    feature_list_sha256: 6e822ee172422e7138945b47b2b27c947393b828b72d96b7a8e22850aded8aca
+  pow_only:
+    feature_set: pow_only
+    feature_count: 280
+    feature_list_sha256: c3106631e4ad3eff1694c874a9ff5c4e26470aa587c7294cc5c3047c53d832dd
+  eeg_pow:
+    feature_set: eeg_pow
+    feature_count: 448
+    feature_list_sha256: 8cd5d70faa8ff30fb4290dd9d9a2dde0e81f50e7682d05668b5fb47df511fd51
+
+tasks:
+  classification:
+    target: label_q5
+    benchmark_task: cognitive_load_5class
+    model: torch_transformer
+    n_classes: 5
+
+models:
+  torch_transformer:
+    type: torch_transformer
+    task_type: classification
+    params:
+      sequence_length: 8
+      d_model: 128
+      nhead: 4
+      num_layers: 2
+      dim_feedforward: 256
+      dropout: 0.1
+      activation: gelu
+      pooling: last
+      positional_encoding: learned
+      batch_size: 128
+      max_epochs: 15
+      learning_rate: 0.001
+      weight_decay: 0.0001
+      validation_size: 0.15
+      early_stopping_patience: 4
+      device: auto
+      random_state: 42
+      standardize: true
+      num_workers: 0
+
+sequence:
+  length: 8
+  stride: 1
+  target_position: last
+  expected_step_seconds: 10.0
+  max_gap_seconds: 10.5
+
+validation:
+  strategy: group_record
+  group_column: record_group_id
+  validation_size: 0.15
+  random_state: 42
+
+evaluation:
+  protocol: group_kfold_subject
+  n_splits: 5
+  group_column: subject_id
+  random_state: 42
+
+analysis:
+  bootstrap_samples: 10000
+  random_state: 42
+  rf_summary_path: reports/feature_group_rf_summary.json

@@ -1,514 +1,452 @@
-# EEG Cognitive State NIR
+# EEG Cognitive State Benchmark
 
-## Тема НИР
+Воспроизводимая исследовательская платформа для классификации когнитивных состояний по данным электроэнцефалографии (ЭЭГ) с межсубъектной оценкой, персонализацией, внешней валидацией, исследованием предобработки и потоковым программным контуром.
 
-**Разработка и валидация методов моделирования латентных proxy-состояний человека по данным электроэнцефалографии с учетом межсубъектной вариабельности**
+**Актуализация README: 26 августа 2026 года.**
 
-## Краткое описание
+## Текущее состояние
 
-Проект посвящен разработке и валидации методов моделирования состояния человека по данным электроэнцефалографии. В качестве исходных сигналов используются EEG/POW-признаки, а в качестве слабой разметки — Performance Metrics, синхронизированные с EEG-записями.
+Основной научный контур проекта ориентирован на классификацию всех семи Performance Metrics (PM):
 
-Вместо прямого предсказания отдельных PM-метрик по независимым EEG-окнам в проекте используется более устойчивая постановка: моделирование временной траектории пользователя в латентном пространстве proxy-состояний.
+- `target_attention`;
+- `target_engagement`;
+- `target_excitement`;
+- `target_stress`;
+- `target_relaxation`;
+- `target_interest`;
+- `target_focus`.
 
-Финальная логика проекта:
+Для каждого PM используется трёхклассовая постановка Q3: низкое, среднее и высокое состояние. Пороговые значения тертилей вычисляются отдельно внутри каждого внешнего разбиения **только по outer-train** и затем без переоценки применяются к outer-test.
 
-```text
-EEG/POW sequence
-    → Transformer
-    → latent proxy-state trajectory
-    → personal head-only calibration
-    → subject-wise evaluation
-```
+Историческая пяти-классовая Focus-разметка `label_q5` сохранена только для воспроизводимости ранних экспериментов и не является основной постановкой текущего проекта.
 
-Важно: латентные состояния в проекте являются **PM-derived proxy-состояниями**. Они не интерпретируются как прямые объективные измерения когнитивно-аффективного состояния человека.
+Реализованы:
 
----
+- фиксированная пятифолдовая межсубъектная оценка;
+- raw-EEG, признаковые и последовательностные модели;
+- единый целевой контракт для семи PM;
+- временной аудит PM-разметки;
+- факторная абляция предобработки A–H;
+- MNE-FASTER и FASTER-like/ICA абляции;
+- персональная калибровка нового пользователя;
+- внешняя мультимодальная валидация;
+- независимый cross-dataset эксперимент CL-Drive ↔ CLARE с DANN;
+- потоковое воспроизведение, streaming worker и FastAPI;
+- детерминированные manifests, split-аудиты, protocol hashes и resume.
 
-## Основная задача
+## Исходные данные и каноническая когорта
 
-Разработать воспроизводимый pipeline, который:
+Основной внутренний набор сформирован из двух исходных источников:
 
-1. объединяет и унифицирует EEG/PM-данные из нескольких источников;
-2. строит латентное пространство proxy-состояний на основе сглаженных PM-метрик;
-3. обучает временную модель для прогнозирования этих состояний по EEG/POW-последовательностям;
-4. учитывает межсубъектную вариабельность через subject-wise split;
-5. проверяет персональную калибровку модели для новых субъектов;
-6. сравнивает финальную модель с feature, temporal, split-seed и naive baselines.
+- `gpn_data`;
+- `Old_EEG`.
 
----
+Они используют ЭЭГ-устройства класса Emotiv и отличаются структурой файлов и организацией записей. Эти источники **не рассматриваются как независимые научные домены**, поскольку часть физических записей представлена в обоих источниках. Совпадающие записи отслеживаются через `record_group_id`.
 
-## Данные
+Основная цепочка формирования выборки:
 
-В проекте используются два основных корпуса EEG-записей:
+| Этап | Размер |
+|---|---:|
+| Полная обработанная таблица до фильтрации по целевой разметке | 51 308 окон |
+| Окна, пригодные для обучения с учителем | 45 384 |
+| После контроля качества raw EEG | 45 326 |
+| После устранения повторного представления логически одинаковых записей | **30 958** |
 
-```text
-data/raw/gpn_data/
-data/raw/Old_EEG/
-```
+После дедупликации каноническая когорта сырого ЭЭГ содержит **30 958 окон из 86 логических записей, относящихся к 54 участникам**.
 
-### `gpn_data`
-
-Основной корпус проекта. Содержит EEG-записи, Performance Metrics, маркеры и аннотации.
-
-### `Old_EEG`
-
-Ранее собранный EEG-корпус, близкий по типу данных, оборудованию и условиям записи.
-
-Оба корпуса объединяются в единый обработанный датасет. При этом переносимость на другие устройства, другие протоколы и другие типы EEG-систем в текущей работе не утверждается.
-
-Основной обработанный датасет:
+Контракт raw EEG:
 
 ```text
-data/processed/windowed_eeg_pm_dataset_w10.parquet
+shape: [B, 1, 14, 2560]
+channels: 14
+sample rate: 256 Hz
+window: 10 s
+dtype: float32
 ```
 
-Датасет латентных slow-состояний:
+Для `attention` число complete-case окон составляет **29 569**. Для остальных шести PM доступны все **30 958** окон. Целевые маски применяются внутри фиксированных внешних разбиений.
 
-```text
-reports/slow_latent_states/pm_w10/slow_pm_latent_states_w10.parquet
-```
+## Признаковые представления
 
-Используемые PM-метрики:
+В проекте используются два различных инженерных представления; они не являются последовательными стадиями отбора признаков.
 
-```text
-Attention
-Engagement
-Excitement
-Stress
-Relaxation
-Interest
-Focus
-```
+### Унифицированное представление — 371 признак
 
-PM-метрики используются как target/proxy-разметка и не используются как входные признаки модели.
+Современный `FeaturePipeline` вычисляет признаки непосредственно из окна ЭЭГ и формирует фиксированное целенезависимое представление:
 
----
+- 182 спектральных;
+- 140 статистических;
+- 28 энтропийных;
+- 21 характеристика межканальной связности.
 
-## Латентные proxy-состояния
+Итого: **371 признак**.
 
-Для построения целевого пространства используются slow-компоненты PM-метрик. На сглаженных PM-представлениях применяется PCA.
+Это представление используется в основном сравнении признаковых и последовательностных моделей.
 
-Финальные латентные оси:
+### Исходное EEG+POW-представление — 448 признаков
 
-| Ось          | Интерпретация                               | Статус                         |
-| ------------ | ------------------------------------------- | ------------------------------ |
-| `slow_pca_1` | Stress / Arousal / общая активация          | используется                   |
-| `slow_pca_2` | Recovery / Fatigue / Relaxation             | используется                   |
-| `slow_pca_3` | Workload / Attention / когнитивный контроль | используется                   |
-| `slow_pca_4` | Engagement / Involvement                    | исключена как менее стабильная |
+Исторический обработанный parquet содержит:
 
-Финальная модель предсказывает:
+- 168 EEG-признаков;
+- 280 POW-признаков.
 
-```text
-slow_pca_1
-slow_pca_2
-slow_pca_3
-```
+Итого: **448 признаков**.
 
----
+Для этого представления отдельно проверен fold-local автоматический отбор признаков: корреляционный фильтр `|r| > 0.95` и Random Forest importance сокращают размерность **448 → 50**. Это отдельный эксперимент и не является происхождением 371-признакового пространства.
 
-## Архитектура решения
+## Экспериментальный протокол
 
-Общий pipeline:
+Основная оценка использует пять фиксированных внешних разбиений по `subject_id`.
 
-```text
-raw EEG/PM data
-    ↓
-data inventory and validation
-    ↓
-windowing and synchronization
-    ↓
-EEG/POW feature extraction
-    ↓
-PM slow-component construction
-    ↓
-PCA latent proxy-state space
-    ↓
-sequence dataset construction
-    ↓
-TransformerEncoder
-    ↓
-zero-shot prediction
-    ↓
-personal head-only calibration
-    ↓
-evaluation and baseline reports
-```
+Основные правила:
 
-Финальная temporal-модель:
+- участники outer-train и outer-test не пересекаются;
+- внутренняя валидация учитывает `record_group_id`;
+- Q3-пороги вычисляются только по outer-train;
+- нормализация, заполнение пропусков и отбор признаков обучаются только на train-части;
+- outer-test не используется для early stopping или выбора модели;
+- последовательности не пересекают границы логических записей;
+- основная итоговая агрегация в подтверждающих экспериментах — participant-macro;
+- результаты разных входных когорт не сравниваются как полностью сопоставимые без matched-протокола.
 
-```text
-EEG/POW sequence
-    → input projection
-    → positional encoding
-    → TransformerEncoder
-    → pooling
-    → regression head
-    → slow_pca_1..3
-```
+## Модели
 
----
+Поддерживаются:
 
-## Контроль утечки данных
+- Logistic Regression;
+- Random Forest;
+- HistGradientBoosting;
+- LightGBM;
+- XGBoost;
+- SVM;
+- sklearn MLP;
+- PyTorch MLP;
+- LSTM;
+- BiLSTM;
+- Transformer;
+- EEGNet;
+- ShallowConvNet;
+- ShallowFusion.
 
-В проекте используется строгая схема оценки:
-
-* train, validation и test разделяются по субъектам;
-* окна одного субъекта не попадают одновременно в разные выборки;
-* preprocessing, imputation и scaling обучаются только на train;
-* validation используется для выбора протокола;
-* test используется только для финальной оценки;
-* персональная калибровка использует только начальный фрагмент held-out субъекта;
-* оценка после калибровки проводится на оставшейся части последовательности.
-
----
-
-## Baseline v1
-
-Ветка `main` фиксирует интегрированный baseline v1:
-
-```text
-Baseline v1: personal calibration of latent EEG proxy-state trajectories
-```
-
-Финальная конфигурация:
-
-| Параметр           | Значение                                 |
-| ------------------ | ---------------------------------------- |
-| `feature_set`      | `pow_plus_eeg`                           |
-| `seq_len`          | `8`                                      |
-| `targets`          | `slow_pca_1`, `slow_pca_2`, `slow_pca_3` |
-| `calibration_lr`   | `0.0001`                                 |
-| `calibration_frac` | `0.20`                                   |
-| split              | subject-wise                             |
-| split seeds        | `42`, `123`, `2024`, `3407`, `777`       |
-
-Основные артефакты baseline v1:
-
-```text
-reports/baseline_v1/baseline_v1_report.md
-reports/baseline_v1/baseline_v1_summary.json
-reports/baseline_v1/hypothesis_baseline_matrix.csv
-reports/baseline_v1/README.md
-```
-
----
+Для transfer-задач реализован общий encoder-интерфейс; для доменной адаптации — DANN.
 
 ## Основные результаты
 
-### Feature ablation
+### Временная обработка PM
 
-| Feature set    | Test R² | Test Spearman |
-| -------------- | ------: | ------------: |
-| `pow_plus_eeg` |  0.2398 |        0.5804 |
-| `eeg`          |  0.1915 |        0.5433 |
-| `pow`          |  0.1410 |        0.5243 |
+В пятифолдовой классификационной проверке всех семи PM исходные значения PM оказались лучшим вариантом:
 
-Финальным выбран объединенный набор признаков:
+| Вариант | Macro-F1 | Balanced Accuracy |
+|---|---:|---:|
+| raw | **0.4730** | **0.4791** |
+| EMA, α=0.5 | 0.4674 | 0.4731 |
+| Hampel | 0.4572 | 0.4629 |
+| Median, w=3 | 0.4505 | 0.4568 |
+
+Причинное сглаживание не дало универсального улучшения, поэтому исходные PM сохранены как основной вариант разметки.
+
+### Факторная абляция предобработки A–H
+
+Эксперимент `preprocessing_factorial_q3_all_pm_v1` завершён полностью:
 
 ```text
-pow_plus_eeg
+8 preprocessing variants × 7 PM × 5 outer folds = 280 runs
+completed_runs = 280
+unsupported_runs = 0
+protocol_hash = 7ca105e55b4ec84064f60d3a6c99d1251fdd89000a15ac1500f7ae6b3008f0a9
 ```
 
-### Персональная head-only калибровка
+Во всех вариантах использовалась идентичная matched-когорта A–H.
 
-| Режим      | Mean R² | Mean Spearman |
-| ---------- | ------: | ------------: |
-| Zero-shot  | -0.0530 |        0.5478 |
-| Calibrated |  0.2398 |        0.5804 |
-| Gain       | +0.2928 |       +0.0326 |
+| Вариант | Band-pass 1–45 Hz | Notch 50 Hz | CAR | Participant-macro Macro-F1 | Participant-macro Balanced Accuracy |
+|---|:---:|:---:|:---:|---:|---:|
+| A | − | − | − | 0.3646 | 0.4172 |
+| B | + | − | − | **0.3702** | **0.4282** |
+| C | − | + | − | 0.3660 | 0.4196 |
+| D | − | − | + | 0.3602 | 0.4097 |
+| E | + | + | − | 0.3695 | 0.4279 |
+| F | + | − | + | 0.3630 | 0.4183 |
+| G | − | + | + | 0.3560 | 0.4054 |
+| H | + | + | + | 0.3631 | 0.4181 |
 
-Калибровка проводится для held-out субъекта: первые 20% последовательностей используются для дообучения только regression head, а оставшиеся 80% используются для оценки.
+Matched participant-level факторные эффекты:
 
-### Temporal baselines
+- CAR: ΔMacro-F1 = **−0.0072**, Holm `p = 0.2905`;
+- CAR: ΔBalanced Accuracy = **−0.0106**, Holm `p = 0.0026`;
+- band-pass: ΔMacro-F1 = `+0.0048`, Holm `p = 0.5675`;
+- band-pass: ΔBalanced Accuracy = `+0.0102`, Holm `p = 0.0604`;
+- notch: средний эффект близок к нулю для обеих основных метрик.
 
-| Модель          |   Test R² | Test Spearman |
-| --------------- | --------: | ------------: |
-| Transformer     |    0.2614 |        0.6094 |
-| GRU             |    0.0442 |        0.5231 |
-| mean_pool_mlp   |   -8.2988 |        0.4731 |
-| last_window_mlp | -122.3203 |        0.4877 |
+Следовательно, отрицательный средний эффект CAR статистически подтверждается для Balanced Accuracy, но не для Macro-F1. Полосовая фильтрация показывает положительную описательную тенденцию, однако после поправки Холма она не достигает уровня `p < 0.05`. Универсального эффекта режекторного фильтра не обнаружено.
 
-Transformer показал лучший zero-shot результат среди проверенных temporal-моделей.
+Файлы эксперимента:
 
-### Split-seed robustness
+- [`bench/experiments/preprocessing_factorial_q3_all_pm.py`](bench/experiments/preprocessing_factorial_q3_all_pm.py)
+- [`experiments/preprocessing/preprocessing_factorial_q3_all_pm_v1.json`](experiments/preprocessing/preprocessing_factorial_q3_all_pm_v1.json)
+- [`scripts/run_preprocessing_factorial_q3_all_pm.py`](scripts/run_preprocessing_factorial_q3_all_pm.py)
 
-Финальный протокол был проверен на 5 subject-wise split seeds.
+Полные runtime-артефакты находятся в `benchmark_results/` и не отслеживаются Git.
 
-| Метрика       | Zero-shot | Calibrated |    Gain |
-| ------------- | --------: | ---------: | ------: |
-| Mean R²       |   -0.0299 |     0.2085 | +0.2384 |
-| Mean Spearman |    0.5388 |     0.5804 | +0.0416 |
+### Удаление артефактов
 
-Эффект калибровки остается положительным в среднем по разным subject-wise разбиениям, но величина эффекта зависит от состава test-субъектов.
+Семиметрическая диагностическая абляция ShallowConvNet:
 
-### Naive baselines
+| Вариант | Macro-F1 | Balanced Accuracy |
+|---|---:|---:|
+| raw | 0.3733 | 0.4250 |
+| ICA | 0.3722 | 0.4265 |
+| FASTER-like | 0.3719 | 0.4227 |
+| FASTER-like + ICA | 0.3540 | 0.4063 |
 
-| Baseline                   | Использует историю target | Test mean R² | Интерпретация                                  |
-| -------------------------- | ------------------------: | -----------: | ---------------------------------------------- |
-| `previous_state`           |                        да |       0.9381 | sanity-check на временную инерцию              |
-| `train_mean`               |                       нет | около -0.020 | простая константа не объясняет результат       |
-| `subject_calibration_mean` |                       нет | около -0.074 | среднего по calibration-фрагменту недостаточно |
-| `subject_calibration_last` |                       нет | около -0.330 | последнее calibration-значение недостаточно    |
+Усложнение процедуры очистки не обеспечило устойчивого повышения качества.
 
-`previous_state` показывает очень высокий R², но использует истинное предыдущее значение целевой переменной. Поэтому это не deployable EEG-only baseline, а sanity-check на гладкость и автокорреляцию slow-состояний.
+В отдельном matched-сравнении полного MNE-FASTER выполнены все 140 запусков для семи PM, ShallowConvNet и XGBoost. Из 30 958 окон после MNE-FASTER осталось 29 899.
 
----
+| Модель | Предобработка | Accuracy | Balanced Accuracy | Macro-F1 |
+|---|---|---:|---:|---:|
+| ShallowConvNet | baseline | 0.4433 | 0.4265 | 0.3768 |
+| ShallowConvNet | MNE-FASTER | 0.4214 | 0.4043 | 0.3511 |
+| XGBoost | baseline | 0.4658 | 0.4497 | 0.4137 |
+| XGBoost | MNE-FASTER | 0.4473 | 0.4357 | 0.3969 |
+
+MNE-FASTER не выбран как предобработка по умолчанию.
+
+### Предварительное сравнение моделей
+
+На первом внешнем разбиении, seed 42:
+
+| Модель | Вход | Macro-F1 | Balanced Accuracy |
+|---|---|---:|---:|
+| LSTM | sequence, 10 × 371 | **0.4932** | **0.5048** |
+| BiLSTM | sequence, 10 × 371 | 0.4857 | 0.5003 |
+| XGBoost | 371 признаков | 0.4848 | 0.4923 |
+| Random Forest | 371 признаков | 0.4846 | 0.4941 |
+| Transformer | sequence, 10 × 371 | 0.4672 | 0.4799 |
+| PyTorch MLP | 371 признаков | 0.4483 | 0.4573 |
+| Logistic Regression | 371 признаков | 0.4201 | 0.4283 |
+| ShallowConvNet | raw EEG | 0.4158 | 0.4236 |
+| EEGNet | raw EEG | 0.3975 | 0.4164 |
+
+Этот эксперимент является предварительным: sequence- и single-window модели используют разные допустимые наборы окон, поэтому таблица не трактуется как окончательный рейтинг архитектур.
+
+### Автоматический отбор признаков
+
+Для исходного 448-признакового EEG+POW-представления выполнен отдельный пятифолдовый LightGBM-эксперимент.
+
+| Режим | Macro-F1 | Balanced Accuracy | Accuracy |
+|---|---:|---:|---:|
+| 448 признаков | **0.4187** | **0.4624** | **0.4826** |
+| 50 признаков | 0.4116 | 0.4527 | 0.4753 |
+
+Размерность уменьшилась на 88.84%, а среднее время downstream-обучения LightGBM — примерно в 6.8 раза. Сокращение признакового пространства полезно прежде всего для уменьшения вычислительной стоимости, а не как способ повышения качества.
+
+### Персонализация нового пользователя
+
+Полный эксперимент персональной калибровки ShallowConvNet завершён для всех семи PM.
+
+Медианный фактический объём калибровки:
+
+- 5%: 28 окон, ≈ 4.67 мин;
+- 10%: 57 окон, ≈ 9.50 мин;
+- 20%: 115 окон, ≈ 19.17 мин.
+
+| Режим | Бюджет | Macro-F1 | Δ к zero-shot |
+|---|---:|---:|---:|
+| zero-shot | 0% | 0.3788 | — |
+| full-model | 5% | 0.3875 | +0.0086 |
+| full-model | 10% | 0.3898 | +0.0109 |
+| full-model | 20% | **0.3924** | **+0.0136** |
+| head-only | 5% | 0.3226 | −0.0563 |
+| head-only | 10% | 0.3344 | −0.0445 |
+| head-only | 20% | 0.3449 | −0.0339 |
+
+Для full-model прирост participant-macro Macro-F1 сохраняется после поправки Холма для всех трёх бюджетов. Head-only не улучшает Macro-F1 и Balanced Accuracy.
+
+Формальный прикладной ориентир Accuracy ≥ 0.75 на уровне системы не достигнут и не используется как критерий выбора модели.
+
+### Внешняя мультимодальная проверка
+
+Используются MEFAR, CL-Drive и CLARE.
+
+XGBoost:
+
+| Набор | EEG-only Macro-F1 | Peripheral-only | Fusion |
+|---|---:|---:|---:|
+| MEFAR | 0.3972 | **0.5776** | 0.5111 |
+| CL-Drive | 0.3805 | 0.3723 | **0.3916** |
+| CLARE | **0.3083** | 0.3016 | 0.2703 |
+
+Дополнительная физиологическая модальность не даёт универсального улучшения: результат зависит от набора данных и способа объединения.
+
+### Независимый cross-dataset перенос CL-Drive ↔ CLARE
+
+Для научной проверки domain shift используются независимые CL-Drive и CLARE. Внутренние `gpn_data`/`Old_EEG` для доказательства междоменного переноса не применяются.
+
+EEG-only контракт:
+
+```text
+channels: TP9, AF7, AF8, TP10
+sample rate: 256 Hz
+window: 10 s
+target: subjective cognitive load, fixed 3 classes
+```
+
+Participant-macro Macro-F1:
+
+| Направление | Target-only | Source-only | DANN |
+|---|---:|---:|---:|
+| CL-Drive → CLARE | **0.2175** | 0.1890 | 0.1695 |
+| CLARE → CL-Drive | **0.2876** | 0.2202 | 0.2095 |
+
+Прямой перенос ухудшает качество в обоих направлениях. DANN не компенсировал межнаборный сдвиг и в среднем дал дополнительное снижение. После поправки Холма статистически подтверждённого преимущества или ухудшения DANN не получено.
+
+### Потоковая обработка
+
+Scientific replay использует 10-секундное окно со сдвигом 1 секунда.
+
+| Профиль | Признаков | Feature P95 | Model P95 | Total P95 |
+|---|---:|---:|---:|---:|
+| full | 399 | 3047.411 ms | 4.723 ms | 3052.311 ms |
+| lightweight | 336 | 6.573 ms | 5.624 ms | **12.215 ms** |
+
+Полный профиль не укладывается в шаг обновления 1 с. Облегчённый профиль имеет большой вычислительный запас и позволяет после накопления первого окна формировать новое предсказание раз в секунду.
+
+Эти измерения относятся к программной обработке готового окна. Полная задержка `сенсор → транспорт → буфер → обработка → пользователь` с физическим ЭЭГ-устройством пока не измерена.
+
+## Внешние наборы
+
+### COG-BCI
+
+Используется как отдельный диагностический и transfer-контур:
+
+- 29 участников;
+- 3 сессии;
+- 1 044 EEG-записи;
+- ≈ 81.75 ч;
+- 500 Hz;
+- 62/63 EEG-канала в нативных схемах;
+- N-Back, MATB-II, PVT, Flanker и resting state.
+
+Расширение числа каналов и contrastive/meta-learning эксперименты сохранены как диагностические результаты; устойчивого downstream-улучшения в проверенных конфигурациях не получено.
+
+### CL-Drive и CLARE
+
+Для EEG-only cross-dataset эксперимента:
+
+- CL-Drive: 3 086 пригодных EEG-окон, 21 участник;
+- CLARE: 3 829 пригодных EEG-окон, 19 участников.
+
+Для мультимодального matched-контура используются более узкие общие когорты EEG + ECG + EDA; их размеры не следует смешивать с EEG-only DANN-когортой.
 
 ## Структура репозитория
 
 ```text
-eeg-cognitive-state-nir/
-│
-├── src/
-│   ├── 00_inventory_data.py
-│   ├── 01_inspect_emotiv_files.py
-│   ├── 02_build_emotiv_catalog.py
-│   ├── 03_validate_catalog_and_columns.py
-│   ├── 04_build_windowed_pm_dataset.py
-│   ├── 05_analyze_pm_sampling.py
-│   ├── 06_eda_windowed_dataset.py
-│   ├── 08_build_eeg_features.py
-│   │
-│   ├── 31_build_pm_latent_states.py
-│   ├── 32_build_pm_state_dynamics.py
-│   ├── 33_train_pm_dynamics_baselines.py
-│   ├── 34_summarize_pm_dynamics_experiments.py
-│   ├── 35_build_and_train_slow_latent_states.py
-│   │
-│   ├── 44_run_seq_len_sensitivity.py
-│   ├── 45_run_calibration_protocol_sensitivity.py
-│   ├── 46_run_reliable_axes_calibration_val_test.py
-│   ├── 47_analyze_per_subject_calibration_diagnostics.py
-│   ├── 48_train_temporal_baselines.py
-│   ├── 49_summarize_final_experiments.py
-│   ├── 50_run_split_seed_robustness.py
-│   ├── 51_run_naive_hypothesis_baselines.py
-│   └── 52_run_integrated_baseline_v1.py
-│
-├── reports/
-│   └── baseline_v1/
-│       ├── README.md
-│       ├── baseline_v1_report.md
-│       ├── baseline_v1_summary.json
-│       ├── hypothesis_baseline_matrix.csv
-│       └── commands_used.md
-│
-├── tools/
-│   └── 00export_project_tree.py
-│
-├── .gitignore
-└── README.md
+bench/
+  datasets/          загрузчики и dataset-контракты
+  experiments/       воспроизводимые экспериментальные протоколы
+  tasks/             target registry и target transforms
+  validation/        канонические scientific splits и метрики
+  data_quality/      переиспользуемые inventory/QC-аудиты
+  preprocessing/     fold-local transforms, caches и orchestration
+  features/          dataset-specific feature caches/adapters
+  automl/            scientific/ и personalized/ orchestration
+  analysis/          статистический и диагностический анализ
+
+cogstate/
+  ingestion/         generic parsing и canonical records
+  preprocessing/     фильтрация и удаление артефактов
+  features/          каноническое target-free извлечение 371 признака
+  model_zoo/         единственные реализации и единая фабрика моделей
+  adaptation/        FOMAML core и reusable calibration primitives
+  streaming/         потоковая обработка
+  evaluation/        application-level evaluation components
+
+experiments/          конфигурации экспериментов
+scripts/              тонкие актуальные CLI-точки запуска
+apps/streaming_worker/ application inference через cogstate
+reports/              отчёты и сводные артефакты
+artifacts/            небольшие model-bundle manifests
 ```
 
----
+Reusable-логика исторических команд перенесена в `bench/` и `cogstate/`.
+Все актуальные запуски выполняются через entry points в `scripts/data/`,
+`scripts/analysis/` и `scripts/`; отдельного legacy-слоя команд нет.
 
-## Основные скрипты
+Большие кэши, predictions, checkpoints, веса моделей и `benchmark_results/` не хранятся в Git.
 
-### Data preparation
+## Воспроизводимость
 
-| Скрипт                               | Назначение                       |
-| ------------------------------------ | -------------------------------- |
-| `00_inventory_data.py`               | инвентаризация исходных данных   |
-| `01_inspect_emotiv_files.py`         | проверка структуры Emotiv-файлов |
-| `02_build_emotiv_catalog.py`         | построение каталога записей      |
-| `03_validate_catalog_and_columns.py` | проверка колонок и структуры     |
-| `04_build_windowed_pm_dataset.py`    | построение оконного PM-датасета  |
-| `05_analyze_pm_sampling.py`          | анализ частоты PM-сэмплирования  |
-| `06_eda_windowed_dataset.py`         | EDA оконного датасета            |
-| `08_build_eeg_features.py`           | построение EEG/POW-признаков     |
+Основной Python-окружение проекта должно содержать PyTorch, scikit-learn, pandas, NumPy, SciPy и зависимости конкретных моделей.
 
-### Latent state modeling
-
-| Скрипт                                     | Назначение                        |
-| ------------------------------------------ | --------------------------------- |
-| `31_build_pm_latent_states.py`             | построение латентных PM-состояний |
-| `32_build_pm_state_dynamics.py`            | анализ динамики PM                |
-| `33_train_pm_dynamics_baselines.py`        | baseline-модели для PM-динамики   |
-| `34_summarize_pm_dynamics_experiments.py`  | сводка PM-dynamics экспериментов  |
-| `35_build_and_train_slow_latent_states.py` | построение slow latent states     |
-
-### Baseline v1
-
-| Скрипт                                              | Назначение                                    |
-| --------------------------------------------------- | --------------------------------------------- |
-| `44_run_seq_len_sensitivity.py`                     | Transformer и анализ длины последовательности |
-| `45_run_calibration_protocol_sensitivity.py`        | функции и протоколы калибровки                |
-| `46_run_reliable_axes_calibration_val_test.py`      | проверка калибровки на validation/test        |
-| `47_analyze_per_subject_calibration_diagnostics.py` | диагностика калибровки по субъектам           |
-| `48_train_temporal_baselines.py`                    | сравнение Transformer, GRU и MLP              |
-| `49_summarize_final_experiments.py`                 | итоговая сводка экспериментов                 |
-| `50_run_split_seed_robustness.py`                   | устойчивость к разным subject-wise split      |
-| `51_run_naive_hypothesis_baselines.py`              | naive и persistence baselines                 |
-| `52_run_integrated_baseline_v1.py`                  | единый runner baseline v1                     |
-
----
-
-## Установка окружения
-
-Рекомендуется использовать отдельное conda-окружение:
+Пример полного A–H запуска:
 
 ```powershell
-conda create -n eeg_nir python=3.10
-conda activate eeg_nir
+python scripts\run_preprocessing_factorial_q3_all_pm.py `
+  --config experiments\preprocessing\preprocessing_factorial_q3_all_pm_v1.json `
+  --run `
+  --resume
 ```
 
-Минимальная установка зависимостей:
+План без обучения:
 
 ```powershell
-pip install numpy pandas scikit-learn pyarrow matplotlib torch lightgbm
+python scripts\run_preprocessing_factorial_q3_all_pm.py `
+  --config experiments\preprocessing\preprocessing_factorial_q3_all_pm_v1.json `
+  --plan-only
 ```
 
-Если в репозитории есть `requirements.txt`, предпочтительно использовать:
+Тест нового контура:
 
 ```powershell
-pip install -r requirements.txt
+python -m pytest tests\test_preprocessing_factorial_q3_all_pm.py -q
 ```
 
----
-
-## Быстрый запуск baseline v1
-
-Сбор уже готовых результатов без переобучения:
+Scientific lightweight replay:
 
 ```powershell
-D:\miniconda3\envs\eeg_nir\python.exe src\52_run_integrated_baseline_v1.py `
-  --root . `
-  --mode summarize
+python scripts\run_streaming_scientific.py `
+  --config configs\streaming_scientific_lightweight_v1.yaml `
+  --action replay
 ```
 
-Ожидаемые выходные файлы:
-
-```text
-reports/baseline_v1/baseline_v1_report.md
-reports/baseline_v1/baseline_v1_summary.json
-reports/baseline_v1/hypothesis_baseline_matrix.csv
-reports/baseline_v1/artifact_index.csv
-reports/baseline_v1/README.md
-```
-
----
-
-## Воспроизведение основных экспериментов
-
-### 1. Temporal baselines
+FastAPI:
 
 ```powershell
-D:\miniconda3\envs\eeg_nir\python.exe src\48_train_temporal_baselines.py `
-  --root . `
-  --dataset reports\slow_latent_states\pm_w10\slow_pm_latent_states_w10.parquet `
-  --output-dir reports\temporal_baselines\pow_plus_eeg_seq8_pca123 `
-  --models last_window_mlp,mean_pool_mlp,gru,transformer `
-  --feature-set pow_plus_eeg `
-  --targets slow_pca_1,slow_pca_2,slow_pca_3 `
-  --seq-len 8 `
-  --calibration-lr 0.0001 `
-  --calibration-frac 0.20 `
-  --device cuda
+python -m apps.streaming_worker.api `
+  --config configs\streaming_scientific_lightweight_v1.yaml
 ```
 
-### 2. Split-seed robustness
+Прикладной streaming CLI и terminal dashboard:
 
 ```powershell
-D:\miniconda3\envs\eeg_nir\python.exe src\50_run_split_seed_robustness.py `
-  --root . `
-  --dataset reports\slow_latent_states\pm_w10\slow_pm_latent_states_w10.parquet `
-  --output-dir reports\split_seed_robustness\pow_plus_eeg_seq8_pca123 `
-  --seeds 42,123,2024,3407,777 `
-  --feature-set pow_plus_eeg `
-  --targets slow_pca_1,slow_pca_2,slow_pca_3 `
-  --seq-len 8 `
-  --calibration-lr 0.0001 `
-  --calibration-frac 0.20 `
-  --device cuda
+python -m apps.streaming_worker validate --config configs\streaming.yaml
+python -m apps.streaming_worker run --config configs\streaming.yaml --dashboard
+python -m apps.streaming_worker run --config configs\streaming.yaml --demo --dashboard
 ```
 
-### 3. Naive baselines
+Docker-образ использует тот же `configs/streaming.yaml` и запускает FastAPI:
 
 ```powershell
-D:\miniconda3\envs\eeg_nir\python.exe src\51_run_naive_hypothesis_baselines.py `
-  --root . `
-  --dataset reports\slow_latent_states\pm_w10\slow_pm_latent_states_w10.parquet `
-  --output-dir reports\naive_hypothesis_baselines\pow_plus_eeg_seq8_pca123 `
-  --seeds 42,123,2024,3407,777 `
-  --feature-set pow_plus_eeg `
-  --targets slow_pca_1,slow_pca_2,slow_pca_3 `
-  --seq-len 8 `
-  --calibration-frac 0.20
+docker build -t eeg-cogstate-streaming .
+docker run --rm -p 8000:8000 eeg-cogstate-streaming
 ```
 
-### 4. Integrated baseline summary
-
-```powershell
-D:\miniconda3\envs\eeg_nir\python.exe src\52_run_integrated_baseline_v1.py `
-  --root . `
-  --mode summarize
-```
-
----
-
-## Полное воспроизведение baseline-блоков
-
-Если нужно пересобрать основные baseline-блоки через интегрирующий runner:
-
-```powershell
-D:\miniconda3\envs\eeg_nir\python.exe src\52_run_integrated_baseline_v1.py `
-  --root . `
-  --mode reproduce `
-  --skip-existing `
-  --run-temporal-baselines `
-  --run-split-seeds `
-  --run-final-summary `
-  --run-naive `
-  --device cuda
-```
-
----
-
-## Основные артефакты
-
-| Артефакт                                                              | Назначение                                 |
-| --------------------------------------------------------------------- | ------------------------------------------ |
-| `reports/baseline_v1/baseline_v1_report.md`                           | итоговый интегрированный отчет baseline v1 |
-| `reports/baseline_v1/baseline_v1_summary.json`                        | машинно-читаемая сводка результатов        |
-| `reports/baseline_v1/hypothesis_baseline_matrix.csv`                  | матрица гипотез и проверок                 |
-| `reports/final_experiment_summary/final_experiment_summary_report.md` | итоговый технический summary-отчет         |
-| `reports/temporal_baselines/pow_plus_eeg_seq8_pca123/`                | сравнение temporal-моделей                 |
-| `reports/split_seed_robustness/pow_plus_eeg_seq8_pca123/`             | устойчивость к subject-wise split seeds    |
-| `reports/naive_hypothesis_baselines/pow_plus_eeg_seq8_pca123/`        | simple statistical/persistence baselines   |
-
----
+Для production-запуска необходимо смонтировать совместимые replay/device data
+и model bundle; bootstrap-manifests предназначены только для диагностического
+сквозного smoke-теста.
 
 ## Ограничения
 
-1. Латентные состояния являются PM-derived proxy-состояниями, а не прямыми объективными измерениями состояния человека.
-2. Используются два близких корпуса EEG-данных; переносимость на другие устройства и протоколы не доказана.
-3. Персональная калибровка требует начального фрагмента данных нового субъекта.
-4. `previous_state` baseline использует историю target и не является deployable EEG-only моделью.
-5. Качество EEG-сигнала и артефакты пока не учитываются как отдельный reliability-модуль.
-6. Ось `slow_pca_4` исключена из финального протокола из-за меньшей устойчивости.
+- Основная внутренняя когорта сравнительно невелика: 54 участника.
+- PM являются проприетарными показателями устройства, а не независимой клинической разметкой.
+- Межсубъектное качество остаётся умеренным.
+- Формальный ориентир Accuracy 75% не достигнут.
+- Мультимодальность не обеспечивает универсального прироста.
+- DANN не устранил cross-dataset shift между CL-Drive и CLARE.
+- Полный MNE-FASTER и CAR не улучшили основной классификационный контур.
+- Live end-to-end задержка с физическим EEG-устройством не измерена.
+- Предварительный model-zoo срез не является окончательным пятифолдовым рейтингом архитектур.
 
----
+## Итог
 
-## Дальнейшая работа
-
-Планируемые направления:
-
-1. Проверить чувствительность к доле калибровочных данных: 5%, 10%, 15%, 20%, 30%.
-2. Провести source-holdout проверку: `gpn_data → Old_EEG` и `Old_EEG → gpn_data`.
-3. Добавить анализ автокорреляции latent targets.
-4. Проверить дополнительные режимы персональной калибровки:
-
-   * `bias_only`;
-   * `head_only`;
-   * `last_block + head`;
-   * `full_finetune`.
-5. Добавить явный модуль оценки качества EEG-сигнала и артефактов.
-
----
-
-## Итоговый вывод
-
-В проекте разработан и валидирован pipeline моделирования латентных proxy-состояний человека по EEG/POW-данным. Показано, что представление состояния в виде временной траектории в латентном PM-derived пространстве является более устойчивой постановкой, чем прямое предсказание отдельных PM-метрик по независимым окнам.
-
-Финальный baseline v1 подтверждает, что Transformer-модель с объединенными EEG/POW-признаками и персональной head-only калибровкой дает положительный прирост качества на held-out субъектах и сохраняет эффект при проверке на нескольких subject-wise разбиениях.
+Проект сформировал воспроизводимый экспериментальный контур для классификации семи когнитивных PM по носимой ЭЭГ. Основные результаты включают межсубъектную оценку, сопоставленные абляции предобработки, персональную калибровку, независимую cross-dataset проверку, мультимодальные эксперименты и потоковый программный прототип. Отрицательные результаты сохраняются как часть экспериментальных выводов и не исключаются постфактум подбором параметров.

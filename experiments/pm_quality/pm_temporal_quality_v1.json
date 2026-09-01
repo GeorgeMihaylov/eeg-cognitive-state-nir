@@ -1,0 +1,83 @@
+{
+  "schema_version": "pm-temporal-quality-v1",
+  "experiment_id": "pm_temporal_quality_ablation_v1",
+  "result_status": "diagnostic",
+  "data": {
+    "processed_pm": "data/processed/windowed_eeg_pm_dataset_w10.parquet",
+    "reference_predictions": "benchmark_results/groupkfold_rf_label_q5/20260713_182031/emotiv_cognitive/cognitive_load_5class/random_forest/group_kfold_subject/predictions.parquet",
+    "raw_window_index": "data/interim/raw_eeg_window_index_w10_pm_union_composite_v1.parquet",
+    "raw_root": "data/raw"
+  },
+  "pm_targets": {
+    "attention": "target_attention",
+    "engagement": "target_engagement",
+    "excitement": "target_excitement",
+    "stress": "target_stress",
+    "relaxation": "target_relaxation",
+    "interest": "target_interest",
+    "focus": "target_focus"
+  },
+  "temporal": {
+    "group_keys": ["source", "subject_id", "record_group_id", "record_id"],
+    "order_keys": ["t_start", "sample_id"],
+    "expected_step_seconds": 10.0,
+    "max_gap_seconds": 10.01,
+    "missing_policy": "preserve_nan_and_reset_state",
+    "lag_diagnostic_max_windows": 3
+  },
+  "variants": {
+    "baseline_raw": {"method": "identity"},
+    "causal_median_w3": {"method": "trailing_median", "window": 3},
+    "causal_ema_a05": {"method": "causal_ema", "alpha": 0.5},
+    "causal_hampel_w5_k3": {"method": "causal_hampel", "window": 5, "threshold": 3.0, "mad_scale": 1.4826}
+  },
+  "folds": {
+    "protocol": "fixed_group_kfold_subject",
+    "group_column": "subject_id",
+    "fold_ids": [1, 2, 3, 4, 5],
+    "source": "canonical_reference_predictions",
+    "q3_transform_policy": "fold_local_quantile_q3_outer_train_only",
+    "test_targets_used_for_threshold_fit": false
+  },
+  "behavioral_audit": {
+    "old_eeg_annotations": "Old_EEG/experiment-1/annotations/**/*.csv",
+    "gpn_json": "gpn_data/**/*.json",
+    "gpn_interval_markers": "gpn_data/**/*intervalMarker*",
+    "annotation_timestamp_interpretation": "UTC_after_empirical_overlap_check",
+    "alignment": "same_subject_unique_half_open_physical_record_window",
+    "nearest_event_tolerance_seconds": null,
+    "alignment_smoke_limit": 200
+  },
+  "downstream": {
+    "experiment_id": "pm_temporal_quality_downstream_v1",
+    "feature_cache": "benchmark_results/preliminary_model_zoo_comparison_fold1",
+    "feature_cache_access": "read_only",
+    "expected_feature_count": 371,
+    "random_state": 42,
+    "hyperparameter_search": false,
+    "models": {
+      "classification": {
+        "logistic_regression": {
+          "scaling": "standard",
+          "params": {"max_iter": 500, "solver": "lbfgs", "random_state": 42}
+        },
+        "random_forest": {
+          "scaling": "none",
+          "params": {"n_estimators": 100, "max_depth": 12, "min_samples_leaf": 2, "n_jobs": 1, "random_state": 42}
+        }
+      },
+      "regression": {
+        "ridge": {
+          "scaling": "standard",
+          "params": {"alpha": 1.0}
+        },
+        "random_forest": {
+          "scaling": "none",
+          "params": {"n_estimators": 100, "max_depth": 12, "min_samples_leaf": 2, "n_jobs": 1, "random_state": 42}
+        }
+      }
+    },
+    "output_dir": "benchmark_results/pm_temporal_quality_downstream_v1"
+  },
+  "output_dir": "benchmark_results/pm_temporal_quality_ablation_v1"
+}

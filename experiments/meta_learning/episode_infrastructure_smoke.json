@@ -1,0 +1,54 @@
+{
+  "result_status": "diagnostic",
+  "output_dir": "benchmark_results/meta_learning_infrastructure",
+  "main_dataset": {
+    "dataset_id": "emotiv_cognitive",
+    "task_id": "cognitive_load_5class",
+    "fold_predictions": "benchmark_results/groupkfold_rf_label_q5/20260713_182031/emotiv_cognitive/cognitive_load_5class/random_forest/group_kfold_subject/predictions.parquet",
+    "outer_fold": 1,
+    "meta_train_subjects": 3,
+    "personalization_subjects": 3,
+    "episode_spec": {
+      "episode_type": "subject_personalization",
+      "task_type": "ordinal_classification",
+      "target_name": "label_q5",
+      "support_unit": "sample",
+      "query_unit": "sample",
+      "support_size": 32,
+      "query_size": 64,
+      "class_balance_policy": "none",
+      "chronological": true,
+      "group_fields": ["subject_id", "record_id", "sample_id"],
+      "seed": 42,
+      "minimum_records": 2,
+      "minimum_classes": 1,
+      "insufficient_data_policy": "skip_episode"
+    }
+  },
+  "cog_bci": {
+    "dataset_id": "cog_bci",
+    "task_id": "cog_bci_nback_3class",
+    "target_index": "benchmark_results/cog_bci_protocols/nback_3class/target_index.parquet",
+    "outer_assignments": "benchmark_results/cog_bci_protocols/nback_3class/outer_assignments.parquet",
+    "outer_folds": "benchmark_results/cog_bci_protocols/nback_3class/outer_folds.json",
+    "outer_fold": 1,
+    "subjects": 3,
+    "episode_spec": {
+      "episode_type": "session_adaptation",
+      "task_type": "ordinal_classification",
+      "target_name": "n_back_level",
+      "support_unit": "session",
+      "query_unit": "session",
+      "support_size": 2,
+      "query_size": 1,
+      "class_balance_policy": "require_all_classes",
+      "chronological": false,
+      "group_fields": ["subject_id", "session_id", "record_id", "sample_id"],
+      "seed": 42,
+      "minimum_records": 3,
+      "minimum_classes": 3,
+      "insufficient_data_policy": "error",
+      "time_column": "start_time_seconds"
+    }
+  }
+}

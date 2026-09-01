@@ -1,0 +1,55 @@
+output_dir: "./benchmark_results/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed42"
+
+raw_preprocessing:
+  resample_hz: 256
+  bandpass: {enabled: false, low_hz: 1.0, high_hz: 45.0}
+  notch: {enabled: false, frequency_hz: 50.0, quality_factor: 30.0}
+  rereference: {mode: none}
+  artifact_rejection: {enabled: false, max_abs_amplitude: null, max_flat_fraction: null}
+
+datasets:
+  emotiv_raw_eeg:
+    data_path: "./data/interim/raw_eeg_window_index_w10_raw_v3.parquet"
+    target_col: "label_q5"
+    dataset_mode: "raw_deduplicated_logical_records"
+    logical_recording_map_path: "./data/interim/logical_recording_map.parquet"
+
+tasks: [cognitive_load_5class]
+
+validation:
+  strategy: group_record
+  group_column: record_group_id
+  validation_size: 0.15
+  random_state: 42
+
+models:
+  torch_shallow_convnet:
+    type: torch_shallow_convnet
+    task_type: classification
+    params:
+      n_filters: 40
+      temporal_kernel_samples: 25
+      pool_size: 75
+      pool_stride: 15
+      dropout: 0.5
+      batch_size: 128
+      max_epochs: 15
+      learning_rate: 0.001
+      weight_decay: 0.0001
+      validation_size: 0.15
+      early_stopping_patience: 4
+      device: auto
+      random_state: 42
+      standardize: true
+      num_workers: 0
+
+evaluation:
+  protocol: group_kfold_subject
+  n_splits: 5
+  group_column: subject_id
+  precomputed_fold_column: outer_fold
+  random_state: 42
+
+task_config: {random_state: 42}
+run_within_subject: false
+run_loso: false

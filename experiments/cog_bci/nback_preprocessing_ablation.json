@@ -1,0 +1,129 @@
+{
+  "result_status": "diagnostic",
+  "input_cache": "benchmark_results/cog_bci_windows/emotiv_common_full",
+  "source_dataset_root": "data/raw/cog_bci/extracted",
+  "index_cache": "benchmark_results/cog_bci_loader/record_index.json",
+  "task_protocol": "benchmark_results/cog_bci_protocols/nback_3class",
+  "output_dir": "benchmark_results/cog_bci_preprocessing_ablation/nback_3class",
+  "tracked_report": "reports/integration/cog_bci_nback_preprocessing_ablation.md",
+  "seed": 42,
+  "unit_audit": {
+    "subjects": ["sub-01", "sub-10"],
+    "sessions": ["ses-01", "ses-02"],
+    "task_variants": ["zero_back", "one_back", "two_back"]
+  },
+  "candidate_variants": [
+    {
+      "variant_id": "A_raw",
+      "name": "raw",
+      "demean": false,
+      "bandpass_enabled": false,
+      "notch_enabled": false
+    },
+    {
+      "variant_id": "B_record_demean",
+      "name": "record_demean",
+      "demean": true,
+      "bandpass_enabled": false,
+      "notch_enabled": false
+    },
+    {
+      "variant_id": "C_notch",
+      "name": "notch",
+      "demean": false,
+      "bandpass_enabled": false,
+      "notch_enabled": true
+    },
+    {
+      "variant_id": "D_bandpass",
+      "name": "bandpass",
+      "demean": false,
+      "bandpass_enabled": true,
+      "notch_enabled": false
+    },
+    {
+      "variant_id": "E_demean_notch",
+      "name": "demean_notch",
+      "demean": true,
+      "bandpass_enabled": false,
+      "notch_enabled": true
+    },
+    {
+      "variant_id": "F_demean_bandpass",
+      "name": "demean_bandpass",
+      "demean": true,
+      "bandpass_enabled": true,
+      "notch_enabled": false
+    },
+    {
+      "variant_id": "G_bandpass_notch",
+      "name": "bandpass_notch",
+      "demean": false,
+      "bandpass_enabled": true,
+      "notch_enabled": true
+    },
+    {
+      "variant_id": "H_demean_bandpass_notch",
+      "name": "demean_bandpass_notch",
+      "demean": true,
+      "bandpass_enabled": true,
+      "notch_enabled": true
+    }
+  ],
+  "filter_specification": {
+    "sampling_rate_hz": 500.0,
+    "bandpass_low_hz": 1.0,
+    "bandpass_high_hz": 45.0,
+    "bandpass_order": 4,
+    "notch_frequency_hz": 50.0,
+    "notch_q": 30.0,
+    "phase": "zero_phase_forward_backward",
+    "padding": "explicit_odd_reflection"
+  },
+  "spectral_features": {
+    "welch_nperseg": 512,
+    "welch_noverlap": 256,
+    "model_feature_detrend": "constant",
+    "qc_feature_detrend": false
+  },
+  "lightweight_models": {
+    "models": [
+      "multinomial_logistic_regression",
+      "hist_gradient_boosting"
+    ],
+    "hyperparameters": "reuse_cog_bci_nback_diagnostics",
+    "scaler_fit_partition": "inner_train"
+  },
+  "selection_rule": {
+    "metric": "mean_inner_validation_record_macro_f1",
+    "model_aggregation": "mean_of_two_preregistered_models",
+    "tie_tolerance": 0.000001,
+    "tie_break": [
+      "A_raw",
+      "C_notch",
+      "D_bandpass",
+      "G_bandpass_notch",
+      "B_record_demean",
+      "E_demean_notch",
+      "F_demean_bandpass",
+      "H_demean_bandpass_notch"
+    ],
+    "max_ordinal_mae_increase": 0.10,
+    "outer_test_used_for_selection": false
+  },
+  "deep_check": {
+    "model": "torch_eegnet",
+    "base_config": "experiments/cog_bci/nback_eegnet_baseline.json",
+    "raw_reference_dir": "benchmark_results/cog_bci_baselines/nback_3class/eegnet_seed42",
+    "fold": 1,
+    "seed": 42,
+    "max_epochs": 15,
+    "patience": 4
+  },
+  "decision_rule": {
+    "minimum_improved_inner_folds": 3,
+    "maximum_line_ratio_vs_raw": 0.50,
+    "maximum_deep_macro_f1_degradation": 0.01,
+    "strong_proceed_deep_macro_f1_improvement": 0.03
+  }
+}

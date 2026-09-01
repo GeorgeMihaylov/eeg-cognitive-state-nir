@@ -1,0 +1,163 @@
+{
+  "analysis_name": "label_target_audit",
+  "analysis_only": true,
+  "artifacts": {
+    "record_target_statistics": "benchmark_results/label_feature_audit/record_target_statistics.parquet",
+    "report": "reports/label_target_audit.md",
+    "subject_target_statistics": "benchmark_results/label_feature_audit/subject_target_statistics.parquet",
+    "summary": "reports/label_target_audit_summary.json",
+    "target_class_statistics": "benchmark_results/label_feature_audit/target_class_statistics.parquet",
+    "variance_decomposition": "benchmark_results/label_feature_audit/variance_decomposition.json"
+  },
+  "data_path": "data/processed/windowed_eeg_pm_dataset_w10.parquet",
+  "input_modified": false,
+  "input_sha256": "26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8",
+  "input_sha256_after": "26b7d71f7c71cc575098888150f12dcf24132075c7e692c9059cf675200954f8",
+  "input_size_bytes": 159208868,
+  "label_q5": {
+    "algorithm": "pd.qcut(target_main, q=5, labels=False, duplicates='drop')",
+    "boundaries_persisted_by_original_builder": false,
+    "counterfactual_source_specific_boundaries": {
+      "Old_EEG": [
+        0.004077,
+        0.3310062,
+        0.3902908,
+        0.44912660000000004,
+        0.533429,
+        0.991193
+      ],
+      "gpn_data": [
+        0.033242,
+        0.329431,
+        0.385454,
+        0.440328,
+        0.521398,
+        0.991193
+      ]
+    },
+    "global_quantile_boundaries": [
+      0.004077,
+      0.330177,
+      0.387786,
+      0.4444580000000001,
+      0.526585,
+      0.991193
+    ],
+    "methodological_leakage_risk": true,
+    "missing_target_rows": 5924,
+    "per_record": false,
+    "per_source": false,
+    "per_subject": false,
+    "scope": "all concatenated records, subjects, and sources before evaluation split",
+    "stored_labels_match_recomputed_global_qcut": true,
+    "uses_outer_test_target_distribution": true
+  },
+  "label_q5_non_null": 45384,
+  "models_trained": 0,
+  "records": 120,
+  "rows": 51308,
+  "source_statistics": [
+    {
+      "max": 0.991193,
+      "mean": 0.4335880035717599,
+      "min": 0.004077,
+      "records": 48,
+      "source": "Old_EEG",
+      "std": 0.12935713108351915,
+      "subjects": 43,
+      "windows": 21558
+    },
+    {
+      "max": 0.991193,
+      "mean": 0.42684546648619154,
+      "min": 0.033242,
+      "records": 71,
+      "source": "gpn_data",
+      "std": 0.1208290633870818,
+      "subjects": 42,
+      "windows": 23826
+    }
+  ],
+  "sources": [
+    "Old_EEG",
+    "gpn_data"
+  ],
+  "subjects": 55,
+  "subjects_in_both_sources": 31,
+  "subjects_in_one_source": 23,
+  "supervised_records": 119,
+  "supervised_rows": 45384,
+  "supervised_subjects": 54,
+  "target_focus_non_null": 45384,
+  "target_lineage": {
+    "activity_mask_applied": false,
+    "additional_scaling_in_repository": false,
+    "chunk_boundary_secondary_aggregation": "unweighted mean of chunk-level aggregates",
+    "numeric_parse_failures_become_missing": true,
+    "raw_export_column": "PM.Focus.Scaled",
+    "target_column": "target_focus",
+    "target_main_is_exact_copy": true,
+    "window_aggregate_column": "PM.Focus.Scaled__mean",
+    "window_seconds": 10.0
+  },
+  "variance_decomposition": {
+    "between_record_within_subject": {
+      "fraction_of_total": 0.06994536858457523,
+      "sum_of_squares": 49.59619932769164
+    },
+    "between_source_unadjusted": {
+      "fraction_of_total": 0.0007256280933783159,
+      "sum_of_squares": 0.5145214942065539
+    },
+    "between_subject": {
+      "fraction_of_total": 0.16094817175209933,
+      "sum_of_squares": 114.12360488161039
+    },
+    "caveats": [
+      "Fractions are descriptive window-weighted quantities, not causal effects.",
+      "The source fraction is unadjusted for subjects represented in both sources.",
+      "Repeated windows are temporally dependent, so window counts are not independent sample sizes."
+    ],
+    "hierarchical_reconstruction_error_fraction": 1.6033220035901746e-16,
+    "icc_1_one_way_random": 0.1630542423571369,
+    "icc_effective_group_size": 836.983846854847,
+    "method": "population sum-of-squares decomposition on supervised windows",
+    "source_difference": {
+      "cohens_d_unadjusted": 0.05396076127988228,
+      "contrast": "Old_EEG - gpn_data",
+      "mean_difference": 0.006742537085568379
+    },
+    "source_statistics": [
+      {
+        "max": 0.991193,
+        "mean": 0.4335880035717599,
+        "min": 0.004077,
+        "records": 48,
+        "source": "Old_EEG",
+        "std": 0.12935713108351915,
+        "subjects": 43,
+        "windows": 21558
+      },
+      {
+        "max": 0.991193,
+        "mean": 0.42684546648619154,
+        "min": 0.033242,
+        "records": 71,
+        "source": "gpn_data",
+        "std": 0.1208290633870818,
+        "subjects": 42,
+        "windows": 23826
+      }
+    ],
+    "total_sum_of_squares": 709.0705264884242,
+    "total_variance_population": 0.015623799719910634,
+    "within_record": {
+      "fraction_of_total": 0.7691064596633256,
+      "sum_of_squares": 545.3507222791222
+    },
+    "within_subject": {
+      "fraction_of_total": 0.8390518282479008,
+      "sum_of_squares": 594.9469216068139
+    }
+  }
+}

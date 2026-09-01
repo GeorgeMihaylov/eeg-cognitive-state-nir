@@ -1,0 +1,4 @@
+alias,canonical_target,relationship,both_finite_count,max_abs_difference,mismatch_count,missing_mask_mismatch_count,loader_behavior,status
+target_main,target_focus,exact in the canonical Parquet; builder has column-presence fallbacks,45384,0,0,0,default when target_col is omitted; fallback search remains for legacy configs,legacy
+target_main,PM.Focus.Scaled__mean,exact through target_focus in the canonical Parquet,45384,0,0,0,not recommended as an implicit task contract,legacy
+label_focus_q5,label_q5,recommended display alias only; no physical column rename,45384,0,0,0,physical target_col remains label_q5,canonical_display_alias

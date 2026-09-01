@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="460" role="img">
+<title>Balanced accuracy versus calibration duration</title>
+<rect width="100%" height="100%" fill="white"/>
+<line x1="80" y1="35" x2="80" y2="395" stroke="#444"/>
+<line x1="80" y1="395" x2="790" y2="395" stroke="#444"/>
+<line x1="80" y1="395.0" x2="790" y2="395.0" stroke="#ddd"/>
+<text x="72" y="399.0" text-anchor="end" font-size="12">0.271</text>
+<line x1="80" y1="323.0" x2="790" y2="323.0" stroke="#ddd"/>
+<text x="72" y="327.0" text-anchor="end" font-size="12">0.292</text>
+<line x1="80" y1="251.0" x2="790" y2="251.0" stroke="#ddd"/>
+<text x="72" y="255.0" text-anchor="end" font-size="12">0.312</text>
+<line x1="80" y1="179.0" x2="790" y2="179.0" stroke="#ddd"/>
+<text x="72" y="183.0" text-anchor="end" font-size="12">0.333</text>
+<line x1="80" y1="107.0" x2="790" y2="107.0" stroke="#ddd"/>
+<text x="72" y="111.0" text-anchor="end" font-size="12">0.354</text>
+<line x1="80" y1="35.0" x2="790" y2="35.0" stroke="#ddd"/>
+<text x="72" y="39.0" text-anchor="end" font-size="12">0.374</text>
+<text x="80.0" y="417" text-anchor="middle" font-size="12">0</text>
+<text x="151.0" y="417" text-anchor="middle" font-size="12">1</text>
+<text x="293.0" y="417" text-anchor="middle" font-size="12">3</text>
+<text x="435.0" y="417" text-anchor="middle" font-size="12">5</text>
+<text x="790.0" y="417" text-anchor="middle" font-size="12">10</text>
+<polyline points="293.0,100.5 435.0,83.1 790.0,80.9" fill="none" stroke="#b279a2" stroke-width="2"/>
+<circle cx="293.0" cy="100.5" r="4" fill="#b279a2"/>
+<circle cx="435.0" cy="83.1" r="4" fill="#b279a2"/>
+<circle cx="790.0" cy="80.9" r="4" fill="#b279a2"/>
+<polyline points="293.0,88.3 435.0,70.5 790.0,69.9" fill="none" stroke="#54a24b" stroke-width="2"/>
+<circle cx="293.0" cy="88.3" r="4" fill="#54a24b"/>
+<circle cx="435.0" cy="70.5" r="4" fill="#54a24b"/>
+<circle cx="790.0" cy="69.9" r="4" fill="#54a24b"/>
+<polyline points="293.0,360.1 435.0,337.6 790.0,357.5" fill="none" stroke="#e45756" stroke-width="2"/>
+<circle cx="293.0" cy="360.1" r="4" fill="#e45756"/>
+<circle cx="435.0" cy="337.6" r="4" fill="#e45756"/>
+<circle cx="790.0" cy="357.5" r="4" fill="#e45756"/>
+<polyline points="80.0,114.5 151.0,109.5 293.0,106.0 435.0,97.8 790.0,95.7" fill="none" stroke="#4c78a8" stroke-width="2"/>
+<circle cx="80.0" cy="114.5" r="4" fill="#4c78a8"/>
+<circle cx="151.0" cy="109.5" r="4" fill="#4c78a8"/>
+<circle cx="293.0" cy="106.0" r="4" fill="#4c78a8"/>
+<circle cx="435.0" cy="97.8" r="4" fill="#4c78a8"/>
+<circle cx="790.0" cy="95.7" r="4" fill="#4c78a8"/>
+<rect x="80" y="8" width="12" height="12" fill="#b279a2"/>
+<text x="97" y="19" font-size="12">full_model</text>
+<rect x="235" y="8" width="12" height="12" fill="#54a24b"/>
+<text x="252" y="19" font-size="12">head_only</text>
+<rect x="390" y="8" width="12" height="12" fill="#e45756"/>
+<text x="407" y="19" font-size="12">subject_normalization</text>
+<rect x="545" y="8" width="12" height="12" fill="#4c78a8"/>
+<text x="562" y="19" font-size="12">zero_shot</text>
+<text x="435.0" y="445" text-anchor="middle" font-size="13">Calibration duration (minutes)</text>
+<text x="18" y="230.0" text-anchor="middle" font-size="13" transform="rotate(-90 18 230.0)">Balanced accuracy</text>
+</svg>

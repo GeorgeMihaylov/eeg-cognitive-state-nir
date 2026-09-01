@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "source_dataset": "cog_bci",
+  "target_contract": "project_emotiv_raw_v1",
+  "canonical_order": [
+    "EEG.AF3",
+    "EEG.F7",
+    "EEG.F3",
+    "EEG.FC5",
+    "EEG.T7",
+    "EEG.P7",
+    "EEG.O1",
+    "EEG.O2",
+    "EEG.P8",
+    "EEG.T8",
+    "EEG.FC6",
+    "EEG.F4",
+    "EEG.F8",
+    "EEG.AF4"
+  ],
+  "mapping": [
+    {"emotiv_channel": "EEG.AF3", "cog_bci_channel": "AF3", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.F7", "cog_bci_channel": "F7", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.F3", "cog_bci_channel": "F3", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.FC5", "cog_bci_channel": "FC5", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.T7", "cog_bci_channel": "T7", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.P7", "cog_bci_channel": "P7", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.O1", "cog_bci_channel": "O1", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.O2", "cog_bci_channel": "O2", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.P8", "cog_bci_channel": "P8", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.T8", "cog_bci_channel": "T8", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.FC6", "cog_bci_channel": "FC6", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.F4", "cog_bci_channel": "F4", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.F8", "cog_bci_channel": "F8", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."},
+    {"emotiv_channel": "EEG.AF4", "cog_bci_channel": "AF4", "match_type": "explicit_alias_match", "status": "explicit_alias_match", "evidence": "Exact sensor label after removing the project CSV namespace prefix 'EEG.'."}
+  ]
+}

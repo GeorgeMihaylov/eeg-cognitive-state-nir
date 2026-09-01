@@ -1,0 +1,30 @@
+analysis:
+  name: label_definition_sensitivity
+  data_path: data/processed/windowed_eeg_pm_dataset_w10.parquet
+  output_dir: benchmark_results/label_feature_audit
+  report_path: reports/label_definition_sensitivity.md
+  summary_path: reports/label_definition_sensitivity_summary.json
+
+  target_column: target_focus
+  legacy_label_column: label_q5
+  n_classes: 5
+  n_splits: 5
+  expected_supervised_rows: 45384
+  global_internal_thresholds: [0.330177, 0.387786, 0.444458, 0.526585]
+  repeat_diagnostics_if_changed_fraction_exceeds: 0.05
+
+  canonical_reference_predictions: >-
+    benchmark_results/groupkfold_rf_label_q5/20260713_182031/emotiv_cognitive/cognitive_load_5class/random_forest/group_kfold_subject/predictions.parquet
+
+# Used only if changed labels exceed the explicitly requested 5% condition.
+diagnostic_baselines:
+  n_splits: 5
+  random_state: 42
+  logistic_regression:
+    max_iter: 500
+    solver: lbfgs
+  random_forest:
+    n_estimators: 50
+    max_depth: 6
+    min_samples_leaf: 10
+    n_jobs: -1

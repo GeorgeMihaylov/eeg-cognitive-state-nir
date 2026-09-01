@@ -1,0 +1,48 @@
+experiment:
+  type: user_calibration
+  output_dir: "./benchmark_results/user_calibration_transformer_label_q5"
+  report_dir: "./reports"
+
+base_run:
+  run_directory: "./benchmark_results/groupkfold_torch_transformer_label_q5/20260716_191246"
+  dataset: emotiv_cognitive
+  task: cognitive_load_5class
+  model: torch_transformer
+
+calibration:
+  budgets_seconds: [0, 60, 180, 300, 600]
+  methods:
+    - zero_shot
+    - subject_normalization
+    - head_only
+
+  defaults:
+    split_strategy: chronological_prefix
+    purge_windows: 7
+    weight_decay: 0.0001
+    calibration_validation_fraction: 0.2
+    fallback_fixed_epochs: 3
+    min_calibration_sequences: 1
+    min_evaluation_sequences: 20
+    random_state: 42
+
+  method_params:
+    zero_shot:
+      max_epochs: 1
+      learning_rate: 0.001
+      early_stopping_patience: 1
+
+    subject_normalization:
+      max_epochs: 1
+      learning_rate: 0.001
+      early_stopping_patience: 1
+
+    head_only:
+      max_epochs: 20
+      learning_rate: 0.001
+      early_stopping_patience: 4
+
+    full_model:
+      max_epochs: 15
+      learning_rate: 0.00005
+      early_stopping_patience: 3

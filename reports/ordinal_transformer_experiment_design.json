@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "document_type": "ordinal_transformer_experiment_design",
+  "created_on": "2026-07-18",
+  "source_commit": "d234f71de345620b27ff097a85c1eef69c3e7b46",
+  "implementation_status": "design_only",
+  "training_performed": false,
+  "model_contract": {
+    "model_name": "torch_transformer",
+    "task": "cognitive_load_5class",
+    "target": "label_q5",
+    "num_classes": 5,
+    "head_type_default": "categorical",
+    "head_types": {
+      "categorical": {
+        "output_width": 5,
+        "output_semantics": "class_logits",
+        "loss": "cross_entropy",
+        "state_dict_prefix": "classifier."
+      },
+      "coral": {
+        "output_width": 4,
+        "output_semantics": "cumulative_threshold_logits",
+        "loss": "unweighted_coral_bce",
+        "state_dict_prefix": "ordinal_head."
+      },
+      "corn": {
+        "output_width": 4,
+        "output_semantics": "conditional_threshold_logits",
+        "loss": "unweighted_corn_masked_bce",
+        "state_dict_prefix": "ordinal_head."
+      }
+    },
+    "shared_components": [
+      "input_projection",
+      "positional_encoding",
+      "transformer_encoder",
+      "pooling",
+      "adapter_training_loop",
+      "inner_validation",
+      "train_only_standardization",
+      "artifact_pipeline"
+    ],
+    "adapter_strategy": "objective_handler_in_existing_TorchClassificationAdapter",
+    "predict_proba_semantics": "five_class_probabilities"
+  },
+  "legacy_compatibility": {
+    "missing_head_type_means": "categorical",
+    "strict_state_dict_load": true,
+    "preserve_categorical_parameter_names": true,
+    "observed_checkpoint": {
+      "input_shape": [8, 448],
+      "num_classes": 5,
+      "parameter_count": 340869,
+      "metadata_has_head_type": false,
+      "classifier_keys": [
+        "classifier.0.weight",
+        "classifier.0.bias",
+        "classifier.1.weight",
+        "classifier.1.bias",
+        "classifier.4.weight",
+        "classifier.4.bias"
+      ]
+    },
+    "calibration": {
+      "current_head_only_prefix": "classifier.",
+      "categorical_must_remain_supported": true,
+      "ordinal_initial_policy": "explicitly_reject_until_separately_designed"
+    }
+  },
+  "ordinal_formulations": {
+    "target_encoding": {
+      "formula": "t[i,k] = 1[y_i > k]",
+      "threshold_indices": [0, 1, 2, 3],
+      "examples": {
+        "0": [0, 0, 0, 0],
+        "1": [1, 0, 0, 0],
+        "2": [1, 1, 0, 0],
+        "3": [1, 1, 1, 0],
+        "4": [1, 1, 1, 1]
+      }
+    },
+    "coral": {
+      "score": "s_i = w^T h_i + b",
+      "cutpoints": "c_0=a; c_k=c_(k-1)+softplus(delta_k)+1e-6",
+      "logits": "z[i,k] = s_i - c_k",
+      "cumulative_probability": "q[i,k] = sigmoid(z[i,k])",
+      "monotonicity": "guaranteed_by_strictly_ordered_cutpoints",
+      "initial_cutpoints": [-1.5, -0.5, 0.5, 1.5],
+      "loss_numerator": "sum BCEWithLogits(z,t) over N*4 entries",
+      "loss_denominator": "N*4",
+      "weighted": false
+    },
+    "corn": {
+      "conditional_probability": "r[i,k] = sigmoid(z[i,k]) = P(y>k | y>k-1)",
+      "mask": "m[i,0]=1; m[i,k]=1[y_i>k-1] for k>0",
+      "target": "t[i,k] = 1[y_i>k]",
+      "cumulative_probability": "q[i,k] = product(r[i,0:k+1])",
+      "monotonicity": "guaranteed_by_cumulative_product",
+      "loss_numerator": "sum m*BCEWithLogits(z,t)",
+      "loss_denominator": "sum m",
+      "empty_threshold_policy": "zero numerator and denominator contribution; threshold 0 keeps total denominator positive",
+      "weighted": false
+    }
+  },
+  "probability_conversion": {
+    "cumulative_definition": "q_k=P(y>k)",
+    "class_formulas": [
+      "p_0=1-q_0",
+      "p_1=q_0-q_1",
+      "p_2=q_1-q_2",
+      "p_3=q_2-q_3",
+      "p_4=q_3"
+    ],
+    "tolerance": 1e-7,
+    "algorithm": [
+      "require finite q in [0,1] within tolerance",
+      "require q_k+tolerance>=q_(k+1)",
+      "raise on monotonicity or negativity violation larger than tolerance",
+      "replace only p in [-tolerance,0) with zero",
+      "require positive finite row sum",
+      "renormalize p by row sum",
+      "retain raw cumulative q in artifacts"
+    ],
+    "silent_clipping": false
+  },
+  "prediction": {
+    "primary": "y_pred = count(q_k >= 0.5)",
+    "tie_rule": "greater_than_or_equal",
+    "expected_rank": "sum(q_k)",
+    "secondary": "argmax(class_probabilities)",
+    "primary_locked_before_outer_test": true
+  },
+  "dataset_protocol": {
+    "data_path": "data/processed/windowed_eeg_pm_dataset_w10.parquet",
+    "supervised_windows": 45384,
+    "sequences": 44142,
+    "sequence_length": 8,
+    "sequence_stride": 1,
+    "sequence_subjects": 53,
+    "supervised_subjects": 54,
+    "sequence_index_sha256": "1d0a1fe8ab8aad1c6da8637cb882c4365c01acb80c0822e34ced21ef7ee36afa",
+    "outer_validation": {
+      "protocol": "group_kfold_subject",
+      "group_column": "subject_id",
+      "n_splits": 5,
+      "shuffle": false
+    },
+    "inner_validation": {
+      "strategy": "group_record",
+      "group_column": "record_group_id",
+      "validation_size": 0.15
+    },
+    "normalization_scope": "inner_train_only",
+    "random_state": 42,
+    "required_alignment_columns": [
+      "sequence_id",
+      "fold",
+      "subject_id",
+      "record_id",
+      "source",
+      "target_sample_id",
+      "target_time",
+      "y_true"
+    ]
+  },
+  "feature_groups": {
+    "eeg_only": {
+      "feature_count": 168,
+      "feature_list_sha256": "6e822ee172422e7138945b47b2b27c947393b828b72d96b7a8e22850aded8aca"
+    },
+    "eeg_pow": {
+      "feature_count": 448,
+      "feature_list_sha256": "8cd5d70faa8ff30fb4290dd9d9a2dde0e81f50e7682d05668b5fb47df511fd51"
+    }
+  },
+  "fixed_model_parameters": {
+    "d_model": 128,
+    "nhead": 4,
+    "num_layers": 2,
+    "dim_feedforward": 256,
+    "dropout": 0.1,
+    "activation": "gelu",
+    "pooling": "last",
+    "positional_encoding": "learned",
+    "batch_size": 128,
+    "max_epochs": 15,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "early_stopping_patience": 4,
+    "device": "auto",
+    "standardize": true,
+    "num_workers": 0
+  },
+  "experiment_matrix": [
+    {"id": "categorical_eeg_only", "feature_group": "eeg_only", "head_type": "categorical", "status": "existing", "folds": 5, "seed": 42},
+    {"id": "coral_eeg_only", "feature_group": "eeg_only", "head_type": "coral", "status": "future", "folds": 5, "seed": 42},
+    {"id": "corn_eeg_only", "feature_group": "eeg_only", "head_type": "corn", "status": "future", "folds": 5, "seed": 42},
+    {"id": "categorical_eeg_pow", "feature_group": "eeg_pow", "head_type": "categorical", "status": "existing", "folds": 5, "seed": 42},
+    {"id": "coral_eeg_pow", "feature_group": "eeg_pow", "head_type": "coral", "status": "future", "folds": 5, "seed": 42},
+    {"id": "corn_eeg_pow", "feature_group": "eeg_pow", "head_type": "corn", "status": "future", "folds": 5, "seed": 42}
+  ],
+  "categorical_baselines": {
+    "eeg_only": {
+      "run": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_only/20260718_124023",
+      "balanced_accuracy_mean": 0.3455992501962447,
+      "balanced_accuracy_std": 0.023249255735548736,
+      "macro_f1_mean": 0.34027133454542347,
+      "macro_f1_std": 0.02096394811678303,
+      "ordinal_mae_mean": 1.0564696570372643,
+      "severe_error_rate_mean": 0.2783763556592621
+    },
+    "eeg_pow": {
+      "run": "benchmark_results/feature_group_transformer_ablation/runs/transformer_classification_eeg_pow/20260718_124412",
+      "balanced_accuracy_mean": 0.36869933947777483,
+      "balanced_accuracy_std": 0.018857493094446256,
+      "macro_f1_mean": 0.361480719674969,
+      "macro_f1_std": 0.01693428118709923,
+      "ordinal_mae_mean": 0.9838457481571901,
+      "severe_error_rate_mean": 0.2513073868109026
+    }
+  },
+  "metrics": {
+    "categorical": ["balanced_accuracy", "macro_f1", "auc_weighted_ovr", "cohen_kappa"],
+    "ordinal": ["ordinal_mae", "adjacent_accuracy", "severe_error_rate", "quadratic_weighted_kappa"],
+    "continuous": ["expected_rank_mae", "expected_rank_spearman"],
+    "decision_primary": ["ordinal_mae", "severe_error_rate", "balanced_accuracy", "macro_f1"],
+    "auc_input": "class_probabilities_N_by_5"
+  },
+  "statistics": {
+    "unit": "subject_id",
+    "bootstrap_resamples": 10000,
+    "confidence_level": 0.95,
+    "tests": ["paired_subject_bootstrap", "wilcoxon_signed_rank", "sign_test", "rank_biserial_correlation"],
+    "holm_families": {
+      "eeg_only_methods": ["coral_vs_categorical", "corn_vs_categorical", "coral_vs_corn"],
+      "eeg_pow_methods": ["coral_vs_categorical", "corn_vs_categorical", "coral_vs_corn"]
+    },
+    "confirmatory_metrics": ["ordinal_mae", "severe_error_rate", "balanced_accuracy", "macro_f1"],
+    "hypotheses_per_holm_family": 12,
+    "supporting_metrics_are_exploratory": true
+  },
+  "success_criteria": {
+    "minimum_conditions": 2,
+    "conditions": [
+      "lower ordinal_mae",
+      "lower severe_error_rate",
+      "higher quadratic_weighted_kappa",
+      "no convincing balanced_accuracy degradation by paired estimate and CI",
+      "no convincing macro_f1 degradation by paired estimate and CI",
+      "better lower subject quartile",
+      "same effect direction for eeg_only and eeg_pow"
+    ]
+  },
+  "prediction_artifact": {
+    "required_existing_columns": ["sequence_id", "fold", "subject_id", "record_id", "source", "y_true", "y_pred"],
+    "ordinal_columns": [
+      "threshold_logit_0", "threshold_logit_1", "threshold_logit_2", "threshold_logit_3",
+      "threshold_probability_0", "threshold_probability_1", "threshold_probability_2", "threshold_probability_3",
+      "class_probability_0", "class_probability_1", "class_probability_2", "class_probability_3", "class_probability_4",
+      "proba_0", "proba_1", "proba_2", "proba_3", "proba_4",
+      "expected_rank", "ordinal_argmax", "y_pred_argmax", "head_type"
+    ],
+    "corn_optional_columns": [
+      "conditional_probability_0", "conditional_probability_1", "conditional_probability_2", "conditional_probability_3"
+    ],
+    "separate_metadata_file": "ordinal_metadata.json"
+  },
+  "test_plan": [
+    "cumulative targets for classes 0..4",
+    "invalid ordinal labels and shapes rejected",
+    "CORN masks for classes 0..4",
+    "CORAL output shape Bx4",
+    "CORN output shape Bx4",
+    "categorical default output shape Bx5",
+    "CORAL cutpoints strictly ordered",
+    "CORAL cumulative probabilities finite and monotone",
+    "CORN conditional probabilities finite and bounded",
+    "CORN cumulative probabilities finite and monotone",
+    "class probabilities nonnegative within tolerance",
+    "class probabilities finite and sum to one",
+    "large monotonicity violation raises",
+    "roundoff correction is bounded and audited",
+    "boundary classes zero and four encode/decode",
+    "threshold decoding including exact 0.5 is deterministic",
+    "expected rank equals sum q and lies in zero to four",
+    "CORAL loss matches manual synthetic value",
+    "CORN loss and denominator match manual synthetic value",
+    "empty upper CORN risk set remains finite",
+    "factory builds all heads and validates class count",
+    "legacy categorical checkpoint strict-load equivalence",
+    "categorical calibration compatibility and ordinal explicit rejection",
+    "runner artifact schema predict_proba shape and AUC input",
+    "sequence IDs folds gitignore and source parquet unchanged"
+  ],
+  "stages": [
+    {"id": "6Б", "scope": "implement infrastructure and tests", "full_training": false},
+    {"id": "6В", "scope": "one-fold <=2000-sequence three-epoch EEG-only CORAL and CORN smoke", "full_training": false},
+    {"id": "6Г", "scope": "four ordinal seed-42 runs on five folds and 44142 sequences", "full_training": true},
+    {"id": "6Д", "scope": "subject-level statistics and research decision", "full_training": false}
+  ],
+  "excluded_from_current_stage": [
+    "model_training",
+    "transformer_implementation_changes",
+    "loss_implementation",
+    "ordinal_experiment_runs",
+    "additional_seeds",
+    "lstm_or_bilstm",
+    "regression",
+    "user_calibration",
+    "automl"
+  ]
+}
