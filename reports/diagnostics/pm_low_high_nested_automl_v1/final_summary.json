@@ -1,0 +1,11 @@
+{
+  "completed_final_outer_fits": 35,
+  "outer_model_inference_executed": true,
+  "outer_model_training_executed": true,
+  "performance_evaluation_executed": true,
+  "primary_metric": "participant_first_balanced_accuracy",
+  "primary_reference": "frozen_lightgbm",
+  "protocol_hash": "0fc645050599906196d0dd31f8b44947444ac95291e361352b18f207c83acab0",
+  "secondary_reference": "frozen_xgboost",
+  "status": "final_outer_complete"
+}

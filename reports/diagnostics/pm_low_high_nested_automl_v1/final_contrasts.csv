@@ -1,0 +1,9 @@
+reference,metric,participant_first_delta,valid_participants
+frozen_lightgbm,balanced_accuracy,-0.0006764103681665279,54
+frozen_lightgbm,macro_f1,-3.584232210558492e-05,54
+frozen_lightgbm,roc_auc,0.002733157842235253,53
+frozen_lightgbm,pr_auc,0.002101815043307418,53
+frozen_xgboost,balanced_accuracy,0.002582034110459599,54
+frozen_xgboost,macro_f1,0.0012479795573085593,54
+frozen_xgboost,roc_auc,0.008717290606660703,53
+frozen_xgboost,pr_auc,0.00793375800394166,53

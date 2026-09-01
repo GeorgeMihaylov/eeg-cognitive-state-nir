@@ -1,0 +1,53 @@
+{
+  "outer_test_used": false,
+  "protocol_hash": "0fc645050599906196d0dd31f8b44947444ac95291e361352b18f207c83acab0",
+  "selected_candidates": [
+    {
+      "candidate_hash": "1ad77897eacf7637d513ebf337a69a2c8f1fc20a1f45322b398025bf229b6705",
+      "candidate_id": "xgboost__sample_011",
+      "model_family": "xgboost",
+      "outer_fold": 1,
+      "participant_first_balanced_accuracy": 0.7519753989197424,
+      "participant_first_macro_f1": 0.7102688537962056,
+      "selection_scope": "one_shared_candidate_all_seven_pm"
+    },
+    {
+      "candidate_hash": "1e05b564d29fe00c97569cd337a22730f36a6b23b4897719ca87c58e9aad1bb5",
+      "candidate_id": "lightgbm__sample_002",
+      "model_family": "lightgbm",
+      "outer_fold": 2,
+      "participant_first_balanced_accuracy": 0.73902550651732,
+      "participant_first_macro_f1": 0.7071695181506407,
+      "selection_scope": "one_shared_candidate_all_seven_pm"
+    },
+    {
+      "candidate_hash": "1e05b564d29fe00c97569cd337a22730f36a6b23b4897719ca87c58e9aad1bb5",
+      "candidate_id": "lightgbm__sample_002",
+      "model_family": "lightgbm",
+      "outer_fold": 3,
+      "participant_first_balanced_accuracy": 0.7496604803161525,
+      "participant_first_macro_f1": 0.7087213932220695,
+      "selection_scope": "one_shared_candidate_all_seven_pm"
+    },
+    {
+      "candidate_hash": "1e05b564d29fe00c97569cd337a22730f36a6b23b4897719ca87c58e9aad1bb5",
+      "candidate_id": "lightgbm__sample_002",
+      "model_family": "lightgbm",
+      "outer_fold": 4,
+      "participant_first_balanced_accuracy": 0.7578758614689167,
+      "participant_first_macro_f1": 0.7091637312906441,
+      "selection_scope": "one_shared_candidate_all_seven_pm"
+    },
+    {
+      "candidate_hash": "e20b7814657f8f22c84f20c7bc9b22c993e29db73dd9c753b12fd40df695cdee",
+      "candidate_id": "xgboost__sample_009",
+      "model_family": "xgboost",
+      "outer_fold": 5,
+      "participant_first_balanced_accuracy": 0.7522705423003457,
+      "participant_first_macro_f1": 0.7157947279173676,
+      "selection_scope": "one_shared_candidate_all_seven_pm"
+    }
+  ],
+  "selection_hash": "b6f1bc21dc472fc8cb7b993d5941075deda137984301e7d1c1754c3fdaf3cc8c",
+  "status": "inner_selection_frozen"
+}
