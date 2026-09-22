@@ -302,17 +302,42 @@ def materialize_cogstate_features(
     workers: int = 1,
     resume: bool = False,
     max_rows: int | None = None,
+    frozen_index: pd.DataFrame | None = None,
+    raw_channel_indices: Sequence[int] | None = None,
+    source_cache_identity: str | None = None,
 ) -> dict[str, Any]:
     """Materialize a deterministic target-free feature cache."""
     if chunk_size <= 0 or workers <= 0:
         raise ValueError("chunk_size and workers must be positive")
     profile, pipeline = load_feature_profile(feature_profile_path)
-    index = build_canonical_feature_index(manifest_path, logical_recording_map_path)
+    index = (build_canonical_feature_index(manifest_path, logical_recording_map_path)
+             if frozen_index is None else frozen_index.copy().reset_index(drop=True))
+    if index.empty or index["sample_id"].duplicated().any():
+        raise ValueError("Materialization requires a nonempty unique sample_id index")
     if max_rows is not None:
         if int(max_rows) <= 0:
             raise ValueError("max_rows must be positive or None")
         index = index.head(int(max_rows)).copy()
-    identity = feature_cache_identity(index, pipeline)
+    identity_index = index.copy()
+    if raw_channel_indices is not None:
+        selected = list(raw_channel_indices)
+        raw_count = index["n_channels"].astype(int).unique()
+        if (len(raw_count) != 1 or not selected or len(set(selected)) != len(selected)
+                or any(not isinstance(i, (int, np.integer)) or i < 0 or i >= raw_count[0] for i in selected)):
+            raise ValueError("Invalid raw channel selection")
+        if frozen_index is None or not source_cache_identity:
+            raise ValueError("Channel selection requires frozen_index and source_cache_identity")
+        identity_index["n_channels"] = len(selected)
+    identity = feature_cache_identity(identity_index, pipeline)
+    if raw_channel_indices is not None:
+        identity["input_transform"] = {
+            "name": "fixed_raw_channel_subset", "indices": [int(i) for i in raw_channel_indices],
+            "source_n_channels": int(index["n_channels"].iloc[0]),
+            "source_cache_identity": source_cache_identity,
+        }
+        identity["cache_identity_hash"] = _semantic_hash(
+            {key: value for key, value in identity.items() if key != "cache_identity_hash"}
+        )
     stored_feature_index = target_free_feature_index(index)
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
@@ -392,6 +417,8 @@ def materialize_cogstate_features(
         for start in range(completed_rows, len(index), chunk_size):
             stop = min(start + chunk_size, len(index))
             windows = _window_batch(view, start, stop)
+            if raw_channel_indices is not None:
+                windows = np.ascontiguousarray(windows[:, :, list(raw_channel_indices)])
             if tuple(windows.shape[1:]) != tuple(identity["raw_window_shape"]):
                 raise RuntimeError(
                     f"Unexpected raw batch shape {windows.shape}; expected "

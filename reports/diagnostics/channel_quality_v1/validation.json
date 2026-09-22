@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "targeted_tests": 42,
+  "py_compile": "PASS",
+  "git_diff_check": 0,
+  "n_window_channels": 433412,
+  "n_record_channels": 1204,
+  "n_subject_channels": 756,
+  "n_fold_channels": 70,
+  "sample_hash_match": true,
+  "canonical_order_each_window": true,
+  "fixed_subject_folds": true,
+  "code_hash_match": true,
+  "zero_std_windows": 0,
+  "max_flat_fraction": 0.6283704572098476,
+  "branch": "analysis/pm-target-validity-audit-20260827"
+}

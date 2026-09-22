@@ -1,0 +1,52 @@
+{
+  "schema_version": "pm-qc-channel-drop-confirmatory-v1",
+  "experiment_id": "pm_qc_channel_drop_confirmatory_v1",
+  "result_status": "confirmatory",
+  "research_question": "Does removing only F8 or only F7, nominated by the completed label-free QC audit, improve participant-first LOW/HIGH balanced accuracy?",
+  "variants": [
+    "baseline_14ch",
+    "drop_F8_13ch",
+    "drop_F7_13ch"
+  ],
+  "reference_config": "experiments/pm_diagnostics/pm_low_high_model_robustness_v1.json",
+  "feature_profile": "experiments/features/preliminary_model_zoo_features_v1.json",
+  "raw_manifest": "data/interim/raw_eeg_window_index_w10_pm_union_composite_v1.parquet",
+  "model": "lightgbm",
+  "model_params": {
+    "n_estimators": 200,
+    "n_jobs": 4,
+    "random_state": 42
+  },
+  "alignment": "fixed EEG(t-10s) -> PM(t); existing exact pairing only",
+  "targets": [
+    "attention",
+    "engagement",
+    "excitement",
+    "stress",
+    "relaxation",
+    "interest",
+    "focus"
+  ],
+  "folds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "threshold_scope": "existing outer_train_continuous_complete_cases before temporal losses",
+  "bootstrap": {
+    "unit": "subject",
+    "n_resamples": 10000,
+    "confidence_level": 0.95,
+    "random_state": 42
+  },
+  "overall_aggregation": "average available PM metrics/deltas within each subject, then equal subject weight",
+  "decision_rule": "95% paired participant CI entirely above zero: evidence of improvement under this protocol; includes zero: inconclusive/approximately neutral; entirely below zero: reduced performance; no further channel selection",
+  "smoke_windows_per_subject": 1,
+  "primary_endpoint": "participant-first balanced_accuracy",
+  "controls": "reports/diagnostics/pm_f3_f4_channel_drop_v1",
+  "qc_motivation": "reports/diagnostics/channel_quality_v1/run_summary.json",
+  "dc_offset_note": "SD-based motivation is invariant to additive DC offset; RMS and some roughness metrics are offset-sensitive. No preprocessing changes.",
+  "multiplicity": "Each prespecified channel has a marginal 95% CI; no family-wise adjustment, no ranking."
+}

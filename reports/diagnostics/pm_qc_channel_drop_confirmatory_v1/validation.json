@@ -1,0 +1,51 @@
+﻿{
+    "schema_version":  "pm-qc-channel-drop-validation-v1",
+    "experiment_id":  "pm_qc_channel_drop_confirmatory_v1",
+    "generated_at":  "2026-09-22T15:21:08.0362107+03:00",
+    "screen":  "PASS",
+    "baseline_participant_first_ba":  0.75366250196231543,
+    "expected_new_training_runs":  70,
+    "drop_F8_runs":  35,
+    "drop_F7_runs":  35,
+    "feature_caches":  [
+                           {
+                               "variant":  "drop_F7_13ch",
+                               "status":  "complete",
+                               "completed_rows":  30958,
+                               "elapsed_seconds":  1087.1428139999043
+                           },
+                           {
+                               "variant":  "drop_F8_13ch",
+                               "status":  "complete",
+                               "completed_rows":  30958,
+                               "elapsed_seconds":  1065.422648100066
+                           }
+                       ],
+    "required_artifacts_present":  true,
+    "targeted_tests":  "PASS",
+    "py_compile":  "PASS",
+    "git_diff_check":  "PASS",
+    "frozen_rows":  30958,
+    "baseline_feature_width":  371,
+    "channel_drop_feature_width":  346,
+    "bootstrap_resamples":  10000,
+    "bootstrap_seed":  42,
+    "bootstrap_unit":  "subject",
+    "primary_endpoint":  "participant-first balanced_accuracy",
+    "result_drop_F8":  {
+                           "balanced_accuracy":  0.747377683107577,
+                           "mean_delta_ba":  -0.0062848188547381216,
+                           "ci_low":  -0.011429896694909245,
+                           "ci_high":  -0.0019805192812797595,
+                           "interpretation":  "reduced performance"
+                       },
+    "result_drop_F7":  {
+                           "balanced_accuracy":  0.74190173432167,
+                           "mean_delta_ba":  -0.011760767640645464,
+                           "ci_low":  -0.0286559285496643,
+                           "ci_high":  -0.0015728542154408594,
+                           "interpretation":  "reduced performance"
+                       },
+    "scientific_conclusion":  "Prespecified QC-driven removal of F8 or F7 did not improve participant-first balanced accuracy; both removals reduced the primary endpoint under the fixed protocol.",
+    "commit_created":  false
+}

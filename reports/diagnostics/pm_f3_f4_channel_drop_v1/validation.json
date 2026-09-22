@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "targeted_tests_passed": 38,
+  "py_compile": "PASS (five touched Python files)",
+  "git_diff_check_exit_code": 0,
+  "shapes": {
+    "baseline_14ch": [
+      30958,
+      371
+    ],
+    "drop_F3_13ch": [
+      30958,
+      346
+    ],
+    "drop_F4_13ch": [
+      30958,
+      346
+    ]
+  },
+  "artifact_row_counts": {
+    "summary_by_variant.csv": 24,
+    "summary_by_target.csv": 21,
+    "participant_metrics.csv": 1128,
+    "participant_deltas.csv": 860,
+    "fold_target_results.csv": 105,
+    "bootstrap_summary.csv": 16,
+    "pretraining_contract.csv": 105,
+    "cohort_equivalence.csv": 105
+  },
+  "cache_sample_fold_pairing_equality": "PASS",
+  "code_hashes": "PASS",
+  "resume_screen_without_new_fits": "PASS"
+}

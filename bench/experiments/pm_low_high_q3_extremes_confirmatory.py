@@ -779,6 +779,8 @@ def execute_run(
     spec: Mapping[str, Any],
     *,
     model_builder: Callable[..., Any] = build_model,
+    expected_feature_count: int = 371,
+    result_status: str = "confirmatory",
 ) -> dict[str, Any]:
     """Execute one frozen PM-fold fit; never called by dry-run."""
     fold = int(spec["outer_fold"])
@@ -815,8 +817,10 @@ def execute_run(
     positions = cohort["lag_minus_10s_feature_position"].to_numpy(dtype=np.int64)
     x_train = np.asarray(context.matrix[positions[train_mask]], dtype=np.float32)
     x_test = np.asarray(context.matrix[positions[test_mask]], dtype=np.float32)
-    if x_train.shape[1] != 371 or x_test.shape[1] != 371:
-        raise RuntimeError("Runtime feature count differs from 371")
+    if (x_train.shape[1] != expected_feature_count or x_test.shape[1] != expected_feature_count
+            or len(context.feature_names) != expected_feature_count
+            or context.cache_identity["n_features"] != expected_feature_count):
+        raise RuntimeError(f"Runtime feature count differs from {expected_feature_count}")
     if not np.isfinite(x_train).all() or not np.isfinite(x_test).all():
         raise RuntimeError("Non-finite features reached model fit")
 
@@ -872,7 +876,7 @@ def execute_run(
     _write_csv(run_dir / "participant_metrics.csv", participants)
     summary = {
         "status": "complete",
-        "result_status": "confirmatory",
+        "result_status": result_status,
         "protocol_hash": context.protocol["protocol_hash"],
         "specification_hash": spec["specification_hash"],
         "threshold_hash": spec["threshold_hash"],

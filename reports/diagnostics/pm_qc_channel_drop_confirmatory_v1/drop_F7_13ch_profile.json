@@ -1,0 +1,117 @@
+{
+  "description": "Target-free preliminary EEG feature representation for the next model-zoo comparison. Sample entropy and feature selection are intentionally disabled.",
+  "feature_pipeline": {
+    "channel_names": [
+      "AF3",
+      "F3",
+      "FC5",
+      "T7",
+      "P7",
+      "O1",
+      "O2",
+      "P8",
+      "T8",
+      "FC6",
+      "F4",
+      "F8",
+      "AF4"
+    ],
+    "connectivity": {
+      "bands": {
+        "alpha": [
+          8.0,
+          13.0
+        ],
+        "beta": [
+          13.0,
+          30.0
+        ],
+        "delta": [
+          1.0,
+          4.0
+        ],
+        "gamma": [
+          30.0,
+          45.0
+        ],
+        "theta": [
+          4.0,
+          8.0
+        ]
+      },
+      "detrend": "constant",
+      "max_channel_pairs": null,
+      "metrics": [
+        "correlation",
+        "coherence",
+        "plv"
+      ],
+      "noverlap": null,
+      "nperseg": 128,
+      "summary_statistics": [
+        "mean",
+        "std",
+        "max"
+      ],
+      "window": "hann"
+    },
+    "entropy": {
+      "include_permutation_entropy": true,
+      "include_sample_entropy": false,
+      "include_spectral_entropy": true,
+      "permutation_delay": 1,
+      "permutation_order": 3,
+      "sample_entropy_m": 2,
+      "sample_entropy_r_ratio": 0.2,
+      "spectral_noverlap": null,
+      "spectral_nperseg": 256,
+      "spectral_window": "hann"
+    },
+    "groups": {
+      "connectivity": true,
+      "entropy": true,
+      "spectral": true,
+      "statistical": true
+    },
+    "sample_rate": 256,
+    "spectral": {
+      "average": "mean",
+      "bands": {
+        "alpha": [
+          8.0,
+          13.0
+        ],
+        "beta": [
+          13.0,
+          30.0
+        ],
+        "delta": [
+          1.0,
+          4.0
+        ],
+        "gamma": [
+          30.0,
+          45.0
+        ],
+        "theta": [
+          4.0,
+          8.0
+        ]
+      },
+      "detrend": "constant",
+      "noverlap": null,
+      "nperseg": 256,
+      "scaling": "density",
+      "spectral_edge": 0.95,
+      "window": "hann"
+    },
+    "statistical": {
+      "include_higher_moments": true,
+      "include_hjorth": true,
+      "variance_epsilon": 1e-12
+    }
+  },
+  "profile_id": "drop_F7_13ch",
+  "schema_version": "cogstate-features-v1",
+  "selection": "none"
+}

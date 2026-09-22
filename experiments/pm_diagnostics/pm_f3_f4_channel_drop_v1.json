@@ -1,0 +1,20 @@
+{
+  "schema_version": "pm-f3-f4-channel-drop-v1",
+  "experiment_id": "pm_f3_f4_channel_drop_v1",
+  "result_status": "diagnostic",
+  "research_question": "Paired participant-level effect of removing only F3 or only F4 before canonical engineered feature extraction.",
+  "variants": ["baseline_14ch", "drop_F3_13ch", "drop_F4_13ch"],
+  "reference_config": "experiments/pm_diagnostics/pm_low_high_model_robustness_v1.json",
+  "feature_profile": "experiments/features/preliminary_model_zoo_features_v1.json",
+  "raw_manifest": "data/interim/raw_eeg_window_index_w10_pm_union_composite_v1.parquet",
+  "model": "lightgbm",
+  "model_params": {"n_estimators": 200, "n_jobs": 4, "random_state": 42},
+  "alignment": "fixed EEG(t-10s) -> PM(t); existing exact pairing only",
+  "targets": ["attention", "engagement", "excitement", "stress", "relaxation", "interest", "focus"],
+  "folds": [1, 2, 3, 4, 5],
+  "threshold_scope": "existing outer_train_continuous_complete_cases before temporal losses",
+  "bootstrap": {"unit": "subject", "n_resamples": 10000, "confidence_level": 0.95, "random_state": 42},
+  "overall_aggregation": "average available PM metrics/deltas within each subject, then equal subject weight",
+  "decision_rule": "descriptive screening only; no automatic winner or subsequent channel selection",
+  "smoke_windows_per_subject": 1
+}
