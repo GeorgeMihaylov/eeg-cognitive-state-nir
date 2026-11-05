@@ -783,12 +783,34 @@ def execute_run(
     result_status: str = "confirmatory",
 ) -> dict[str, Any]:
     """Execute one frozen PM-fold fit; never called by dry-run."""
+    if str(spec["condition"]) != "lag_minus_10s" or int(spec["lag_seconds"]) != -10:
+        raise ValueError("Only the fixed lag-minus-10 condition may execute")
+    return execute_binary_run(
+        context, spec, model_builder=model_builder,
+        expected_feature_count=expected_feature_count, result_status=result_status,
+        feature_prefix="lag_minus_10s", model_name="xgboost",
+    )
+
+
+def execute_binary_run(
+    context: ProtocolContext,
+    spec: Mapping[str, Any],
+    *,
+    feature_prefix: str,
+    model_name: str,
+    model_builder: Callable[..., Any] = build_model,
+    expected_feature_count: int = 371,
+    result_status: str = "confirmatory",
+) -> dict[str, Any]:
+    """Shared LOW/HIGH fit/artifact path for explicitly prepared feature cohorts.
+
+    Callers own alignment validation; the historical wrapper keeps its fixed -10
+    contract. Target fitting, sample guards and participant metrics stay shared.
+    """
     fold = int(spec["outer_fold"])
     pm = str(spec["pm"])
     if pm not in PM_NAMES:
         raise ValueError(f"Unsupported PM: {pm}")
-    if str(spec["condition"]) != "lag_minus_10s" or int(spec["lag_seconds"]) != -10:
-        raise ValueError("Only the fixed lag-minus-10 condition may execute")
     thresholds = context.transforms[(fold, pm)]
     if thresholds.q_low != float(spec["q_low"]) or thresholds.q_high != float(spec["q_high"]):
         raise RuntimeError("Runtime thresholds differ from the frozen specification")
@@ -814,7 +836,7 @@ def execute_run(
     y_test = labels[test_mask].astype(np.int64)
     if sorted(np.unique(y_train).tolist()) != list(FIXED_LABELS):
         raise RuntimeError(f"fold {fold} {pm}: outer train is not class-complete")
-    positions = cohort["lag_minus_10s_feature_position"].to_numpy(dtype=np.int64)
+    positions = cohort[f"{feature_prefix}_feature_position"].to_numpy(dtype=np.int64)
     x_train = np.asarray(context.matrix[positions[train_mask]], dtype=np.float32)
     x_test = np.asarray(context.matrix[positions[test_mask]], dtype=np.float32)
     if (x_train.shape[1] != expected_feature_count or x_test.shape[1] != expected_feature_count
@@ -826,7 +848,7 @@ def execute_run(
 
     started = time.perf_counter()
     model = model_builder(
-        "xgboost",
+        model_name,
         "classification",
         (len(context.feature_names),),
         2,
@@ -859,12 +881,12 @@ def execute_run(
         "target_sample_id", "subject_id", "record_id", "outer_fold"
     ]].copy()
     predictions["feature_sample_id"] = test_cohort[
-        "lag_minus_10s_feature_sample_id"
+        f"{feature_prefix}_feature_sample_id"
     ].to_numpy()
     predictions["pm"] = pm
     predictions["target_id"] = f"target_{pm}"
-    predictions["condition"] = "lag_minus_10s"
-    predictions["lag_seconds"] = FIXED_LAG_SECONDS
+    predictions["condition"] = str(spec["condition"])
+    predictions["lag_seconds"] = int(spec["lag_seconds"])
     predictions["q_low"] = thresholds.q_low
     predictions["q_high"] = thresholds.q_high
     predictions["y_true"] = y_test
@@ -884,8 +906,8 @@ def execute_run(
         "outer_fold": fold,
         "pm": pm,
         "target_id": spec["target_id"],
-        "condition": "lag_minus_10s",
-        "lag_seconds": FIXED_LAG_SECONDS,
+        "condition": str(spec["condition"]),
+        "lag_seconds": int(spec["lag_seconds"]),
         "q_low": thresholds.q_low,
         "q_high": thresholds.q_high,
         "n_train": int(train_mask.sum()),

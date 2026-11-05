@@ -1,0 +1,20 @@
+{
+  "canonical_rows": 30958,
+  "common_complete_cases": {
+    "attention": 29104,
+    "engagement": 30392,
+    "excitement": 30392,
+    "focus": 30392,
+    "interest": 30392,
+    "relaxation": 30392,
+    "stress": 30392
+  },
+  "cross_fold_pairs": 0,
+  "cross_record_pairs": 0,
+  "cross_subject_pairs": 0,
+  "identical_evaluation_examples_between_lags": true,
+  "planned_fits": 175,
+  "protocol_hash": "38a65e564a8103de5f3a34f5216af0aff1dddcbea2ee8484af4e3acd7adb1fdf",
+  "reference_lag_s": -10,
+  "training_executed": false
+}
