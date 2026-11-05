@@ -1,0 +1,70 @@
+{
+  "schema_version": "pm-temporal-predictability-v1",
+  "experiment_id": "pm_temporal_predictability_v1",
+  "experiment_type": "confirmatory_planned",
+  "research_question": "Does older causal EEG history improve participant-macro BA over H10 on strict H120 common support?",
+  "reference_config": "experiments/pm_diagnostics/pm_low_high_q3_extremes_confirmatory_v1.json",
+  "output_dir": "reports/diagnostics/pm_temporal_predictability_v1",
+  "horizons_s": [
+    10,
+    20,
+    30,
+    60,
+    120
+  ],
+  "target_ids": [
+    "target_attention",
+    "target_engagement",
+    "target_excitement",
+    "target_stress",
+    "target_relaxation",
+    "target_interest",
+    "target_focus"
+  ],
+  "folds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "fixed_fold_hash": "2a176aad988fb814175c9edbf1e08266809f5c0a4ed4bf0dfd987ebf8c43c5dd",
+  "primary_support": "strict_common_support_h120",
+  "secondary_support": "horizon_specific_support",
+  "threshold_fit_scope": "outer_train_continuous_complete_cases",
+  "model_params": {
+    "n_estimators": 200,
+    "n_jobs": 4,
+    "random_state": 42
+  },
+  "primary_metric": "participant_macro_balanced_accuracy",
+  "secondary_metrics": [
+    "macro_f1",
+    "roc_auc",
+    "pr_auc",
+    "low_recall",
+    "high_recall",
+    "precision",
+    "accuracy"
+  ],
+  "history_order_control": "ordered",
+  "optional_order_control": "per-example shuffle of older blocks; canonical -10 fixed; deterministic sample-ID seed",
+  "primary_planned_fits": 175,
+  "secondary_planned_fits_if_later_authorized": 175,
+  "full_run_enabled": false,
+  "smoke": {
+    "target": "target_attention",
+    "outer_fold": 1,
+    "horizons_s": [
+      10,
+      20,
+      30,
+      60,
+      120
+    ],
+    "n_estimators": 10,
+    "maximum_fits": 5
+  },
+  "future_analysis": "paired participant differences vs H10 and subject bootstrap; primary and sensitivity never pooled",
+  "interpretation": "PM-derived proxies; no physiological causality; smoke is execution validation only"
+}

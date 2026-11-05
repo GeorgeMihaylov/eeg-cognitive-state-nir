@@ -61,3 +61,8 @@ TODO.md
 !reports/summary/final_experiment_inventory.csv
 !reports/summary/final_result_tables/
 !reports/summary/final_result_tables/*.csv
+
+# Reconstructible history feature-name lists and smoke prediction bundles
+reports/diagnostics/pm_temporal_predictability_v1/H*_feature_names.json
+reports/diagnostics/pm_temporal_predictability_v1/smoke/H*_feature_names.json
+reports/diagnostics/pm_temporal_predictability_v1/smoke/runs/

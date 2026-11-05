@@ -1,0 +1,17 @@
+{
+  "targeted_tests_passed": 40,
+  "test_modules": [
+    "test_pm_temporal_predictability",
+    "test_pm_temporal_diagnostics",
+    "test_pm_temporal_state_space",
+    "test_pm_eeg_absolute_lag"
+  ],
+  "dry_run_passed": true,
+  "smoke_fits_executed": 5,
+  "smoke_fits_restored": 0,
+  "smoke_artifact_checksums_verified": true,
+  "prediction_sample_label_subject_fold_identity_equal": true,
+  "full_175_fit_run_executed": false,
+  "order_shuffle_real_data_fits": 0,
+  "unrelated_files_staged": false
+}
