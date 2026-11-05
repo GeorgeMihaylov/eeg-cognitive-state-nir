@@ -51,7 +51,7 @@
   "optional_order_control": "per-example shuffle of older blocks; canonical -10 fixed; deterministic sample-ID seed",
   "primary_planned_fits": 175,
   "secondary_planned_fits_if_later_authorized": 175,
-  "full_run_enabled": false,
+  "full_run_enabled": true,
   "smoke": {
     "target": "target_attention",
     "outer_fold": 1,

@@ -66,3 +66,5 @@ TODO.md
 reports/diagnostics/pm_temporal_predictability_v1/H*_feature_names.json
 reports/diagnostics/pm_temporal_predictability_v1/smoke/H*_feature_names.json
 reports/diagnostics/pm_temporal_predictability_v1/smoke/runs/
+reports/diagnostics/pm_temporal_predictability_v1/full_matched/H*_feature_names.json
+reports/diagnostics/pm_temporal_predictability_v1/full_matched/runs/

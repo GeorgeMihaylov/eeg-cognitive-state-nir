@@ -119,3 +119,56 @@ def test_paired_results_bootstrap_participants_not_windows():
     assert intervals.n_subjects.eq(4).all()
     with pytest.raises(ValueError,match='Duplicate'):
         history.paired_history_results(pd.DataFrame(rows+rows))
+
+
+def test_full_plan_exactly_175_primary_and_guarded(tmp_path):
+    config = history.load_config(CONFIG)
+    ctx = history.prepare_from_base(base_context(frame()), config, tmp_path, full=True)
+    assert len(ctx.run_matrix) == 175
+    assert history.write_dry_run(ctx)['planned_fits'] == 175
+    assert ctx.run_matrix.support_mode.eq(history.PRIMARY).all()
+    assert ctx.protocol['secondary_planned_fits'] == 0
+    history.validate_full_run(ctx)
+    original = ctx.run_matrix.copy()
+    for column, value in [('support_mode', history.SECONDARY), ('pm','attention'),
+                          ('horizon_s', 10), ('train_label_hash','changed')]:
+        ctx.run_matrix = original.copy()
+        ctx.run_matrix.loc[len(original)-1,column] = value
+        with pytest.raises(ValueError):
+            history.validate_full_run(ctx)
+    ctx.run_matrix = original.iloc[:-1].copy()
+    with pytest.raises(ValueError, match='175'):
+        history.validate_full_run(ctx)
+    ctx.run_matrix = original
+    ctx.protocol['params'] = {**history.PARAMS, 'n_estimators':10}
+    with pytest.raises(ValueError,match='175'):
+        history.validate_full_run(ctx)
+
+
+def test_bootstrap_p_and_bh():
+    assert history.centered_bootstrap_p(np.zeros(10)) == 1
+    assert history.centered_bootstrap_p(np.ones(10)) == 1/10001
+    assert history.centered_bootstrap_p(np.array([-1.,1.])) == 1
+    np.testing.assert_allclose(history.benjamini_hochberg(np.array([.04,.01,.03,.2])), [.053333333333,.04,.053333333333,.2])
+
+
+def test_full_aggregation_participant_weights_and_28_contrasts(tmp_path):
+    participants, folds = [], []
+    for pm in low.PM_NAMES:
+        for fold in range(1,6):
+            for h in history.HORIZONS:
+                gain = .02 if h != 10 else 0
+                folds.append(dict(pm=pm,outer_fold=fold,horizon_s=h,participant_macro_balanced_accuracy=.6+gain))
+                for subject in range(2):
+                    row = dict(pm=pm,outer_fold=fold,horizon_s=h,subject_id=f's{fold}_{subject}',support_mode=history.PRIMARY)
+                    row.update({m:.6+gain for m in ['balanced_accuracy','macro_f1','roc_auc','pr_auc','low_recall','high_recall','precision','accuracy']})
+                    row['n_samples'] = 1 if subject==0 else 10000
+                    participants.append(row)
+    history.aggregate_full_results(SimpleNamespace(output=tmp_path),pd.DataFrame(folds),pd.DataFrame(participants))
+    contrasts = pd.read_csv(tmp_path/'paired_ba_vs_h10.csv')
+    assert len(contrasts)==28
+    assert contrasts.n_subjects.eq(10).all()
+    assert contrasts.folds_improved.eq(5).all()
+    assert contrasts.participants_improved.eq(10).all()
+    np.testing.assert_allclose(contrasts.delta_ba,.02)
+    assert len(pd.read_csv(tmp_path/'overall.csv'))==35
