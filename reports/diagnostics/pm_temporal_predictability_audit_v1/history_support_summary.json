@@ -1,0 +1,41 @@
+{
+  "schema_version": "pm-temporal-history-support-v1",
+  "coordinate_source": "per-record t_start/10s grid",
+  "canonical_rows": 30958,
+  "canonical_subjects": 54,
+  "canonical_records": 86,
+  "feature_count": 371,
+  "history_horizons_seconds": [
+    10,
+    20,
+    30,
+    60,
+    120
+  ],
+  "primary_support_mode": "strict_common_support_h120",
+  "secondary_support_mode": "horizon_specific_support",
+  "h120_global_windows": 29437,
+  "h120_global_retention_vs_h10": 0.9555606050769331,
+  "h120_global_subjects": 53,
+  "h120_global_records": 84,
+  "minimum_test_fold_h120_retention": 0.945993031358885,
+  "target_h120_windows": {
+    "attention": 28205,
+    "engagement": 29437,
+    "excitement": 29437,
+    "stress": 29437,
+    "relaxation": 29437,
+    "interest": 29437,
+    "focus": 29437
+  },
+  "target_h120_retention_vs_h10": {
+    "attention": 0.9579201195489743,
+    "engagement": 0.9555606050769331,
+    "excitement": 0.9555606050769331,
+    "stress": 0.9555606050769331,
+    "relaxation": 0.9555606050769331,
+    "interest": 0.9555606050769331,
+    "focus": 0.9555606050769331
+  },
+  "model_fits": 0
+}
