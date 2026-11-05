@@ -1,0 +1,29 @@
+{
+  "aggregation": "median features within record/family, then equal-record median",
+  "delay_windows": 1,
+  "encoding": "base-m digits of stable argsort; injective",
+  "experiment_type": "diagnostic",
+  "feature_values_sha256": "5be7f2742e325ab8908b299680c1af19f2329425bda965d34618b56cb1bbf355",
+  "insufficient_rule": "NaN PE when valid pattern count below minimum",
+  "length_rule": "heuristic >=5*m! valid patterns, at least 50; finite-sample bias remains",
+  "minimum_patterns": {
+    "3": 50,
+    "4": 120,
+    "5": 600
+  },
+  "minimum_segment_windows": 100,
+  "normalization": "H/log(m!)",
+  "orders": [
+    3,
+    4,
+    5
+  ],
+  "reference_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
+  "schema_version": "pe-final-v1",
+  "seed": 42,
+  "segments": "longest exact-contiguous per record; earliest breaks length ties",
+  "source_sha256": "77acf8bdffeb24c0e29242b8ca7a60715c1872d3a2b222a72bad4f713bb3f9da",
+  "surrogate_rule": "within segment; finite mask fixed",
+  "surrogates": 10,
+  "ties": "stable temporal-index order; tie fractions reported"
+}
