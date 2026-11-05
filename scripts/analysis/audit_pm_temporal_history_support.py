@@ -1,4 +1,4 @@
-﻿"""Audit temporal-history support before predictive EEG history experiments.
+"""Audit temporal-history support before predictive EEG history experiments.
 
 No models are fitted. The audit reuses the canonical LOW/HIGH protocol and
 feature cache, then checks availability of exact 10 s EEG history blocks for
@@ -405,7 +405,7 @@ def main() -> int:
     )
 
     readme_lines = [
-        "# Temporal Predictability Audit — history support",
+        "# Temporal Predictability Audit - history support",
         "",
         "This stage audits exact EEG history availability before any "
         "predictive model fitting.",
@@ -452,7 +452,7 @@ def main() -> int:
         f"{summary['minimum_test_fold_h120_retention']:.2%}.",
         "",
         "The retained support is sufficient to use H120 as the "
-        "matched support for the primary H10–H120 comparison.",
+        "matched support for the primary H10-H120 comparison.",
         "",
     ]
 

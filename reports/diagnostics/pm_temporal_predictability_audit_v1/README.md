@@ -1,4 +1,4 @@
-# Temporal Predictability Audit — history support
+# Temporal Predictability Audit - history support
 
 This stage audits exact EEG history availability before any predictive model fitting.
 
@@ -31,4 +31,4 @@ H120 retains 95.56% of H10 support (29437 windows), with 53 subjects and 84 reco
 
 The minimum H120 retention across target/test-fold combinations is 94.60%.
 
-The retained support is sufficient to use H120 as the matched support for the primary H10–H120 comparison.
+The retained support is sufficient to use H120 as the matched support for the primary H10-H120 comparison.
