@@ -1,0 +1,17 @@
+{
+  "classifier_fits": 0,
+  "elapsed_s": 151.89393860002747,
+  "fnn_status_counts": {
+    "insufficient_sequence_length": 11320,
+    "ok": 2438,
+    "unreliable_neighbors": 1,
+    "unreliable_surrogates": 1
+  },
+  "spectra_path": "benchmark_results\\pm_temporal_state_space_v1\\ssa_spectra.json",
+  "ssa_status_counts": {
+    "insufficient_sequence_length": 2968,
+    "ok": 27844,
+    "zero_iqr": 1094
+  },
+  "status": "complete"
+}

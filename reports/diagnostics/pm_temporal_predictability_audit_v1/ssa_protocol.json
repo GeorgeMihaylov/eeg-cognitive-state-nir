@@ -1,0 +1,25 @@
+{
+  "L": "min(60,floor(N/2))",
+  "L_rationale": "fixed <=600s trajectory, <=half segment; no optimization",
+  "aggregation": "median features within record/family; equal-record median globally; all weights features equally",
+  "concentration": "sum(energy**2)",
+  "delta": "surrogate median minus observed",
+  "effective_rank": "exp(Shannon entropy of energy)",
+  "energy": "squared singular values / sum; computed via symmetric Hankel Gram eigenvalues",
+  "experiment_type": "exploratory",
+  "independent_unit_caution": "records within participant are dependent; no inferential p values",
+  "input_sha256": "5be7f2742e325ab8908b299680c1af19f2329425bda965d34618b56cb1bbf355",
+  "minimum_windows": 100,
+  "participation_ratio": "1/sum(energy**2)",
+  "reference_protocol_hash": "ac07a43b2554a2f178e9a63e28a1462cee253d613f122516e26ac0dcfe6c7431",
+  "scaling": "segment median/IQR; zero IQR and nonfinite trajectories skipped",
+  "seed": 42,
+  "segments": "longest exact-contiguous 10s segment per record; earliest breaks ties",
+  "source_hashes": {
+    "audit_pm_temporal_ssa.py": "add6953f7b6aa4a64bc304eda8d4b394099588957cf51f23ff49d87e3182b36c",
+    "temporal_feature_diagnostics.py": "cefc4100b98df477f5adb69f85863e459b0c77d72635012455e31b847fbf3def",
+    "temporal_state_space.py": "2c53434566ffa70850c5307693e557275412592d8892320a2f760ceeeddada79"
+  },
+  "surrogate": "independent temporal permutation within same segment; preserve marginal values",
+  "surrogates": 10
+}
