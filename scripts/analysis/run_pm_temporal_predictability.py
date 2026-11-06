@@ -22,8 +22,18 @@ def main() -> int:
     mode.add_argument("--dry-run", action="store_true")
     mode.add_argument("--smoke", action="store_true")
     mode.add_argument("--full-run", action="store_true", help="Exactly 175 ordered strict-common-support fits")
+    mode.add_argument("--order-control", action="store_true", help="Exactly 25 shuffled H120 fits; reuse ordered reference")
+    mode.add_argument("--order-control-dry-run", action="store_true", help="Preflight the 25-fit order control without training")
     args = parser.parse_args()
     config = load_config(args.root / args.config)
+    if args.order_control or args.order_control_dry_run:
+        from bench.experiments import pm_temporal_order_control as control
+        context = control.prepare_protocol(config, root=args.root, feature_cache_dir=args.feature_cache_dir,
+                                           output_dir=args.output_dir)
+        print(json.dumps(control.write_dry_run(context), indent=2))
+        if args.order_control:
+            print(json.dumps(control.run(context), indent=2))
+        return 0
     context = prepare_protocol(config, root=args.root, feature_cache_dir=args.feature_cache_dir,
                                output_dir=args.output_dir, smoke=args.smoke, full=not args.smoke)
     print(json.dumps(write_dry_run(context), indent=2))

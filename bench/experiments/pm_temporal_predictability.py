@@ -262,7 +262,7 @@ def run_smoke(context: HistoryContext) -> dict:
     return _execute_runs(context, full=False)
 
 
-def _execute_runs(context: HistoryContext, *, full: bool) -> dict:
+def _execute_runs(context: HistoryContext, *, full: bool, order_control: bool = False) -> dict:
     runs = context.run_matrix
     started = time.perf_counter()
     summaries, participants = [], []
@@ -281,7 +281,13 @@ def _execute_runs(context: HistoryContext, *, full: bool) -> dict:
             for key, value in support_identity(cohort, labels, mask).items():
                 if spec[f"{partition}_{key}"] != value:
                     raise ValueError("Runtime history identity mismatch")
-        matrix = history_matrix(base.matrix, context.positions, targets, horizon)
+        matrix = history_matrix(base.matrix, context.positions, targets, horizon,
+                                shuffled=order_control, sample_ids=cohort.target_sample_id.tolist())
+        if order_control:
+            from bench.experiments.pm_temporal_order_control import validate_cell
+            validate_cell(context, spec, cohort, labels)
+            if not np.array_equal(matrix[:, -371:], base.matrix[context.positions[-1][targets]]):
+                raise ValueError("Shuffle moved canonical -10 block")
         cohort["history_feature_position"] = np.arange(len(cohort))
         cohort["history_feature_sample_id"] = [
             "|".join(base.full.iloc[[context.positions[lag][i] for lag in HORIZONS[horizon]]].sample_id.astype(str)) for i in targets]
@@ -303,9 +309,17 @@ def _execute_runs(context: HistoryContext, *, full: bool) -> dict:
             provenance = cohort.copy()
             for lag in HORIZONS[horizon]:
                 provenance[f"lag_m{-lag*10}_sample_id"] = base.full.iloc[context.positions[lag][targets]].sample_id.to_numpy()
+            if order_control:
+                # Reuse the same shuffle function on row IDs: no second permutation algorithm.
+                shuffled_positions = history_matrix(np.arange(len(base.full))[:, None], context.positions,
+                    targets, 120, shuffled=True, sample_ids=cohort.target_sample_id.tolist()).astype(int)
+                for j in range(12):
+                    provenance[f"actual_slot_{j:02d}_sample_id"] = base.full.iloc[shuffled_positions[:, j]].sample_id.to_numpy()
+                cohort["history_feature_sample_id"] = ["|".join(row) for row in
+                    provenance[[f"actual_slot_{j:02d}_sample_id" for j in range(12)]].astype(str).to_numpy()]
             provenance.to_parquet(run_dir / "history_provenance.parquet", index=False)
             summary = low.execute_binary_run(view, spec, feature_prefix="history", model_name="lightgbm",
-                                             expected_feature_count=matrix.shape[1], result_status="confirmatory" if full else "smoke_only")
+                                             expected_feature_count=matrix.shape[1], result_status="confirmatory_order_control" if order_control else "confirmatory" if full else "smoke_only")
             summary.update(horizon_s=horizon, support_mode=PRIMARY, artifact_sha256={
                 name: hashlib.sha256((run_dir/name).read_bytes()).hexdigest() for name in ("predictions.parquet", "participant_metrics.csv", "history_provenance.parquet")})
             low._atomic_json(run_dir / "run_summary.json", summary)
@@ -317,13 +331,18 @@ def _execute_runs(context: HistoryContext, *, full: bool) -> dict:
     low._write_csv(context.output / "fold_metrics.csv", pd.DataFrame(summaries))
     participant_frame = pd.concat(participants, ignore_index=True)
     low._write_csv(context.output / "participant_metrics.csv", participant_frame)
-    paired, _ = paired_history_results(participant_frame)
-    low._write_csv(context.output / "participant_paired_deltas.csv", paired)
+    if order_control:
+        from bench.experiments.pm_temporal_order_control import aggregate_order_control
+        aggregate_order_control(context, pd.DataFrame(summaries), participant_frame)
+    else:
+        paired, _ = paired_history_results(participant_frame)
+        low._write_csv(context.output / "participant_paired_deltas.csv", paired)
     if full:
         aggregate_full_results(context, pd.DataFrame(summaries), participant_frame)
     status = {"state": "complete", "executed": executed, "resumed": resumed, "complete": len(summaries), "full_run_executed": full, "failed": 0,
               "elapsed_s": time.perf_counter()-started, "model_fit_predict_s": sum(r["training_time_seconds"] for r in summaries),
-              "result_status": "confirmatory" if full else "smoke_only_not_scientific_evidence", "protocol_hash": context.protocol["protocol_hash"]}
+              "order_control_executed": order_control,
+              "result_status": "confirmatory_order_control" if order_control else "confirmatory" if full else "smoke_only_not_scientific_evidence", "protocol_hash": context.protocol["protocol_hash"]}
     low._atomic_json(context.output / "execution_status.json", status)
     return status
 
