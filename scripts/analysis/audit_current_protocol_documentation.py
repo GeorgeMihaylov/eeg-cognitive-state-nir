@@ -112,7 +112,7 @@ def audit(baseline: str, output: Path) -> dict:
             '- Rebuilt current experiment/colleague/requirements summaries from metadata. Historical execution statuses, metric sources and numerical tables are retained.',
             '- experiment_summary separates current primary and legacy sections; colleague generator prepends curated current evidence. Requirement generator owns both summary and final coverage.',
             '- config auditor emits scientific roles from config_curation.yaml; dedicated JSON protocols are explicitly metadata_only, not falsely resolved by the YAML auditor.',
-            '- Historical report_builder/project_final_package outputs cannot overwrite current article/conclusions/requirement coverage. Their numerical legacy generators were not run during this task.',
+            '- Historical report_builder/project_final_package outputs cannot overwrite current article/conclusions/requirement coverage. No completed legacy package regeneration or result replacement was performed. Two existing tests entered the legacy generator but stopped at metadata mapping before writes.',
             '', '## File-by-file after audit','', '| Path | Matches | Classification | Action |','|---|---|---|---|']
     for row in states['after']['rows']:
         matches=', '.join(f'{k}: {v}' for k,v in row['matches'].items())
