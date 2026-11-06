@@ -1,0 +1,14 @@
+{
+  "verified_cells": 25,
+  "prediction_identity_exact": true,
+  "train_test_identity_hashes_equal": true,
+  "canonical_minus10_fixed": true,
+  "older_block_multiset_preserved": true,
+  "min_changed_order_fraction": 1.0,
+  "max_changed_order_fraction": 1.0,
+  "reference_files_unchanged": true,
+  "artifact_checksums_valid": true,
+  "tests": "31 passed",
+  "dry_run_planned_fits": 25,
+  "additional_experiments_executed": false
+}

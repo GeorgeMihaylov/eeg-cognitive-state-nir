@@ -1,0 +1,12 @@
+{
+  "ci": "percentile 95% paired differences",
+  "contrast": "ordered_H120 - shuffled_H120",
+  "limitations": "conditional target selection on same cohort; overlapping training folds; one fixed shuffle realization; no physiological causality",
+  "multiplicity": "BH across exactly 5 primary BA contrasts",
+  "p": "two-sided centered-null bootstrap; plus-one correction",
+  "primary_metric": "participant_macro_balanced_accuracy",
+  "replicates": 10000,
+  "secondary": "descriptive only",
+  "seed": 42,
+  "unit": "participant"
+}

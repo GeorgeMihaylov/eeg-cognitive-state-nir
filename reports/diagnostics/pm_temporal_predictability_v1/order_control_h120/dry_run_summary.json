@@ -1,0 +1,19 @@
+{
+  "canonical_block_fixed": true,
+  "horizons_s": [
+    120
+  ],
+  "ordered_identity_hashes_equal": true,
+  "ordered_reference_retrained": false,
+  "planned_fits": 25,
+  "protocol_hash": "ecd3e62bfbf0056dfdf74139d7ca4d396948a862f3d32d3b194ab3bfbd8dd149",
+  "support_mode": "strict_common_support_h120",
+  "target_subset": [
+    "excitement",
+    "focus",
+    "interest",
+    "relaxation",
+    "stress"
+  ],
+  "training_executed": false
+}
