@@ -1,5 +1,7 @@
 # PM LOW/HIGH nested AutoML v1
 
+Completed: **2,730 inner trainings and 35 final outer fits**. [Candidate scores](candidate_scores.csv) sum completed_inner_fits to 2730; [final status](final_summary.json) records 35 complete. Historical dry-run counts below are protocol planning, not current execution status.
+
 Preregistered nested model-family/hyperparameter selection protocol.
 
 - seven PM, one shared selected candidate per outer fold

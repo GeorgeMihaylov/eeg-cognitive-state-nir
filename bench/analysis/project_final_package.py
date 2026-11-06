@@ -1270,6 +1270,7 @@ def build_requirement_rows(repo_root: Path) -> list[dict[str, Any]]:
             "not_started": "open",
             "needs_clarification": "blocked",
             "failed_acceptance_criterion": "partially_closed",
+            "not_applicable": "not_required_for_article",
         }[old]
         if item["requirement_id"] in {"R-PERS-02"}:
             status = "partially_closed"
@@ -2160,18 +2161,18 @@ upper bound. Автоматические DANN/FOMAML sweeps и дополнит
 не планируются; target-specific `Focus −20 s` не используется.
 """
     return {
-        repo_root / "reports/integration/project_final_state.md": final_state,
+        repo_root / "reports/integration/project_final_state.md": "> **HISTORICAL SNAPSHOT — 2026-08-29.** Superseded by [current context](../../PROJECT_CONTEXT.md).\n\n" + final_state,
         repo_root
-        / "reports/integration/project_scientific_conclusions.md": conclusions,
+        / "reports/integration/project_scientific_conclusions_legacy_20260829.md": "> **Historical snapshot.** See [current conclusions](project_scientific_conclusions.md).\n\n" + conclusions,
         repo_root
-        / "reports/integration/project_negative_results.md": negative_report,
+        / "reports/integration/project_negative_results.md": "> **Historical evidence package.** See [current context](../../PROJECT_CONTEXT.md). Original task-specific negative findings are retained.\n\n" + negative_report,
         repo_root
-        / "reports/integration/project_reproducibility_audit.md": repro,
+        / "reports/integration/project_reproducibility_audit.md": "> **Historical consolidation audit.** See [current context](../../PROJECT_CONTEXT.md); this inventory is not current project completeness.\n\n" + repro,
         repo_root
-        / "reports/diagnostics/pm_eeg_lag_final_conclusion.md": lag_report,
+        / "reports/diagnostics/pm_eeg_lag_final_conclusion.md": "> **Historical Q3 classification evidence.** Original alignment and regression results are retained; the alignment was later used by the [current LOW/HIGH line](pm_eeg_absolute_lag_v1/README.md).\n\n" + lag_report,
         repo_root
-        / "reports/requirements/final_requirement_coverage.md": req_report,
-        repo_root / "reports/summary/final_project_results.md": final_report,
+        / "reports/requirements/final_requirement_coverage_legacy_20260829.md": "> **Historical snapshot.** See [current coverage](final_requirement_coverage.md).\n\n" + req_report,
+        repo_root / "reports/summary/final_project_results.md": "> **HISTORICAL SNAPSHOT — 2026-08-29.** Superseded by [current context](../../PROJECT_CONTEXT.md).\n\n" + final_report,
     }
 
 

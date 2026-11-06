@@ -14,6 +14,8 @@ configs:
   report_links:
   - reports/label_definition_sensitivity.md
   - reports/label_definition_sensitivity_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -24,6 +26,7 @@ configs:
     errors: []
     warnings:
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: diagnostic
   automatic_status: diagnostic
   curation:
@@ -65,8 +68,11 @@ configs:
   resolved_config_hash: fe1810bfcbb272695f2acc48455392ff42739098ede0df1232fb00bbd9b921f5
   used_by: []
   report_links:
+  - reports/architecture/final_src_removal_audit.md
   - reports/label_target_audit.md
   - reports/label_target_audit_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -77,6 +83,7 @@ configs:
     errors: []
     warnings:
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: diagnostic
   automatic_status: diagnostic
   curation:
@@ -117,7 +124,10 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: e8b317b8d2760a5533eff72577656ba7b061f57dac27508a681caf52bdaf7f9d
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/config_provenance.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -128,6 +138,7 @@ configs:
     errors: []
     warnings:
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: diagnostic
   automatic_status: diagnostic
   curation:
@@ -175,6 +186,8 @@ configs:
   used_by: []
   report_links:
   - reports/diagnostic_baselines.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   - reports/temporal_label_structure.md
   - reports/temporal_target_summary.json
   is_legacy: false
@@ -187,6 +200,7 @@ configs:
     errors: []
     warnings:
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: diagnostic
   automatic_status: diagnostic
   curation:
@@ -236,6 +250,8 @@ configs:
   - reports/integration/pm_multioutput_regression.md
   - reports/integration/target_pipeline_audit.md
   - reports/integration/wesad_metrics_review.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -245,6 +261,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: legacy
   automatic_role: root
   automatic_status: diagnostic
   curation:
@@ -286,7 +303,11 @@ configs:
   resolved_config_hash: ba31cb682f4ce0643d3d9544b232e830a17f5a66c7b48c031249bdb5268b1a38
   used_by:
   - label_q5_random_forest_groupkfold
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/config_provenance.md
+  - reports/summary/final_result_tables/classification_results.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -298,6 +319,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: baseline
   curation:
@@ -344,7 +366,10 @@ configs:
   resolved_config_hash: b39cdd25e1961ec431a6dac569e45d1d5daa4fd112f1b974a03059ed1753309d
   used_by:
   - label_q5_torch_mlp_groupkfold
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/final_result_tables/classification_results.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -358,6 +383,7 @@ configs:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
     - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: baseline
   curation:
@@ -399,7 +425,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: a6ca9b3eca775a75e9621f4f7904627db24bf0eb41486ea6a644e592ae09521e
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -411,6 +439,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -452,7 +481,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 26306a6bb3e25be61c528b54c59ae4e2baef90361fa9bff77c3565c17e9a7999
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -466,6 +497,7 @@ configs:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
     - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -507,7 +539,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: ff9a2ec639345d6e8d101d10bc1dc0ab04b52490673a3cf71b04504ee87f8f38
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -517,6 +551,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: legacy
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -558,7 +593,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 475da05d4d32dff09aef99bcc9bd47052e8d250dcce5b61d36379cc3b35d8347
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -568,6 +605,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: legacy
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -609,7 +647,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: d6cda728e4fdc6df9c9407884f4c846e20b980881b8d1938eaa52bd8c4b572b6
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -619,6 +659,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: legacy
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -660,7 +701,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 1309f7beec71e78d2ef9b81cea17dfa9ba88c32f896fcccb558fc04c64f83170
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -670,6 +713,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: legacy
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -711,7 +755,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: dcc35266ddccd5610d447c57a6bab2995107bf12d553e70faf9cd3cbcad1ad88
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -721,6 +767,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: legacy
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -764,6 +811,8 @@ configs:
   used_by: []
   report_links:
   - reports/integration/personalization_full_subjects.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -775,6 +824,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -817,7 +867,11 @@ configs:
   resolved_config_hash: b3c846881b82756661c585e1ea7a806d0a425577cac1e0ed4156727899f742a7
   used_by:
   - label_q5_personalization_multiseed_20pct
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/config_provenance.md
+  - reports/summary/final_result_tables/personalization_results.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -829,6 +883,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: final
   curation:
@@ -880,7 +935,9 @@ configs:
   inheritance_depth: 1
   resolved_config_hash: f96da712158af4915505dc96703efdac5fdb75b19cbfa43ce314e6a759a2bf95
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -892,6 +949,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -933,7 +991,9 @@ configs:
   inheritance_depth: 1
   resolved_config_hash: d0e6bce1fbc62f6a1b7417dcc3c37f194f4d5053d10a7d347e7dce373d74e25a
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -945,6 +1005,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -988,6 +1049,8 @@ configs:
   used_by: []
   report_links:
   - reports/integration/personalization_finetuning_smoke.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -999,6 +1062,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -1039,7 +1103,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 38a23388f3f10aa599cc646b343fba396d587978239d7abf96ebd05b0c2f5cd4
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1051,6 +1117,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -1095,10 +1162,13 @@ configs:
   base_config: null
   inheritance_depth: 0
   resolved_config_hash: 6fd7e4c759f9f1e0b3d255280b3079b7dd2b4fc7d97e3c3c6d31874bd1db4d1d
-  used_by: []
+  used_by:
+  - label_q5_feature_group_rf_ablation
   report_links:
   - reports/feature_group_rf_ablation.md
   - reports/feature_group_rf_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1109,6 +1179,7 @@ configs:
     errors: []
     warnings:
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: ablation
   automatic_status: diagnostic
   curation:
@@ -1149,7 +1220,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 23df7f44c25f9be6fb767836aa42c2a15fb853a42dcefd98f00f2cefe80e8b8c
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1162,6 +1235,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -1207,6 +1281,8 @@ configs:
   report_links:
   - reports/ordinal_transformer_multiseed_runs.md
   - reports/ordinal_transformer_multiseed_runs_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1219,6 +1295,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -1265,6 +1342,8 @@ configs:
   - reports/auxiliary_corn_transformer_smoke_results.md
   - reports/auxiliary_corn_transformer_smoke_setup.md
   - reports/auxiliary_corn_transformer_smoke_setup_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1277,6 +1356,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -1319,6 +1399,8 @@ configs:
   used_by: []
   report_links:
   - reports/ordinal_transformer_smoke.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1331,6 +1413,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -1375,6 +1458,8 @@ configs:
   - reports/auxiliary_corn_lambda_selection_setup.md
   - reports/auxiliary_corn_lambda_selection_setup_summary.json
   - reports/ordinal_transformer_multiseed_runs_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1387,6 +1472,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -1431,6 +1517,8 @@ configs:
   - reports/auxiliary_corn_nested_lambda_results.json
   - reports/auxiliary_corn_nested_lambda_results.md
   - reports/ordinal_transformer_multiseed_runs_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1443,6 +1531,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -1487,6 +1576,8 @@ configs:
   - reports/auxiliary_corn_nested_lambda_finalized_results.json
   - reports/auxiliary_corn_nested_lambda_finalized_results.md
   - reports/auxiliary_corn_nested_lambda_results.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1497,6 +1588,7 @@ configs:
     errors: []
     warnings:
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: historical
   automatic_role: diagnostic
   automatic_status: diagnostic
   curation:
@@ -1544,6 +1636,8 @@ configs:
   - reports/auxiliary_corn_policy_subject_analysis.md
   - reports/auxiliary_corn_policy_subject_analysis_summary.json
   - reports/ordinal_transformer_multiseed_runs_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1554,6 +1648,7 @@ configs:
     errors: []
     warnings:
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: historical
   automatic_role: diagnostic
   automatic_status: diagnostic
   curation:
@@ -1599,6 +1694,8 @@ configs:
   - reports/ordinal_transformer_multiseed_runs_summary.json
   - reports/ordinal_transformer_multiseed_statistics.md
   - reports/ordinal_transformer_multiseed_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1609,6 +1706,7 @@ configs:
     errors: []
     warnings:
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: historical
   automatic_role: diagnostic
   automatic_status: diagnostic
   curation:
@@ -1653,6 +1751,8 @@ configs:
   - reports/ordinal_transformer_decision.md
   - reports/ordinal_transformer_statistical_analysis.md
   - reports/ordinal_transformer_statistical_analysis_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1663,6 +1763,7 @@ configs:
     errors: []
     warnings:
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: historical
   automatic_role: diagnostic
   automatic_status: diagnostic
   curation:
@@ -1693,6 +1794,490 @@ configs:
     - reports/ordinal_transformer_statistical_analysis.md
     - commit:577536e
     notes: []
+- config_path: experiments/targets/pm_union_raw_composite.yaml
+  topic: other
+  role: base
+  status: diagnostic
+  loader_type: unknown
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: a8b639c8864b2bf17d878127965616df4970a25a3b04cf4f697f8aae90a9fb2f
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: false
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'conflicting_key_types [raw_preprocessing.resample_hz]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [schema_version]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [targets]: key has multiple types within loader family unknown'
+    - 'loader_validation: no current CLI loader identified'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'unknown_field [audit_schema_path]: field is not associated with a current loader contract'
+    - 'unknown_field [catalog_path]: field is not associated with a current loader contract'
+    - 'unknown_field [delta_cache_root]: field is not associated with a current loader contract'
+    - 'unknown_field [historical_cache_root]: field is not associated with a current loader contract'
+    - 'unknown_field [historical_manifest_path]: field is not associated with a current loader contract'
+    - 'unknown_field [logical_recording_map_path]: field is not associated with a current loader contract'
+    - 'unknown_field [max_missing_fraction]: field is not associated with a current loader contract'
+    - 'unknown_field [mode]: field is not associated with a current loader contract'
+    - 'unknown_field [output_manifest_path]: field is not associated with a current loader contract'
+    - 'unknown_field [output_summary_path]: field is not associated with a current loader contract'
+    - 'unknown_field [processed_path]: field is not associated with a current loader contract'
+    - 'unknown_field [raw_preprocessing]: field is not associated with a current loader contract'
+    - 'unknown_field [schema_version]: field is not associated with a current loader contract'
+    - 'unknown_field [target_sfreq]: field is not associated with a current loader contract'
+  scientific_status: infrastructure_only
+  automatic_role: unknown
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/targets/pm_union_raw_composite.yaml
+    review_status: not_applicable
+    decision: keep_as_base
+    decision_reason: Canonical PM-union raw target fragment; not a standalone run.
+    canonical_config: experiments/targets/pm_union_raw_composite.yaml
+    result_status: diagnostic
+    config_role: base
+    linked_experiments: []
+    evidence:
+    - bench/datasets/pm_union_raw_contract.py
+    - tests/test_pm_union_raw_contract.py
+    - commit:fc55e48
+    unlinked_category: target contract fragment
+    notes:
+    - Fold-local Q3 boundaries remain part of the execution layer.
+- config_path: experiments/feature_selection/lightgbm_feature_selection_v1.yaml
+  topic: other
+  role: full
+  status: baseline
+  loader_type: unknown
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: dd749e828cf606769fea71afddb35a56194881ec0421a64938f7e530797107f9
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: false
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'conflicting_key_types [raw_preprocessing.resample_hz]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [schema_version]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [targets]: key has multiple types within loader family unknown'
+    - 'loader_validation: no current CLI loader identified'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'unknown_field [base_protocol_config]: field is not associated with a current loader contract'
+    - 'unknown_field [evaluation]: field is not associated with a current loader contract'
+    - 'unknown_field [experiment_id]: field is not associated with a current loader contract'
+    - 'unknown_field [feature_regimes]: field is not associated with a current loader contract'
+    - 'unknown_field [lightgbm]: field is not associated with a current loader contract'
+    - 'unknown_field [output_dir]: field is not associated with a current loader contract'
+    - 'unknown_field [result_status]: field is not associated with a current loader contract'
+    - 'unknown_field [selector]: field is not associated with a current loader contract'
+    - 'unknown_field [smoke]: field is not associated with a current loader contract'
+    - 'unknown_field [targets]: field is not associated with a current loader contract'
+    - 'unknown_field [tasks]: field is not associated with a current loader contract'
+  scientific_status: legacy
+  automatic_role: unknown
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/feature_selection/lightgbm_feature_selection_v1.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Prespecified LightGBM baseline and fold-local top-50 comparison.
+    canonical_config: experiments/feature_selection/lightgbm_feature_selection_v1.yaml
+    result_status: baseline
+    canonical_status: active
+    provenance_status: documented
+    config_role: full
+    linked_experiments:
+    - lightgbm_feature_selection_v1
+    evidence:
+    - cogstate/model_zoo/factory.py
+    - bench/experiments/pm_all_targets_feature_baseline.py
+    linked_runtime: benchmark_results/lightgbm_feature_selection_v1
+    notes:
+    - Execution is blocked until LightGBM is installed explicitly; no hyperparameter tuning is permitted.
+- config_path: configs/streaming.yaml
+  topic: other
+  role: smoke
+  status: smoke
+  loader_type: unknown
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 3a5dcacbbcb73059fe91e9bdfbb772968e998aab43517ad282d4178d9736c694
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: false
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'conflicting_key_types [raw_preprocessing.resample_hz]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [schema_version]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [targets]: key has multiple types within loader family unknown'
+    - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
+    - 'loader_validation: no current CLI loader identified'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'unknown_field [api]: field is not associated with a current loader contract'
+    - 'unknown_field [features]: field is not associated with a current loader contract'
+    - 'unknown_field [model]: field is not associated with a current loader contract'
+    - 'unknown_field [output]: field is not associated with a current loader contract'
+    - 'unknown_field [postprocessing]: field is not associated with a current loader contract'
+    - 'unknown_field [preprocessing]: field is not associated with a current loader contract'
+    - 'unknown_field [quality]: field is not associated with a current loader contract'
+    - 'unknown_field [signal]: field is not associated with a current loader contract'
+    - 'unknown_field [source]: field is not associated with a current loader contract'
+    - 'unknown_field [windowing]: field is not associated with a current loader contract'
+  scientific_status: current_supporting
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/streaming.yaml
+    review_status: reviewed
+    decision: keep_as_smoke
+    decision_reason: Bootstrap-only streaming configuration retained for technical smoke tests.
+    canonical_config: configs/streaming_scientific_v1.yaml
+    result_status: smoke
+    config_role: smoke
+    linked_experiments: []
+    evidence:
+    - README.md
+    - commit:e5759d3
+    unlinked_category: streaming support
+    notes:
+    - Bootstrap model is diagnostic_only and forbidden by the scientific config.
+- config_path: configs/streaming_scientific_lightweight_v1.yaml
+  topic: other
+  role: diagnostic
+  status: diagnostic
+  loader_type: unknown
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 7709e91d1500171e6f7c670c2681c00d0d60b6768608acce1925c26efc31a696
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: false
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'conflicting_key_types [raw_preprocessing.resample_hz]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [schema_version]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [targets]: key has multiple types within loader family unknown'
+    - 'loader_validation: no current CLI loader identified'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'unknown_field [api]: field is not associated with a current loader contract'
+    - 'unknown_field [experiment_id]: field is not associated with a current loader contract'
+    - 'unknown_field [features]: field is not associated with a current loader contract'
+    - 'unknown_field [model]: field is not associated with a current loader contract'
+    - 'unknown_field [output]: field is not associated with a current loader contract'
+    - 'unknown_field [postprocessing]: field is not associated with a current loader contract'
+    - 'unknown_field [preprocessing]: field is not associated with a current loader contract'
+    - 'unknown_field [quality]: field is not associated with a current loader contract'
+    - 'unknown_field [result_status]: field is not associated with a current loader contract'
+    - 'unknown_field [scientific]: field is not associated with a current loader contract'
+    - 'unknown_field [signal]: field is not associated with a current loader contract'
+    - 'unknown_field [source]: field is not associated with a current loader contract'
+    - 'unknown_field [windowing]: field is not associated with a current loader contract'
+  scientific_status: current_supporting
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/streaming_scientific_lightweight_v1.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Paired feature-profile ablation on the locked fold-1 cohort and replay.
+    canonical_config: configs/streaming_scientific_v1.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments:
+    - streaming_scientific_lightweight_v1
+    evidence:
+    - configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+    - cogstate/model_zoo/factory.py
+    linked_runtime: benchmark_results/streaming_scientific_lightweight_v1
+    notes:
+    - Only the feature profile differs from the full scientific streaming diagnostic.
+- config_path: configs/streaming_scientific_v1.yaml
+  topic: other
+  role: diagnostic
+  status: diagnostic
+  loader_type: unknown
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 0435a5ac74b03373ef3c529f077538b6b40969e1f6c25de934d82be3c8b6d82e
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: false
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'conflicting_key_types [raw_preprocessing.resample_hz]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [schema_version]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [targets]: key has multiple types within loader family unknown'
+    - 'loader_validation: no current CLI loader identified'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'unknown_field [api]: field is not associated with a current loader contract'
+    - 'unknown_field [experiment_id]: field is not associated with a current loader contract'
+    - 'unknown_field [features]: field is not associated with a current loader contract'
+    - 'unknown_field [model]: field is not associated with a current loader contract'
+    - 'unknown_field [output]: field is not associated with a current loader contract'
+    - 'unknown_field [postprocessing]: field is not associated with a current loader contract'
+    - 'unknown_field [preprocessing]: field is not associated with a current loader contract'
+    - 'unknown_field [quality]: field is not associated with a current loader contract'
+    - 'unknown_field [result_status]: field is not associated with a current loader contract'
+    - 'unknown_field [scientific]: field is not associated with a current loader contract'
+    - 'unknown_field [signal]: field is not associated with a current loader contract'
+    - 'unknown_field [source]: field is not associated with a current loader contract'
+    - 'unknown_field [windowing]: field is not associated with a current loader contract'
+  scientific_status: current_supporting
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: configs/streaming_scientific_v1.yaml
+    review_status: reviewed
+    decision: keep_as_diagnostic
+    decision_reason: Leakage-safe outer-fold deployment and held-out replay validation.
+    canonical_config: configs/streaming_scientific_v1.yaml
+    result_status: diagnostic
+    config_role: diagnostic
+    linked_experiments:
+    - streaming_scientific_v1
+    evidence:
+    - configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml
+    - cogstate/model_zoo/factory.py
+    linked_runtime: benchmark_results/streaming_scientific_v1
+    notes:
+    - Full feature extraction does not currently sustain a one-second live step.
+- config_path: experiments/targets/canonical_target_contract.yaml
+  topic: other
+  role: diagnostic
+  status: diagnostic
+  loader_type: unknown
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 32afdfd60352f57817004f80fc8a88a5d4e0116649af1d389159c5152ff95e19
+  used_by: []
+  report_links:
+  - reports/integration/canonical_target_contract.md
+  - reports/summary/target_registry.yaml
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: false
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'conflicting_key_types [raw_preprocessing.resample_hz]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [schema_version]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [targets]: key has multiple types within loader family unknown'
+    - 'loader_validation: no current CLI loader identified'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'unknown_field [decision_rule]: field is not associated with a current loader contract'
+    - 'unknown_field [execution_mode]: field is not associated with a current loader contract'
+    - 'unknown_field [expected_outer_folds]: field is not associated with a current loader contract'
+    - 'unknown_field [experiment_id]: field is not associated with a current loader contract'
+    - 'unknown_field [feature_dataset_path]: field is not associated with a current loader contract'
+    - 'unknown_field [fixed_outer_fold_column]: field is not associated with a current loader contract'
+    - 'unknown_field [fixed_outer_group_column]: field is not associated with a current loader contract'
+    - 'unknown_field [logical_recording_map_path]: field is not associated with a current loader contract'
+    - 'unknown_field [output_dir]: field is not associated with a current loader contract'
+    - 'unknown_field [raw_dataset_mode]: field is not associated with a current loader contract'
+    - 'unknown_field [raw_manifest_path]: field is not associated with a current loader contract'
+    - 'unknown_field [raw_preprocessing]: field is not associated with a current loader contract'
+    - 'unknown_field [registry_path]: field is not associated with a current loader contract'
+    - 'unknown_field [report_path]: field is not associated with a current loader contract'
+    - 'unknown_field [result_status]: field is not associated with a current loader contract'
+    - 'unknown_field [schema_version]: field is not associated with a current loader contract'
+  scientific_status: infrastructure_only
+  automatic_role: diagnostic
+  automatic_status: diagnostic
+  curation: {}
+- config_path: experiments/pm_regression/pm_all_targets_feature_baseline.yaml
+  topic: pm_regression
+  role: full
+  status: baseline
+  loader_type: unknown
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: a2ed6cc8cb9d6c676d5ea7e98f97d8b727bbd2e48bc1fa37003e1ea490a33aef
+  used_by: []
+  report_links:
+  - reports/summary/target_registry.yaml
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: false
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'conflicting_key_types [raw_preprocessing.resample_hz]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [schema_version]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [targets]: key has multiple types within loader family unknown'
+    - 'loader_validation: no current CLI loader identified'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'unknown_field [dataset]: field is not associated with a current loader contract'
+    - 'unknown_field [evaluation]: field is not associated with a current loader contract'
+    - 'unknown_field [execution_mode]: field is not associated with a current loader contract'
+    - 'unknown_field [experiment_id]: field is not associated with a current loader contract'
+    - 'unknown_field [feature_sets]: field is not associated with a current loader contract'
+    - 'unknown_field [metrics]: field is not associated with a current loader contract'
+    - 'unknown_field [models]: field is not associated with a current loader contract'
+    - 'unknown_field [output_dir]: field is not associated with a current loader contract'
+    - 'unknown_field [paired_single_vs_multioutput]: field is not associated with a current loader contract'
+    - 'unknown_field [result_status]: field is not associated with a current loader contract'
+    - 'unknown_field [resume]: field is not associated with a current loader contract'
+    - 'unknown_field [schema_version]: field is not associated with a current loader contract'
+    - 'unknown_field [smoke]: field is not associated with a current loader contract'
+    - 'unknown_field [targets]: field is not associated with a current loader contract'
+  scientific_status: current_supporting
+  automatic_role: unknown
+  automatic_status: unclassified
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/pm_regression/pm_all_targets_feature_baseline.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: 'Canonical seven-PM engineered-feature baseline with fixed subject folds, target-specific cohorts, and
+      paired complete-case single-versus-multioutput analysis.
+
+      '
+    canonical_config: experiments/pm_regression/pm_all_targets_feature_baseline.yaml
+    result_status: baseline
+    canonical_status: completed
+    provenance_status: documented
+    config_role: full
+    linked_experiments:
+    - pm_all_targets_feature_baseline_v1
+    evidence:
+    - reports/integration/canonical_target_contract.md
+    - reports/summary/target_registry.yaml
+    linked_runtime: benchmark_results/pm_all_targets_feature_baseline_v1
+    notes:
+    - All 1125 preregistered runs completed with a clean leakage audit.
 - config_path: experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml
   topic: pm_regression
   role: full
@@ -1705,7 +2290,11 @@ configs:
   used_by:
   - pm_regression_mean_baseline_5fold
   - pm_regression_random_forest_5fold
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/config_provenance.md
+  - reports/summary/final_result_tables/requirement_coverage.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1716,6 +2305,7 @@ configs:
     errors: []
     warnings:
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: current_supporting
   automatic_role: full
   automatic_status: baseline
   curation:
@@ -1773,6 +2363,8 @@ configs:
   used_by: []
   report_links:
   - reports/integration/torch_group_validation.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1785,6 +2377,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: current_supporting
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -1826,7 +2419,10 @@ configs:
   resolved_config_hash: fa075fd87447ce9011a6c9b0999b0c414e4a84634d8336833c8d12ecf56afb63
   used_by:
   - pm_standard_clip_audit
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/final_result_tables/preprocessing_ablation.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1838,6 +2434,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: current_supporting
   automatic_role: smoke
   automatic_status: diagnostic
   curation:
@@ -1881,6 +2478,8 @@ configs:
   used_by: []
   report_links:
   - reports/integration/pm_multioutput_regression.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1894,6 +2493,7 @@ configs:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
     - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+  scientific_status: current_supporting
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -1934,7 +2534,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: b5f2e4221c7dc3c17eaceb4566200bc37e9f37aabd2489e0ee42b0dfc055b16d
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1944,6 +2546,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: current_supporting
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -1986,7 +2589,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 09c7f1baf5c278972a02c01695f40a052a7f92cb41a20f8a81fb54289821d6a1
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -1996,6 +2601,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: current_supporting
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -2037,7 +2643,9 @@ configs:
   inheritance_depth: 1
   resolved_config_hash: bf914a62e471135b92e74b9f9f8edf3476117ba4c6bb1c6e28060f6cf2639d8d
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2049,6 +2657,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: current_supporting
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -2093,6 +2702,9 @@ configs:
   - pm_regression_personalization_multiseed_20pct
   report_links:
   - reports/integration/pm_regression_personalization_multiseed_20pct.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/final_result_tables/personalization_results.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2104,6 +2716,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: current_supporting
   automatic_role: full
   automatic_status: final
   curation:
@@ -2151,7 +2764,9 @@ configs:
   inheritance_depth: 1
   resolved_config_hash: e33a6962fb1808e24ab28a69a21030b5015b241f4668ee5568f812a6444e30b6
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2163,6 +2778,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: current_supporting
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -2204,7 +2820,9 @@ configs:
   inheritance_depth: 1
   resolved_config_hash: 9591a47d3f2287d156284afb069354bac8a3bb338ca018194a075017cc9c4aa8
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2216,6 +2834,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: current_supporting
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -2259,6 +2878,8 @@ configs:
   used_by: []
   report_links:
   - reports/preprocessing_ablation_implementation_audit.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2268,6 +2889,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: historical
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -2310,6 +2932,8 @@ configs:
   used_by: []
   report_links:
   - reports/preprocessing_ablation_implementation_audit.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2319,6 +2943,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: historical
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -2361,6 +2986,8 @@ configs:
   used_by: []
   report_links:
   - reports/preprocessing_ablation_implementation_audit.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2370,6 +2997,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: historical
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -2412,6 +3040,8 @@ configs:
   used_by: []
   report_links:
   - reports/preprocessing_ablation_implementation_audit.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2421,6 +3051,7 @@ configs:
     scientific_protocol_valid: true
     errors: []
     warnings: []
+  scientific_status: historical
   automatic_role: base
   automatic_status: unclassified
   curation:
@@ -2451,6 +3082,122 @@ configs:
     - reports/preprocessing_ablation_implementation_audit.md
     - commit:50d35ac
     notes: []
+- config_path: experiments/preprocessing/artifact_removal_ablation_v1.yaml
+  topic: preprocessing_ablation
+  role: full
+  status: baseline
+  loader_type: unknown
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 281603d8d29aebb43f90d6840e67fe9b3d7614229ee311fdd018e4726934e56a
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: false
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'conflicting_key_types [raw_preprocessing.resample_hz]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [schema_version]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [targets]: key has multiple types within loader family unknown'
+    - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
+    - 'loader_validation: no current CLI loader identified'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+    - 'unknown_field [artifact_runtime]: field is not associated with a current loader contract'
+    - 'unknown_field [dataset]: field is not associated with a current loader contract'
+    - 'unknown_field [evaluation]: field is not associated with a current loader contract'
+    - 'unknown_field [experiment_id]: field is not associated with a current loader contract'
+    - 'unknown_field [faster]: field is not associated with a current loader contract'
+    - 'unknown_field [ica]: field is not associated with a current loader contract'
+    - 'unknown_field [model]: field is not associated with a current loader contract'
+    - 'unknown_field [output_dir]: field is not associated with a current loader contract'
+    - 'unknown_field [result_status]: field is not associated with a current loader contract'
+    - 'unknown_field [smoke]: field is not associated with a current loader contract'
+    - 'unknown_field [targets]: field is not associated with a current loader contract'
+    - 'unknown_field [variants]: field is not associated with a current loader contract'
+  scientific_status: legacy
+  automatic_role: ablation
+  automatic_status: diagnostic
+  curation:
+    safe_to_move: false
+    safe_to_edit: false
+    protected_fields:
+    - config_path
+    - output_dir
+    - dataset
+    - task
+    - target
+    - targets
+    - preprocessing
+    - evaluation
+    - validation
+    - split_seed
+    - model_seed
+    - model_seeds
+    config_path: experiments/preprocessing/artifact_removal_ablation_v1.yaml
+    review_status: reviewed
+    decision: keep
+    decision_reason: Prespecified full artifact-removal ablation with a separate smoke profile.
+    canonical_config: experiments/preprocessing/artifact_removal_ablation_v1.yaml
+    result_status: baseline
+    canonical_status: active
+    provenance_status: documented
+    config_role: full
+    linked_experiments:
+    - artifact_removal_ablation_v1
+    evidence:
+    - bench/experiments/preprocessing_ablation.py
+    - tests/test_preprocessing_ablation.py
+    linked_runtime: benchmark_results/artifact_removal_ablation_v1
+    notes:
+    - Full 140-run matrix requires explicit confirmation and has not been executed.
+- config_path: experiments/preprocessing/artifact_removal_ablation_v2.yaml
+  topic: preprocessing_ablation
+  role: ablation
+  status: diagnostic
+  loader_type: unknown
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 8e8cf33edaf6a7ec80540bf7e9e3445855dcb894fa041bfb31d6f4f882744ec8
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: false
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'conflicting_key_types [raw_preprocessing.resample_hz]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [schema_version]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [targets]: key has multiple types within loader family unknown'
+    - 'loader_validation: no current CLI loader identified'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
+    - 'unknown_field [dataset]: field is not associated with a current loader contract'
+    - 'unknown_field [evaluation]: field is not associated with a current loader contract'
+    - 'unknown_field [experiment_id]: field is not associated with a current loader contract'
+    - 'unknown_field [model]: field is not associated with a current loader contract'
+    - 'unknown_field [output_dir]: field is not associated with a current loader contract'
+    - 'unknown_field [preprocessing]: field is not associated with a current loader contract'
+    - 'unknown_field [result_status]: field is not associated with a current loader contract'
+    - 'unknown_field [smoke]: field is not associated with a current loader contract'
+    - 'unknown_field [targets]: field is not associated with a current loader contract'
+    - 'unknown_field [task_types]: field is not associated with a current loader contract'
+    - 'unknown_field [variants]: field is not associated with a current loader contract'
+  scientific_status: legacy
+  automatic_role: ablation
+  automatic_status: diagnostic
+  curation: {}
 - config_path: experiments/preprocessing_ablation_shallowconvnet.yaml
   topic: preprocessing_ablation
   role: ablation
@@ -2464,6 +3211,10 @@ configs:
   - shallowconvnet_preprocessing_ablation
   report_links:
   - reports/preprocessing_selected_trials_multiseed.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/final_result_tables/preprocessing_ablation.csv
+  - reports/summary/final_result_tables/requirement_coverage.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2475,6 +3226,7 @@ configs:
     warnings:
     - 'experiment_registry_mismatch: shallowconvnet_preprocessing_ablation seeds: registry=[7,42,123] config=[42]'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: ablation
   automatic_status: diagnostic
   curation:
@@ -2523,7 +3275,10 @@ configs:
   resolved_config_hash: 922041982356e6023206f9e257d3b94f8b7c70bcb985dad3dfc3c5c9b2c1d4b1
   used_by:
   - label_q5_eegnet_raw_dedup_multiseed
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/final_result_tables/classification_results.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2536,6 +3291,7 @@ configs:
     - 'experiment_registry_mismatch: label_q5_eegnet_raw_dedup_multiseed seeds: registry=[7,42,123] config=[42]'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: baseline
   curation:
@@ -2582,7 +3338,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 369ede805c413b37b8e861d551f52907877d49132628123e10968da36c0d1145
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2594,6 +3352,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -2636,7 +3395,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 8c566c98fb52476b9dd409f01b389825b7294c9350e59144d1b47c665d03925c
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2648,6 +3409,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -2691,7 +3453,11 @@ configs:
   resolved_config_hash: 02fafd53bed9a625559b3d057ae6a74e6ae3c3a34a917c0ea21a24bd34c59a0d
   used_by:
   - label_q5_shallowconvnet_raw_dedup_multiseed
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/config_provenance.md
+  - reports/summary/final_result_tables/classification_results.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2704,6 +3470,7 @@ configs:
     - 'experiment_registry_mismatch: label_q5_shallowconvnet_raw_dedup_multiseed seeds: registry=[7,42,123] config=[42]'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: final
   curation:
@@ -2754,7 +3521,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: bab1474903c66234b47cf856829d0c4aad7fd6fe52dc33875c66185256a6c481
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2766,6 +3535,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -2808,7 +3578,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 6f76378aa4daf6e7026b9bf056625fdf3ffcbd422568c8722441de44181d1b18
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2820,6 +3592,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -2862,7 +3635,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: fc331e70df3dbc3c56680e9b0c63dbb63eaae438104a6c6047c8c54f471b3c99
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2874,6 +3649,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -2917,6 +3693,8 @@ configs:
   used_by: []
   report_links:
   - reports/raw_eegnet_label_q5_report.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2929,6 +3707,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -2969,7 +3748,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: d637c419e5ac2e196e68cbaea5c388d711ed6215e27cae5920e261b29ff7a1fe
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -2981,6 +3762,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -3012,6 +3794,46 @@ configs:
     - commit:50d35ac
     unlinked_category: smoke support
     notes: []
+- config_path: experiments/targets/preliminary_streaming_handoff_shallow_fold1.yaml
+  topic: raw_eeg
+  role: smoke
+  status: smoke
+  loader_type: unknown
+  expected_cli_argument: null
+  base_config: null
+  inheritance_depth: 0
+  resolved_config_hash: 71b472a7facc642d9e5a57502fac34ab68c587caae69719eef60ddcba1a1c78d
+  used_by: []
+  report_links: []
+  is_legacy: false
+  superseded_by: null
+  deprecation_reason: null
+  audit:
+    cli_loadable: false
+    schema_valid: false
+    scientific_protocol_valid: true
+    errors: []
+    warnings:
+    - 'conflicting_key_types [raw_preprocessing.resample_hz]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [schema_version]: key has multiple types within loader family unknown'
+    - 'conflicting_key_types [targets]: key has multiple types within loader family unknown'
+    - 'loader_validation: no current CLI loader identified'
+    - 'missing_config_version: configuration has no explicit config version'
+    - 'unknown_field [data]: field is not associated with a current loader contract'
+    - 'unknown_field [evaluation]: field is not associated with a current loader contract'
+    - 'unknown_field [experiment_id]: field is not associated with a current loader contract'
+    - 'unknown_field [latency]: field is not associated with a current loader contract'
+    - 'unknown_field [model]: field is not associated with a current loader contract'
+    - 'unknown_field [output_dir]: field is not associated with a current loader contract'
+    - 'unknown_field [raw_preprocessing]: field is not associated with a current loader contract'
+    - 'unknown_field [result_status]: field is not associated with a current loader contract'
+    - 'unknown_field [schema_version]: field is not associated with a current loader contract'
+    - 'unknown_field [targets]: field is not associated with a current loader contract'
+    - 'unknown_field [validation]: field is not associated with a current loader contract'
+  scientific_status: legacy
+  automatic_role: smoke
+  automatic_status: smoke
+  curation: {}
 - config_path: configs/groupkfold_torch_eegnet_preprocessed_dedup_label_q5.yaml
   topic: raw_eeg
   role: diagnostic
@@ -3022,7 +3844,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: d5880cdfcbe4c7cbd34d46327af4af6e088790c0a6fc5ecd5fbe31569566ab4e
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3034,6 +3858,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -3075,7 +3900,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 257286beb8b70c198a681833395771697f5bbc396bcdc3e9c75fabf8bd19b180
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3087,6 +3914,7 @@ configs:
     warnings:
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -3130,6 +3958,8 @@ configs:
   used_by: []
   report_links:
   - reports/raw_eegnet_label_q5_report.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3142,6 +3972,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -3188,6 +4019,8 @@ configs:
   used_by: []
   report_links:
   - reports/cross_source_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3200,6 +4033,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -3243,6 +4077,8 @@ configs:
   used_by: []
   report_links:
   - reports/cross_source_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3255,6 +4091,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -3299,6 +4136,9 @@ configs:
   - label_q5_transformer_multiseed
   report_links:
   - reports/automl_architecture_audit.md
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/final_result_tables/classification_results.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3312,6 +4152,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: final
   curation:
@@ -3357,10 +4198,13 @@ configs:
   base_config: null
   inheritance_depth: 0
   resolved_config_hash: 2e1b8f5333c2e1815fb0da3daaa3bc8974c9c7006ad3d71c08020b723dad917a
-  used_by: []
+  used_by:
+  - cross_source_generalization_diagnostic
   report_links:
   - reports/cross_source_experiment_plan.json
   - reports/cross_source_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3373,8 +4217,9 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
-  automatic_status: unclassified
+  automatic_status: diagnostic
   curation:
     safe_to_move: false
     safe_to_edit: false
@@ -3416,7 +4261,9 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 0f16e8d80d3367d829a7b4aeef4becaa47d3c305c086251037bf707ef89c85e0
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3431,6 +4278,7 @@ configs:
     - 'missing_config_version: configuration has no explicit config version'
     - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
     - 'missing_inner_validation [validation]: Torch sequence config has no explicit group-aware inner validation'
+  scientific_status: legacy
   automatic_role: smoke
   automatic_status: smoke
   curation:
@@ -3472,7 +4320,11 @@ configs:
   inheritance_depth: 1
   resolved_config_hash: a2c0c0e3ab18b506e96cbc380473c9012558212d217c9667a0be2a3e64414343
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/config_provenance.md
+  - reports/summary/final_result_tables/requirement_coverage.csv
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3485,6 +4337,7 @@ configs:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'implicit_result_status: result status is inferred from reports/registry rather than declared in YAML'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -3529,11 +4382,14 @@ configs:
   base_config: null
   inheritance_depth: 0
   resolved_config_hash: 4dc6d8b6b45dfcdf524ac9bfd4ede0fa02a97f3bfe1d70342f300d8aadcb2cc8
-  used_by: []
+  used_by:
+  - label_q5_feature_group_transformer_ablation
   report_links:
   - reports/feature_group_rf_summary.json
   - reports/feature_group_transformer_ablation.md
   - reports/feature_group_transformer_summary.json
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3545,6 +4401,7 @@ configs:
     warnings:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: ablation
   automatic_status: diagnostic
   curation:
@@ -3586,7 +4443,10 @@ configs:
   resolved_config_hash: 0577926406c129aa21175f19c03c946bfd0ef1f206d000bf60e05ae65a4229c2
   used_by:
   - label_q5_gapaware_bilstm_groupkfold
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/final_result_tables/classification_results.csv
   is_legacy: true
   superseded_by: null
   deprecation_reason: Tracked statistical_analysis.yaml identifies this completed length-10 representation as legacy; retain
@@ -3599,6 +4459,7 @@ configs:
     warnings:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: legacy
   automatic_status: baseline
   curation:
@@ -3641,7 +4502,10 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: 5c7b60b09dd036809e27711201af228dcf1205888c2ebe394088968d0e96312b
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/config_provenance.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3656,6 +4520,7 @@ configs:
     - 'missing_config_version: configuration has no explicit config version'
     - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
     - 'missing_inner_validation [validation]: Torch sequence config has no explicit group-aware inner validation'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -3707,7 +4572,10 @@ configs:
   resolved_config_hash: eacd5a8831d6793f052cee2333e594dc7b6c95b6458ecdc3ff010b85c9c48365
   used_by:
   - label_q5_gapaware_lstm_groupkfold
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/final_result_tables/classification_results.csv
   is_legacy: true
   superseded_by: null
   deprecation_reason: Tracked statistical_analysis.yaml identifies this completed length-10 representation as legacy; retain
@@ -3720,6 +4588,7 @@ configs:
     warnings:
     - 'implicit_preprocessing [feature_scaling]: Torch feature preprocessing is not explicit'
     - 'missing_config_version: configuration has no explicit config version'
+  scientific_status: legacy
   automatic_role: legacy
   automatic_status: baseline
   curation:
@@ -3762,7 +4631,10 @@ configs:
   inheritance_depth: 0
   resolved_config_hash: e73bd72c962901543795a5ff6e34e7d20c643fae849a9c079434eaa69da63a94
   used_by: []
-  report_links: []
+  report_links:
+  - reports/summary/config_audit.md
+  - reports/summary/config_curation.md
+  - reports/summary/config_provenance.md
   is_legacy: false
   superseded_by: null
   deprecation_reason: null
@@ -3777,6 +4649,7 @@ configs:
     - 'missing_config_version: configuration has no explicit config version'
     - 'missing_inner_validation [validation]: Torch config has no explicit inner validation section'
     - 'missing_inner_validation [validation]: Torch sequence config has no explicit group-aware inner validation'
+  scientific_status: legacy
   automatic_role: full
   automatic_status: unclassified
   curation:
@@ -3817,6 +4690,73 @@ configs:
     unlinked_category: historical runtime provenance
     notes:
     - Gap-aware LSTM is the scientifically safer current sequence reference.
+- config_path: experiments/pm_diagnostics/pm_low_high_model_robustness_v1.json
+  scientific_status: current_primary
+  role: experiment
+  status: final
+  loader_type: dedicated_protocol_loader
+  used_by:
+  - pm_low_high_robustness_lightgbm
+  - pm_low_high_robustness_xgboost
+  report_links:
+  - reports/diagnostics/pm_low_high_model_robustness_v1/README.md
+  is_legacy: false
+  metadata_only: true
+- config_path: experiments/pm_diagnostics/pm_low_high_nested_automl_v1.json
+  scientific_status: current_primary
+  role: experiment
+  status: final
+  loader_type: dedicated_protocol_loader
+  used_by:
+  - pm_low_high_nested_automl
+  report_links:
+  - reports/diagnostics/pm_low_high_nested_automl_v1/README.md
+  is_legacy: false
+  metadata_only: true
+- config_path: experiments/pm_diagnostics/pm_low_high_personalized_weighted_augmentation_v1.json
+  scientific_status: current_primary
+  role: experiment
+  status: final
+  loader_type: dedicated_protocol_loader
+  used_by:
+  - pm_low_high_personalization_lightgbm
+  - pm_low_high_personalization_xgboost
+  report_links:
+  - reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/README.md
+  is_legacy: false
+  metadata_only: true
+- config_path: experiments/pm_diagnostics/pm_low_high_q3_extremes_confirmatory_v1.json
+  scientific_status: current_primary
+  role: experiment
+  status: final
+  loader_type: dedicated_protocol_loader
+  used_by:
+  - pm_low_high_extremes_confirmatory
+  report_links:
+  - reports/diagnostics/pm_low_high_q3_extremes_confirmatory_v1/README.md
+  is_legacy: false
+  metadata_only: true
+- config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+  scientific_status: current_primary
+  role: experiment
+  status: final
+  loader_type: dedicated_protocol_loader
+  used_by:
+  - pm_temporal_matched_h10
+  - pm_temporal_matched_h20
+  - pm_temporal_matched_h30
+  - pm_temporal_matched_h60
+  - pm_temporal_matched_h120
+  - pm_h120_order_control_excitement
+  - pm_h120_order_control_focus
+  - pm_h120_order_control_interest
+  - pm_h120_order_control_relaxation
+  - pm_h120_order_control_stress
+  report_links:
+  - reports/diagnostics/pm_temporal_predictability_v1/README.md
+  - reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/README.md
+  is_legacy: false
+  metadata_only: true
 duplicate_groups:
 - kind: same_protocol_different_output
   hash: 042e8b993ce057b12e6631e405aa5349bcea22b50f8ab69b05218deb1190dd8a

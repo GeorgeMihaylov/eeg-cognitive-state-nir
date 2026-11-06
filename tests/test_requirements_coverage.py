@@ -331,7 +331,8 @@ def test_23_personalization_implementation_is_separate_from_quality() -> None:
     items = {item["requirement_id"]: item for item in _project_registry()["requirements"]}
     assert items["R-PERS-01"]["overall_status"] == "complete"
     assert items["R-PERS-Q01"]["requirement_kind"] == "acceptance_criterion"
-    assert items["R-PERS-Q01"]["overall_status"] == "failed_acceptance_criterion"
+    assert items["R-PERS-Q01"]["overall_status"] == "not_applicable"
+    assert "label_q5" in items["R-PERS-Q01"]["not_applicable_reason"]
 
 
 def test_24_accuracy_threshold_is_recorded_as_failed() -> None:

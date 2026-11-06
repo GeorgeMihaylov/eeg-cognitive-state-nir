@@ -22,6 +22,8 @@ ALLOWED_STATUSES = {
     "diagnostic",
     "invalidated",
 }
+SCIENTIFIC_STATUSES = {"current_primary", "current_supporting", "historical", "legacy",
+                       "diagnostic", "closed_negative", "infrastructure_only"}
 ALLOWED_CATEGORIES = {
     "model",
     "preprocessing",
@@ -55,6 +57,7 @@ REQUIRED_FIELDS = {
 }
 PATH_FIELDS = {"report_path", "runtime_path", "config_path", "path"}
 SUMMARY_COLUMNS = [
+    "scientific_status",
     "experiment_id",
     "title",
     "category",
@@ -267,6 +270,8 @@ def validate_registry(
         if experiment_id in seen:
             raise RegistryError(f"Duplicate experiment_id: {experiment_id}")
         seen.add(experiment_id)
+        if "scientific_status" in item and item["scientific_status"] not in SCIENTIFIC_STATUSES:
+            raise RegistryError(f"{experiment_id} has unknown scientific_status")
         if item["status"] not in ALLOWED_STATUSES:
             raise RegistryError(
                 f"{experiment_id} has unknown status {item['status']!r}"
@@ -557,6 +562,7 @@ def _summary_row(
         for item in secondary
     ]
     row = {
+        "scientific_status": experiment.get("scientific_status", "unclassified"),
         "experiment_id": experiment["experiment_id"],
         "title": experiment["title"],
         "category": experiment["category"],
@@ -782,6 +788,9 @@ def _markdown_table(
 
 def render_experiment_markdown(summary: Mapping[str, Any]) -> str:
     experiments = list(summary["experiments"])
+    current = [item for item in experiments if item.get("scientific_status") == "current_primary"]
+    historical = [item for item in experiments if item.get("scientific_status") in {"legacy", "historical"}]
+    experiments = [item for item in experiments if item not in current and item not in historical]
     rows = {
         str(row["experiment_id"]): row for row in summary["experiment_rows"]
     }
@@ -815,12 +824,14 @@ def render_experiment_markdown(summary: Mapping[str, Any]) -> str:
         "",
     ]
     for title, selected in (
+        ("Current primary — seven-PM LOW/HIGH", current),
         ("Итоговые результаты", final),
         ("Базовые результаты", baseline),
         ("Предобработка и диагностика", diagnostics),
         ("Персонализация", personalization),
         ("Mixins", mixins),
         ("Невалидные и заменённые запуски", invalidated),
+        ("Historical / legacy — original protocols and metrics retained", historical),
     ):
         lines.extend([f"## {title}", ""])
         lines.extend(_markdown_table(selected, rows, secondary_by_id))

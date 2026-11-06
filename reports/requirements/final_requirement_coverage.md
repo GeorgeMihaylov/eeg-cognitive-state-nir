@@ -1,68 +1,200 @@
-# Финальное покрытие требований
+# Карта соответствия требованиям проекта
 
-Карта разделяет формальное закрытие, научную ценность и сервисные/
-демонстрационные пункты. Авторитетный юридический текст ТЗ в tracked-дереве
-не найден, поэтому статусы являются инженерной трассировкой утверждённого
-плана проекта.
+## 1. Источники требований
 
-## Сводка
+Основной источник: `README.md` (`project_plan`). Статус источников: `project_plan_only`.
 
-| status | count |
+- Официальный файл технического задания не найден в tracked-дереве или Git history.
+- README фиксирует цели проекта, но не задаёт формальную обязательность и приоритет всех deliverables.
+- AGENTS.md и PROJECT_CONTEXT.md используются только как внутренние планы, а не как официальный текст ТЗ.
+
+## 2. Метод оценки
+
+Реестр курируется вручную; генератор проверяет источники, evidence, иерархию, семь измерений покрытия и логические противоречия статусов.
+
+## 3. Сводный статус
+
+| Статус | Количество |
 |---|---|
-| closed | 10 |
-| not_required_for_article | 3 |
-| open | 2 |
-| partially_closed | 12 |
+| complete | 17 |
+| failed_acceptance_criterion | 0 |
+| needs_clarification | 1 |
+| not_applicable | 1 |
+| not_started | 0 |
+| partial | 10 |
 
-## Требования
+Всего требований: **29**.
 
-| requirement_id | requirement | category | status | remaining_gap | recommended_closure_form |
-|---|---|---|---|---|---|
-| R-DATA | Данные и унификация источников | ('scientific',) | partially_closed | Нет единого актуального data-card, включающего собственные и внешние треки./Внешние datasets не имеют сопоставимого полного experiment contract. | Подготовить единый data-card и явно зафиксировать scope внешних наборов. |
-| R-DATA-01 | Унификация gpn_data и Old_EEG | ('scientific',) | closed |  | Поддерживать data provenance при следующих изменениях набора. |
-| R-DATA-02 | Внешний WESAD benchmark | ('scientific',) | not_required_for_article | Нет текущего канонического WESAD experiment config и записи experiment registry./Исторические WESAD scripts не являются текущим integrated pipeline. | Уточнить, обязателен ли WESAD deliverable; при положительном решении интегрировать один ограниченный baseline через текущий runner.
- |
-| R-DATA-03 | STEW и другие открытые EEG-наборы | ('scientific',) | not_required_for_article | Нет loader, task, config или current result для STEW./Не найден официальный признак обязательности. | Зафиксировать включение или исключение STEW в утверждённом scope. |
-| R-PREP | Предобработка и контроль качества EEG | ('scientific',) | partially_closed | Не все упоминаемые artifact-removal методы интегрированы в canonical pipeline. | Зафиксировать обязательный минимальный preprocessing scope и отдельно решить необходимость artifact removal.
- |
-| R-PREP-01 | Band-pass, notch, CAR и deduplication | ('scientific',) | partially_closed | Полный A-H factorial выполнен только для seed 42./Diagnostic experiment не устанавливает универсально лучший preprocessing. | Зафиксировать raw как текущий reference и границы обобщения ablation; не запускать полный повтор без отдельной гипотезы.
- |
-| R-PREP-02 | Artifact removal, ICA и FASTER | ('scientific',) | partially_closed | ICA отсутствует./FASTER prototype не является полноценной реализацией алгоритма и не подключён к runner./Нет leakage tests, config provenance или experiment result. | Сначала решить, входит ли artifact removal в обязательный scope; не интегрировать prototype без методической спецификации.
- |
-| R-FEAT | Представления и признаки | ('scientific',) | partially_closed | Нет единого feature dictionary с происхождением всех 448 колонок. | Создать feature dictionary с группой, формулой и provenance. |
-| R-FEAT-01 | EEG, POW, raw и sequence representations | ('scientific',) | closed |  | Поддерживать representation contracts в архитектурной документации. |
-| R-FEAT-02 | Энтропия, связность и снижение размерности | ('scientific',) | partially_closed | Энтропийные признаки отсутствуют./Connectivity prototype не встроен в canonical feature dataset./PCA и feature selection не имеют train-only integrated path. | Уточнить обязательные advanced feature families до реализации. |
-| R-MODEL | Интегрированный набор моделей | ('scientific',) | partially_closed | Model selection недоступен в конечном demo-сценарии. | Подключить выбор канонической модели в минимальном demo. |
-| R-MODEL-01 | Classical ML и Torch model zoo | ('scientific',) | closed |  | Поддерживать model matrix в README и summary registry. |
-| R-MODEL-02 | Классификация label_q5 и многовыходная PM-регрессия | ('scientific',) | closed |  | Обновить устаревшее ограничение README о regression track. |
-| R-MODEL-03 | AutoML | ('scientific',) | partially_closed | Выполнен diagnostic pilot, а не полный nested AutoML experiment./До streaming/demo AutoML не закрывает ближайший обязательный deliverable. | Отложить full AutoML до закрытия platform deliverables. |
-| R-EVAL | Научно корректная оценка | ('scientific',) | closed |  | Поддерживать единое описание evaluation policy. |
-| R-EVAL-01 | Outer/inner leakage protection | ('scientific',) | closed |  | Сохранять leakage checklist для новых experiment families. |
-| R-EVAL-02 | Метрики, артефакты и статистические сравнения | ('scientific',) | closed |  | Поддерживать artifact schema в architecture docs. |
-| R-PERS | Персонализация и перенос | ('scientific',) | partially_closed | Accuracy 0.75 не достигнута./Селективное online назначение калибровки не реализовано. | Перенести validated personalization в будущий demo/streaming сценарий без новых budget sweeps.
- |
-| R-PERS-01 | Leakage-safe classification и PM personalization | ('scientific',) | closed |  | Поддерживать финальные personalization reports и configs. |
-| R-PERS-Q01 | Accuracy персонализации не ниже 0.75 | ('scientific',) | partially_closed | Максимальная наблюдавшаяся accuracy 0.6349206349 ниже 0.75./Авторитетный первоисточник численного критерия не найден. | Подтвердить происхождение и обязательность порога; не запускать неограниченные fine-tuning sweeps автоматически.
- |
-| R-PERS-02 | Transfer, domain adaptation, meta- и contrastive learning | ('scientific',) | partially_closed | DANN is partially confirmed only in Old_EEG to gpn_data; FOMAML diagnostic is do_not_proceed; reverse DANN and a target-supervised upper bound remain untested. | Сохранить частично подтверждённый DANN и отрицательный FOMAML; новые sweeps запускать только по новой научной постановке. |
-| R-PLAT | Воспроизводимая интегрированная платформа | ('formal',) | closed |  | Поддерживать registries и architecture documentation. |
-| R-PLAT-01 | Registries, CLI, manifests, resume и summaries | ('formal',) | closed |  | Синхронизировать README с текущими registries. |
-| R-STREAM | Потоковый replay и измерение latency | ('service/demo',) | open | Нет replay API, latency/throughput/memory benchmark или error contract. | Реализовать минимальный offline replay поверх canonical model artifact. |
-| R-DEMO | Минимальный демонстрационный интерфейс | ('service/demo',) | open | Нет UI или demo CLI, model selection, visualization и export flow. | Построить минимальный demo поверх streaming replay и model registry. |
-| R-MULTI | Мультимодальность | ('scientific',) | not_required_for_article | Нет модели с совместными EEG и wearable inputs./WESAD относится к отдельной задаче и не синхронизирован с Emotiv./Официальный multimodal deliverable не найден. | Определить, требуется ли истинная multimodal fusion или отдельные benchmarks достаточны. |
-| R-DOC | Документация и итоговые материалы | ('formal',) | partially_closed | README датирован 20 июля и не отражает последние PM/personalization/config этапы./Нет единого architecture document и актуального runbook./Презентация, preprint и финальный deliverable не найдены. | После streaming/demo обновить README, architecture/runbook и собрать финальный комплект отчёта и презентации.
- |
+## 4. Полностью выполненные требования
 
-## Оставшаяся работа
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-DATA-01 | Унификация gpn_data и Old_EEG | complete | P3 | — |
+| R-EVAL | Научно корректная оценка | complete | P3 | — |
+| R-EVAL-01 | Outer/inner leakage protection | complete | P3 | — |
+| R-EVAL-02 | Метрики, артефакты и статистические сравнения | complete | P3 | — |
+| R-FEAT | Canonical 371 engineered features | complete | P1 | — |
+| R-FEAT-01 | EEG, POW, raw и sequence representations | complete | P3 | — |
+| R-FEAT-02 | Entropy, connectivity and historical feature selection | complete | P1 | — |
+| R-MODEL | Integrated model factory and current primary references | complete | P1 | — |
+| R-MODEL-01 | Classical ML и Torch model zoo | complete | P3 | — |
+| R-MODEL-02 | Seven-PM LOW/HIGH classification and supporting continuous PM regression | complete | P1 | — |
+| R-MODEL-03 | Nested LOW/HIGH AutoML | complete | P1 | — |
+| R-TEMPORAL | Completed temporal predictability and H120 order control | complete | P1 | — |
+| R-PERS-01 | Leakage-safe LOW/HIGH adaptation and supporting PM regression | complete | P1 | — |
+| R-PLAT | Воспроизводимая интегрированная платформа | complete | P3 | — |
+| R-PLAT-01 | Registries, CLI, manifests, resume и summaries | complete | P1 | — |
+| R-PREP-01 | Band-pass, notch, CAR and deduplication | complete | P1 | — |
+| R-PREP-02 | Completed ICA and MNE-FASTER comparisons | complete | P1 | — |
 
-**Обязательно:** итоговая документация, description/data card,
-reproducibility section, финальный отчёт, таблицы/рисунки, презентация.
+## 5. Частично выполненные требования
 
-**Желательно для статьи:** выбрать центральную гипотезу, зафиксировать
-статистически корректные сравнения, related work, вклад, ограничения и
-приложение отрицательных результатов.
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-DATA | Internal canonical data and external task contracts | partial | P1 | A unified publication data card spanning current internal and external tracks remains to be consolidated. |
+| R-DATA-02 | Внешний WESAD benchmark | partial | P2 | Нет текущего канонического WESAD experiment config и записи experiment registry.; Исторические WESAD scripts не являются текущим integrated pipeline. |
+| R-DEMO | Implemented streaming CLI/dashboard/API; delivery acceptance pending | partial | P1 | Final demo acceptance and hardware deployment scope need confirmation. |
+| R-DOC | Current documentation and publication deliverables | partial | P1 | Final manuscript, presentation and acceptance scope remain to be finalized. |
+| R-SEQUENCE | Planned bounded H120 sequence comparison | partial | P1 | One architecture and evaluation protocol still need to be frozen; experiment not executed. |
+| R-MULTI | Completed external EEG/peripheral/fusion comparisons | partial | P1 | External labels differ from seven internal PM; temporal findings have not been independently replicated. |
+| R-PERS | LOW/HIGH personalization and transfer | partial | P1 | Deployment of the validated adaptation protocol with real hardware remains separate from offline evidence. |
+| R-PERS-02 | Completed transfer/DANN/FOMAML/contrastive tracks | partial | P1 | Independent external validation of the current temporal conclusion remains open. |
+| R-PREP | Preprocessing and EEG quality control | partial | P1 | Further representation changes require a separate scientific hypothesis. |
+| R-STREAM | Implemented replay/API and software latency; hardware latency pending | partial | P1 | Sensor-to-user end-to-end latency with physical hardware has not been measured. |
 
-**Исключить без новой гипотезы:** дальнейший DANN search, FOMAML sweep,
-новый contrastive search, полный 62-канальный cache, дополнительные COG-BCI
-CNN seeds, AutoML и новые внешние наборы. Уже выполненный confirmatory DANN
-сохраняется как `partially_confirmed` evidence.
+## 6. Невыполненные требования
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+
+## 7. Недостигнутые критерии качества
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+
+## 8. Требования, нуждающиеся в уточнении
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-DATA-03 | STEW и другие открытые EEG-наборы | needs_clarification | P1 | Нет loader, task, config или current result для STEW.; Не найден официальный признак обязательности. |
+
+## 9. Данные
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-DATA | Internal canonical data and external task contracts | partial | P1 | A unified publication data card spanning current internal and external tracks remains to be consolidated. |
+| R-DATA-01 | Унификация gpn_data и Old_EEG | complete | P3 | — |
+| R-DATA-02 | Внешний WESAD benchmark | partial | P2 | Нет текущего канонического WESAD experiment config и записи experiment registry.; Исторические WESAD scripts не являются текущим integrated pipeline. |
+| R-DATA-03 | STEW и другие открытые EEG-наборы | needs_clarification | P1 | Нет loader, task, config или current result для STEW.; Не найден официальный признак обязательности. |
+
+## 10. Предобработка
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-PREP | Preprocessing and EEG quality control | partial | P1 | Further representation changes require a separate scientific hypothesis. |
+| R-PREP-01 | Band-pass, notch, CAR and deduplication | complete | P1 | — |
+| R-PREP-02 | Completed ICA and MNE-FASTER comparisons | complete | P1 | — |
+
+## 11. Признаки
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-FEAT | Canonical 371 engineered features | complete | P1 | — |
+| R-FEAT-01 | EEG, POW, raw и sequence representations | complete | P3 | — |
+| R-FEAT-02 | Entropy, connectivity and historical feature selection | complete | P1 | — |
+
+## 12. Модели
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-MODEL | Integrated model factory and current primary references | complete | P1 | — |
+| R-MODEL-01 | Classical ML и Torch model zoo | complete | P3 | — |
+| R-MODEL-02 | Seven-PM LOW/HIGH classification and supporting continuous PM regression | complete | P1 | — |
+| R-MODEL-03 | Nested LOW/HIGH AutoML | complete | P1 | — |
+| R-SEQUENCE | Planned bounded H120 sequence comparison | partial | P1 | One architecture and evaluation protocol still need to be frozen; experiment not executed. |
+| R-TEMPORAL | Completed temporal predictability and H120 order control | complete | P1 | — |
+
+## 13. Оценка качества
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-EVAL | Научно корректная оценка | complete | P3 | — |
+| R-EVAL-01 | Outer/inner leakage protection | complete | P3 | — |
+| R-EVAL-02 | Метрики, артефакты и статистические сравнения | complete | P3 | — |
+
+## 14. Персонализация и перенос
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-PERS | LOW/HIGH personalization and transfer | partial | P1 | Deployment of the validated adaptation protocol with real hardware remains separate from offline evidence. |
+| R-PERS-01 | Leakage-safe LOW/HIGH adaptation and supporting PM regression | complete | P1 | — |
+| R-PERS-02 | Completed transfer/DANN/FOMAML/contrastive tracks | partial | P1 | Independent external validation of the current temporal conclusion remains open. |
+| R-PERS-Q01 | Historical label_q5 accuracy threshold 0.75 (not current LOW/HIGH criterion) | not_applicable | P1 | — |
+
+## 15. Воспроизводимая платформа
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-PLAT | Воспроизводимая интегрированная платформа | complete | P3 | — |
+| R-PLAT-01 | Registries, CLI, manifests, resume и summaries | complete | P1 | — |
+
+## 16. Потоковый режим
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-STREAM | Implemented replay/API and software latency; hardware latency pending | partial | P1 | Sensor-to-user end-to-end latency with physical hardware has not been measured. |
+
+## 17. Демонстрация
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-DEMO | Implemented streaming CLI/dashboard/API; delivery acceptance pending | partial | P1 | Final demo acceptance and hardware deployment scope need confirmation. |
+
+## 18. Мультимодальность
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-MULTI | Completed external EEG/peripheral/fusion comparisons | partial | P1 | External labels differ from seven internal PM; temporal findings have not been independently replicated. |
+
+## 19. Документация и результаты
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-DOC | Current documentation and publication deliverables | partial | P1 | Final manuscript, presentation and acceptance scope remain to be finalized. |
+
+## 20. Критические пробелы
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+
+## 21. Что не требует новых экспериментов
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-DATA | Internal canonical data and external task contracts | partial | P1 | A unified publication data card spanning current internal and external tracks remains to be consolidated. |
+| R-DATA-02 | Внешний WESAD benchmark | partial | P2 | Нет текущего канонического WESAD experiment config и записи experiment registry.; Исторические WESAD scripts не являются текущим integrated pipeline. |
+| R-DATA-03 | STEW и другие открытые EEG-наборы | needs_clarification | P1 | Нет loader, task, config или current result для STEW.; Не найден официальный признак обязательности. |
+| R-DEMO | Implemented streaming CLI/dashboard/API; delivery acceptance pending | partial | P1 | Final demo acceptance and hardware deployment scope need confirmation. |
+| R-DOC | Current documentation and publication deliverables | partial | P1 | Final manuscript, presentation and acceptance scope remain to be finalized. |
+| R-SEQUENCE | Planned bounded H120 sequence comparison | partial | P1 | One architecture and evaluation protocol still need to be frozen; experiment not executed. |
+| R-MULTI | Completed external EEG/peripheral/fusion comparisons | partial | P1 | External labels differ from seven internal PM; temporal findings have not been independently replicated. |
+| R-PERS | LOW/HIGH personalization and transfer | partial | P1 | Deployment of the validated adaptation protocol with real hardware remains separate from offline evidence. |
+| R-PERS-02 | Completed transfer/DANN/FOMAML/contrastive tracks | partial | P1 | Independent external validation of the current temporal conclusion remains open. |
+| R-PREP | Preprocessing and EEG quality control | partial | P1 | Further representation changes require a separate scientific hypothesis. |
+| R-STREAM | Implemented replay/API and software latency; hardware latency pending | partial | P1 | Sensor-to-user end-to-end latency with physical hardware has not been measured. |
+
+## 22. Рекомендуемый порядок закрытия
+
+| ID | Требование | Статус | Приоритет закрытия | Пробел |
+|---|---|---|---|---|
+| R-DATA | Internal canonical data and external task contracts | partial | P1 | A unified publication data card spanning current internal and external tracks remains to be consolidated. |
+| R-DATA-03 | STEW и другие открытые EEG-наборы | needs_clarification | P1 | Нет loader, task, config или current result для STEW.; Не найден официальный признак обязательности. |
+| R-DEMO | Implemented streaming CLI/dashboard/API; delivery acceptance pending | partial | P1 | Final demo acceptance and hardware deployment scope need confirmation. |
+| R-DOC | Current documentation and publication deliverables | partial | P1 | Final manuscript, presentation and acceptance scope remain to be finalized. |
+| R-MULTI | Completed external EEG/peripheral/fusion comparisons | partial | P1 | External labels differ from seven internal PM; temporal findings have not been independently replicated. |
+| R-PERS | LOW/HIGH personalization and transfer | partial | P1 | Deployment of the validated adaptation protocol with real hardware remains separate from offline evidence. |
+| R-PERS-02 | Completed transfer/DANN/FOMAML/contrastive tracks | partial | P1 | Independent external validation of the current temporal conclusion remains open. |
+| R-PREP | Preprocessing and EEG quality control | partial | P1 | Further representation changes require a separate scientific hypothesis. |
+| R-SEQUENCE | Planned bounded H120 sequence comparison | partial | P1 | One architecture and evaluation protocol still need to be frozen; experiment not executed. |
+| R-STREAM | Implemented replay/API and software latency; hardware latency pending | partial | P1 | Sensor-to-user end-to-end latency with physical hardware has not been measured. |
+| R-DATA-02 | Внешний WESAD benchmark | partial | P2 | Нет текущего канонического WESAD experiment config и записи experiment registry.; Исторические WESAD scripts не являются текущим integrated pipeline. |

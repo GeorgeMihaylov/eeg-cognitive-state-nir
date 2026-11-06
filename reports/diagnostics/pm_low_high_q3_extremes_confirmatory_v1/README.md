@@ -1,5 +1,7 @@
 # PM LOW-vs-HIGH q3 extremes confirmatory v1
 
+Current **binary LOW/HIGH**, not historical three-class Q3: q3 in the immutable namespace refers to tertile cutoffs. LOW <= Q33, HIGH >= Q67, fitted on canonical outer-train continuous complete cases. All 35 fold-PM results are available in [results](results_by_fold.csv) and [summary](pooled_summary.csv); dry-run training=false below is a historical preflight flag.
+
 This preregistered protocol evaluates whether canonical EEG features distinguish
 strongly LOW from strongly HIGH continuous PM states. The middle outer-train
 tertile is excluded. Thresholds are fitted on continuous outer-train targets only

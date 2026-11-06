@@ -1196,9 +1196,12 @@ class StatisticalAnalysis:
         automl_stats = comparison_table.loc[
             comparison_table.get("family", pd.Series(dtype=str)) == "automl_pilot"
         ] if not comparison_table.empty else pd.DataFrame()
-        article_report = self.reports_dir / "article_results_summary.md"
+        # This generator belongs to the historical label_q5 statistical package.
+        # Never overwrite the independently maintained current LOW/HIGH article summary.
+        article_report = self.reports_dir / "article_results_summary_legacy_label_q5.md"
         article_report.write_text(
-            "# Article-ready results summary\n\n"
+            "> **Historical label_q5 protocol.** See [current summary](article_results_summary.md).\n\n"
+            "# Historical article results summary\n\n"
             "## 1. Dataset and evaluation protocol\n\n"
             "The supervised target is five-level `label_q5`. Scientific model results "
             "use five-fold GroupKFold by `subject_id`; inner validation is confined to "

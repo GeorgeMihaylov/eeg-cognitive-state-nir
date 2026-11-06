@@ -414,3 +414,199 @@ notes:
   ordinal_transformer: Ordinal Transformer results remain a separately tracked diagnostic/noncanonical slice and are not mixed
     into the canonical seven-model table.
   random_window_split: Random-window results are diagnostic/legacy comparisons and are not mixed with cross-subject GroupKFold.
+current_primary:
+- experiment_id: pm_low_high_extremes_confirmatory
+  scientific_status: current_primary
+  metric:
+    name: participant_macro_balanced_accuracy
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_low_high_q3_extremes_confirmatory_v1/pooled_summary.csv
+      column: participant_macro_balanced_accuracy_mean
+      filters: {}
+      aggregation: first
+- experiment_id: pm_low_high_robustness_lightgbm
+  scientific_status: current_primary
+  metric:
+    name: participant_macro_balanced_accuracy
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_low_high_model_robustness_v1/summary_by_model.csv
+      column: participant_macro_balanced_accuracy_mean
+      filters:
+        model: lightgbm
+      aggregation: first
+- experiment_id: pm_low_high_robustness_xgboost
+  scientific_status: current_primary
+  metric:
+    name: participant_macro_balanced_accuracy
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_low_high_model_robustness_v1/summary_by_model.csv
+      column: participant_macro_balanced_accuracy_mean
+      filters:
+        model: xgboost
+      aggregation: first
+- experiment_id: pm_low_high_nested_automl
+  scientific_status: current_primary
+  metric:
+    name: participant_first_balanced_accuracy
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_low_high_nested_automl_v1/final_pooled_summary.csv
+      column: balanced_accuracy
+      filters:
+        source: automl
+      aggregation: first
+- experiment_id: pm_low_high_personalization_lightgbm
+  scientific_status: current_primary
+  metric:
+    name: operational_delta_roc_auc
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv
+      column: delta_roc_auc_mean
+      filters:
+        model: lightgbm
+        estimand: operational_all_eval_ready_with_fallback
+      aggregation: first
+- experiment_id: pm_low_high_personalization_xgboost
+  scientific_status: current_primary
+  metric:
+    name: operational_delta_roc_auc
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv
+      column: delta_roc_auc_mean
+      filters:
+        model: xgboost
+        estimand: operational_all_eval_ready_with_fallback
+      aggregation: first
+- experiment_id: pm_temporal_matched_h10
+  scientific_status: current_primary
+  metric:
+    name: descriptive_equal_pm_participant_macro_ba
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_temporal_predictability_v1/full_matched/overall.csv
+      column: balanced_accuracy
+      filters:
+        horizon_s: 10
+      aggregation: mean
+- experiment_id: pm_temporal_matched_h20
+  scientific_status: current_primary
+  metric:
+    name: descriptive_equal_pm_participant_macro_ba
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_temporal_predictability_v1/full_matched/overall.csv
+      column: balanced_accuracy
+      filters:
+        horizon_s: 20
+      aggregation: mean
+- experiment_id: pm_temporal_matched_h30
+  scientific_status: current_primary
+  metric:
+    name: descriptive_equal_pm_participant_macro_ba
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_temporal_predictability_v1/full_matched/overall.csv
+      column: balanced_accuracy
+      filters:
+        horizon_s: 30
+      aggregation: mean
+- experiment_id: pm_temporal_matched_h60
+  scientific_status: current_primary
+  metric:
+    name: descriptive_equal_pm_participant_macro_ba
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_temporal_predictability_v1/full_matched/overall.csv
+      column: balanced_accuracy
+      filters:
+        horizon_s: 60
+      aggregation: mean
+- experiment_id: pm_temporal_matched_h120
+  scientific_status: current_primary
+  metric:
+    name: descriptive_equal_pm_participant_macro_ba
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_temporal_predictability_v1/full_matched/overall.csv
+      column: balanced_accuracy
+      filters:
+        horizon_s: 120
+      aggregation: mean
+- experiment_id: pm_h120_order_control_excitement
+  scientific_status: current_primary
+  metric:
+    name: ordered_minus_shuffled_participant_macro_ba
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/ordered_vs_shuffled_ba.csv
+      column: delta_ba
+      filters:
+        pm: excitement
+      aggregation: first
+- experiment_id: pm_h120_order_control_focus
+  scientific_status: current_primary
+  metric:
+    name: ordered_minus_shuffled_participant_macro_ba
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/ordered_vs_shuffled_ba.csv
+      column: delta_ba
+      filters:
+        pm: focus
+      aggregation: first
+- experiment_id: pm_h120_order_control_interest
+  scientific_status: current_primary
+  metric:
+    name: ordered_minus_shuffled_participant_macro_ba
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/ordered_vs_shuffled_ba.csv
+      column: delta_ba
+      filters:
+        pm: interest
+      aggregation: first
+- experiment_id: pm_h120_order_control_relaxation
+  scientific_status: current_primary
+  metric:
+    name: ordered_minus_shuffled_participant_macro_ba
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/ordered_vs_shuffled_ba.csv
+      column: delta_ba
+      filters:
+        pm: relaxation
+      aggregation: first
+- experiment_id: pm_h120_order_control_stress
+  scientific_status: current_primary
+  metric:
+    name: ordered_minus_shuffled_participant_macro_ba
+    direction: higher_is_better
+    value_source:
+      type: csv_filter
+      path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/ordered_vs_shuffled_ba.csv
+      column: delta_ba
+      filters:
+        pm: stress
+      aggregation: first
+scientific_status_note: Legacy classification/preprocessing rows below retain their original metrics and execution status;
+  current_primary references are rendered from experiment_registry.yaml.

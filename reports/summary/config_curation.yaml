@@ -1687,3 +1687,157 @@ normalization_plan:
     dry_load:
       - каждый фактический loader type
     rollback: Не выполнять пакет без отдельной migration map и совместимых aliases.
+
+scientific_status_overrides:
+  experiments/label_definition_sensitivity.yaml: legacy
+  experiments/label_target_audit.yaml: legacy
+  experiments/statistical_analysis.yaml: legacy
+  experiments/temporal_target_audit.yaml: legacy
+  configs.yaml: legacy
+  configs/groupkfold_rf_label_q5.yaml: legacy
+  configs/groupkfold_torch_mlp_label_q5.yaml: legacy
+  configs/smoke_rf_label_q5.yaml: legacy
+  configs/smoke_torch_mlp_label_q5.yaml: legacy
+  experiments/calibration/label_q5_finetuning_base_smoke.yaml: legacy
+  experiments/calibration/label_q5_finetuning_cuda_smoke_base.yaml: legacy
+  experiments/calibration/label_q5_finetuning_full_base.yaml: legacy
+  experiments/calibration/label_q5_finetuning_multiseed_20pct_base.yaml: legacy
+  experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke_base.yaml: legacy
+  experiments/calibration/label_q5_finetuning_full_subjects.yaml: legacy
+  experiments/calibration/label_q5_finetuning_multiseed_20pct.yaml: legacy
+  experiments/calibration/label_q5_finetuning_cuda_integration_smoke.yaml: legacy
+  experiments/calibration/label_q5_finetuning_multiseed_cuda_smoke.yaml: legacy
+  experiments/calibration/label_q5_finetuning_smoke.yaml: legacy
+  experiments/user_calibration_transformer_label_q5.yaml: legacy
+  experiments/feature_group_rf_ablation.yaml: legacy
+  experiments/ordinal_transformer_full_seed42.yaml: legacy
+  experiments/ordinal_transformer_multiseed.yaml: legacy
+  experiments/auxiliary_corn_transformer_smoke.yaml: legacy
+  experiments/ordinal_transformer_smoke.yaml: legacy
+  experiments/auxiliary_corn_lambda_selection_setup.yaml: legacy
+  experiments/auxiliary_corn_nested_lambda.yaml: legacy
+  experiments/auxiliary_corn_nested_lambda_finalize.yaml: historical
+  experiments/auxiliary_corn_policy_statistics.yaml: historical
+  experiments/ordinal_transformer_multiseed_statistics.yaml: historical
+  experiments/ordinal_transformer_statistics.yaml: historical
+  experiments/pm_regression/pm_regression_rf_groupkfold_full.yaml: current_supporting
+  experiments/pm_regression/pm_regression_group_validation_smoke.yaml: current_supporting
+  experiments/pm_regression/pm_regression_robust_scaling_smoke.yaml: current_supporting
+  experiments/pm_regression/pm_regression_smoke.yaml: current_supporting
+  experiments/calibration/pm_regression_personalization_20pct_base.yaml: current_supporting
+  experiments/calibration/pm_regression_personalization_cuda_smoke_base.yaml: current_supporting
+  experiments/calibration/pm_regression_personalization_20pct.yaml: current_supporting
+  experiments/calibration/pm_regression_personalization_multiseed_20pct.yaml: current_supporting
+  experiments/calibration/pm_regression_personalization_cuda_smoke.yaml: current_supporting
+  experiments/calibration/pm_regression_personalization_multiseed_cuda_smoke.yaml: current_supporting
+  configs/raw_preprocessing_a_raw.yaml: historical
+  configs/raw_preprocessing_b_bandpass.yaml: historical
+  configs/raw_preprocessing_c_bandpass_notch.yaml: historical
+  configs/raw_preprocessing_d_bandpass_notch_car.yaml: historical
+  experiments/preprocessing_ablation_shallowconvnet.yaml: legacy
+  configs/groupkfold_torch_eegnet_raw_dedup_label_q5.yaml: legacy
+  configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed123.yaml: legacy
+  configs/groupkfold_torch_eegnet_raw_dedup_label_q5_seed7.yaml: legacy
+  configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5.yaml: legacy
+  configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed123.yaml: legacy
+  configs/groupkfold_torch_shallow_convnet_raw_dedup_label_q5_seed7.yaml: legacy
+  configs/smoke_torch_eegnet_dedup_preprocessed_label_q5.yaml: legacy
+  configs/smoke_torch_eegnet_label_q5.yaml: legacy
+  configs/smoke_torch_shallow_convnet_label_q5.yaml: legacy
+  configs/groupkfold_torch_eegnet_preprocessed_dedup_label_q5.yaml: legacy
+  configs/groupkfold_torch_eegnet_raw_all_label_q5.yaml: legacy
+  configs/groupkfold_torch_eegnet_label_q5.yaml: legacy
+  configs/groupkfold_source_gpn_rf_transformer_label_q5.yaml: legacy
+  configs/groupkfold_source_old_eeg_rf_transformer_label_q5.yaml: legacy
+  configs/groupkfold_torch_transformer_label_q5.yaml: legacy
+  experiments/cross_source_generalization.yaml: legacy
+  configs/smoke_torch_lstm_label_q5.yaml: legacy
+  experiments/automl_transformer_label_q5.yaml: legacy
+  experiments/feature_group_transformer_ablation.yaml: legacy
+  configs/groupkfold_torch_bilstm_gapaware_label_q5.yaml: legacy
+  configs/groupkfold_torch_bilstm_label_q5.yaml: legacy
+  configs/groupkfold_torch_lstm_gapaware_label_q5.yaml: legacy
+  configs/groupkfold_torch_lstm_label_q5.yaml: legacy
+  experiments/pm_diagnostics/pm_low_high_model_robustness_v1.json: current_primary
+  experiments/pm_diagnostics/pm_low_high_nested_automl_v1.json: current_primary
+  experiments/pm_diagnostics/pm_low_high_personalized_weighted_augmentation_v1.json: current_primary
+  experiments/pm_diagnostics/pm_low_high_q3_extremes_confirmatory_v1.json: current_primary
+  experiments/pm_diagnostics/pm_temporal_predictability_v1.json: current_primary
+  experiments/targets/pm_union_raw_composite.yaml: infrastructure_only
+  experiments/feature_selection/lightgbm_feature_selection_v1.yaml: legacy
+  configs/streaming.yaml: current_supporting
+  configs/streaming_scientific_lightweight_v1.yaml: current_supporting
+  configs/streaming_scientific_v1.yaml: current_supporting
+  experiments/targets/canonical_target_contract.yaml: infrastructure_only
+  experiments/pm_regression/pm_all_targets_feature_baseline.yaml: current_supporting
+  experiments/preprocessing/artifact_removal_ablation_v1.yaml: legacy
+  experiments/preprocessing/artifact_removal_ablation_v2.yaml: legacy
+  experiments/targets/preliminary_streaming_handoff_shallow_fold1.yaml: legacy
+reviewed_protocol_metadata:
+- config_path: experiments/pm_diagnostics/pm_low_high_model_robustness_v1.json
+  scientific_status: current_primary
+  role: experiment
+  status: final
+  loader_type: dedicated_protocol_loader
+  used_by:
+  - pm_low_high_robustness_lightgbm
+  - pm_low_high_robustness_xgboost
+  report_links:
+  - reports/diagnostics/pm_low_high_model_robustness_v1/README.md
+  is_legacy: false
+  metadata_only: true
+- config_path: experiments/pm_diagnostics/pm_low_high_nested_automl_v1.json
+  scientific_status: current_primary
+  role: experiment
+  status: final
+  loader_type: dedicated_protocol_loader
+  used_by:
+  - pm_low_high_nested_automl
+  report_links:
+  - reports/diagnostics/pm_low_high_nested_automl_v1/README.md
+  is_legacy: false
+  metadata_only: true
+- config_path: experiments/pm_diagnostics/pm_low_high_personalized_weighted_augmentation_v1.json
+  scientific_status: current_primary
+  role: experiment
+  status: final
+  loader_type: dedicated_protocol_loader
+  used_by:
+  - pm_low_high_personalization_lightgbm
+  - pm_low_high_personalization_xgboost
+  report_links:
+  - reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/README.md
+  is_legacy: false
+  metadata_only: true
+- config_path: experiments/pm_diagnostics/pm_low_high_q3_extremes_confirmatory_v1.json
+  scientific_status: current_primary
+  role: experiment
+  status: final
+  loader_type: dedicated_protocol_loader
+  used_by:
+  - pm_low_high_extremes_confirmatory
+  report_links:
+  - reports/diagnostics/pm_low_high_q3_extremes_confirmatory_v1/README.md
+  is_legacy: false
+  metadata_only: true
+- config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+  scientific_status: current_primary
+  role: experiment
+  status: final
+  loader_type: dedicated_protocol_loader
+  used_by:
+  - pm_temporal_matched_h10
+  - pm_temporal_matched_h20
+  - pm_temporal_matched_h30
+  - pm_temporal_matched_h60
+  - pm_temporal_matched_h120
+  - pm_h120_order_control_excitement
+  - pm_h120_order_control_focus
+  - pm_h120_order_control_interest
+  - pm_h120_order_control_relaxation
+  - pm_h120_order_control_stress
+  report_links:
+  - reports/diagnostics/pm_temporal_predictability_v1/README.md
+  - reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/README.md
+  is_legacy: false
+  metadata_only: true

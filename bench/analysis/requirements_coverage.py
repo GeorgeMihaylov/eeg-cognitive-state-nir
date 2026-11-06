@@ -940,6 +940,9 @@ def generate(
         encoding="utf-8",
         newline="",
     )
+    final_coverage = root / "reports/requirements/final_requirement_coverage.md"
+    final_coverage.parent.mkdir(parents=True, exist_ok=True)
+    final_coverage.write_text(render_coverage_markdown(registry), encoding="utf-8", newline="")
     return registry, warnings
 
 

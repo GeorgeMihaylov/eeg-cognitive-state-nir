@@ -2,6 +2,7 @@ schema_version: 1
 
 experiments:
   - experiment_id: label_q5_random_forest_groupkfold
+    scientific_status: legacy
     title: Random Forest baseline для label_q5
     category: model
     status: baseline
@@ -55,6 +56,7 @@ experiments:
     tags: [classification, feature_window, classical_ml]
 
   - experiment_id: label_q5_torch_mlp_groupkfold
+    scientific_status: legacy
     title: Torch MLP baseline для label_q5
     category: model
     status: baseline
@@ -108,6 +110,7 @@ experiments:
     tags: [classification, feature_window, torch]
 
   - experiment_id: label_q5_gapaware_lstm_groupkfold
+    scientific_status: legacy
     title: Gap-aware LSTM для label_q5
     category: model
     status: baseline
@@ -161,6 +164,7 @@ experiments:
     tags: [classification, sequence, recurrent]
 
   - experiment_id: label_q5_gapaware_bilstm_groupkfold
+    scientific_status: legacy
     title: Gap-aware BiLSTM для label_q5
     category: model
     status: baseline
@@ -214,6 +218,7 @@ experiments:
     tags: [classification, sequence, recurrent]
 
   - experiment_id: label_q5_transformer_multiseed
+    scientific_status: legacy
     title: Transformer для label_q5
     category: model
     status: final
@@ -274,6 +279,7 @@ experiments:
     tags: [classification, sequence, multiseed, transformer]
 
   - experiment_id: label_q5_eegnet_raw_dedup_multiseed
+    scientific_status: legacy
     title: EEGNet на deduplicated raw EEG
     category: model
     status: baseline
@@ -327,6 +333,7 @@ experiments:
     tags: [classification, raw_eeg, cnn, multiseed]
 
   - experiment_id: label_q5_shallowconvnet_raw_dedup_multiseed
+    scientific_status: legacy
     title: ShallowConvNet на deduplicated raw EEG
     category: model
     status: final
@@ -385,6 +392,7 @@ experiments:
     tags: [classification, raw_eeg, cnn, multiseed]
 
   - experiment_id: shallowconvnet_preprocessing_ablation
+    scientific_status: legacy
     title: Абляция предобработки raw EEG A–H
     category: preprocessing
     status: diagnostic
@@ -435,6 +443,7 @@ experiments:
     tags: [diagnostic, raw_eeg, preprocessing, multiseed]
 
   - experiment_id: pm_standard_clip_audit
+    scientific_status: current_supporting
     title: Leakage-safe standard_clip для EEG+POW
     category: preprocessing
     status: diagnostic
@@ -473,6 +482,7 @@ experiments:
     tags: [diagnostic, regression, robust_scaling]
 
   - experiment_id: pm_robust_scaling_unwired_groupkfold
+    scientific_status: current_supporting
     title: Первый GroupKFold run robust scaling без model-level config
     category: preprocessing
     status: invalidated
@@ -501,6 +511,7 @@ experiments:
     tags: [invalidated, regression, robust_scaling]
 
   - experiment_id: pm_regression_mean_baseline_5fold
+    scientific_status: current_supporting
     title: Mean baseline многовыходной PM-регрессии
     category: regression
     status: baseline
@@ -562,6 +573,7 @@ experiments:
     tags: [regression, baseline, multioutput]
 
   - experiment_id: pm_regression_random_forest_5fold
+    scientific_status: current_supporting
     title: Random Forest baseline многовыходной PM-регрессии
     category: regression
     status: baseline
@@ -633,6 +645,7 @@ experiments:
     tags: [regression, baseline, multioutput, classical_ml]
 
   - experiment_id: label_q5_personalization_multiseed_20pct
+    scientific_status: legacy
     title: Трёхсидовая персонализация label_q5
     category: personalization
     status: final
@@ -745,6 +758,7 @@ experiments:
     tags: [classification, personalization, multiseed, cuda]
 
   - experiment_id: pm_regression_personalization_multiseed_20pct
+    scientific_status: current_supporting
     title: Трёхсидовая персонализация PM-регрессии
     category: personalization
     status: final
@@ -857,6 +871,7 @@ experiments:
     tags: [regression, personalization, multiseed, cuda]
 
   - experiment_id: mixin_transfer_learning_audit
+    scientific_status: historical
     title: Аудит Transfer learning mixin
     category: mixin
     status: diagnostic
@@ -889,6 +904,7 @@ experiments:
     tags: [mixin, transfer, audit]
 
   - experiment_id: mixin_domain_adaptation_audit
+    scientific_status: historical
     title: Аудит Domain adaptation mixin
     category: mixin
     status: diagnostic
@@ -921,6 +937,7 @@ experiments:
     tags: [mixin, dann, deferred]
 
   - experiment_id: mixin_meta_learning_audit
+    scientific_status: historical
     title: Аудит Meta-learning mixin
     category: mixin
     status: diagnostic
@@ -953,6 +970,7 @@ experiments:
     tags: [mixin, maml, deferred]
 
   - experiment_id: mixin_contrastive_learning_audit
+    scientific_status: historical
     title: Аудит Contrastive learning mixin
     category: mixin
     status: diagnostic
@@ -985,6 +1003,7 @@ experiments:
     tags: [mixin, contrastive, deferred]
 
   - experiment_id: label_q5_feature_group_rf_ablation
+    scientific_status: legacy
     title: Абляция EEG, POW и EEG+POW для Random Forest
     category: preprocessing
     status: diagnostic
@@ -1014,6 +1033,7 @@ experiments:
     tags: [classification, feature_ablation, groupkfold]
 
   - experiment_id: label_q5_feature_group_transformer_ablation
+    scientific_status: legacy
     title: Абляция EEG и EEG+POW для Transformer
     category: preprocessing
     status: diagnostic
@@ -1043,6 +1063,7 @@ experiments:
     tags: [classification, transformer, feature_ablation]
 
   - experiment_id: label_q5_ordinal_transformer_multiseed
+    scientific_status: legacy
     title: Многосидовое сравнение categorical, CORAL и CORN Transformer
     category: model
     status: final
@@ -1073,6 +1094,7 @@ experiments:
     tags: [classification, ordinal, transformer, multiseed]
 
   - experiment_id: label_q5_auxiliary_corn_policy
+    scientific_status: legacy
     title: Вложенная auxiliary-CORN policy
     category: model
     status: diagnostic
@@ -1103,6 +1125,7 @@ experiments:
     tags: [classification, ordinal, transformer, closed_negative]
 
   - experiment_id: cross_source_generalization_diagnostic
+    scientific_status: legacy
     title: Межисточниковая проверка gpn_data и Old_EEG
     category: model
     status: diagnostic
@@ -1132,6 +1155,7 @@ experiments:
     tags: [classification, cross_source, diagnostic]
 
   - experiment_id: label_target_provenance_audit
+    scientific_status: diagnostic
     title: Аудит происхождения и структуры label_q5
     category: infrastructure
     status: diagnostic
@@ -1162,6 +1186,7 @@ experiments:
     tags: [target, provenance, infrastructure]
 
   - experiment_id: shared_encoder_interface
+    scientific_status: infrastructure_only
     title: Единый интерфейс энкодеров
     category: infrastructure
     status: diagnostic
@@ -1191,6 +1216,7 @@ experiments:
     tags: [encoder, infrastructure]
 
   - experiment_id: dann_infrastructure
+    scientific_status: infrastructure_only
     title: DANN-инфраструктура
     category: infrastructure
     status: diagnostic
@@ -1220,6 +1246,7 @@ experiments:
     tags: [dann, infrastructure, deferred]
 
   - experiment_id: contrastive_pretraining_infrastructure
+    scientific_status: infrastructure_only
     title: Контрастивная инфраструктура raw EEG
     category: infrastructure
     status: diagnostic
@@ -1249,6 +1276,7 @@ experiments:
     tags: [contrastive, infrastructure]
 
   - experiment_id: cog_bci_inventory_and_window_caches
+    scientific_status: infrastructure_only
     title: COG-BCI inventory и record-safe window caches
     category: infrastructure
     status: diagnostic
@@ -1279,6 +1307,7 @@ experiments:
     tags: [cog_bci, data, cache, infrastructure]
 
   - experiment_id: cog_bci_nback_cnn_baseline
+    scientific_status: closed_negative
     title: COG-BCI N-Back CNN baseline
     category: model
     status: diagnostic
@@ -1312,6 +1341,7 @@ experiments:
     tags: [cog_bci, cnn, nback, closed_negative]
 
   - experiment_id: cog_bci_preprocessing_ablation
+    scientific_status: diagnostic
     title: COG-BCI N-Back preprocessing ablation
     category: preprocessing
     status: diagnostic
@@ -1342,6 +1372,7 @@ experiments:
     tags: [cog_bci, preprocessing, closed_negative]
 
   - experiment_id: cog_bci_spectral_14_vs_62
+    scientific_status: closed_negative
     title: COG-BCI spectral benchmark 14 против 62 каналов
     category: model
     status: diagnostic
@@ -1375,6 +1406,7 @@ experiments:
     tags: [cog_bci, spectral, channels, closed_negative]
 
   - experiment_id: cog_bci_shape_only_contrastive_transfer
+    scientific_status: closed_negative
     title: Shape-only contrastive transfer COG-BCI → label_q5
     category: model
     status: diagnostic
@@ -1412,6 +1444,7 @@ experiments:
     tags: [cog_bci, contrastive, transfer, closed_negative]
 
   - experiment_id: cog_bci_time_aligned_contrastive_transfer
+    scientific_status: closed_negative
     title: Time-aligned contrastive transfer COG-BCI → label_q5
     category: model
     status: diagnostic
@@ -1451,6 +1484,7 @@ experiments:
 
   - task_id: 8T
     experiment_id: meta_learning_episode_infrastructure_v1
+    scientific_status: infrastructure_only
     title: Leakage-safe episodic meta-learning infrastructure
     category: infrastructure
     status: diagnostic
@@ -1484,6 +1518,7 @@ experiments:
 
   - task_id: 8U
     experiment_id: fomaml_synthetic_contract_v1
+    scientific_status: infrastructure_only
     title: Synthetic First-Order MAML contract
     category: infrastructure
     status: diagnostic
@@ -1517,6 +1552,7 @@ experiments:
 
   - task_id: 8F
     experiment_id: fomaml_production_buffer_contract_v1
+    scientific_status: infrastructure_only
     title: Production FOMAML BatchNorm and validation contract
     category: infrastructure
     status: diagnostic
@@ -1550,6 +1586,7 @@ experiments:
 
   - task_id: 8X
     experiment_id: fomaml_label_q5_feature_protocol_blocked_v1
+    scientific_status: legacy
     title: First feature-level FOMAML protocol audit
     category: infrastructure
     status: invalidated
@@ -1585,6 +1622,7 @@ experiments:
 
   - task_id: 8Ц
     experiment_id: fomaml_label_q5_raw_protocol_v2
+    scientific_status: legacy
     title: Raw-deduplicated FOMAML protocol
     category: infrastructure
     status: diagnostic
@@ -1618,6 +1656,7 @@ experiments:
 
   - task_id: 8Ч
     experiment_id: fomaml_label_q5_raw_deduplicated_diagnostic_v1
+    scientific_status: legacy
     title: Raw-deduplicated FOMAML diagnostic
     category: model
     status: diagnostic
@@ -1651,6 +1690,7 @@ experiments:
 
   - task_id: 8Ш
     experiment_id: dann_label_q5_raw_protocol_v1
+    scientific_status: legacy
     title: Leakage-safe raw DANN protocol
     category: infrastructure
     status: diagnostic
@@ -1684,6 +1724,7 @@ experiments:
 
   - task_id: 8Щ
     experiment_id: dann_label_q5_old_eeg_to_gpn_diagnostic_v1
+    scientific_status: legacy
     title: One-block diagnostic DANN Old_EEG to gpn_data
     category: model
     status: diagnostic
@@ -1717,6 +1758,7 @@ experiments:
 
   - task_id: 8Э
     experiment_id: dann_label_q5_confirmatory_v1_protocol
+    scientific_status: legacy
     title: Five-fold DANN confirmation protocol v1
     category: infrastructure
     status: diagnostic
@@ -1750,6 +1792,7 @@ experiments:
 
   - task_id: 8Ю
     experiment_id: dann_label_q5_confirmatory_v2_protocol
+    scientific_status: legacy
     title: DANN confirmatory v2 analysis protocol
     category: infrastructure
     status: diagnostic
@@ -1783,6 +1826,7 @@ experiments:
 
   - task_id: 8Я
     experiment_id: dann_label_q5_old_eeg_to_gpn_confirmatory_v2_execution
+    scientific_status: legacy
     title: Confirmatory multi-block DANN execution
     category: model
     status: final
@@ -1816,6 +1860,7 @@ experiments:
     tags: [dann, confirmatory, multiseed, multifold]
 
   - experiment_id: pm_eeg_lag_confirmatory_371_xgboost_v1
+    scientific_status: legacy
     title: Confirmatory fixed previous-window EEG alignment for PM classification
     category: model
     status: final
@@ -1853,6 +1898,7 @@ experiments:
     tags: [classification, pm, temporal_alignment, confirmatory, participant_macro]
 
   - experiment_id: pm_eeg_lag_regression_confirmatory_371_xgboost_v1
+    scientific_status: current_supporting
     title: Confirmatory fixed previous-window EEG alignment for continuous PM regression
     category: regression
     status: final
@@ -1898,6 +1944,7 @@ experiments:
     tags: [regression, pm, temporal_alignment, confirmatory, participant_macro]
 
   - experiment_id: pm_all_targets_feature_baseline_v1
+    scientific_status: current_supporting
     title: Canonical seven-PM engineered-feature baseline
     category: regression
     status: baseline
@@ -1968,6 +2015,568 @@ experiments:
       - Source-specific slices are descriptive and not independent confirmatory tests.
     tags: [regression, baseline, engineered_features, participant_macro, multiseed]
 
+  - experiment_id: pm_low_high_extremes_confirmatory
+    title: Seven-PM LOW/HIGH confirmatory
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: xgboost
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: participant_macro_balanced_accuracy
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_low_high_q3_extremes_confirmatory_v1/pooled_summary.csv
+        column: participant_macro_balanced_accuracy_mean
+        filters: {}
+        aggregation: first
+    result_summary: Completed 35 fits. q3 in the namespace means tertile cutoffs, not three-class labels.
+    report_path: reports/diagnostics/pm_low_high_q3_extremes_confirmatory_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_low_high_q3_extremes_confirmatory_v1.json
+    commit: bcfc44a
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_low_high_robustness_lightgbm
+    title: 'LOW/HIGH model robustness: lightgbm'
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: participant_macro_balanced_accuracy
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_low_high_model_robustness_v1/summary_by_model.csv
+        column: participant_macro_balanced_accuracy_mean
+        filters:
+          model: lightgbm
+        aggregation: first
+    result_summary: Mean over 35 PM-fold participant-macro rows; pre-history baseline.
+    report_path: reports/diagnostics/pm_low_high_model_robustness_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_low_high_model_robustness_v1.json
+    commit: 83428d9
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_low_high_robustness_xgboost
+    title: 'LOW/HIGH model robustness: xgboost'
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: xgboost
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: participant_macro_balanced_accuracy
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_low_high_model_robustness_v1/summary_by_model.csv
+        column: participant_macro_balanced_accuracy_mean
+        filters:
+          model: xgboost
+        aggregation: first
+    result_summary: Mean over 35 PM-fold participant-macro rows; pre-history baseline.
+    report_path: reports/diagnostics/pm_low_high_model_robustness_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_low_high_model_robustness_v1.json
+    commit: 83428d9
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_low_high_nested_automl
+    title: Completed nested LOW/HIGH AutoML
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: nested_lightgbm_xgboost
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: participant_first_balanced_accuracy
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_low_high_nested_automl_v1/final_pooled_summary.csv
+        column: balanced_accuracy
+        filters:
+          source: automl
+        aggregation: first
+    result_summary: 2730 inner trainings and 35 outer fits complete. Participant-first BA shown; same-support frozen
+      references retained in source table.
+    report_path: reports/diagnostics/pm_low_high_nested_automl_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_low_high_nested_automl_v1.json
+    commit: 222dbaf
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_low_high_personalization_lightgbm
+    personalization:
+      method: weighted_augmentation
+      calibration_budget: 1800 seconds
+      gain_metric: operational_delta_roc_auc
+      gain_value:
+        name: operational_delta_roc_auc
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv
+          column: delta_roc_auc_mean
+          filters:
+            model: lightgbm
+            estimand: operational_all_eval_ready_with_fallback
+          aggregation: first
+    title: 'LOW/HIGH 30-minute adaptation: lightgbm'
+    category: personalization
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: operational_delta_roc_auc
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv
+        column: delta_roc_auc_mean
+        filters:
+          model: lightgbm
+          estimand: operational_all_eval_ready_with_fallback
+        aggregation: first
+    result_summary: 50 participants / 345 pairs with fallback; adaptation on 285 pairs / 48 participants. Original
+      target thresholds fixed.
+    report_path: reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_low_high_personalized_weighted_augmentation_v1.json
+    commit: 524ab25
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_low_high_personalization_xgboost
+    personalization:
+      method: weighted_augmentation
+      calibration_budget: 1800 seconds
+      gain_metric: operational_delta_roc_auc
+      gain_value:
+        name: operational_delta_roc_auc
+        direction: higher_is_better
+        value_source:
+          type: csv_filter
+          path: reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv
+          column: delta_roc_auc_mean
+          filters:
+            model: xgboost
+            estimand: operational_all_eval_ready_with_fallback
+          aggregation: first
+    title: 'LOW/HIGH 30-minute adaptation: xgboost'
+    category: personalization
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: xgboost
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: operational_delta_roc_auc
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv
+        column: delta_roc_auc_mean
+        filters:
+          model: xgboost
+          estimand: operational_all_eval_ready_with_fallback
+        aggregation: first
+    result_summary: 50 participants / 345 pairs with fallback; adaptation on 285 pairs / 48 participants. Original
+      target thresholds fixed.
+    report_path: reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_low_high_personalized_weighted_augmentation_v1.json
+    commit: 524ab25
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_temporal_matched_h10
+    title: Matched LOW/HIGH H10
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: descriptive_equal_pm_participant_macro_ba
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_temporal_predictability_v1/full_matched/overall.csv
+        column: balanced_accuracy
+        filters:
+          horizon_s: 10
+        aggregation: mean
+    result_summary: 175/175 full matrix complete; strict H120 common support. H120 passes BH for 5/7 PM in 28-contrast
+      family; this mean is descriptive.
+    report_path: reports/diagnostics/pm_temporal_predictability_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+    commit: 8584d96
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_temporal_matched_h20
+    title: Matched LOW/HIGH H20
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: descriptive_equal_pm_participant_macro_ba
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_temporal_predictability_v1/full_matched/overall.csv
+        column: balanced_accuracy
+        filters:
+          horizon_s: 20
+        aggregation: mean
+    result_summary: 175/175 full matrix complete; strict H120 common support. H120 passes BH for 5/7 PM in 28-contrast
+      family; this mean is descriptive.
+    report_path: reports/diagnostics/pm_temporal_predictability_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+    commit: 8584d96
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_temporal_matched_h30
+    title: Matched LOW/HIGH H30
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: descriptive_equal_pm_participant_macro_ba
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_temporal_predictability_v1/full_matched/overall.csv
+        column: balanced_accuracy
+        filters:
+          horizon_s: 30
+        aggregation: mean
+    result_summary: 175/175 full matrix complete; strict H120 common support. H120 passes BH for 5/7 PM in 28-contrast
+      family; this mean is descriptive.
+    report_path: reports/diagnostics/pm_temporal_predictability_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+    commit: 8584d96
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_temporal_matched_h60
+    title: Matched LOW/HIGH H60
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: descriptive_equal_pm_participant_macro_ba
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_temporal_predictability_v1/full_matched/overall.csv
+        column: balanced_accuracy
+        filters:
+          horizon_s: 60
+        aggregation: mean
+    result_summary: 175/175 full matrix complete; strict H120 common support. H120 passes BH for 5/7 PM in 28-contrast
+      family; this mean is descriptive.
+    report_path: reports/diagnostics/pm_temporal_predictability_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+    commit: 8584d96
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_temporal_matched_h120
+    title: Matched LOW/HIGH H120
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: descriptive_equal_pm_participant_macro_ba
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_temporal_predictability_v1/full_matched/overall.csv
+        column: balanced_accuracy
+        filters:
+          horizon_s: 120
+        aggregation: mean
+    result_summary: 175/175 full matrix complete; strict H120 common support. H120 passes BH for 5/7 PM in 28-contrast
+      family; this mean is descriptive.
+    report_path: reports/diagnostics/pm_temporal_predictability_v1/README.md
+    config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+    commit: 8584d96
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_h120_order_control_excitement
+    n_subjects: 53
+    title: 'Conditional H120 order control: excitement'
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: ordered_minus_shuffled_participant_macro_ba
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/ordered_vs_shuffled_ba.csv
+        column: delta_ba
+        filters:
+          pm: excitement
+        aggregation: first
+    result_summary: 25/25 subset complete, ordered reused; 4/5 gated PM pass BH across five contrasts. Stress inconclusive;
+      canonical block fixed.
+    report_path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/README.md
+    config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+    commit: fbd100f
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_h120_order_control_focus
+    n_subjects: 53
+    title: 'Conditional H120 order control: focus'
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: ordered_minus_shuffled_participant_macro_ba
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/ordered_vs_shuffled_ba.csv
+        column: delta_ba
+        filters:
+          pm: focus
+        aggregation: first
+    result_summary: 25/25 subset complete, ordered reused; 4/5 gated PM pass BH across five contrasts. Stress inconclusive;
+      canonical block fixed.
+    report_path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/README.md
+    config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+    commit: fbd100f
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_h120_order_control_interest
+    n_subjects: 53
+    title: 'Conditional H120 order control: interest'
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: ordered_minus_shuffled_participant_macro_ba
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/ordered_vs_shuffled_ba.csv
+        column: delta_ba
+        filters:
+          pm: interest
+        aggregation: first
+    result_summary: 25/25 subset complete, ordered reused; 4/5 gated PM pass BH across five contrasts. Stress inconclusive;
+      canonical block fixed.
+    report_path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/README.md
+    config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+    commit: fbd100f
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_h120_order_control_relaxation
+    n_subjects: 53
+    title: 'Conditional H120 order control: relaxation'
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: ordered_minus_shuffled_participant_macro_ba
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/ordered_vs_shuffled_ba.csv
+        column: delta_ba
+        filters:
+          pm: relaxation
+        aggregation: first
+    result_summary: 25/25 subset complete, ordered reused; 4/5 gated PM pass BH across five contrasts. Stress inconclusive;
+      canonical block fixed.
+    report_path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/README.md
+    config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+    commit: fbd100f
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+  - experiment_id: pm_h120_order_control_stress
+    n_subjects: 53
+    title: 'Conditional H120 order control: stress'
+    category: model
+    status: final
+    scientific_status: current_primary
+    task: seven_pm_low_high
+    target: seven PM; LOW <= Q33 / HIGH >= Q67
+    model: lightgbm
+    feature_set: canonical_371
+    preprocessing: frozen canonical feature cache
+    evaluation_protocol: fixed 5 subject-disjoint outer folds; participant-macro; canonical -10 s
+    seeds:
+    - 42
+    primary_metric:
+      name: ordered_minus_shuffled_participant_macro_ba
+      direction: higher_is_better
+      value_source:
+        type: csv_filter
+        path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/ordered_vs_shuffled_ba.csv
+        column: delta_ba
+        filters:
+          pm: stress
+        aggregation: first
+    result_summary: 25/25 subset complete, ordered reused; 4/5 gated PM pass BH across five contrasts. Stress inconclusive;
+      canonical block fixed.
+    report_path: reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/README.md
+    config_path: experiments/pm_diagnostics/pm_temporal_predictability_v1.json
+    commit: fbd100f
+    limitations:
+    - PM proxies; same internal cohort; compare only matched support.
+    tags:
+    - current_primary
+    - low_high
+
 unresolved_entries:
   - experiment_id: label_q5_lightgbm_baseline
     missing_field: structured final result and primary metric
@@ -1976,7 +2585,7 @@ unresolved_entries:
       - benchmark_results
       - configs
       - experiments
-    recommended_action: Выполнить или импортировать канонический 5-fold GroupKFold run и tracked report.
+    recommended_action: Historical missing evidence; retain unresolved, do not run a legacy benchmark to fill this gap.
 
   - experiment_id: label_q5_histgradientboosting_baseline
     missing_field: structured final result and primary metric
@@ -1985,7 +2594,7 @@ unresolved_entries:
       - benchmark_results
       - configs
       - experiments
-    recommended_action: Добавить канонический config и 5-fold GroupKFold baseline.
+    recommended_action: Historical missing evidence; no new legacy fit requested.
 
   - experiment_id: label_q5_logistic_regression_baseline
     missing_field: EEG+POW GroupKFold result
@@ -1994,7 +2603,7 @@ unresolved_entries:
       - benchmark_results
       - configs
       - experiments
-    recommended_action: Не использовать temporal diagnostic D1–D3; выполнить отдельный EEG+POW baseline.
+    recommended_action: Keep historical non-comparable diagnostic; no new legacy fit requested.
 
   - experiment_id: pm_regression_torch_mlp_5fold
     missing_field: comparable five-fold final result
@@ -2003,3 +2612,34 @@ unresolved_entries:
       - benchmark_results/pm_regression_smoke
       - experiments/pm_regression
     recommended_action: Зарегистрировать после отдельного полного five-fold run; текущий Torch MLP является fold-1 smoke.
+
+current_summary_markdown: '## Current primary scientific summary — 2026-11-06
+
+
+  Seven-PM LOW/HIGH: LOW <= Q33 and HIGH >= Q67, thresholds fitted once on canonical outer-train continuous complete cases
+  before history filtering. Five subject-disjoint folds; participant-macro BA primary; canonical EEG(t-10 s) -> PM(t). Current
+  cache: 371 features including entropy/connectivity; historical 448 EEG+POW is separate.
+
+
+  LightGBM BA 0.752780 / XGBoost 0.750079 in model robustness. Full nested LOW/HIGH AutoML is complete (2730 inner trainings,
+  35 final runs), not merely the historical Transformer pilot. Matched H10–H120 is complete 175/175: mean BA 0.7505 -> 0.7819;
+  H120 gain in 5/7 PM after BH across 28 contrasts. Order control complete 25/25: ordered advantage in 4/5 gated PM after
+  BH across five contrasts; stress inconclusive. These are two-stage conditional results, not unconditional tests of all seven
+  PM.
+
+
+  LOW/HIGH 30-minute weighted augmentation: XGBoost delta ROC-AUC/PR-AUC +0.016216/+0.014790; LightGBM +0.014680/+0.015281.
+  Operational 50 participants/345 pairs with fallback, adaptation 285 pairs/48 participants. Continuous PM regression remains
+  supporting evidence (RF macro MAE 0.100278 vs mean 0.110989). Historical label_q5 accuracy criteria do not define current
+  LOW/HIGH acceptance.
+
+
+  Next: one bounded prespecified H120 sequence-model comparison against ordered-H120 LightGBM, planned and not executed. No
+  broad architecture search. PM are proxies; no physiological causality or attractor claim.
+
+
+  Sources: [current context](../../PROJECT_CONTEXT.md), [model robustness](../diagnostics/pm_low_high_model_robustness_v1/summary_by_model.csv),
+  [temporal evidence](../diagnostics/pm_temporal_predictability_v1/README.md), [adaptation](../diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv),
+  [experiment registry](experiment_registry.yaml).
+
+  '

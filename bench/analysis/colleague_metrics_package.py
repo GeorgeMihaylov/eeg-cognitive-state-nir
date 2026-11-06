@@ -1084,7 +1084,7 @@ def _report(
 def _glossary() -> str:
     rows = [
         ("Accuracy", "Доля верных классов", "выше", "окна/folds", "Искажается дисбалансом классов."),
-        ("Balanced accuracy", "Средняя полнота по классам", "выше", "окна/folds", "Приоритетна для label_q5."),
+        ("Balanced accuracy", "Средняя полнота по классам", "выше", "окна/folds", "Current LOW/HIGH primary: equal participant weights; legacy label_q5 remains separate."),
         ("Macro F1", "Среднее F1 с равным весом классов", "выше", "окна/folds", "Приоритетна; чувствительна к редким классам."),
         ("Weighted F1", "F1 с весом по поддержке классов", "выше", "окна/folds", "Может скрывать слабые редкие классы."),
         ("AUC", "Площадь под ROC, multiclass aggregate", "выше", "окна/folds", "Зависит от схемы multiclass aggregation."),
@@ -1104,7 +1104,7 @@ def _glossary() -> str:
         [
             "# Глоссарий метрик",
             "",
-            "Для `label_q5` приоритетны balanced accuracy и macro F1. Отсутствующие метрики оставляются пустыми, а не заменяются нулём.",
+            "Current seven-PM LOW/HIGH: primary participant-macro balanced accuracy; secondary Macro-F1, ROC-AUC, PR-AUC. Historical `label_q5` tables retain their original metrics. Отсутствующие метрики оставляются пустыми, а не заменяются нулём.",
             "",
             _markdown_table(
                 ["Метрика", "Смысл", "Лучше", "Агрегация", "Ограничение"], rows
@@ -1159,13 +1159,27 @@ def generate_package(
     _write_csv(outputs["personalization"], PERSONALIZATION_FIELDS, tables["personalization"])
     _write_csv(outputs["preprocessing"], PREPROCESSING_FIELDS, tables["preprocessing"])
     outputs["summary"].write_text(
-        _report(tables, extras, provenance), encoding="utf-8", newline="\n"
+        render_current_and_historical_report(experiment_registry, tables, extras, provenance),
+        encoding="utf-8", newline="\n"
     )
     outputs["glossary"].write_text(_glossary(), encoding="utf-8", newline="\n")
     outputs["provenance"].write_text(
         _normalise_provenance(provenance), encoding="utf-8", newline="\n"
     )
     return {"tables": tables, "extras": extras, "written": list(outputs.values())}
+
+
+def render_current_and_historical_report(registry, tables, extras, provenance) -> str:
+    """Keep historical numeric tables intact, with current curated evidence first."""
+    legacy = _report(tables, extras, provenance)
+    current = registry.get("current_summary_markdown")
+    if not current:
+        return legacy
+    return ("# Current and historical experiment evidence\n\n" + current.rstrip()
+            + "\n\n---\n\n> **Historical package below.** Classification tables describe legacy label_q5; "
+            "regression is supporting evidence. Old integration statements and acceptance criteria "
+            "are snapshots, not current project requirements. Original numerical values are preserved.\n\n"
+            + legacy)
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

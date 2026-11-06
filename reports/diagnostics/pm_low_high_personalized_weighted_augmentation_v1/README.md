@@ -1,6 +1,8 @@
 # PM LOW/HIGH personalized weighted augmentation v1
 
-Preregistered model-level personalization protocol. Dry-run only at this stage.
+Completed LOW/HIGH personalization. [Final estimands](summary_by_estimand.csv): 30-minute calibration, operational 50 participants / 345 pairs with fallback; adaptation applied to 285 pairs / 48 participants. XGBoost delta ROC-AUC/PR-AUC +0.016216/+0.014790; LightGBM +0.014680/+0.015281. Historical dry-run flags below describe preflight only.
+
+Preregistered model-level personalization protocol, now completed.
 
 - all seven PM through one identical path
 - exact `EEG(t-10s) -> PM(t)` temporal pairing

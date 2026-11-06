@@ -1,11 +1,11 @@
 # Глоссарий метрик
 
-Для `label_q5` приоритетны balanced accuracy и macro F1. Отсутствующие метрики оставляются пустыми, а не заменяются нулём.
+Current seven-PM LOW/HIGH: primary participant-macro balanced accuracy; secondary Macro-F1, ROC-AUC, PR-AUC. Historical `label_q5` tables retain their original metrics. Отсутствующие метрики оставляются пустыми, а не заменяются нулём.
 
 | Метрика | Смысл | Лучше | Агрегация | Ограничение |
 |---|---|---|---|---|
 | Accuracy | Доля верных классов | выше | окна/folds | Искажается дисбалансом классов. |
-| Balanced accuracy | Средняя полнота по классам | выше | окна/folds | Приоритетна для label_q5. |
+| Balanced accuracy | Средняя полнота по классам | выше | окна/folds | Current LOW/HIGH primary: equal participant weights; legacy label_q5 remains separate. |
 | Macro F1 | Среднее F1 с равным весом классов | выше | окна/folds | Приоритетна; чувствительна к редким классам. |
 | Weighted F1 | F1 с весом по поддержке классов | выше | окна/folds | Может скрывать слабые редкие классы. |
 | AUC | Площадь под ROC, multiclass aggregate | выше | окна/folds | Зависит от схемы multiclass aggregation. |

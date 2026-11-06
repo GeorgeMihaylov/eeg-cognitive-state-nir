@@ -1,91 +1,97 @@
-# Article-ready results summary
+# Current article results summary — 2026-11-06
 
-## 1. Dataset and evaluation protocol
+Current synthesis of existing artifacts; no models, caches or scientific metrics were recomputed for this documentation revision. [Historical label_q5 article package](article_results_summary_legacy_label_q5.md) preserves the previous tables.
 
-The supervised target is five-level `label_q5`. Scientific model results use five-fold GroupKFold by `subject_id`; inner validation is confined to outer-train data. Subject is the independent inferential unit.
 
-## 2. Random-window sanity versus subject GroupKFold
 
-Earlier random-window runs remain technical sanity checks and are not included in inferential claims. GroupKFold is the defensible primary protocol because it prevents train/test subject overlap.
+## 1–2. Dataset and cohort
 
-## 3. Feature-window baselines
+Internal sources: gpn_data + Old_EEG; these are provenance sources, not independent domains because logical recordings can overlap. Canonical deduplicated cohort: 30,958 ten-second windows, 54 participants, 86 logical recordings. Raw EEG per example [1,14,2560], 256 Hz. Attention has 29,569 continuous complete cases before temporal/label filtering; other PM have 30,958. Each experiment's support is authoritative.
 
-Random Forest and Torch MLP are exactly aligned on 45,384 ten-second EEG+POW feature windows. Their paired subject results are reported with bootstrap intervals, Wilcoxon, exact sign tests, and within-family Holm adjustment.
+Current canonical feature cache: **371 = 182 spectral + 140 statistical + 28 entropy + 21 connectivity**. Historical EEG 168 + POW 280 = 448 features is a separate pipeline, not the origin or current definition of the 371 features.
 
-## 4. Sequence-model comparison
+## 3–4. Seven PM, LOW/HIGH and subject-disjoint validation
 
-The available LSTM/BiLSTM pair uses 43,828 gap-aware sequences of length 10. Transformer uses 44,142 sequences of length 8. Therefore the recurrent pair can be tested against each other, but no exact paired Transformer comparison is currently defensible. Aggregate results can only be described.
+## Frozen current target and validation contract
 
-## 5. Raw EEG model comparison
+Seven targets: target_attention, target_engagement, target_excitement, target_stress, target_relaxation, target_interest, target_focus.
 
-EEGNet and ShallowConvNet are exactly aligned on 30,958 raw deduplicated EEG windows for seeds 7, 42, and 123. Filtered runs are excluded from this model-family comparison.
+For each PM and fixed outer fold, fit Q33/Q67 on **canonical outer-train continuous complete cases**, once before history filtering. **LOW <= Q33; HIGH >= Q67**. Exclude the middle third from binary training/evaluation labels. Middle samples still consume elapsed time and can contribute to history-support accounting. Apply thresholds unchanged to outer-test and all matched horizons. No test-derived target thresholds, preprocessing, feature selection, calibration or hyperparameter selection.
 
-## 6. Logical-record deduplication
+Five fixed subject-disjoint outer folds by subject_id. Participant-first aggregation; primary classification endpoint **participant-macro balanced accuracy**. Secondary Macro-F1, ROC-AUC, PR-AUC; undefined AUCs are omitted only for that metric with valid participant counts recorded. Paired bootstrap resamples participants, not EEG windows. Random-window splits are diagnostics, not evidence of cross-subject generalization.
 
-Raw-model analyses use the logical-record-deduplicated dataset and its existing fold assignments; no cache or dataset was rebuilt.
+Canonical dataset-level temporal alignment: **EEG(t-10 s) -> PM(t)**. PM [T,T+10] uses EEG [T-10,T]. Longer history extends backwards, exact record-relative ten-second lookup, oldest first and canonical block last. No gaps/substitution, future blocks, subject/record/fold crossing. This does not establish a physiological delay, brain mechanism or proprietary PM algorithm.
 
-## 7. Preprocessing ablation
+## Baselines and nested AutoML
 
-| factor   |   on_mean |   off_mean |   main_effect_on_minus_off |
-|:---------|----------:|-----------:|---------------------------:|
-| bandpass |  0.269653 |   0.272745 |               -0.00309246  |
-| notch    |  0.271623 |   0.270774 |                0.000848908 |
-| car      |  0.256928 |   0.28547  |               -0.0285418   |
+[Model robustness](../reports/diagnostics/pm_low_high_model_robustness_v1/summary_by_model.csv), mean of 35 participant-macro PM × fold rows:
 
-A/B/E multiseed deltas versus raw A:
+| Model | BA | Macro-F1 | ROC-AUC | PR-AUC |
+|---|---:|---:|---:|---:|
+| LightGBM | 0.752780 | 0.716281 | 0.878977 | 0.868075 |
+| XGBoost | 0.750079 | 0.715152 | 0.873250 | 0.862414 |
 
-| trial   |   seed |   delta_balanced_accuracy_vs_A |   delta_macro_f1_vs_A |   delta_auc_vs_A |
-|:--------|-------:|-------------------------------:|----------------------:|-----------------:|
-| B       |      7 |                    0.00354512  |           -0.0029283  |     -0.00177725  |
-| B       |     42 |                    0.00494522  |            0.00533351 |      0.0114326   |
-| B       |    123 |                   -0.00359353  |           -0.0070361  |     -0.000199419 |
-| E       |      7 |                    0.000793635 |           -0.00574786 |     -0.00357641  |
-| E       |     42 |                    0.00649453  |            0.00591693 |      0.0120512   |
-| E       |    123 |                   -0.00354354  |           -0.0073782  |     -0.000172312 |
+[Nested LOW/HIGH AutoML](../reports/diagnostics/pm_low_high_nested_automl_v1/README.md) is complete: 2,730 inner trainings and 35 final outer fits. Historical label_q5 Transformer AutoML was only a pilot; it is not the current AutoML status.
 
-The full A–H factorial is evaluated at seed 42, while A/B/E have seeds 7, 42, and 123. Band-pass and notch deltas change sign across seeds; they do not show a stable advantage over raw input. CAR is consistently negative within the seed-42 matched factorial contrasts.
+Earlier LOW/HIGH matched LSTM/Transformer comparisons did not establish a stable advantage over tabular baselines. Their support/context differ from the newly justified H120 comparison; the latter has not run.
 
-## 8. Transformer AutoML pilot
+## Completed temporal diagnostics
 
-| comparison                                   | family       | track        | left_model        | right_model          |   seed | metric            | budget_seconds   | inferential   | status   |   n_subjects |   nonzero_differences |   mean_difference |   median_difference |     ci_low |     ci_high |   probability_difference_gt_zero |   subjects_improved |   subjects_degraded |   ties |   fraction_improved |   fraction_degraded |   number_needed_to_improve | wilcoxon_status          |   wilcoxon_statistic | wilcoxon_p_value   | sign_test_status         | sign_test_p_value   |   rank_biserial | holm_adjusted_p_value   |
-|:---------------------------------------------|:-------------|:-------------|:------------------|:---------------------|-------:|:------------------|:-----------------|:--------------|:---------|-------------:|----------------------:|------------------:|--------------------:|-----------:|------------:|---------------------------------:|--------------------:|--------------------:|-------:|--------------------:|--------------------:|---------------------------:|:-------------------------|---------------------:|:-------------------|:-------------------------|:--------------------|----------------:|:------------------------|
-| tuned_minus_baseline_transformer_outer_fold1 | automl_pilot | automl_pilot | tuned_transformer | baseline_transformer |     42 | balanced_accuracy |                  | False         | ok       |           11 |                    11 |        -0.0335926 |          -0.038215  | -0.0513401 | -0.0146393  |                           0.0007 |                   1 |                  10 |      0 |           0.0909091 |            0.909091 |                   11       | not_run_pilot_case_study |                    5 |                    | not_run_pilot_case_study |                     |       -0.848485 |                         |
-| tuned_minus_baseline_transformer_outer_fold1 | automl_pilot | automl_pilot | tuned_transformer | baseline_transformer |     42 | macro_f1          |                  | False         | ok       |           11 |                    11 |        -0.0181423 |          -0.0289572 | -0.0431285 |  0.00931242 |                           0.0895 |                   3 |                   8 |      0 |           0.272727  |            0.727273 |                    3.66667 | not_run_pilot_case_study |                   16 |                    | not_run_pilot_case_study |                     |       -0.515152 |                         |
-| tuned_minus_baseline_transformer_outer_fold1 | automl_pilot | automl_pilot | tuned_transformer | baseline_transformer |     42 | auc               |                  | False         | ok       |           11 |                    11 |        -0.0201142 |          -0.0167591 | -0.0413879 |  0.00158602 |                           0.0349 |                   2 |                   9 |      0 |           0.181818  |            0.818182 |                    5.5     | not_run_pilot_case_study |                   15 |                    | not_run_pilot_case_study |                     |       -0.545455 |                         |
+[Diagnostic report](../reports/diagnostics/pm_temporal_predictability_audit_v1/README.md): H120 retains 29,437 windows, 95.56% of H10 support, 53 participants, 84 records before LOW/HIGH filtering.
 
-This is an outer-fold-1 case study only. It does not support a general claim about AutoML, and no p-value is reported for it.
+| Delay (s) | 10 | 20 | 30 | 60 | 120 |
+|---|---:|---:|---:|---:|---:|
+| Median all-feature record ACF | .2655 | .1597 | .1313 | .0991 | .0402 |
+| Median excess normalized MI | .0493 | .0255 | .0204 | .0132 | .0075 |
 
-## 9. User calibration
+MI measures a more general dependence class than correlation; it does not prove nonlinearity. PE is near maximal, with a small systematic order effect. SSA observed/surrogate effective ranks 41.9408/53.3163, rank90 43.5/47.0 and leading energy .1172/.0462 indicate structured but multicomponent trajectories. Restricted FNN has only 14–16 eligible records: no reliable embedding dimension, physical attractor or Takens claim. These are diagnostics, separate from PM predictive evidence.
 
-| calibration_method    |   budget_seconds |   subjects |   delta_balanced_accuracy_mean |   delta_macro_f1_mean |   fraction_improved |   fraction_degraded |
-|:----------------------|-----------------:|-----------:|-------------------------------:|----------------------:|--------------------:|--------------------:|
-| full_model            |              180 |         53 |                     0.00155651 |            0.00430998 |            0.45283  |            0.528302 |
-| full_model            |              300 |         53 |                     0.00422703 |            0.00859423 |            0.584906 |            0.415094 |
-| full_model            |              600 |         53 |                     0.00425732 |            0.00900231 |            0.641509 |            0.358491 |
-| head_only             |              180 |         53 |                     0.00507361 |            0.00632683 |            0.641509 |            0.358491 |
-| head_only             |              300 |         53 |                     0.00782603 |            0.0108902  |            0.603774 |            0.396226 |
-| head_only             |              600 |         53 |                     0.00741206 |            0.0109374  |            0.641509 |            0.358491 |
-| subject_normalization |              180 |         53 |                    -0.072877   |           -0.100797   |            0.150943 |            0.849057 |
-| subject_normalization |              300 |         53 |                    -0.0687598  |           -0.0936721  |            0.207547 |            0.792453 |
-| subject_normalization |              600 |         53 |                    -0.0750587  |           -0.0959628  |            0.207547 |            0.792453 |
+## Completed matched prediction and order control
 
-Every calibrated method is compared with zero-shot predictions from the same subject, budget, and evaluation tail. Calibration inputs are excluded from evaluation metrics.
+[Full matched evidence](../reports/diagnostics/pm_temporal_predictability_v1/README.md): strict_common_support_h120; LightGBM 200 estimators, n_jobs=4, random_state=42. All 175 fits executed, no restores/failures. Identical target samples, labels, subjects, folds, thresholds and counts across horizons within PM/fold.
 
-## 10. Limitations
+| Horizon | BA | Macro-F1 | ROC-AUC | PR-AUC |
+|---|---:|---:|---:|---:|
+| H10 | .7505 | .7175 | .8823 | .8687 |
+| H20 | .7608 | .7277 | .8996 | .8859 |
+| H30 | .7663 | .7331 | .9052 | .8905 |
+| H60 | .7708 | .7382 | .9073 | .8927 |
+| H120 | .7819 | .7501 | .9113 | .8973 |
 
-The cohort contains 54 subjects, subject AUC is undefined when required classes are absent, recurrent and Transformer sequence definitions differ, the AutoML result covers one outer fold, and calibration effects are heterogeneous. No external-dataset generalization is evaluated here.
+Equal-PM means are descriptive, not replacements for target-specific paired inference. H120-vs-H10 BA gains pass BH for excitement (+.0197), focus (+.1071), interest (+.0345), relaxation (+.0195), stress (+.0341): **5/7**. Attention/engagement have no confirmed H120 gain. Participant bootstrap: 10,000, seed 42; BH over exactly 28 primary contrasts.
 
-## 11. Main defensible claims
+[Order control](../reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/README.md): **25/25**, no failures/restores, ordered H120 reused. Same five gated PM, H120, five folds. Existing deterministic per-sample shuffle permutes only the 11 older blocks (-120 through -20 s); canonical -10 stays fixed. Hashes/provenance verify data identity and block preservation.
 
-- GroupKFold performance is above the five-class chance reference for the main completed models, but varies materially across subjects.
-- Raw-model differences are assessed only on exact deduplicated windows.
-- CAR has a negative seed-42 factorial main effect for ShallowConvNet; band-pass/notch stability must be judged across the available seeds.
-- Head-only calibration has a small, heterogeneous matched effect, while short-interval subject normalization is harmful on average.
-- The outer-fold-1 AutoML pilot did not improve the baseline Transformer.
+| PM | Ordered BA | Shuffled BA | Delta | BH q |
+|---|---:|---:|---:|---:|
+| excitement | .86061 | .85321 | +.00740 | .00850 |
+| focus | .81268 | .73349 | +.07919 | .00025 |
+| interest | .76239 | .75380 | +.00859 | .00850 |
+| relaxation | .80252 | .78817 | +.01435 | .00025 |
+| stress | .77320 | .76352 | +.00969 | .07079 |
 
-## 12. Claims that cannot yet be made
+Ordered-minus-shuffled BA: 10,000 participant-paired bootstrap resamples, seed 42, percentile 95% CI, centered-null two-sided p, BH across **five** conditional contrasts. Four pass; stress CI crosses zero and is **inconclusive**, not equivalence. Focus: 52/53 participants and 5/5 folds favor ordered. The two-stage selection uses the same cohort, one shuffle realization and overlapping training folds; these are not unconditional independent tests across all seven PM. Secondary metrics are descriptive.
 
-- Transformer cannot be declared superior to LSTM/BiLSTM from a paired test because sequence identities differ.
-- The AutoML pilot cannot be generalized beyond outer fold 1.
-- A preprocessing choice cannot be called universally optimal from this single architecture and limited seed set.
-- No clinical, causal, or external-population claim is supported.
+## Personalization and supporting tracks
+
+[LOW/HIGH weighted augmentation](../reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv): 30-minute chronological calibration. Operational support 50 participants/345 participant-PM pairs with fallback; adaptation applied to 285 pairs/48 participants. XGBoost delta ROC-AUC +.0162159, PR-AUC +.0147896; LightGBM +.0146802/+.0152810. Original outer-train target thresholds stay fixed. Gains are modest; do not launch another broad sweep.
+
+Continuous seven-PM regression remains supporting evidence: [RF versus mean baseline](../reports/integration/pm_multioutput_regression.md), [alignment regression](../reports/diagnostics/pm_eeg_lag_final_conclusion.md). Regression and historical Q3 classification metrics must not be relabelled as LOW/HIGH.
+
+External COG-BCI N-Back (zero/one/two-back), MATB (easy/medium/difficult) and CL-Drive/CLARE subjective_cognitive_load_3class_fixed are **native three-class tasks**, not obsolete internal PM Q3. Synthetic three-class fixtures are also valid. WESAD is physiological, not EEG. External results use different targets/support and do not validate all seven internal PM conclusions automatically.
+
+Historical label_q5 DANN, FOMAML and contrastive tracks remain supporting/negative evidence; FOMAML do_not_proceed and closed transfer screenings are not invitations to repeat sweeps. Streaming replay/demo is implemented; software-window latency is not measured sensor-to-user latency.
+
+## History, limitations and authority
+
+Internal label_q5 (five-level Focus) and fold-local Q3 LOW/MIDDLE/HIGH are **historical/legacy**, not current primary classification. Preserve their code, configurations, metrics, seeds, folds and provenance. Native external three-class semantics are unchanged.
+
+[2026-08-29 final snapshot](../reports/integration/project_final_state.md) and [historical final package](../reports/summary/final_project_results.md) describe earlier evidence, not competing current states. [Current experiment registry](../reports/summary/experiment_registry.yaml) separates scientific_status from execution status. Current summaries must not rank incompatible cohorts/tasks as one benchmark.
+
+PM are device-derived proxies, not direct cognitive ground truth. Internal independent sample size is at most 54 participants; H120 uses 53. Proprietary smoothing may influence alignment. No physiological causality, small brain attractor, universal history benefit or guaranteed Transformer advantage is established. Negative findings and uncertainty remain part of the scientific record.
+
+## Defensible claims and claims not supported
+
+The internal LOW/HIGH benchmark supports strong tabular references, target-dependent history gains (5/7 H120 comparisons), and an older-block order contribution for four of five gated PM. The largest observed order effect is Focus. Modest operational personalization gains and supporting continuous-regression results are preserved.
+
+No universal benefit for every PM, physiological memory/causality, small brain attractor, proprietary Emotiv mechanism or guaranteed superiority of Transformer is established. Stress order evidence is inconclusive. External native tasks and legacy Q3/label_q5 results are separate evidence, not interchangeable benchmarks. One bounded H120 sequence comparison is planned, not completed.

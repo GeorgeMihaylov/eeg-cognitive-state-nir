@@ -2309,10 +2309,17 @@ def render_config_registry(result: AuditResult) -> str:
             },
         }
         if result.curation:
+            item["scientific_status"] = result.curation.get("scientific_status_overrides", {}).get(record.path, "unclassified")
             item["automatic_role"] = record.automatic_role
             item["automatic_status"] = record.automatic_status
             item["curation"] = deepcopy(record.curation)
         configs.append(item)
+    # JSON experiment protocols use dedicated loaders outside this YAML auditor.
+    # Retain reviewed metadata without claiming a resolved-config validation.
+    known = {item["config_path"] for item in configs}
+    for item in result.curation.get("reviewed_protocol_metadata", []):
+        if item["config_path"] not in known:
+            configs.append(deepcopy(item))
     document = {
         "schema_version": SCHEMA_VERSION,
         "purpose": (
@@ -2912,11 +2919,14 @@ def write_outputs(result: AuditResult, output_dir: Path) -> dict[str, Path]:
     }
     outputs["inventory"].write_text(render_inventory_csv(result), encoding="utf-8", newline="")
     outputs["registry"].write_text(render_config_registry(result), encoding="utf-8", newline="")
-    outputs["report"].write_text(render_markdown(result), encoding="utf-8", newline="")
+    scope_note = ("> **Configuration inventory, not a scientific ranking.** Historical Q3/label_q5 "
+                  "configurations retain their original contracts. Use scientific_status in the registry "
+                  "and [current context](../../PROJECT_CONTEXT.md) for the current LOW/HIGH project state.\n\n")
+    outputs["report"].write_text(scope_note + render_markdown(result), encoding="utf-8", newline="")
     if result.curation:
         outputs["curation_report"] = output_dir / "config_curation.md"
         outputs["curation_report"].write_text(
-            render_curation_markdown(result),
+            scope_note + render_curation_markdown(result),
             encoding="utf-8",
             newline="",
         )

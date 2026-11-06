@@ -1,3 +1,21 @@
+# Current and historical experiment evidence
+
+## Current primary scientific summary — 2026-11-06
+
+Seven-PM LOW/HIGH: LOW <= Q33 and HIGH >= Q67, thresholds fitted once on canonical outer-train continuous complete cases before history filtering. Five subject-disjoint folds; participant-macro BA primary; canonical EEG(t-10 s) -> PM(t). Current cache: 371 features including entropy/connectivity; historical 448 EEG+POW is separate.
+
+LightGBM BA 0.752780 / XGBoost 0.750079 in model robustness. Full nested LOW/HIGH AutoML is complete (2730 inner trainings, 35 final runs), not merely the historical Transformer pilot. Matched H10–H120 is complete 175/175: mean BA 0.7505 -> 0.7819; H120 gain in 5/7 PM after BH across 28 contrasts. Order control complete 25/25: ordered advantage in 4/5 gated PM after BH across five contrasts; stress inconclusive. These are two-stage conditional results, not unconditional tests of all seven PM.
+
+LOW/HIGH 30-minute weighted augmentation: XGBoost delta ROC-AUC/PR-AUC +0.016216/+0.014790; LightGBM +0.014680/+0.015281. Operational 50 participants/345 pairs with fallback, adaptation 285 pairs/48 participants. Continuous PM regression remains supporting evidence (RF macro MAE 0.100278 vs mean 0.110989). Historical label_q5 accuracy criteria do not define current LOW/HIGH acceptance.
+
+Next: one bounded prespecified H120 sequence-model comparison against ordered-H120 LightGBM, planned and not executed. No broad architecture search. PM are proxies; no physiological causality or attractor claim.
+
+Sources: [current context](../../PROJECT_CONTEXT.md), [model robustness](../diagnostics/pm_low_high_model_robustness_v1/summary_by_model.csv), [temporal evidence](../diagnostics/pm_temporal_predictability_v1/README.md), [adaptation](../diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv), [experiment registry](experiment_registry.yaml).
+
+---
+
+> **Historical package below.** Classification tables describe legacy label_q5; regression is supporting evidence. Old integration statements and acceptance criteria are snapshots, not current project requirements. Original numerical values are preserved.
+
 # Единая сводка экспериментальных результатов EEG-проекта
 
 ## Краткое резюме

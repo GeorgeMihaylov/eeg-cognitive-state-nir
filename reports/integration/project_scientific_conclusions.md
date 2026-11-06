@@ -1,82 +1,14 @@
-# Научные выводы проекта
+# Current scientific conclusions — 2026-11-06
 
-## Основная классификация
+Current primary classification is seven-PM **LOW/HIGH**, not label_q5 or internal three-class Q3. Exact LOW <= Q33 / HIGH >= Q67; outer-train continuous complete cases only, before history filtering; middle excluded. Five subject-disjoint folds and participant-macro BA remain primary. Canonical 371 features and EEG(t-10 s) -> PM(t) are dataset contracts.
 
-**Гипотеза.** EEG/POW и временной контекст позволяют предсказывать
-пятиуровневый `label_q5` между испытуемыми. **Протокол.** Пятифолдовый
-subject-disjoint GroupKFold, train-only preprocessing и group-aware inner
-validation. **Результат.** Последовательные LSTM/BiLSTM/Transformer достигают
-macro F1 около 0.36, превосходя RF/MLP и raw CNN baselines. **Решение.**
-Transformer и recurrent модели остаются основными feature-based references.
-**Ограничение.** Цель инерционна во времени и основана на глобальных
-квантилях. **Статус для статьи:** основной результат с обязательным
-sensitivity analysis разметки.
+1. **Baselines:** LightGBM BA 0.752780 and XGBoost 0.750079 on model robustness support are strong references. Full nested LOW/HIGH AutoML completed 2730 inner trainings and 35 final outer runs.
+2. **History:** matched H10–H120 completed 175/175; H120 gains pass BH across 28 contrasts for excitement, focus, interest, relaxation, stress (5/7). Attention/engagement have no confirmed H120 gain. Descriptive mean BA rises .7505 to .7819; target-specific paired inference remains authoritative.
+3. **Order:** conditional H120 control completed 25/25, ordered reused. Canonical -10 s block fixed, the 11 older blocks preserved and permuted per sample. Ordered-minus-shuffled BA passes BH across five contrasts for excitement, focus, interest, relaxation (4/5); stress is inconclusive (q=.070793, CI crosses zero). Focus delta .079192, 52/53 participants and 5/5 folds favor ordered. This is a two-stage gated analysis on the same cohort, not an independent unconditional seven-target test.
+4. **Decision:** one bounded, prespecified H120 sequence architecture compared with ordered-H120 LightGBM is justified and planned, not executed. No broad architecture or AutoML sweep is justified.
+5. **Personalization:** 30-minute LOW/HIGH weighted augmentation gives modest operational ROC-AUC/PR-AUC gains: XGBoost +.016216/+.014790, LightGBM +.014680/+.015281; 50 participants/345 pairs with fallback. Target thresholds stay fixed.
+6. **Diagnostics:** ACF/MI/surrogates/PE/SSA support statistical temporal structure; FNN does not establish a reliable dimension. These diagnostics are separate from PM prediction results.
+7. **Supporting evidence:** continuous seven-PM regression remains useful; DANN/FOMAML/contrastive legacy results retain conditional/negative conclusions. COG-BCI and CL-Drive/CLARE keep native three-class tasks. These are not relabelled LOW/HIGH experiments.
+8. **Limitations:** PM are proxies; 53 participants contribute to H120 comparisons, folds share training subjects, and only one shuffle realization is used. No physiological causality, universal memory mechanism, small attractor or guaranteed neural advantage is established. External replication of temporal conclusions is still open.
 
-## Порядковая постановка
-
-**Гипотеза.** Учёт порядка классов снизит тяжёлые ошибки без потери
-категориального качества. **Протокол.** Три seeds, пять folds, subject-level
-paired analysis; auxiliary weight выбирался только на inner validation.
-**Результат.** CORN снижает ordinal MAE и severe-error rate, но balanced
-accuracy не улучшается устойчиво; auxiliary policy также не поддержана.
-**Решение.** Категориальный Transformer — основной baseline, CORN —
-дополнительный анализ. **Ограничение.** Один набор и три seeds. **Статус для
-статьи:** отрицательный/компромиссный результат.
-
-## Регрессия и персонализация
-
-**Гипотеза.** EEG+POW позволяют оценивать семь PM и адаптироваться к новому
-пользователю. **Протокол.** Пятифолдовая RF-регрессия и leakage-safe
-chronological 20% calibration. **Результат.** RF превосходит mean baseline;
-full-model PM fine-tuning даёт небольшой устойчивый macro-MAE gain, но
-классификационный full-model не универсально лучше head-only. **Решение.**
-Для статьи показывать эффект и межсубъектную вариативность, не утверждать
-универсальное превосходство полной настройки. **Ограничение.** Один бюджет
-20%. **Статус:** основной результат с осторожной интерпретацией.
-
-## Временное согласование EEG и PM
-
-**Гипотеза.** Для PM-меток корректнее фиксированное причинное согласование
-предыдущего окна `EEG(t−10s) → PM(t)`, чем `EEG(t) → PM(t)`. **Протокол.**
-Сначала отдельный exploratory sweep сформировал единственную общую гипотезу
-`−10 s`; затем её независимо проверили классификацией fold-local Q3 и
-регрессией всех семи continuous PM на тех же пяти subject-disjoint folds,
-371 признаке и XGBoost seed 42. **Результат.** Классификация дала положительные
-ΔMacro-F1 и Δbalanced accuracy во всех 35/35 fold×PM сравнениях
-(+0.053003 и
-+0.056273). В регрессии
-participant-macro MAE уменьшилась на
-11.93%
-(32/35 сравнений), Pearson вырос
-на +0.208793 (35/35); средние эффекты
-благоприятны для 7/7 PM. **Решение.** Использовать фиксированное
-`EEG(t−10s) → PM(t)` для всех семи PM в будущих core-экспериментах без
-target-specific lag selection. **Ограничение.** Это коррекция временного
-согласования данных, а не доказанный физиологический лаг или известное
-описание внутреннего алгоритма Emotiv; R2 поддерживает вывод только как
-неоднородная и нестабильная дополнительная метрика.
-
-## COG-BCI
-
-**Гипотеза.** Внешний N-Back корпус может подтвердить raw CNN, преимущества
-62 каналов или перенос энкодера. **Протокол.** Record-safe caches,
-subject-disjoint folds и заранее защищённый downstream fold. **Результат.**
-CNN близки к chance; 62 канала дают только +0.0077 BA; shape-only и
-time-aligned transfer не превосходят random initialization. Физическое
-согласование улучшило contrastive representation diagnostics, но не
-downstream. **Решение.** `retain_14_channel_cache`, `close_transfer_track`.
-**Ограничение.** Transfer — screening на одном downstream fold. **Статус:**
-диагностический отрицательный результат и приложение статьи.
-
-## FOMAML и DANN
-
-Эпизодическая инфраструктура и безопасные BatchNorm-контракты подтверждены
-инженерно. В raw-deduplicated FOMAML diagnostic выбранная policy ухудшила
-participant macro F1 и ordinal MAE относительно обычной supervised
-full-model адаптации; решение — `do_not_proceed`. DANN в направлении
-`Old_EEG → gpn_data` дал малый положительный средний эффект: четыре из пяти
-folds и оба primary seeds положительны по macro F1. Статус
-`partially_confirmed`: средний эффект ниже +0.01, win fraction ниже 60%, а
-participant bootstrap interval включает ноль. Статистическая значимость не
-установлена; source/target являются provenance-доменами, а не доказанно
-разными устройствами.
+Sources: [current context](../../PROJECT_CONTEXT.md), [temporal evidence](../diagnostics/pm_temporal_predictability_v1/README.md), [order control](../diagnostics/pm_temporal_predictability_v1/order_control_h120/README.md), [model robustness](../diagnostics/pm_low_high_model_robustness_v1/summary_by_model.csv), [personalization](../diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv), [supporting lag regression](../diagnostics/pm_eeg_lag_final_conclusion.md). [Previous conclusions](project_scientific_conclusions_legacy_20260829.md) are a historical snapshot.
