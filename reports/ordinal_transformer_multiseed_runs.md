@@ -1,3 +1,5 @@
+> **Historical protocol.** This report describes earlier internal PM Q3 and/or five-level Focus label_q5 experiments, preserved for reproducibility. It is not the current primary classification result. Current primary: seven-PM LOW/HIGH, outer-train Q33/Q67, LOW <= Q33 / HIGH >= Q67, middle excluded. Current status: [PROJECT_CONTEXT](../PROJECT_CONTEXT.md).
+
 # Ordinal Transformer multiseed runs
 
 Seeds 7 and 123 were trained with the canonical seed-42 outer and inner splits. Seed 42 was reused.

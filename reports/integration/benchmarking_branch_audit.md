@@ -1,3 +1,5 @@
+> **HISTORICAL SNAPSHOT.** Status statements reflect an earlier consolidation, not current project completeness. Numerical results, provenance and native external task semantics below are preserved. Superseded by the current LOW/HIGH project state. Current status: [PROJECT_CONTEXT](../../PROJECT_CONTEXT.md).
+
 # Аудит ветки `feature/benchmarking` перед интеграцией
 
 Дата аудита: 22 июля 2026 года  

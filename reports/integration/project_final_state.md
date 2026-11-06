@@ -1,3 +1,5 @@
+> **HISTORICAL SNAPSHOT — 2026-08-29.** Status statements reflect an earlier consolidation, not current project completeness. Numerical results, provenance and native external task semantics below are preserved. Superseded by the current LOW/HIGH project state. Current status: [PROJECT_CONTEXT](../../PROJECT_CONTEXT.md).
+
 # Итоговое состояние проекта
 
 Дата консолидации: 2026-08-29. Пакет построен только из существующих

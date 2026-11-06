@@ -1,3 +1,5 @@
+> **HISTORICAL SNAPSHOT.** Status statements reflect an earlier consolidation, not current project completeness. Numerical results, provenance and native external task semantics below are preserved. Superseded by the current LOW/HIGH project state. Current status: [PROJECT_CONTEXT](../PROJECT_CONTEXT.md).
+
 # Statistical analysis run inventory
 
 Selection is content-aware: completed status, complete folds, resolved configuration semantics, smoke limits, identities, and only then recency. Legacy pre-manifest runs are explicitly labelled and accepted only when their complete prediction and metrics artifacts validate.

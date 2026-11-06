@@ -1,3 +1,5 @@
+> **Historical protocol.** This report describes earlier internal PM Q3 and/or five-level Focus label_q5 experiments, preserved for reproducibility. It is not the current primary classification result. Current primary: seven-PM LOW/HIGH, outer-train Q33/Q67, LOW <= Q33 / HIGH >= Q67, middle excluded. Current status: [PROJECT_CONTEXT](../PROJECT_CONTEXT.md).
+
 # Label definition sensitivity
 
 The existing `label_q5` remains unchanged. Four thresholds are fitted only from the outer-train subjects of each canonical GroupKFold split and applied unchanged to that fold's train and test targets.

@@ -1,3 +1,5 @@
+> **HISTORICAL SNAPSHOT.** Status statements reflect an earlier consolidation, not current project completeness. Numerical results, provenance and native external task semantics below are preserved. Superseded by the current LOW/HIGH project state. Current status: [PROJECT_CONTEXT](../../PROJECT_CONTEXT.md).
+
 # Полный аудит реестра целевых переменных
 
 Статус решения: **target_registry_ready**. Аудит является read-only: модели не обучались, новые классовые цели и кэши не материализовались.

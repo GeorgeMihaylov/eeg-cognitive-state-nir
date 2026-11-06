@@ -1,3 +1,5 @@
+> **Historical classification protocol, retained alignment evidence.** Classification below used fold-local three-class Q3; regression remains supporting evidence. The dataset-level EEG(t-10 s) -> PM(t) alignment was later retained and tested in the current [seven-PM LOW/HIGH line](pm_eeg_absolute_lag_v1/README.md). Original results remain unchanged; this is not a physiological-delay claim.
+
 # Финальный вывод по временному согласованию EEG и PM
 
 Дата консолидации: 2026-08-29. Новое обучение для этого документа не

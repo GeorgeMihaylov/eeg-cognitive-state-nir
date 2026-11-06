@@ -1,3 +1,5 @@
+> **HISTORICAL SNAPSHOT.** Status statements reflect an earlier consolidation, not current project completeness. Numerical results, provenance and native external task semantics below are preserved. Superseded by the current LOW/HIGH project state. Current status: [PROJECT_CONTEXT](../PROJECT_CONTEXT.md).
+
 # AutoML architecture audit
 
 Date: 2026-07-16

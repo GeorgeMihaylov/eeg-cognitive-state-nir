@@ -1,3 +1,5 @@
+> **HISTORICAL SNAPSHOT.** Status statements reflect an earlier consolidation, not current project completeness. Numerical results, provenance and native external task semantics below are preserved. Superseded by the current LOW/HIGH project state. Current status: [PROJECT_CONTEXT](../../PROJECT_CONTEXT.md).
+
 # Аудит конфигураций экспериментов
 
 Найдено **69** tracked experiment YAML/YML; CLI-loadable: **65**; base: **11**, full: **19**, smoke: **16**, diagnostic: **13**, legacy: **6**, unknown: **0**. Конфигов с ошибками: **0**, с предупреждениями: **57**; exact duplicate groups: **0**, protocol duplicate groups: **4**; с experiment registry связано: **12**.
