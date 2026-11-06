@@ -1,0 +1,12 @@
+{
+  "complete": 175,
+  "elapsed_s": 5114.862246099976,
+  "executed": 175,
+  "failed": 0,
+  "full_run_executed": true,
+  "model_fit_predict_s": 2565.709419199964,
+  "protocol_hash": "983460eccffec6ea22cc687bbbfc852516ed672e99562f5a4d9d0057ef088dbe",
+  "result_status": "confirmatory",
+  "resumed": 0,
+  "state": "complete"
+}

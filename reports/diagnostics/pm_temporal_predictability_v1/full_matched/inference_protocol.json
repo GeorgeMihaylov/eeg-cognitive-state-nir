@@ -1,0 +1,11 @@
+{
+  "ci": "paired-difference percentile 95%",
+  "limitations": "overlapping training folds, shared participants across PM, proprietary PM proxies; descriptive inference",
+  "multiplicity": "BH across 28 BA contrasts only",
+  "p": "two-sided centered-null bootstrap mean; (1+exceedances)/10001",
+  "primary_endpoint": "participant_macro_balanced_accuracy",
+  "replicates": 10000,
+  "secondary": "descriptive percentile CIs; no multiplicity claim",
+  "seed": 42,
+  "unit": "participant"
+}

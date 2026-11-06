@@ -1,0 +1,19 @@
+{
+  "canonical_rows": 30958,
+  "cross_subject_record_fold_pairs": 0,
+  "full_run_enabled": true,
+  "history_support": {
+    "10": 30806,
+    "120": 29437,
+    "20": 30663,
+    "30": 30524,
+    "60": 30140
+  },
+  "planned_fits": 175,
+  "primary_identity_hashes_equal": true,
+  "primary_planned_fits": 175,
+  "protocol_hash": "983460eccffec6ea22cc687bbbfc852516ed672e99562f5a4d9d0057ef088dbe",
+  "secondary_planned_fits": 0,
+  "thresholds_horizon_invariant": true,
+  "training_executed": false
+}
