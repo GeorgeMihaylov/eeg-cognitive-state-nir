@@ -2,7 +2,7 @@
 
 Воспроизводимая исследовательская платформа для распознавания PM-defined когнитивных состояний по данным электроэнцефалографии (ЭЭГ) с межсубъектной оценкой, персонализацией, внешней валидацией, исследованием предобработки и потоковым программным контуром.
 
-**Актуализация README: 5 ноября 2026 года.**
+**Актуализация README: 6 ноября 2026 года.**
 
 ## Текущее состояние
 
@@ -16,11 +16,11 @@
 - `target_interest`;
 - `target_focus`.
 
-Основная постановка — **LOW / HIGH**: нижняя и верхняя трети распределения PM, средняя треть исключается. Q33/Q67 вычисляются отдельно для каждого PM и outer fold **только по outer-train** и без переоценки применяются к outer-test. Точная семантика текущего кода и спецификаций: `LOW ≤ Q(1/3)`, `HIGH ≥ Q(2/3)`; значения на границах включаются в крайние классы.
+Основная постановка — **LOW / HIGH**: нижняя и верхняя трети распределения PM, средняя треть исключается. Q33/Q67 вычисляются отдельно для каждого PM и outer fold **только по canonical outer-train continuous complete cases, до history filtering** и без переоценки применяются к outer-test. Точная семантика текущего кода и спецификаций: `LOW ≤ Q(1/3)`, `HIGH ≥ Q(2/3)`; значения на границах включаются в крайние классы.
 
 Трёхклассовая Q3-постановка и пяти-классовая Focus-разметка `label_q5` — **исторические (legacy)** протоколы, сохранённые для воспроизводимости.
 
-Завершены межсубъектные baseline, исследования preprocessing, временной привязки EEG–PM, последовательностных моделей, персонализации, transfer и streaming. Следующий этап — **Temporal Predictability Audit**, проверка полезности истории до канонического 10-секундного блока.
+Завершены межсубъектные baseline, исследования preprocessing, временной привязки EEG–PM, последовательностных моделей, персонализации, transfer и streaming. **Temporal Predictability Audit завершён**: matched H10–H120 175/175 и H120 order control 25/25. Следующий этап — одна bounded sequence-model comparison, пока только planned.
 
 Подробный научный контекст: [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md). Правила работы и экспериментальные инварианты: [AGENTS.md](AGENTS.md). Точные контракты и результаты определяются кодом, спецификациями и артефактами конкретного эксперимента.
 
@@ -153,7 +153,9 @@ LightGBM и XGBoost — сильные табличные baseline на 371 пр
 
 Таким образом, participant-macro Balanced Accuracy находится около 0.75, ROC-AUC — в high-0.8 range. Это характеристики конкретного LOW/HIGH-протокола, а не заявление о «точности системы 75%».
 
-**Temporal models.** LSTM, BiLSTM и Transformer уже исследовались. Устойчивого преимущества последовательностных моделей над сильными табличными baseline не установлено. В [современном matched-сравнении](reports/diagnostics/pm_low_high_temporal_context_matched_v1/summary_by_model.csv) средняя participant-macro BA составляет около 0.750 для LightGBM/XGBoost и 0.725 для LSTM/Transformer. BiLSTM представлен в историческом сравнении ниже. Следующая задача — определить информационную ценность более длинной истории.
+**Nested LOW/HIGH AutoML завершён:** 2 730 inner trainings и 35 final outer fits ([результаты](reports/diagnostics/pm_low_high_nested_automl_v1/final_summary.json)). Старый Transformer AutoML pilot относится к historical label_q5.
+
+**Temporal models.** LSTM, BiLSTM и Transformer уже исследовались. Устойчивого преимущества последовательностных моделей над сильными табличными baseline не установлено. В [современном matched-сравнении](reports/diagnostics/pm_low_high_temporal_context_matched_v1/summary_by_model.csv) средняя participant-macro BA составляет около 0.750 для LightGBM/XGBoost и 0.725 для LSTM/Transformer. BiLSTM представлен в историческом сравнении ниже. Новый H120 audit уже установил target-dependent пользу истории и порядка; одна bounded H120 sequence comparison теперь обоснована, но ещё не выполнена.
 
 **Персонализация LOW/HIGH.** Исследованы индивидуальные пороги решения, probability calibration и model adaptation при ограниченном объёме target-subject data. В практически важном сценарии первых **30 минут** данных пользователя наиболее устойчивый результат дала адаптация модели через weighted augmentation. На operational support (50 участников, 345 participant–PM пар, с fallback для непригодных к адаптации случаев) получены небольшие стабильные приросты относительно zero-shot:
 
@@ -162,7 +164,7 @@ LightGBM и XGBoost — сильные табличные baseline на 371 пр
 | XGBoost | +0.0162 | +0.0148 |
 | LightGBM | +0.0147 | +0.0153 |
 
-Источники: [итоговые estimands](reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv), [participant bootstrap](reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/bootstrap_operational.csv). Для этих четырёх приростов описательные 95% интервалы выше нуля. Адаптация применялась к 285 participant–PM парам у 48 участников; оценка выполнялась на последующем отрезке. Пороги LOW/HIGH оставались outer-train; персональные пороги решения не меняли целевую разметку. README этого эксперимента сохранил раннюю пометку «dry-run», поэтому численные результаты здесь взяты из итоговых CSV.
+Источники: [итоговые estimands](reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/summary_by_estimand.csv), [participant bootstrap](reports/diagnostics/pm_low_high_personalized_weighted_augmentation_v1/bootstrap_operational.csv). Для этих четырёх приростов описательные 95% интервалы выше нуля. Адаптация применялась к 285 participant–PM парам у 48 участников; оценка выполнялась на последующем отрезке. Пороги LOW/HIGH оставались outer-train; персональные пороги решения не меняли целевую разметку. Численные результаты взяты из итоговых CSV, а не раннего dry-run manifest.
 
 **Channel diagnostics.** Устойчивого полезного fixed inter-channel lag не обнаружено; удаление F3/F7/F8 ухудшало качество в проверенных конфигурациях ([channel-drop report](reports/diagnostics/pm_qc_channel_drop_confirmatory_v1/README.md), [inter-channel diagnostic](reports/diagnostics/interchannel_lag_pilot_v1/run_summary.json)). Дальнейший arbitrary channel-drop search не является приоритетом; перспективнее phase synchronization, functional connectivity и graph representations.
 
@@ -473,22 +475,17 @@ docker run --rm -p 8000:8000 eeg-cogstate-streaming
 и model bundle; bootstrap-manifests предназначены только для диагностического
 сквозного smoke-теста.
 
-## Текущий исследовательский этап
+## Temporal Predictability — завершён
 
-**Temporal Predictability Audit** должен ответить: содержит ли EEG-history до канонического `[T−10,T]` дополнительную predictive information сверх одного 10-секундного блока?
+[Диагностики](reports/diagnostics/pm_temporal_predictability_audit_v1/README.md): support, ACF, MI/surrogates, PE, SSA/Hankel и restricted FNN завершены. H120 сохраняет 29 437 окон, 95.56% H10 support, 53 участника и 84 записи. Временная зависимость присутствует, но надёжная embedding dimension не установлена; MI не доказывает нелинейность, SSA/FNN не доказывают физический attractor.
 
-Планируемые горизонты: **H10, H20, H30, H60, H120**. История расширяется назад, оставаясь внутри одной непрерывной записи. План включает:
+[Full matched H10–H120](reports/diagnostics/pm_temporal_predictability_v1/README.md): **175/175**, failed 0, restored 0; strict common H120 support, одинаковые labels/samples/participants/folds/thresholds. LightGBM 200 trees, n_jobs=4, seed 42. Средняя по семи PM participant-macro BA: H10 **0.7505**, H20 **0.7608**, H30 **0.7663**, H60 **0.7708**, H120 **0.7819**. Это descriptive summary; paired inference выполняется отдельно по PM.
 
-- support/retention audit с числом участников, записей и train/test окон;
-- autocorrelation, permutation entropy и mutual information для выбора диагностического delay;
-- Takens-style delay embedding / False Nearest Neighbours и Hankel / Singular Spectrum Analysis;
-- surrogate controls внутри записи, с контролем достаточной длины последовательностей;
-- predictive LightGBM H10–H120 comparison на matched support, с прежними гиперпараметрами и конкатенацией lagged features;
-- при наличии прироста — temporal-order shuffle control с фиксированным каноническим блоком −10 s.
+H120 vs H10 проходит BH q<0.05 у **5/7 PM**: excitement, focus, interest, relaxation, stress (28 target × horizon contrasts). Attention/engagement не имеют подтверждённого H120 gain. Польза дополнительной истории зависит от target.
 
-Это план, а не уже полученный результат. Сначала проверяется наличие полезной информации, затем способность архитектуры её использовать. Если H10 ≈ длинным histories, новая temporal NN не обоснована. Польза H20/H30 допускает TimesNet/PatchTST; польза H60/H120 при важности порядка — PatchTST; доказанная длинная память — Mamba/SSM. Если история помогает независимо от порядка, предпочтительнее lag/SSA/statistical features.
+[H120 order control](reports/diagnostics/pm_temporal_predictability_v1/order_control_h120/README.md): **25/25**, ordered H120 не переобучался. Только пять gated PM; перемешаны 11 older blocks, canonical -10 s block фиксирован. Ordered − shuffled BA проходит BH у **4/5**: excitement, focus, interest, relaxation. Stress — **inconclusive**, q≈0.0708, CI пересекает ноль. Focus: ΔBA≈+0.0792, 52/53 participants и 5/5 folds ordered better. Bootstrap 10 000, seed 42; BH по пяти условным контрастам не является unconditional тестом всех семи PM.
 
-Дальнейшая последовательность: wavelet feature ablation → phase-synchronization / Kuramoto-style features → максимум одна обоснованная temporal architecture → confirmatory personalization → external validation научных выводов → manuscript preparation. Подробности — в [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md).
+Следующий этап: **одна заранее фиксированная H120 sequence architecture против ordered-H120 LightGBM на matched support**, planned, not completed. Широкий architecture/AutoML search не обоснован. Wavelet и synchronization ablations — отдельные последующие гипотезы. Подробнее: [PROJECT_CONTEXT](PROJECT_CONTEXT.md).
 
 ## Ограничения
 
@@ -504,4 +501,4 @@ docker run --rm -p 8000:8000 eeg-cogstate-streaming
 
 ## Итог
 
-Создан воспроизводимый межсубъектный EEG pipeline, унифицированы семь PM и установлен основной LOW/HIGH-протокол. Сформированы сильные LightGBM/XGBoost baseline и подтверждена predictive temporal alignment `EEG(t−10 s) → PM(t)`. Изучены preprocessing, transfer, personalization и streaming; сложные temporal models пока не показали стабильного преимущества. Текущая работа направлена на выяснение temporal information content EEG, далее — wavelet и synchronization representations и внешняя проверка выводов. Отрицательные результаты сохраняются вместе с условиями, в которых они получены.
+Создан воспроизводимый межсубъектный EEG pipeline, унифицированы семь PM и установлен основной LOW/HIGH-протокол. Сформированы сильные LightGBM/XGBoost baseline и подтверждена predictive temporal alignment `EEG(t−10 s) → PM(t)`. Изучены preprocessing, transfer, personalization и streaming; сложные temporal models пока не показали стабильного преимущества. Temporal history и order effects подтверждены для подмножеств PM; далее запланированы bounded sequence comparison и независимая внешняя проверка выводов. Отрицательные результаты сохраняются вместе с условиями, в которых они получены.

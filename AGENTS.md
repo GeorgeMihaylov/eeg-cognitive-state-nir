@@ -1,5 +1,7 @@
 # AGENTS.md
 
+Current scientific status: 2026-11-06. See [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) and the completed [temporal evidence](reports/diagnostics/pm_temporal_predictability_v1/README.md).
+
 ## 1. Purpose
 
 This repository contains the research and experimental platform for EEG-based cognitive-state recognition.
@@ -116,7 +118,7 @@ target_focus
 
 Do not reduce new primary experiments to Focus-only unless the experiment explicitly studies Focus.
 
-Historical `label_q5` / Focus-only experiments remain useful as legacy baselines but are not the main current classification protocol.
+Historical `label_q5` / Focus-only and internal fold-local Q3 experiments are legacy, not current primary classification. Preserve their results/configurations; never relabel their metrics as LOW/HIGH. Native COG-BCI N-Back/MATB, CL-Drive/CLARE three-class targets and synthetic three-class tests are valid separate tasks and must not be reinterpreted.
 
 ---
 
@@ -130,11 +132,11 @@ LOW / HIGH
 
 For each PM and each outer fold:
 
-- LOW is defined below the fold-local Q33 threshold;
-- HIGH is defined above the fold-local Q67 threshold;
+- LOW <= fold-local Q33;
+- HIGH >= fold-local Q67;
 - the middle third is excluded.
 
-Thresholds must be derived from the training subjects only.
+Thresholds are fitted once on canonical outer-train continuous complete cases before history filtering and reused unchanged across matched horizons and outer-test. Middle samples consume elapsed time/support but never become binary training labels.
 
 Never calculate Q33/Q67 globally before the train/test split.
 
@@ -159,7 +161,7 @@ The main scientific question is generalization to unseen participants.
 
 Therefore the primary evaluation is cross-subject.
 
-Use the existing fixed outer folds by `subject_id` whenever the current experiment belongs to the main protocol.
+Use the existing five fixed outer folds by `subject_id` whenever the current experiment belongs to the main protocol.
 
 All samples belonging to one subject must remain in the same outer fold.
 
@@ -370,6 +372,10 @@ Do not rerun them simply with minor architecture changes.
 
 A new temporal architecture requires evidence that additional temporal history contains useful information.
 
+### Nested AutoML
+
+Full LOW/HIGH nested AutoML is complete: 2,730 inner trainings and 35 final outer runs. The old label_q5 Transformer AutoML pilot is historical.
+
 ### Personalization
 
 Personalization has already been studied using a limited amount of target-subject data.
@@ -407,13 +413,13 @@ Do not repeat the `[-30,-20,-10,0,+10]` sweep unless the underlying dataset or t
 
 ---
 
-# 12. Current research priority: Temporal Predictability Audit
+# 12. Completed Temporal Predictability Audit
 
-The next main scientific question is:
+The completed audit addressed:
 
 > Does EEG history before the canonical `[T-10,T]` block contain additional information about LOW/HIGH cognitive state beyond the canonical 10-second window itself?
 
-Initial history horizons are:
+Completed history horizons are:
 
 ```text
 H10
@@ -425,7 +431,7 @@ H120
 
 where the canonical `-10 s` block is always the most recent causal block.
 
-The audit should separate two different questions:
+The audit separates two different questions:
 
 1. does additional history contain information?
 2. does a particular model architecture know how to exploit it?
@@ -434,9 +440,9 @@ Do not answer both questions by immediately training another large neural networ
 
 ---
 
-## 13. Required Temporal Predictability diagnostics
+## 13. Completed diagnostics and retained methodological rules
 
-Before a large temporal-model benchmark, prefer inexpensive diagnostics.
+Support/ACF/MI/surrogates/PE/SSA/restricted FNN are complete. No reliable FNN embedding dimension or physical attractor was established. Preserve these rules for future diagnostic work; do not rerun completed diagnostics without a new request.
 
 ### 13.1 Support audit
 
@@ -539,7 +545,7 @@ Compare observed and surrogate:
 - SSA structure;
 - other temporal statistics.
 
-If longer history improves prediction, additionally test temporal ordering.
+The conditional H120 order control is complete (25/25). Do not rerun it without a new request. The following describes the retained control principle.
 
 For example:
 
@@ -569,7 +575,7 @@ their temporal ordering is useful
 
 # 15. Predictive history benchmark
 
-If support and diagnostics justify it, the first predictive history test should remain deliberately simple.
+The first matched predictive history test is complete: 175/175, strict common H120 support, LightGBM 200 trees / n_jobs=4 / seed 42. H120 gains pass BH across 28 contrasts for 5/7 PM: excitement, focus, interest, relaxation, stress. Attention/engagement have no confirmed H120 gain. The gated order control reused ordered H120 and completed 25/25 shuffled fits; order effects pass BH across five contrasts for excitement, focus, interest and relaxation (4/5); stress is inconclusive. This two-stage analysis is conditional, not an unconditional independent seven-PM test.
 
 Use the existing LightGBM configuration.
 
@@ -712,31 +718,7 @@ Do not create an architecture zoo.
 
 Model choice must follow empirical evidence.
 
-Use the following logic:
-
-```text
-If H10 ≈ longer histories:
-    do not add a new sequence model only for novelty.
-
-If H20/H30 helps:
-    TimesNet or PatchTST may be justified.
-
-If clear periodic/multi-periodic structure is found:
-    TimesNet becomes particularly relevant.
-
-If H60/H120 helps and temporal order matters:
-    PatchTST becomes well motivated.
-
-If useful information continues over very long context:
-    Mamba / selective State Space Models may be justified.
-
-If history helps but shuffled history performs similarly:
-    prefer statistical aggregation, Hankel/SSA, or lag features
-    over a complex sequence architecture.
-
-If useful temporal information exists but data are limited:
-    consider ESN/reservoir computing as a cheap baseline first.
-```
+Current evidence justifies one bounded, prespecified H120 sequence architecture compared directly against ordered-H120 LightGBM on identical support. This comparison is planned, not executed. Do not launch broad AutoML, Mamba, PatchTST or TimesNet sweeps merely because history/order effects are positive. Freeze the model and comparison before test outcomes; preserve target-dependent interpretation and negative results.
 
 Only one new temporal architecture should normally be evaluated at a time.
 
@@ -770,6 +752,8 @@ The internal PM generation process may include smoothing or proprietary processi
 ---
 
 # 19. Dataset handling
+
+Current canonical cache: 371 features (182 spectral, 140 statistical, 28 entropy, 21 connectivity); 30,958 deduplicated windows, 54 participants, 86 records, raw [1,14,2560] at 256 Hz. EEG 168 + POW 280 = 448 is a historical separate representation.
 
 Primary internal data sources include:
 
@@ -1165,13 +1149,14 @@ cross-subject baseline
         ↓
 confirmed EEG–PM temporal alignment
         ↓
-temporal predictability / effective history
+completed temporal predictability / effective history
+        ↓
+one bounded H120 sequence comparison (planned)
         ↓
 time-frequency representation
         ↓
 inter-channel synchronization
-        ↓
-one justified temporal architecture if needed
+
         ↓
 confirmatory personalization
         ↓
@@ -1190,28 +1175,7 @@ Do not replace this question with:
 
 # 33. Immediate next milestone
 
-The immediate scientific milestone is:
-
-```text
-Temporal Predictability Audit
-```
-
-The milestone should answer:
-
-1. How much continuous EEG history is available?
-2. How quickly does temporal dependence decay?
-3. Does observed temporal structure differ from surrogate data?
-4. What temporal delay is suggested by mutual information?
-5. What effective embedding dimension is suggested by state-space diagnostics?
-6. What does Hankel/SSA indicate about temporal redundancy?
-7. Does H20/H30/H60/H120 improve prediction over H10?
-8. If it improves, is the ordering of older history blocks important?
-
-Do not begin TimesNet, PatchTST, Mamba, or another major temporal neural model before this milestone is interpreted.
-
-The expected next independent experiment after the temporal audit is a wavelet-feature ablation.
-
-A phase-synchronization/Kuramoto-style feature experiment is a high-priority subsequent direction.
+The temporal milestone is complete (175/175 matched, 25/25 order control). The next milestone is one bounded H120 sequence-model comparison against the frozen ordered-H120 LightGBM reference, only on explicit authorization. Wavelet and phase-synchronization representations remain separate later ablations. No architecture has yet been evaluated as this next milestone.
 
 ---
 

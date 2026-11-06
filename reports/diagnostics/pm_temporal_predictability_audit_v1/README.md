@@ -1,6 +1,6 @@
 # Temporal Predictability Audit
 
-Diagnostic/exploratory analysis of canonical engineered EEG trajectories. This report combines the completed support/ACF/MI audits with reviewed PE and new SSA/FNN diagnostics. No classifier is fitted by these diagnostic scripts; the separate predictive runner is restricted to preflight and a five-fit smoke.
+Diagnostic/exploratory analysis of canonical engineered EEG trajectories. This report combines the completed support/ACF/MI audits with reviewed PE and new SSA/FNN diagnostics. No classifier is fitted by these diagnostic scripts; the separate predictive experiments are now complete: matched 175/175 and conditional H120 order control 25/25.
 
 ## Contract
 
@@ -109,6 +109,6 @@ python scripts/analysis/summarize_pm_temporal_diagnostics.py
 
 `temporal_diagnostics_summary.json` assembles the compact tables, protocols, input/source hashes and limitations. The cache location is supplied by CLI; reusable code does not hard-code the workstation path.
 
-Support and observed-versus-surrogate structure justify a separately authorized matched H10-H120 LightGBM test. They do not establish that older history adds PM prediction information or justify a new sequence architecture. The separate infrastructure is in `bench/experiments/pm_temporal_predictability.py`; primary and horizon-specific sensitivity manifests are separated. No full 175-fit benchmark is run as part of this stage.
+Support and observed-versus-surrogate structure motivated the now-completed [matched H10–H120 experiment](../pm_temporal_predictability_v1/README.md) (175/175) and [H120 order control](../pm_temporal_predictability_v1/order_control_h120/README.md) (25/25). Diagnostics alone do not establish PM predictability. The separate predictive evidence shows H120 gains for 5/7 PM after BH across 28 contrasts, and order effects for 4/5 gated PM after BH across five contrasts; stress order evidence is inconclusive. This supports one bounded H120 sequence comparison, planned and not yet executed. No reliable embedding dimension or physical attractor was established.
 
 Methodological references: [Bandt and Pompe, PE](https://doi.org/10.1103/PhysRevLett.88.174102); [Kennel et al., FNN](https://doi.org/10.1103/PhysRevA.45.3403). Neither diagnostic establishes physiological causation for proprietary PM proxies.
